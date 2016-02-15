@@ -1,6 +1,8 @@
 require 'sinatra/base'
 
 class SonGtkGui < Sinatra::Base
+  set :bind, "0.0.0.0"
+
   get '/' do
     'Hello, SONATA End User!'
   end
