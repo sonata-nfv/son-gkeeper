@@ -1,0 +1,50 @@
+current directory: /Users/jbonnet/src/ruby/sinatra/sonata/son-gkeeper/son-gtkapi/vendor/bundle/ruby/2.2.0/gems/puma-2.14.0/ext/puma_http11
+/Users/jbonnet/.rvm/rubies/ruby-2.2.3/bin/ruby -r ./siteconf20160217-93716-1egklh1.rb extconf.rb
+checking for BIO_read() in -lcrypto... yes
+checking for SSL_CTX_new() in -lssl... yes
+checking for openssl/bio.h... no
+creating Makefile
+
+To see why this extension failed to compile, please check the mkmf.log which can be found here:
+
+  /Users/jbonnet/src/ruby/sinatra/sonata/son-gkeeper/son-gtkapi/vendor/bundle/ruby/2.2.0/extensions/x86_64-darwin-14/2.2.0-static/puma-2.14.0/mkmf.log
+
+current directory: /Users/jbonnet/src/ruby/sinatra/sonata/son-gkeeper/son-gtkapi/vendor/bundle/ruby/2.2.0/gems/puma-2.14.0/ext/puma_http11
+make "DESTDIR=" clean
+
+current directory: /Users/jbonnet/src/ruby/sinatra/sonata/son-gkeeper/son-gtkapi/vendor/bundle/ruby/2.2.0/gems/puma-2.14.0/ext/puma_http11
+make "DESTDIR="
+compiling http11_parser.c
+compiling io_buffer.c
+io_buffer.c:119:10: warning: passing 'uint8_t *' (aka 'unsigned char *') to parameter of type 'const char *' converts between pointers to integer types with different sign [-Wpointer-sign]
+  return rb_str_new(b->top, b->cur - b->top);
+         ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/Users/jbonnet/.rvm/rubies/ruby-2.2.3/include/ruby-2.2.0/ruby/intern.h:796:20: note: expanded from macro 'rb_str_new'
+        rb_str_new_static((str), (len)) : \
+                          ^~~~~
+/Users/jbonnet/.rvm/rubies/ruby-2.2.3/include/ruby-2.2.0/ruby/intern.h:727:37: note: passing argument to parameter here
+VALUE rb_str_new_static(const char *, long);
+                                    ^
+io_buffer.c:119:10: warning: passing 'uint8_t *' (aka 'unsigned char *') to parameter of type 'const char *' converts between pointers to integer types with different sign [-Wpointer-sign]
+  return rb_str_new(b->top, b->cur - b->top);
+         ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/Users/jbonnet/.rvm/rubies/ruby-2.2.3/include/ruby-2.2.0/ruby/intern.h:797:13: note: expanded from macro 'rb_str_new'
+        rb_str_new((str), (len));         \
+                   ^~~~~
+/Users/jbonnet/.rvm/rubies/ruby-2.2.3/include/ruby-2.2.0/ruby/intern.h:706:29: note: passing argument to parameter here
+VALUE rb_str_new(const char*, long);
+                            ^
+2 warnings generated.
+compiling mini_ssl.c
+In file included from mini_ssl.c:4:
+/Users/jbonnet/.rvm/rubies/ruby-2.2.3/include/ruby-2.2.0/ruby/backward/rubyio.h:2:2: warning: use "ruby/io.h" instead of "rubyio.h" [-W#warnings]
+#warning use "ruby/io.h" instead of "rubyio.h"
+ ^
+1 warning generated.
+compiling puma_http11.c
+linking shared-object puma/puma_http11.bundle
+ld: warning: directory not found for option '-L/Users/haven/.sm/pkg/active/lib'
+
+current directory: /Users/jbonnet/src/ruby/sinatra/sonata/son-gkeeper/son-gtkapi/vendor/bundle/ruby/2.2.0/gems/puma-2.14.0/ext/puma_http11
+make "DESTDIR=" install
+/usr/bin/install -m 0755 puma_http11.bundle ./.gem.20160217-93716-l9jb73/puma
