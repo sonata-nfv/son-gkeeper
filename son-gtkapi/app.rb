@@ -27,5 +27,13 @@ class App < Sinatra::Base
     halt 404, "Sorry, couldn't find package \"#{params[:id]}\"." unless @package
     @package.to_json
   end
+
+  post '/packages' do
+    @json = JSON.parse(request.body.read)
+    p @json
+    @package = Package.create!(@json)
+    halt 404, "Sorry, couldn't add package \"#{params[:name]}\"." unless @package
+    @package.to_json
+  end
 end
 
