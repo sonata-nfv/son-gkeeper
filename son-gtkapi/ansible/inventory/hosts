@@ -1,0 +1,7 @@
+[gtkpr]
+185.17.229.24 ansible_ssh_user=ptin_admin ansible_ssh_port=2221
+
+#   site01-dr ansible_ssh_host=site01.dr ansible_ssh_port=65422
+#   db01 ansible_ssh_user=fred
+#   ansible_ssh_private_key_file=/home/fred/.ssh.id_rsa bastion
+
