@@ -1,0 +1,6 @@
+---
+- name: deploy ruby to target machines
+  hosts: gtkpr
+  sudo: yes
+  roles:
+    - { role: rvm_io.rvm1-ruby, tags: ruby, sudo: True }
