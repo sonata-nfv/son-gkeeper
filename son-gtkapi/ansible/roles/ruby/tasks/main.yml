@@ -1,9 +1,0 @@
----
-# tasks file for ruby
-- name: RUBY | Installing RUBY repo rpm
-  include: redhat.yml
-  when: ansible_os_family == "RedHat"
-      
-- name: RUBY | Installing RUBY
-  include: debian.yml
-  when: ansible_os_family == "Debian"
