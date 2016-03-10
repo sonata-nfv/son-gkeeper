@@ -1,4 +1,6 @@
-This is SONATA's Gatekeeper API.
+# Gatekeeper's API
 
-* How to install
-WIP
+## Usage
+```
+$ bundle exec ruby app.rb
+```

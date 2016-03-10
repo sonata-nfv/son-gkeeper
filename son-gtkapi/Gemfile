@@ -1,10 +1,20 @@
 source 'https://rubygems.org'
 
-gem 'sqlite3'
 gem 'rake'
 gem 'sinatra'
-gem 'sinatra-activerecord' #, path: ".."
-gem 'activerecord' #, "3.2.17"
+gem 'sinatra-contrib'
 gem 'pry'
 gem 'pry-byebug'
 gem 'puma'
+gem 'rest-client'
+gem 'rack-parser', :require => 'rack/parser'
+
+group :test do
+  gem 'webmock'
+  gem 'rspec'
+  gem 'rack-test'
+end
+
+group :test, :development do
+  gem 'capybara'
+end
