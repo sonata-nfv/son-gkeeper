@@ -3,6 +3,7 @@ GEM
   specs:
     addressable (2.4.0)
     backports (3.6.8)
+    builder (3.2.2)
     byebug (8.2.2)
     capybara (2.6.2)
       addressable
@@ -11,6 +12,11 @@ GEM
       rack (>= 1.0.0)
       rack-test (>= 0.5.4)
       xpath (~> 2.0)
+    ci_reporter (2.0.0)
+      builder (>= 2.1.2)
+    ci_reporter_rspec (1.0.0)
+      ci_reporter (~> 2.0)
+      rspec (>= 2.14, < 4)
     coderay (1.1.0)
     crack (0.4.3)
       safe_yaml (~> 1.0.0)
@@ -89,6 +95,7 @@ PLATFORMS
 
 DEPENDENCIES
   capybara
+  ci_reporter_rspec
   pry
   pry-byebug
   puma

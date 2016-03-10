@@ -20,58 +20,16 @@ require 'yaml'
 require 'rack/parser'
 
 set :root, File.dirname(__FILE__)
-enable :sessions
+set :bind, '0.0.0.0'
+use Rack::Session::Cookie, :key => 'rack.session', :domain => 'foo.com', :path => '/', :expire_after => 2592000, :secret => '$0nata'
+enable :logging
+
 config_file 'config/services.yml'
 
 # https://github.com/achiu/rack-parser
-use Rack::Parser, :content_types => {
-  'application/json' => Proc.new { |body| ::MultiJson.decode body }
-}
+use Rack::Parser, :content_types => { 'application/json' => Proc.new { |body| ::MultiJson.decode body } }
 
 get '/' do
-  #send_file './config/api.yml'
-  #erb './config/api.yml'
   api = YAML.load_file './config/api.yml'
   halt 200, {'Location' => '/'}, api.to_s
-end
-
-# https://github.com/sinatra/sinatra-recipes/blob/ecc597b3725bb9eb7ac9e30a89f72b0d9b0c9af5/middleware/rack_parser.md
-post '/orders' do
-  order = Order.from_hash( params['order'] )
-  order.process
-  # ....
-end
-
-post '/messages' do
-  message = Message.from_hash( ::MultiJson.decode(request.body) )
-  message.save
-  halt 201, {'Location' => "/messages/#{message.id}"}, ''
-end
-
-
-
-def require_logged_in
-    redirect('/sessions/new') unless is_authenticated?
-end
-
-def is_authenticated?
-    return !!session[:user_id]
-end
-
-get '/' do
-  erb :login
-end
-
-get '/sessions/new' do
-  erb :login
-end
-
-post '/sessions' do
-  session[:user_id] = params["user_id"]
-  redirect('/secrets')
-end
-
-get '/secrets' do
-  require_logged_in
-  erb :secrets
 end

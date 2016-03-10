@@ -1,11 +1,18 @@
 require 'rspec/core/rake_task'
+require 'ci/reporter/rake/rspec'
 require './app'
 
 task :default => [:specs]
 
 desc "Run Unit Tests"
 RSpec::Core::RakeTask.new :specs do |task|
-    task.pattern = Dir['spec/**/*_spec.rb']
+  task.pattern = Dir['spec/**/*_spec.rb']
+end
+
+# use like in
+#   rake ci:all
+namespace :ci do
+  task :all => ['ci:setup:rspec', 'specs']
 end
 
 # From https://coderwall.com/p/ecrr8q/sinatra-rake
