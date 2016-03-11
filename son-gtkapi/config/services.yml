@@ -1,0 +1,22 @@
+---
+development:
+  packages: 'http://localhost:5100'
+  licenses: ''
+  users: ''
+  kpis: ''
+  bss: ''
+
+test:
+  packages: ''
+  licenses: ''
+  users: ''
+  kpis: ''
+  bss: ''
+
+production:
+  packages: ''
+  licenses: ''
+  users: ''
+  kpis: ''
+  bss: ''
+

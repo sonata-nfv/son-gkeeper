@@ -1,0 +1,31 @@
+require 'rspec/core/rake_task'
+require 'ci/reporter/rake/rspec'
+require './app'
+
+task :default => [:specs]
+
+desc "Run Unit Tests"
+RSpec::Core::RakeTask.new :specs do |task|
+  task.pattern = Dir['spec/**/*_spec.rb']
+end
+
+# use like in
+#   rake ci:all
+namespace :ci do
+  task :all => ['ci:setup:rspec', 'specs']
+end
+
+# From https://coderwall.com/p/ecrr8q/sinatra-rake
+# Run it with
+#   rake -g create_sinatra 
+# or
+#   rake -g create_sinatra 'myapp/appfolder'
+desc "Create a directory structure for Sinatra classic app in a specified directory"
+task :create_sinatra do
+  dir = ARGV.count > 2 ? ARGV.last : "."
+  sh "mkdir #{dir}" unless dir == "."
+  sh "touch #{dir}/app.rb"
+  sh "mkdir -p #{dir}/public/js"
+  sh "mkdir -p #{dir}/public/css"
+  sh "mkdir -p #{dir}/public/images"
+end
