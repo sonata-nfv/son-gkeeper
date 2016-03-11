@@ -2,7 +2,7 @@ require 'rspec/core/rake_task'
 require 'ci/reporter/rake/rspec'
 require './app'
 
-task :default => [:specs]
+task :default => ['ci:all']
 
 desc "Run Unit Tests"
 RSpec::Core::RakeTask.new :specs do |task|
