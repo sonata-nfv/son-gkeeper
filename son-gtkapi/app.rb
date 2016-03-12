@@ -21,6 +21,7 @@ require 'rack/parser'
 
 set :root, File.dirname(__FILE__)
 set :bind, '0.0.0.0'
+set :public_folder, 'public'
 use Rack::Session::Cookie, :key => 'rack.session', :domain => 'foo.com', :path => '/', :expire_after => 2592000, :secret => '$0nata'
 enable :logging
 
@@ -32,4 +33,8 @@ use Rack::Parser, :content_types => { 'application/json' => Proc.new { |body| ::
 get '/' do
   api = YAML.load_file './config/api.yml'
   halt 200, {'Location' => '/'}, api.to_s
+end
+
+get '/api-doc' do
+  redirect '/swagger/index.html' 
 end

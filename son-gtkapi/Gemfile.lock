@@ -23,9 +23,12 @@ GEM
     diff-lcs (1.2.5)
     domain_name (0.5.20160309)
       unf (>= 0.0.5, < 1.0.0)
+    faker (1.6.3)
+      i18n (~> 0.5)
     hashdiff (0.3.0)
     http-cookie (1.0.2)
       domain_name (~> 0.5)
+    i18n (0.7.0)
     method_source (0.8.2)
     mime-types (2.99.1)
     mini_portile2 (2.0.0)
@@ -96,6 +99,7 @@ PLATFORMS
 DEPENDENCIES
   capybara
   ci_reporter_rspec
+  faker
   pry
   pry-byebug
   puma

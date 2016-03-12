@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="Test /api-doc Path access" tests="1" time="0.059538" failures="0" errors="0" skipped="0" timestamp="2016-03-12T19:12:53+00:00">
+  <testcase name="Test /api-doc Path access is successful" time="0.059217">
+  </testcase>
+</testsuite>
