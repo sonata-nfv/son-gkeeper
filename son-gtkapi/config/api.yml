@@ -1,12 +1,33 @@
----
-routes:
-  '/':
+swagger: '2.0'
+info:
+  title: "SONATA's SP API"
+  description: "This is a proposal for the SONATA's SP API"
+  version: 1.0.0
+host: sp.sonata-nfv.eu
+schemes:
+  - https
+basePath: /api
+produces:
+  - application/json
+
+paths:
+  /:
     get:
-      description: 'Get the whole API description.'
+      summary: "Gatekeeper's URL root"
+      description: "Everything starts here."
       parameters:
-      errors:
-        - 200
-    post:
-  '/packages':
+      tags:
+      responses:
+        '200':
+          description: 'This list of paths.'
+  /api-doc:
     get:
-    post:
+      summary: "Gatekeeper's API documentation."
+      description: "The Gatekeeper's API documentation, in Swagger format."
+      produces:
+        - text/html
+      parameters:
+      tags:
+      responses:
+        '200':
+          description: 'This HTML API documentation.'

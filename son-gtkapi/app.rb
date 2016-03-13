@@ -36,6 +36,11 @@ get '/' do
 end
 
 get '/api-doc' do
-  redirect '/swagger/index.html' 
+  #redirect '/swagger/index.html' 
+  erb :api_doc
 end
 
+#get '/foo/bar/?' do
+#  "Hello World"
+#end
+#The route matches "/foo/bar" and "/foo/bar/".
