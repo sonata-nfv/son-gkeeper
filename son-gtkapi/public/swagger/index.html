@@ -202,9 +202,9 @@ font-style: italic;
   
   
   
-  <li><a href="#packagesGet"><code><span class="http-method">get</span> /packages</code></a></li>
+  <li><a href="#rootGet"><code><span class="http-method">get</span> /</code></a></li>
   
-  <li><a href="#packagesPost"><code><span class="http-method">post</span> /packages</code></a></li>
+  <li><a href="#apiDocGet"><code><span class="http-method">get</span> /api-doc</code></a></li>
   
   
   
@@ -215,15 +215,13 @@ font-style: italic;
   
   
   
-  <div class="method"><a name="packagesGet"/>
+  <div class="method"><a name="rootGet"/>
     <div class="method-path">
     <a class="up" href="#__Methods">Up</a>
-    <pre class="get"><code class="huge"><span class="http-method">get</span> /packages</code></pre></div>
-    <div class="method-summary">Packages (<span class="nickname">packagesGet</span>)</div>
+    <pre class="get"><code class="huge"><span class="http-method">get</span> /</code></pre></div>
+    <div class="method-summary">Gatekeeper&#39;s URL root (<span class="nickname">rootGet</span>)</div>
     
-    <div class="method-notes">The Packages endpoint returns information about the SONATA&#39;s Service Platform packages available. The response includes the package name, author, version and content.</div>
-
-    
+    <div class="method-notes">Everything starts here.</div>
 
     
 
@@ -232,26 +230,11 @@ font-style: italic;
     
 
     
-    <h3 class="field-label">Query parameters</h3>
-    <div class="field-items">
-      <div class="param">id (optional)</div>
-
-      <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash; The id of the Package in the Service Platform. If provided, only the information about that package is returned. </div><div class="param">packageName (optional)</div>
-
-      <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash; The name of the Package, as given by the Developer. </div><div class="param">authorName (optional)</div>
-
-      <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash; The name of the Developer. </div>
-    </div>  <!-- field-items -->
-    
 
     
 
     
-    <h3 class="field-label">Return type</h3>
-    <div class="return-type">
-      array[<a href="#Package">Package</a>]
-      
-    </div>
+
     
 
     <!--Todo: process Response Object and its headers, schema, examples -->
@@ -272,45 +255,20 @@ font-style: italic;
     <h3 class="field-label">Responses</h3>
     
     <h4 class="field-label">200</h4>
-    An array of packages
-    
-    
-    <h4 class="field-label">404</h4>
-    No package with the given ID was found.
-    
-    
-    <h4 class="field-label">0</h4>
-    Unexpected error
+    This list of paths.
     
     
   </div> <!-- method -->
   <hr/>
   
-  <div class="method"><a name="packagesPost"/>
+  <div class="method"><a name="apiDocGet"/>
     <div class="method-path">
     <a class="up" href="#__Methods">Up</a>
-    <pre class="post"><code class="huge"><span class="http-method">post</span> /packages</code></pre></div>
-    <div class="method-summary">Package on-boarding (<span class="nickname">packagesPost</span>)</div>
+    <pre class="get"><code class="huge"><span class="http-method">get</span> /api-doc</code></pre></div>
+    <div class="method-summary">Gatekeeper&#39;s API documentation. (<span class="nickname">apiDocGet</span>)</div>
     
-    <div class="method-notes">The Packages endpoint accepts information about the **SONATA&#39;s Service Platform** package, containing all the required meta-data.</div>
+    <div class="method-notes">The Gatekeeper&#39;s API documentation, in Swagger format.</div>
 
-    
-
-    
-
-    
-    <h3 class="field-label">Request body</h3>
-    <div class="field-items">
-      <div class="param">name (optional)</div>
-
-      <div class="param-desc"><span class="param-type">Body Parameter</span> &mdash; The name of the Package, as given by the Developer. </div><div class="param">developerName (optional)</div>
-
-      <div class="param-desc"><span class="param-type">Body Parameter</span> &mdash; The name of the Developer. </div><div class="param">description (optional)</div>
-
-      <div class="param-desc"><span class="param-type">Body Parameter</span> &mdash; The description of the Package. </div><div class="param">imageUrl (optional)</div>
-
-      <div class="param-desc"><span class="param-type">Body Parameter</span> &mdash; The URL of the package. </div>
-    </div>  <!-- field-items -->
     
 
     
@@ -320,11 +278,9 @@ font-style: italic;
     
 
     
-    <h3 class="field-label">Return type</h3>
-    <div class="return-type">
-      array[<a href="#Package">Package</a>]
-      
-    </div>
+
+    
+
     
 
     <!--Todo: process Response Object and its headers, schema, examples -->
@@ -337,7 +293,7 @@ font-style: italic;
     the media type will be conveyed by the <span class="heaader">Content-Type</span> response header.
     <ul>
     
-      <li><code>application/json</code></li>
+      <li><code>text/html</code></li>
     
     </ul>
     
@@ -345,11 +301,7 @@ font-style: italic;
     <h3 class="field-label">Responses</h3>
     
     <h4 class="field-label">200</h4>
-    An array of packages
-    
-    
-    <h4 class="field-label">0</h4>
-    Unexpected error
+    This HTML API documentation.
     
     
   </div> <!-- method -->
@@ -366,33 +318,8 @@ font-style: italic;
   <h2>Table of Contents</h2>
   <ol>
   
-  
-    <li><a href="#Package"><code>Package</code></a></li>
-  
-  
   </ol>
 
-  
-  
-  <div class="model">
-    <h3 class="field-label"><a name="Package">Package</a> <a class="up" href="#__Models">Up</a></h3>
-    <div class="field-items">
-      <div class="param">package_id </div><div class="param-desc"><span class="param-type">String</span> Unique identifier representing a specific package.</div>
-      
-      <div class="param">name </div><div class="param-desc"><span class="param-type">String</span> Display name of package.</div>
-      
-      <div class="param">description </div><div class="param-desc"><span class="param-type">String</span> Description of package.</div>
-      
-      <div class="param">version </div><div class="param-desc"><span class="param-type">String</span> Version of the package.</div>
-      
-      <div class="param">developer_name </div><div class="param-desc"><span class="param-type">String</span> Name of the package author.</div>
-      
-      <div class="param">image_url </div><div class="param-desc"><span class="param-type">String</span> Image URL representing the package.</div>
-      
-      
-    </div>  <!-- field-items -->
-  </div>
-  
   
   </body>
 </html>
