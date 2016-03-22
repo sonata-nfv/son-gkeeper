@@ -17,7 +17,7 @@ RSpec.describe 'Package API' do
     @package = { filename: package_file_name, type: 'application/octet-stream', name: 'package', tempfile: File.read('./'+package_file_name),
       head: "Content-Disposition: form-data; name=\"package\"; filename=\"#{package_file_name}\"\r\nContent-Type: application/octet-stream\r\n"
     }
-    let(:package_file) {Rack::Test::UploadedFile.new('./simplest-example.son','application/octet-stream', true)}
+    let(:package_file) {Rack::Test::UploadedFile.new('./spec/fixtures/simplest-example.son','application/octet-stream', true)}
     let(:stub) {stub_request(:post, 'http://localhost:5100/packages').to_return(:status=>201, :body=>response_body.to_json, :headers=>{ 'Content-Type'=>'application/json' })}
     # .with(:headers => { 'Content-Type' => 'application/octet-stream' })
     
