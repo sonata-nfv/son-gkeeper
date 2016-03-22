@@ -8,13 +8,14 @@ gem 'pry-byebug'
 gem 'puma'
 gem 'rest-client'
 gem 'rack-parser', :require => 'rack/parser'
+gem 'sinatra-cross_origin'
 gem 'ci_reporter_rspec'
+gem 'rubyzip', '>= 1.0.0'
 
 group :test do
   gem 'webmock'
   gem 'rspec'
   gem 'rack-test'
-  gem 'faker'
 end
 
 group :test, :development do
