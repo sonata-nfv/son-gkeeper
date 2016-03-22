@@ -1,20 +1,23 @@
 ---
 development:
-  packages: 'http://localhost:5100'
+  pkgmgmt:
+    url: 'http://localhost:5100/packages'
   licenses: ''
   users: ''
   kpis: ''
   bss: ''
 
 test:
-  packages: ''
+  pkgmgmt:
+    url: 'http://localhost:5100/packages'
   licenses: ''
   users: ''
   kpis: ''
   bss: ''
 
 production:
-  packages: ''
+  pkgmgmt:
+    url: 'http://localhost:5100/packages'
   licenses: ''
   users: ''
   kpis: ''

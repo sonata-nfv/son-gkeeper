@@ -1,8 +1,8 @@
-swagger: '2.0'
+swagger: "2.0"
 info:
   title: "SONATA's SP API"
   description: "This is a proposal for the SONATA's SP API"
-  version: 1.0.0
+  version: "1.0.0"
 host: sp.sonata-nfv.eu
 schemes:
   - https
@@ -30,4 +30,25 @@ paths:
       tags:
       responses:
         '200':
-          description: 'This HTML API documentation.'
+          description: "This HTML API documentation."
+  /packages:
+    post:
+      summary: "Submit a SONATA package to the Service Platform."
+      description: "The SDK uses this endpoint to submit a SONATA package."
+      produces:
+        - application/json
+      parameters:
+        - name: "package"
+          in: "formData"
+          description: "The Package file, as specified by the son-schema."
+          required: true
+          type: file
+      tags: 
+      responses:
+        '201':
+          description: "The submited package has been received, validated and submited to the Catalogue."
+  /instantiations:
+    get:
+      summary:
+    post:
+      summary:
