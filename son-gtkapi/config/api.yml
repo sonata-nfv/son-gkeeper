@@ -47,3 +47,8 @@ paths:
       responses:
         '201':
           description: "The submited package has been received, validated and submited to the Catalogue."
+  /instantiations:
+    get:
+      summary:
+    post:
+      summary:
