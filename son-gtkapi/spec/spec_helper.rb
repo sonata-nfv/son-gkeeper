@@ -13,3 +13,4 @@ module RSpecMixin
 end
 
 RSpec.configure { |c| c.include RSpecMixin }
+WebMock.disable_net_connect!(allow_localhost: true)
