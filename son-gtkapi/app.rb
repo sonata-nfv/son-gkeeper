@@ -31,8 +31,9 @@ config_file 'config/services.yml'
 use Rack::Parser, :content_types => { 'application/json' => Proc.new { |body| ::MultiJson.decode body } }
 
 get '/' do
-  api = YAML.load_file './config/api.yml'
-  halt 200, {'Location' => '/'}, api.to_s
+  headers "Content-Type" => "text/plain; charset=utf8"
+  api = open('./config/api.yml')
+  halt 200, {'Location' => '/'}, api.read.to_s
 end
 
 get '/api-doc' do
