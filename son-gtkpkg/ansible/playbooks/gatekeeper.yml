@@ -1,0 +1,24 @@
+---
+- hosts: gatekeeper
+  sudo: yes
+  remote_user: deploy
+  gather_facts: no
+  vars:
+    webserver_name: localhost #sp.sonata-nfv.eu
+    webserver_port: 8021
+    deployment_dir: /var/www
+    app_name: gatekeeper
+
+  tasks:
+  - name: provision
+    include: provisioning.yml
+
+  roles:
+    - { role: rvm_io.rvm1-ruby, tags: ruby, sudo: True }
+    - webserver
+      
+#  handlers:
+#  - name: restart nginx
+#    action: service name=nginx state=restarted
+#  - name: restart puma
+#    action: service name=puma state=restarted

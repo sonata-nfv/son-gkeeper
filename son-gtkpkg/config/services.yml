@@ -1,0 +1,3 @@
+---
+development:
+  manifest_schema: 'assets/schemas/manifest.json'
