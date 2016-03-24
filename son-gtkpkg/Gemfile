@@ -1,0 +1,24 @@
+source 'https://rubygems.org'
+
+gem 'rake'
+gem 'sinatra'
+gem 'sinatra-contrib'
+gem 'pry'
+gem 'pry-byebug'
+gem 'puma'
+gem 'rest-client'
+gem 'rack-parser', :require => 'rack/parser'
+gem 'ci_reporter_rspec'
+gem 'rubyzip', '~> 1.2'
+gem 'json-schema', '~> 2.6'
+
+group :test do
+  gem 'webmock'
+  gem 'rspec'
+  gem 'rack-test'
+  gem 'faker'
+end
+
+group :test, :development do
+  gem 'capybara'
+end

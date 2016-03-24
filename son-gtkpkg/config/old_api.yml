@@ -1,0 +1,12 @@
+---
+routes:
+  '/':
+    get:
+      description: 'Get the whole API description.'
+      parameters:
+      errors:
+        - 200
+    post:
+  '/packages':
+    get:
+    post:

@@ -1,0 +1,14 @@
+---
+- name: create user
+  user:
+    name: deploy
+    createhome: yes
+    shell: /bin/bash
+    group: root
+    generate_ssh_key: yes
+
+- name: copy my ssh key
+  authorized_key:
+    key: "{{ lookup('file', '/Users/jbonnet/.ssh/id_rsa.pub') }}"
+    user: "deploy"
+    state: present
