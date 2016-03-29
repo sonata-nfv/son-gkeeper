@@ -6,13 +6,13 @@ require 'pp'
 require 'rspec/its'
 
 RSpec.describe 'Package API' do
+  let(:response_body) {{ 'uuid'=> "dcfb1a6c-770b-460b-bb11-3aa863f84fa0", 'descriptor_version' => "1.0", 'package_group' => "eu.sonata-nfv.package", 'package_name' => "simplest-example", 'package_version' => "0.1", 'package_maintainer' => "Michael Bredel, NEC Labs Europe"}}
+
   describe 'POST /packages' do
-    context 'with valid parameters given' do
+    context 'with correct parameters' do
       # curl -F "package=@simplest-example.son" localhost:5000/packages
   
       package_file_name = 'simplest-example.son'
-      let(:response_body) {{ 'uuid'=> "dcfb1a6c-770b-460b-bb11-3aa863f84fa0", 'descriptor_version' => "1.0", 'package_group' => "eu.sonata-nfv.package", 'package_name' => "simplest-example", 
-        'package_version' => "0.1", 'package_maintainer' => "Michael Bredel, NEC Labs Europe"}}
       @package = { filename: package_file_name, type: 'application/octet-stream', name: 'package', tempfile: File.read('./spec/fixtures/'+package_file_name),
         head: "Content-Disposition: form-data; name=\"package\"; filename=\"#{package_file_name}\"\r\nContent-Type: application/octet-stream\r\n"
       }
@@ -21,16 +21,14 @@ RSpec.describe 'Package API' do
       # .with(:headers => { 'Content-Type' => 'application/octet-stream' })
     
       before do
-        stub_request(:any, 'localhost:5100/packages').to_return(:status=>201, :body=>response_body.to_json, :headers=>{ 'Content-Type'=>'application/json' })
+        stub_request(:post, 'localhost:5100/packages').to_return(:status=>201, :body=>response_body.to_json, :headers=>{ 'Content-Type'=>'application/json' })
         post '/packages', :package => package_file
       end
     
       after do
-      
       end
 
       subject { last_response }
-      
       its(:status) { is_expected.to eq 201 }
   
       it 'returns the JSON related to the resource creation' do
@@ -54,13 +52,17 @@ RSpec.describe 'Package API' do
   end
   
   describe 'GET /packages' do
-    context 'with no (UU)ID given' do
+    context 'with (UU)ID given' do      
+      before do
+        stub_request(:get, 'localhost:5100/packages').to_return(:status=>200, :body=>response_body.to_json, :headers=>{ 'Content-Type'=>'application/json' })
+        get '/packages/dcfb1a6c-770b-460b-bb11-3aa863f84fa0'
+      end
       
+      subject { last_response }
+      its(:status) { is_expected.to eq 200 }
+
     end
-    
-    context 'with (UU)ID given' do
-      
+    context 'without (UU)ID given' do
     end
   end
 end
-
