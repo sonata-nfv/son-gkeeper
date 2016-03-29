@@ -1,14 +1,4 @@
 class Gtkpkg < Sinatra::Application
-	
-  get '/' do
-    api = YAML.load_file './config/api.yml'
-    halt 200, {'Location' => '/'}, api.to_json
-  end
-
-  get '/api-doc' do
-    #redirect '/swagger/index.html' 
-    erb :api_doc
-  end
 
   # Receive the Java package
   post '/package' do
@@ -44,4 +34,5 @@ class Gtkpkg < Sinatra::Application
     halt 200
   end
 
+#  { 'uuid'=> "dcfb1a6c-770b-460b-bb11-3aa863f84fa0", 'descriptor_version' => "1.0", 'package_group' => "eu.sonata-nfv.package", 'package_name' => "simplest-example", 'package_version' => "0.1", 'package_maintainer' => "Michael Bredel, NEC Labs Europe"}
 end

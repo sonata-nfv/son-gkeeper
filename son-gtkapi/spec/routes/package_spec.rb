@@ -6,8 +6,7 @@ require 'pp'
 require 'rspec/its'
 
 RSpec.describe 'Package API' do
-  let(:response_body) {{ 'uuid'=> "dcfb1a6c-770b-460b-bb11-3aa863f84fa0", 'descriptor_version' => "1.0", 'package_group' => "eu.sonata-nfv.package", 'package_name' => "simplest-example", 
-    'package_version' => "0.1", 'package_maintainer' => "Michael Bredel, NEC Labs Europe"}}
+  let(:response_body) {{ 'uuid'=> "dcfb1a6c-770b-460b-bb11-3aa863f84fa0", 'descriptor_version' => "1.0", 'package_group' => "eu.sonata-nfv.package", 'package_name' => "simplest-example", 'package_version' => "0.1", 'package_maintainer' => "Michael Bredel, NEC Labs Europe"}}
 
   describe 'POST /packages' do
     context 'with correct parameters' do
@@ -33,18 +32,22 @@ RSpec.describe 'Package API' do
       its(:status) { is_expected.to eq 201 }
   
       it 'returns the JSON related to the resource creation' do
-        expect(last_response.headers['Content-Type']).to eq 'application/json'
+        expect(last_response.headers['Content-Type']).to include 'application/json'
         parsed_body = JSON.parse(JSON.parse(last_response.body, :quirks_mode => true))
         expect(parsed_body).to be_an_instance_of(Hash)
         expect(parsed_body).to eq response_body
       end
   
       it 'should return a UUID' do
+        # /[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89aAbB][a-f0-9]{3}-[a-f0-9]{12}/
         parsed_body = JSON.parse(JSON.parse(last_response.body, :quirks_mode => true))
         uuid = parsed_body.fetch('uuid')
         expect(uuid).to be_an_instance_of(String)
         expect(uuid.length).to eq 36
       end
+    end
+    
+    context 'with invalid parameters given' do
     end
   end
   
@@ -63,4 +66,3 @@ RSpec.describe 'Package API' do
     end
   end
 end
-
