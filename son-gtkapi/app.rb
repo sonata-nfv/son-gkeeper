@@ -64,6 +64,27 @@ class Package
       [500, '', e]
     end
   end
+  
+  def self.find_by_id( url, uuid)
+    pp uuid, uuid.class
+    headers = { accept: 'application/json', content_type: 'application/json'}
+    #package = { filename: file_name, type: 'application/octet-stream', name: 'package', tempfile: File.new(file_path, 'rb').read,
+    #  head: "Content-Disposition: form-data; name=\"package\"; filename=\"#{file_name}\"\r\nContent-Type: application/octet-stream\r\n"
+    #}
+    begin
+#      package = RestClient.get( url+'/'+uuid, headers) 
+      package = {
+        'uuid'=> uuid, #"dcfb1a6c-770b-460b-bb11-3aa863f84fa0",
+        'descriptor_version' => "1.0",
+        'package_group' => "eu.sonata-nfv.package",
+        'package_name' => "simplest-example",
+        'package_version' => "0.1", 'package_maintainer' => "Michael Bredel, NEC Labs Europe"}
+    rescue => e
+      e.inspect
+      [500, '', e]
+    end
+  end
+  
 end
 
 helpers do
@@ -84,7 +105,7 @@ get '/' do
   halt 200, {'Location' => '/'}, api.read.to_s
 end
 
-get '/api-doc' do
+get '/api-doc/?' do
   erb :api_doc
 end
 
@@ -112,7 +133,20 @@ post '/packages/?' do
   json_error 400, 'No package file specified'
 end
 
-#get '/download/*.*' do
+get '/packages/:uuid/?' do
+  unless params[:uuid].nil?
+    logger.info "Package UUID = #{params[:uuid]}"
+    package = Package.find_by_id( settings.pkgmgmt['url'], params[:uuid])
+    if package['uuid']
+      headers = {'location'=> "#{settings.pkgmgmt['url']}/#{package['uuid']}", 'content-type'=> 'application/json'}
+      halt 200, headers, package.to_json
+    else
+      json_error 400, "No package with UUID=#{params[:uuid]} was found"
+    end
+    
+  end
+  json_error 400, 'No package UUID specified'
+  
 #  file = "#{params[:splat].first}.#{params[:splat].last}"
 #  path = "<path to files directory>/#{file}"
   #
@@ -123,4 +157,4 @@ end
 #  else
 #      halt 404, "File not found"
 #  end
-#end
+end
