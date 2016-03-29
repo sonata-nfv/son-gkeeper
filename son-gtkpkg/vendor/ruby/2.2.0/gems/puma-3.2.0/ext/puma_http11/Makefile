@@ -12,12 +12,12 @@ NULLCMD = :
 #### Start of system configuration section. ####
 
 srcdir = .
-topdir = /home/capzulu/.rvm/rubies/ruby-2.2.3/include/ruby-2.2.0
+topdir = /Users/jbonnet/.rvm/rubies/ruby-2.2.3/include/ruby-2.2.0
 hdrdir = $(topdir)
-arch_hdrdir = /home/capzulu/.rvm/rubies/ruby-2.2.3/include/ruby-2.2.0/i686-linux
+arch_hdrdir = /Users/jbonnet/.rvm/rubies/ruby-2.2.3/include/ruby-2.2.0/x86_64-darwin14
 PATH_SEPARATOR = :
 VPATH = $(srcdir):$(arch_hdrdir)/ruby:$(hdrdir)/ruby
-prefix = $(DESTDIR)/home/capzulu/.rvm/rubies/ruby-2.2.3
+prefix = $(DESTDIR)/Users/jbonnet/.rvm/rubies/ruby-2.2.3
 rubysitearchprefix = $(rubylibprefix)/$(sitearch)
 rubyarchprefix = $(rubylibprefix)/$(arch)
 rubylibprefix = $(libdir)/$(RUBY_BASE_NAME)
@@ -31,8 +31,8 @@ rubyhdrdir = $(includedir)/$(RUBY_VERSION_NAME)
 vendorarchdir = $(vendorlibdir)/$(sitearch)
 vendorlibdir = $(vendordir)/$(ruby_version)
 vendordir = $(rubylibprefix)/vendor_ruby
-sitearchdir = $(DESTDIR)./.gem.20160323-3690-1061vch
-sitelibdir = $(DESTDIR)./.gem.20160323-3690-1061vch
+sitearchdir = $(DESTDIR)./.gem.20160329-92123-1w2j7dv
+sitelibdir = $(DESTDIR)./.gem.20160329-92123-1w2j7dv
 sitedir = $(rubylibprefix)/site_ruby
 rubyarchdir = $(rubylibdir)/$(arch)
 rubylibdir = $(rubylibprefix)/$(ruby_version)
@@ -54,7 +54,7 @@ oldincludedir = $(DESTDIR)/usr/include
 includedir = $(prefix)/include
 localstatedir = $(prefix)/var
 sharedstatedir = $(prefix)/com
-sysconfdir = $(prefix)/etc
+sysconfdir = $(DESTDIR)/etc
 datadir = $(datarootdir)
 datarootdir = $(prefix)/share
 libexecdir = $(exec_prefix)/libexec
@@ -65,10 +65,10 @@ archdir = $(rubyarchdir)
 
 CC = gcc
 CXX = g++
-LIBRUBY = $(LIBRUBY_SO)
+LIBRUBY = $(LIBRUBY_A)
 LIBRUBY_A = lib$(RUBY_SO_NAME)-static.a
-LIBRUBYARG_SHARED = -Wl,-R$(libdir) -L$(libdir) -l$(RUBY_SO_NAME)
-LIBRUBYARG_STATIC = -Wl,-R$(libdir) -L$(libdir) -l$(RUBY_SO_NAME)-static
+LIBRUBYARG_SHARED = 
+LIBRUBYARG_STATIC = -l$(RUBY_SO_NAME)-static -framework CoreFoundation
 empty =
 OUTFLAG = -o $(empty)
 COUTFLAG = -o $(empty)
@@ -77,19 +77,19 @@ RUBY_EXTCONF_H =
 cflags   =  $(optflags) $(debugflags) $(warnflags)
 optflags = -O3 -fno-fast-math
 debugflags = -ggdb3
-warnflags = -Wall -Wextra -Wno-unused-parameter -Wno-parentheses -Wno-long-long -Wno-missing-field-initializers -Wunused-variable -Wpointer-arith -Wwrite-strings -Wdeclaration-after-statement -Wimplicit-function-declaration -Wdeprecated-declarations -Wno-packed-bitfield-compat
-CCDLFLAGS = -fPIC
-CFLAGS   = $(CCDLFLAGS) $(cflags)  -fPIC $(ARCH_FLAG)
+warnflags = -Wall -Wextra -Wno-unused-parameter -Wno-parentheses -Wno-long-long -Wno-missing-field-initializers -Wunused-variable -Wpointer-arith -Wwrite-strings -Wdeclaration-after-statement -Wshorten-64-to-32 -Wimplicit-function-declaration -Wdivision-by-zero -Wdeprecated-declarations -Wextra-tokens
+CCDLFLAGS = -fno-common
+CFLAGS   = $(CCDLFLAGS) -O3 -I/Users/haven/.sm/pkg/active/include -fPIC -mmacosx-version-min=10.7 -pipe $(ARCH_FLAG)
 INCFLAGS = -I. -I$(arch_hdrdir) -I$(hdrdir)/ruby/backward -I$(hdrdir) -I$(srcdir)
-DEFS     = -D_FILE_OFFSET_BITS=64
-CPPFLAGS = -DHAVE_OPENSSL_BIO_H  $(DEFS) $(cppflags)
+DEFS     = 
+CPPFLAGS = -DHAVE_OPENSSL_BIO_H -D_XOPEN_SOURCE -D_DARWIN_C_SOURCE -D_DARWIN_UNLIMITED_SELECT -D_REENTRANT $(DEFS) $(cppflags)
 CXXFLAGS = $(CCDLFLAGS) $(cxxflags) $(ARCH_FLAG)
-ldflags  = -L. -fstack-protector -rdynamic -Wl,-export-dynamic
-dldflags =  
-ARCH_FLAG = 
+ldflags  = -L. -L/Users/haven/.sm/pkg/active/lib -fPIC -Bstatic -lz -fstack-protector -L/usr/local/lib
+dldflags = -Wl,-undefined,dynamic_lookup -Wl,-multiply_defined,suppress 
+ARCH_FLAG =  -arch x86_64
 DLDFLAGS = $(ldflags) $(dldflags) $(ARCH_FLAG)
-LDSHARED = $(CC) -shared
-LDSHAREDXX = $(CXX) -shared
+LDSHARED = $(CC) -dynamic -bundle
+LDSHAREDXX = $(CXX) -dynamic -bundle
 AR = ar
 EXEEXT = 
 
@@ -100,7 +100,7 @@ RUBY_VERSION_NAME = $(RUBY_BASE_NAME)-$(ruby_version)
 RUBYW_BASE_NAME = rubyw
 RUBY_BASE_NAME = ruby
 
-arch = i686-linux
+arch = x86_64-darwin14
 sitearch = $(arch)
 ruby_version = 2.2.0
 ruby = $(bindir)/$(RUBY_BASE_NAME)
@@ -109,9 +109,9 @@ ruby_headers = $(hdrdir)/ruby.h $(hdrdir)/ruby/ruby.h $(hdrdir)/ruby/defines.h $
 
 RM = rm -f
 RM_RF = $(RUBY) -run -e rm -- -rf
-RMDIRS = rmdir --ignore-fail-on-non-empty -p
-MAKEDIRS = /bin/mkdir -p
-INSTALL = /usr/bin/install -c
+RMDIRS = rmdir -p
+MAKEDIRS = mkdir -p
+INSTALL = /usr/bin/install
 INSTALL_PROG = $(INSTALL) -m 0755
 INSTALL_DATA = $(INSTALL) -m 644
 COPY = cp
@@ -122,7 +122,7 @@ TOUCH = exit >
 preload = 
 
 libpath = . $(libdir)
-LIBPATH =  -L. -L$(libdir) -Wl,-R$(libdir)
+LIBPATH =  -L. -L$(libdir)
 DEFFILE = 
 
 CLEANFILES = mkmf.log
@@ -133,15 +133,15 @@ extout =
 extout_prefix = 
 target_prefix = /puma
 LOCAL_LIBS = 
-LIBS = $(LIBRUBYARG_SHARED) -lssl -lcrypto  -lpthread -lrt -ldl -lcrypt -lm   -lc
-ORIG_SRCS = mini_ssl.c http11_parser.c puma_http11.c io_buffer.c
+LIBS =  -lssl -lcrypto  -lpthread -ldl -lobjc 
+ORIG_SRCS = http11_parser.c io_buffer.c mini_ssl.c puma_http11.c
 SRCS = $(ORIG_SRCS) 
-OBJS = mini_ssl.o http11_parser.o puma_http11.o io_buffer.o
-HDRS = $(srcdir)/http11_parser.h $(srcdir)/ext_help.h
+OBJS = http11_parser.o io_buffer.o mini_ssl.o puma_http11.o
+HDRS = $(srcdir)/ext_help.h $(srcdir)/http11_parser.h
 TARGET = puma_http11
 TARGET_NAME = puma_http11
 TARGET_ENTRY = Init_$(TARGET_NAME)
-DLLIB = $(TARGET).so
+DLLIB = $(TARGET).bundle
 EXTSTATIC = 
 STATIC_LIB = 
 
@@ -154,7 +154,7 @@ HDRDIR        = $(rubyhdrdir)/ruby$(target_prefix)
 ARCHHDRDIR    = $(rubyhdrdir)/$(arch)/ruby$(target_prefix)
 
 TARGET_SO     = $(DLLIB)
-CLEANLIBS     = $(TARGET).so 
+CLEANLIBS     = $(TARGET).bundle 
 CLEANOBJS     = *.o  *.bak
 
 all:    $(DLLIB)
@@ -253,6 +253,7 @@ $(DLLIB): $(OBJS) Makefile
 	$(ECHO) linking shared-object puma/$(DLLIB)
 	-$(Q)$(RM) $(@)
 	$(Q) $(LDSHARED) -o $@ $(OBJS) $(LIBPATH) $(DLDFLAGS) $(LOCAL_LIBS) $(LIBS)
+	$(Q) $(POSTLINK)
 
 
 

@@ -12,12 +12,12 @@ NULLCMD = :
 #### Start of system configuration section. ####
 
 srcdir = .
-topdir = /home/capzulu/.rvm/rubies/ruby-2.2.3/include/ruby-2.2.0
+topdir = /Users/jbonnet/.rvm/rubies/ruby-2.2.3/include/ruby-2.2.0
 hdrdir = $(topdir)
-arch_hdrdir = /home/capzulu/.rvm/rubies/ruby-2.2.3/include/ruby-2.2.0/i686-linux
+arch_hdrdir = /Users/jbonnet/.rvm/rubies/ruby-2.2.3/include/ruby-2.2.0/x86_64-darwin14
 PATH_SEPARATOR = :
 VPATH = $(srcdir):$(arch_hdrdir)/ruby:$(hdrdir)/ruby
-prefix = $(DESTDIR)/home/capzulu/.rvm/rubies/ruby-2.2.3
+prefix = $(DESTDIR)/Users/jbonnet/.rvm/rubies/ruby-2.2.3
 rubysitearchprefix = $(rubylibprefix)/$(sitearch)
 rubyarchprefix = $(rubylibprefix)/$(arch)
 rubylibprefix = $(libdir)/$(RUBY_BASE_NAME)
@@ -31,8 +31,8 @@ rubyhdrdir = $(includedir)/$(RUBY_VERSION_NAME)
 vendorarchdir = $(vendorlibdir)/$(sitearch)
 vendorlibdir = $(vendordir)/$(ruby_version)
 vendordir = $(rubylibprefix)/vendor_ruby
-sitearchdir = $(DESTDIR)./.gem.20160323-3690-oovvdw
-sitelibdir = $(DESTDIR)./.gem.20160323-3690-oovvdw
+sitearchdir = $(DESTDIR)./.gem.20160329-92123-1do2mu1
+sitelibdir = $(DESTDIR)./.gem.20160329-92123-1do2mu1
 sitedir = $(rubylibprefix)/site_ruby
 rubyarchdir = $(rubylibdir)/$(arch)
 rubylibdir = $(rubylibprefix)/$(ruby_version)
@@ -54,7 +54,7 @@ oldincludedir = $(DESTDIR)/usr/include
 includedir = $(prefix)/include
 localstatedir = $(prefix)/var
 sharedstatedir = $(prefix)/com
-sysconfdir = $(prefix)/etc
+sysconfdir = $(DESTDIR)/etc
 datadir = $(datarootdir)
 datarootdir = $(prefix)/share
 libexecdir = $(exec_prefix)/libexec
@@ -65,10 +65,10 @@ archdir = $(rubyarchdir)
 
 CC = gcc
 CXX = g++
-LIBRUBY = $(LIBRUBY_SO)
+LIBRUBY = $(LIBRUBY_A)
 LIBRUBY_A = lib$(RUBY_SO_NAME)-static.a
-LIBRUBYARG_SHARED = -Wl,-R$(libdir) -L$(libdir) -l$(RUBY_SO_NAME)
-LIBRUBYARG_STATIC = -Wl,-R$(libdir) -L$(libdir) -l$(RUBY_SO_NAME)-static
+LIBRUBYARG_SHARED = 
+LIBRUBYARG_STATIC = -l$(RUBY_SO_NAME)-static -framework CoreFoundation
 empty =
 OUTFLAG = -o $(empty)
 COUTFLAG = -o $(empty)
@@ -77,19 +77,19 @@ RUBY_EXTCONF_H =
 cflags   =  $(optflags) $(debugflags) $(warnflags)
 optflags = -O3 -fno-fast-math
 debugflags = -ggdb3
-warnflags = -Wall -Wextra -Wno-unused-parameter -Wno-parentheses -Wno-long-long -Wno-missing-field-initializers -Wunused-variable -Wpointer-arith -Wwrite-strings -Wdeclaration-after-statement -Wimplicit-function-declaration -Wdeprecated-declarations -Wno-packed-bitfield-compat
-CCDLFLAGS = -fPIC
-CFLAGS   = $(CCDLFLAGS) $(cflags)  -fPIC  -g -DXP_UNIX -O3 -Wall -Wcast-qual -Wwrite-strings -Wconversion -Wmissing-noreturn -Winline -DNOKOGIRI_USE_PACKAGED_LIBRARIES $(ARCH_FLAG)
+warnflags = -Wall -Wextra -Wno-unused-parameter -Wno-parentheses -Wno-long-long -Wno-missing-field-initializers -Wunused-variable -Wpointer-arith -Wwrite-strings -Wdeclaration-after-statement -Wshorten-64-to-32 -Wimplicit-function-declaration -Wdivision-by-zero -Wdeprecated-declarations -Wextra-tokens
+CCDLFLAGS = -fno-common
+CFLAGS   = $(CCDLFLAGS) -O3 -I/Users/haven/.sm/pkg/active/include -fPIC -mmacosx-version-min=10.7 -pipe  -Wall -Wcast-qual -Wwrite-strings -Wconversion -Wmissing-noreturn -Winline -DNOKOGIRI_USE_PACKAGED_LIBRARIES $(ARCH_FLAG)
 INCFLAGS = -I. -I$(arch_hdrdir) -I$(hdrdir)/ruby/backward -I$(hdrdir) -I$(srcdir)
-DEFS     = -D_FILE_OFFSET_BITS=64
-CPPFLAGS = -DHAVE_XMLPARSEDOC -DHAVE_XSLTPARSESTYLESHEETDOC -DHAVE_EXSLTFUNCREGISTER -DHAVE_XMLHASFEATURE -DHAVE_XMLFIRSTELEMENTCHILD -DHAVE_XMLRELAXNGSETPARSERSTRUCTUREDERRORS -DHAVE_XMLRELAXNGSETPARSERSTRUCTUREDERRORS -DHAVE_XMLRELAXNGSETVALIDSTRUCTUREDERRORS -DHAVE_XMLSCHEMASETVALIDSTRUCTUREDERRORS -DHAVE_XMLSCHEMASETPARSERSTRUCTUREDERRORS -I/home/capzulu/Documentos/sonata/son-gkeeper/son-gtkpkg/vendor/ruby/2.2.0/gems/nokogiri-1.6.7.2/ports/i686-pc-linux-gnu/libxslt/1.1.28/include -I/home/capzulu/Documentos/sonata/son-gkeeper/son-gtkpkg/vendor/ruby/2.2.0/gems/nokogiri-1.6.7.2/ports/i686-pc-linux-gnu/libxml2/2.9.2/include/libxml2 -I/home/capzulu/Documentos/sonata/son-gkeeper/son-gtkpkg/vendor/ruby/2.2.0/gems/nokogiri-1.6.7.2/ports/i686-pc-linux-gnu/libxml2/2.9.2/include/libxml2  $(DEFS) $(cppflags) "-DNOKOGIRI_LIBXML2_PATH=\"/home/capzulu/Documentos/sonata/son-gkeeper/son-gtkpkg/vendor/ruby/2.2.0/gems/nokogiri-1.6.7.2/ports/i686-pc-linux-gnu/libxml2/2.9.2\"" "-DNOKOGIRI_LIBXML2_PATCHES=\"0001-Revert-Missing-initialization-for-the-catalog-module.patch 0002-Fix-missing-entities-after-CVE-2014-3660-fix.patch 0003-Stop-parsing-on-entities-boundaries-errors.patch 0004-Cleanup-conditional-section-error-handling.patch 0005-CVE-2015-1819-Enforce-the-reader-to-run-in-constant-.patch 0006-Another-variation-of-overflow-in-Conditional-section.patch 0007-Fix-an-error-in-previous-Conditional-section-patch.patch 0008-CVE-2015-8035-Fix-XZ-compression-support-loop.patch 0009-Updated-config.guess.patch 0010-Fix-parsering-short-unclosed-comment-uninitialized-access.patch 0011-Avoid-extra-processing-of-MarkupDecl-when-EOF.patch 0012-Avoid-processing-entities-after-encoding-conversion-.patch 0013-CVE-2015-7497-Avoid-an-heap-buffer-overflow-in-xmlDi.patch 0014-CVE-2015-5312-Another-entity-expansion-issue.patch 0015-Add-xmlHaltParser-to-stop-the-parser.patch 0016-Detect-incoherency-on-GROW.patch 0017-CVE-2015-7500-Fix-memory-access-error-due-to-incorre.patch 0018-CVE-2015-8242-Buffer-overead-with-HTML-parser-in-pus.patch 0019-Do-not-print-error-context-when-there-is-none.patch 0020-xmlStopParser-reset-errNo.patch 0021-Reuse-xmlHaltParser-where-it-makes-sense.patch\"" "-DNOKOGIRI_LIBXSLT_PATH=\"/home/capzulu/Documentos/sonata/son-gkeeper/son-gtkpkg/vendor/ruby/2.2.0/gems/nokogiri-1.6.7.2/ports/i686-pc-linux-gnu/libxslt/1.1.28\"" "-DNOKOGIRI_LIBXSLT_PATCHES=\"0001-Adding-doc-update-related-to-1.1.28.patch 0002-Fix-a-couple-of-places-where-f-printf-parameters-wer.patch 0003-Initialize-pseudo-random-number-generator-with-curre.patch 0004-EXSLT-function-str-replace-is-broken-as-is.patch 0006-Fix-str-padding-to-work-with-UTF-8-strings.patch 0007-Separate-function-for-predicate-matching-in-patterns.patch 0008-Fix-direct-pattern-matching.patch 0009-Fix-certain-patterns-with-predicates.patch 0010-Fix-handling-of-UTF-8-strings-in-EXSLT-crypto-module.patch 0013-Memory-leak-in-xsltCompileIdKeyPattern-error-path.patch 0014-Fix-for-bug-436589.patch 0015-Fix-mkdir-for-mingw.patch 0016-Fix-for-type-confusion-in-preprocessing-attributes.patch 0017-Updated-config.guess.patch\""
+DEFS     = 
+CPPFLAGS = -DHAVE_ICONV_H -DHAVE_XMLPARSEDOC -DHAVE_XSLTPARSESTYLESHEETDOC -DHAVE_EXSLTFUNCREGISTER -DHAVE_XMLHASFEATURE -DHAVE_XMLFIRSTELEMENTCHILD -DHAVE_XMLRELAXNGSETPARSERSTRUCTUREDERRORS -DHAVE_XMLRELAXNGSETPARSERSTRUCTUREDERRORS -DHAVE_XMLRELAXNGSETVALIDSTRUCTUREDERRORS -DHAVE_XMLSCHEMASETVALIDSTRUCTUREDERRORS -DHAVE_XMLSCHEMASETPARSERSTRUCTUREDERRORS -I/Users/jbonnet/src/ruby/sinatra/sonata/son-gkeeper/son-gtkpkg/vendor/ruby/2.2.0/gems/nokogiri-1.6.7.2/ports/x86_64-apple-darwin14.5.0/libxslt/1.1.28/include -I/Users/jbonnet/src/ruby/sinatra/sonata/son-gkeeper/son-gtkpkg/vendor/ruby/2.2.0/gems/nokogiri-1.6.7.2/ports/x86_64-apple-darwin14.5.0/libxml2/2.9.2/include/libxml2 -I/Users/jbonnet/src/ruby/sinatra/sonata/son-gkeeper/son-gtkpkg/vendor/ruby/2.2.0/gems/nokogiri-1.6.7.2/ports/x86_64-apple-darwin14.5.0/libxml2/2.9.2/include/libxml2 -D_XOPEN_SOURCE -D_DARWIN_C_SOURCE -D_DARWIN_UNLIMITED_SELECT -D_REENTRANT $(DEFS) $(cppflags) "-DNOKOGIRI_LIBXML2_PATH=\"/Users/jbonnet/src/ruby/sinatra/sonata/son-gkeeper/son-gtkpkg/vendor/ruby/2.2.0/gems/nokogiri-1.6.7.2/ports/x86_64-apple-darwin14.5.0/libxml2/2.9.2\"" "-DNOKOGIRI_LIBXML2_PATCHES=\"0001-Revert-Missing-initialization-for-the-catalog-module.patch 0002-Fix-missing-entities-after-CVE-2014-3660-fix.patch 0003-Stop-parsing-on-entities-boundaries-errors.patch 0004-Cleanup-conditional-section-error-handling.patch 0005-CVE-2015-1819-Enforce-the-reader-to-run-in-constant-.patch 0006-Another-variation-of-overflow-in-Conditional-section.patch 0007-Fix-an-error-in-previous-Conditional-section-patch.patch 0008-CVE-2015-8035-Fix-XZ-compression-support-loop.patch 0009-Updated-config.guess.patch 0010-Fix-parsering-short-unclosed-comment-uninitialized-access.patch 0011-Avoid-extra-processing-of-MarkupDecl-when-EOF.patch 0012-Avoid-processing-entities-after-encoding-conversion-.patch 0013-CVE-2015-7497-Avoid-an-heap-buffer-overflow-in-xmlDi.patch 0014-CVE-2015-5312-Another-entity-expansion-issue.patch 0015-Add-xmlHaltParser-to-stop-the-parser.patch 0016-Detect-incoherency-on-GROW.patch 0017-CVE-2015-7500-Fix-memory-access-error-due-to-incorre.patch 0018-CVE-2015-8242-Buffer-overead-with-HTML-parser-in-pus.patch 0019-Do-not-print-error-context-when-there-is-none.patch 0020-xmlStopParser-reset-errNo.patch 0021-Reuse-xmlHaltParser-where-it-makes-sense.patch\"" "-DNOKOGIRI_LIBXSLT_PATH=\"/Users/jbonnet/src/ruby/sinatra/sonata/son-gkeeper/son-gtkpkg/vendor/ruby/2.2.0/gems/nokogiri-1.6.7.2/ports/x86_64-apple-darwin14.5.0/libxslt/1.1.28\"" "-DNOKOGIRI_LIBXSLT_PATCHES=\"0001-Adding-doc-update-related-to-1.1.28.patch 0002-Fix-a-couple-of-places-where-f-printf-parameters-wer.patch 0003-Initialize-pseudo-random-number-generator-with-curre.patch 0004-EXSLT-function-str-replace-is-broken-as-is.patch 0006-Fix-str-padding-to-work-with-UTF-8-strings.patch 0007-Separate-function-for-predicate-matching-in-patterns.patch 0008-Fix-direct-pattern-matching.patch 0009-Fix-certain-patterns-with-predicates.patch 0010-Fix-handling-of-UTF-8-strings-in-EXSLT-crypto-module.patch 0013-Memory-leak-in-xsltCompileIdKeyPattern-error-path.patch 0014-Fix-for-bug-436589.patch 0015-Fix-mkdir-for-mingw.patch 0016-Fix-for-type-confusion-in-preprocessing-attributes.patch 0017-Updated-config.guess.patch\""
 CXXFLAGS = $(CCDLFLAGS) $(cxxflags) $(ARCH_FLAG)
-ldflags  = -L. -fstack-protector -rdynamic -Wl,-export-dynamic
-dldflags =  
-ARCH_FLAG = 
+ldflags  = -L. -L/Users/haven/.sm/pkg/active/lib -fPIC -Bstatic -lz -fstack-protector -L/usr/local/lib
+dldflags = -Wl,-undefined,dynamic_lookup -Wl,-multiply_defined,suppress 
+ARCH_FLAG =  -arch x86_64
 DLDFLAGS = $(ldflags) $(dldflags) $(ARCH_FLAG)
-LDSHARED = $(CC) -shared
-LDSHAREDXX = $(CXX) -shared
+LDSHARED = $(CC) -dynamic -bundle
+LDSHAREDXX = $(CXX) -dynamic -bundle
 AR = ar
 EXEEXT = 
 
@@ -100,7 +100,7 @@ RUBY_VERSION_NAME = $(RUBY_BASE_NAME)-$(ruby_version)
 RUBYW_BASE_NAME = rubyw
 RUBY_BASE_NAME = ruby
 
-arch = i686-linux
+arch = x86_64-darwin14
 sitearch = $(arch)
 ruby_version = 2.2.0
 ruby = $(bindir)/$(RUBY_BASE_NAME)
@@ -109,9 +109,9 @@ ruby_headers = $(hdrdir)/ruby.h $(hdrdir)/ruby/ruby.h $(hdrdir)/ruby/defines.h $
 
 RM = rm -f
 RM_RF = $(RUBY) -run -e rm -- -rf
-RMDIRS = rmdir --ignore-fail-on-non-empty -p
-MAKEDIRS = /bin/mkdir -p
-INSTALL = /usr/bin/install -c
+RMDIRS = rmdir -p
+MAKEDIRS = mkdir -p
+INSTALL = /usr/bin/install
 INSTALL_PROG = $(INSTALL) -m 0755
 INSTALL_DATA = $(INSTALL) -m 644
 COPY = cp
@@ -121,8 +121,8 @@ TOUCH = exit >
 
 preload = 
 
-libpath = /home/capzulu/Documentos/sonata/son-gkeeper/son-gtkpkg/vendor/ruby/2.2.0/gems/nokogiri-1.6.7.2/ports/i686-pc-linux-gnu/libxml2/2.9.2/lib /home/capzulu/Documentos/sonata/son-gkeeper/son-gtkpkg/vendor/ruby/2.2.0/gems/nokogiri-1.6.7.2/ports/i686-pc-linux-gnu/libxslt/1.1.28/lib . $(libdir)
-LIBPATH =  -L/home/capzulu/Documentos/sonata/son-gkeeper/son-gtkpkg/vendor/ruby/2.2.0/gems/nokogiri-1.6.7.2/ports/i686-pc-linux-gnu/libxml2/2.9.2/lib -Wl,-R/home/capzulu/Documentos/sonata/son-gkeeper/son-gtkpkg/vendor/ruby/2.2.0/gems/nokogiri-1.6.7.2/ports/i686-pc-linux-gnu/libxml2/2.9.2/lib -L/home/capzulu/Documentos/sonata/son-gkeeper/son-gtkpkg/vendor/ruby/2.2.0/gems/nokogiri-1.6.7.2/ports/i686-pc-linux-gnu/libxslt/1.1.28/lib -Wl,-R/home/capzulu/Documentos/sonata/son-gkeeper/son-gtkpkg/vendor/ruby/2.2.0/gems/nokogiri-1.6.7.2/ports/i686-pc-linux-gnu/libxslt/1.1.28/lib -L. -L$(libdir) -Wl,-R$(libdir)
+libpath = /Users/jbonnet/src/ruby/sinatra/sonata/son-gkeeper/son-gtkpkg/vendor/ruby/2.2.0/gems/nokogiri-1.6.7.2/ports/x86_64-apple-darwin14.5.0/libxml2/2.9.2/lib /Users/jbonnet/src/ruby/sinatra/sonata/son-gkeeper/son-gtkpkg/vendor/ruby/2.2.0/gems/nokogiri-1.6.7.2/ports/x86_64-apple-darwin14.5.0/libxslt/1.1.28/lib . $(libdir)
+LIBPATH =  -L/Users/jbonnet/src/ruby/sinatra/sonata/son-gkeeper/son-gtkpkg/vendor/ruby/2.2.0/gems/nokogiri-1.6.7.2/ports/x86_64-apple-darwin14.5.0/libxml2/2.9.2/lib -L/Users/jbonnet/src/ruby/sinatra/sonata/son-gkeeper/son-gtkpkg/vendor/ruby/2.2.0/gems/nokogiri-1.6.7.2/ports/x86_64-apple-darwin14.5.0/libxslt/1.1.28/lib -L. -L$(libdir)
 DEFFILE = 
 
 CLEANFILES = mkmf.log
@@ -133,15 +133,15 @@ extout =
 extout_prefix = 
 target_prefix = /nokogiri
 LOCAL_LIBS = 
-LIBS = $(LIBRUBYARG_SHARED) /home/capzulu/Documentos/sonata/son-gkeeper/son-gtkpkg/vendor/ruby/2.2.0/gems/nokogiri-1.6.7.2/ports/i686-pc-linux-gnu/libxslt/1.1.28/lib/libexslt.a -lrt -lm -ldl -lz /home/capzulu/Documentos/sonata/son-gkeeper/son-gtkpkg/vendor/ruby/2.2.0/gems/nokogiri-1.6.7.2/ports/i686-pc-linux-gnu/libxml2/2.9.2/lib/libxml2.a /home/capzulu/Documentos/sonata/son-gkeeper/son-gtkpkg/vendor/ruby/2.2.0/gems/nokogiri-1.6.7.2/ports/i686-pc-linux-gnu/libxslt/1.1.28/lib/libxslt.a -ldl -lm -lz /home/capzulu/Documentos/sonata/son-gkeeper/son-gtkpkg/vendor/ruby/2.2.0/gems/nokogiri-1.6.7.2/ports/i686-pc-linux-gnu/libxml2/2.9.2/lib/libxml2.a -lpthread -lrt -ldl -lcrypt -lm   -lc 
-ORIG_SRCS = xml_io.c xml_reader.c html_entity_lookup.c xml_attribute_decl.c xml_libxml2_hacks.c xml_relax_ng.c xml_sax_push_parser.c xml_node.c html_element_description.c xml_sax_parser.c xml_text.c xml_document.c xml_processing_instruction.c html_sax_parser_context.c nokogiri.c xml_cdata.c xml_element_content.c xml_encoding_handler.c xml_element_decl.c xml_comment.c html_document.c xml_node_set.c xml_xpath_context.c xml_dtd.c xml_document_fragment.c xml_schema.c xml_attr.c xslt_stylesheet.c xml_entity_decl.c html_sax_push_parser.c xml_namespace.c xml_entity_reference.c xml_sax_parser_context.c xml_syntax_error.c
+LIBS =  /Users/jbonnet/src/ruby/sinatra/sonata/son-gkeeper/son-gtkpkg/vendor/ruby/2.2.0/gems/nokogiri-1.6.7.2/ports/x86_64-apple-darwin14.5.0/libxslt/1.1.28/lib/libexslt.a -lm -liconv -lpthread -lz /Users/jbonnet/src/ruby/sinatra/sonata/son-gkeeper/son-gtkpkg/vendor/ruby/2.2.0/gems/nokogiri-1.6.7.2/ports/x86_64-apple-darwin14.5.0/libxml2/2.9.2/lib/libxml2.a /Users/jbonnet/src/ruby/sinatra/sonata/son-gkeeper/son-gtkpkg/vendor/ruby/2.2.0/gems/nokogiri-1.6.7.2/ports/x86_64-apple-darwin14.5.0/libxslt/1.1.28/lib/libxslt.a -lm -liconv -lpthread -lz /Users/jbonnet/src/ruby/sinatra/sonata/son-gkeeper/son-gtkpkg/vendor/ruby/2.2.0/gems/nokogiri-1.6.7.2/ports/x86_64-apple-darwin14.5.0/libxml2/2.9.2/lib/libxml2.a -llzma -lpthread -ldl -lobjc  
+ORIG_SRCS = html_document.c html_element_description.c html_entity_lookup.c html_sax_parser_context.c html_sax_push_parser.c nokogiri.c xml_attr.c xml_attribute_decl.c xml_cdata.c xml_comment.c xml_document.c xml_document_fragment.c xml_dtd.c xml_element_content.c xml_element_decl.c xml_encoding_handler.c xml_entity_decl.c xml_entity_reference.c xml_io.c xml_libxml2_hacks.c xml_namespace.c xml_node.c xml_node_set.c xml_processing_instruction.c xml_reader.c xml_relax_ng.c xml_sax_parser.c xml_sax_parser_context.c xml_sax_push_parser.c xml_schema.c xml_syntax_error.c xml_text.c xml_xpath_context.c xslt_stylesheet.c
 SRCS = $(ORIG_SRCS) 
-OBJS = xml_io.o xml_reader.o html_entity_lookup.o xml_attribute_decl.o xml_libxml2_hacks.o xml_relax_ng.o xml_sax_push_parser.o xml_node.o html_element_description.o xml_sax_parser.o xml_text.o xml_document.o xml_processing_instruction.o html_sax_parser_context.o nokogiri.o xml_cdata.o xml_element_content.o xml_encoding_handler.o xml_element_decl.o xml_comment.o html_document.o xml_node_set.o xml_xpath_context.o xml_dtd.o xml_document_fragment.o xml_schema.o xml_attr.o xslt_stylesheet.o xml_entity_decl.o html_sax_push_parser.o xml_namespace.o xml_entity_reference.o xml_sax_parser_context.o xml_syntax_error.o
-HDRS = $(srcdir)/html_sax_parser_context.h $(srcdir)/html_element_description.h $(srcdir)/xml_element_content.h $(srcdir)/xml_processing_instruction.h $(srcdir)/xml_libxml2_hacks.h $(srcdir)/xml_reader.h $(srcdir)/html_sax_push_parser.h $(srcdir)/xml_node_set.h $(srcdir)/xml_document.h $(srcdir)/xml_xpath_context.h $(srcdir)/xml_document_fragment.h $(srcdir)/xml_entity_decl.h $(srcdir)/xml_encoding_handler.h $(srcdir)/xml_sax_push_parser.h $(srcdir)/xml_schema.h $(srcdir)/html_entity_lookup.h $(srcdir)/nokogiri.h $(srcdir)/xml_element_decl.h $(srcdir)/xml_attr.h $(srcdir)/xml_sax_parser_context.h $(srcdir)/xml_comment.h $(srcdir)/xml_dtd.h $(srcdir)/xml_sax_parser.h $(srcdir)/xml_attribute_decl.h $(srcdir)/xml_node.h $(srcdir)/xml_namespace.h $(srcdir)/xml_cdata.h $(srcdir)/xml_entity_reference.h $(srcdir)/xml_io.h $(srcdir)/xml_relax_ng.h $(srcdir)/xml_text.h $(srcdir)/xml_syntax_error.h $(srcdir)/xslt_stylesheet.h $(srcdir)/html_document.h
+OBJS = html_document.o html_element_description.o html_entity_lookup.o html_sax_parser_context.o html_sax_push_parser.o nokogiri.o xml_attr.o xml_attribute_decl.o xml_cdata.o xml_comment.o xml_document.o xml_document_fragment.o xml_dtd.o xml_element_content.o xml_element_decl.o xml_encoding_handler.o xml_entity_decl.o xml_entity_reference.o xml_io.o xml_libxml2_hacks.o xml_namespace.o xml_node.o xml_node_set.o xml_processing_instruction.o xml_reader.o xml_relax_ng.o xml_sax_parser.o xml_sax_parser_context.o xml_sax_push_parser.o xml_schema.o xml_syntax_error.o xml_text.o xml_xpath_context.o xslt_stylesheet.o
+HDRS = $(srcdir)/html_document.h $(srcdir)/html_element_description.h $(srcdir)/html_entity_lookup.h $(srcdir)/html_sax_parser_context.h $(srcdir)/html_sax_push_parser.h $(srcdir)/nokogiri.h $(srcdir)/xml_attr.h $(srcdir)/xml_attribute_decl.h $(srcdir)/xml_cdata.h $(srcdir)/xml_comment.h $(srcdir)/xml_document.h $(srcdir)/xml_document_fragment.h $(srcdir)/xml_dtd.h $(srcdir)/xml_element_content.h $(srcdir)/xml_element_decl.h $(srcdir)/xml_encoding_handler.h $(srcdir)/xml_entity_decl.h $(srcdir)/xml_entity_reference.h $(srcdir)/xml_io.h $(srcdir)/xml_libxml2_hacks.h $(srcdir)/xml_namespace.h $(srcdir)/xml_node.h $(srcdir)/xml_node_set.h $(srcdir)/xml_processing_instruction.h $(srcdir)/xml_reader.h $(srcdir)/xml_relax_ng.h $(srcdir)/xml_sax_parser.h $(srcdir)/xml_sax_parser_context.h $(srcdir)/xml_sax_push_parser.h $(srcdir)/xml_schema.h $(srcdir)/xml_syntax_error.h $(srcdir)/xml_text.h $(srcdir)/xml_xpath_context.h $(srcdir)/xslt_stylesheet.h
 TARGET = nokogiri
 TARGET_NAME = nokogiri
 TARGET_ENTRY = Init_$(TARGET_NAME)
-DLLIB = $(TARGET).so
+DLLIB = $(TARGET).bundle
 EXTSTATIC = 
 STATIC_LIB = 
 
@@ -154,7 +154,7 @@ HDRDIR        = $(rubyhdrdir)/ruby$(target_prefix)
 ARCHHDRDIR    = $(rubyhdrdir)/$(arch)/ruby$(target_prefix)
 
 TARGET_SO     = $(DLLIB)
-CLEANLIBS     = $(TARGET).so 
+CLEANLIBS     = $(TARGET).bundle 
 CLEANOBJS     = *.o  *.bak
 
 all:    $(DLLIB)
@@ -253,6 +253,7 @@ $(DLLIB): $(OBJS) Makefile
 	$(ECHO) linking shared-object nokogiri/$(DLLIB)
 	-$(Q)$(RM) $(@)
 	$(Q) $(LDSHARED) -o $@ $(OBJS) $(LIBPATH) $(DLDFLAGS) $(LOCAL_LIBS) $(LIBS)
+	$(Q) $(POSTLINK)
 
 
 

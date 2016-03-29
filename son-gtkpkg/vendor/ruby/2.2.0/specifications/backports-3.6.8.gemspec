@@ -2,19 +2,19 @@
 # stub: backports 3.6.8 ruby lib
 
 Gem::Specification.new do |s|
-  s.name = "backports"
+  s.name = "backports".freeze
   s.version = "3.6.8"
 
-  s.required_rubygems_version = Gem::Requirement.new(">= 0") if s.respond_to? :required_rubygems_version=
-  s.require_paths = ["lib"]
-  s.authors = ["Marc-Andr\u{e9} Lafortune"]
+  s.required_rubygems_version = Gem::Requirement.new(">= 0".freeze) if s.respond_to? :required_rubygems_version=
+  s.require_paths = ["lib".freeze]
+  s.authors = ["Marc-Andr\u{e9} Lafortune".freeze]
   s.date = "2016-02-09"
-  s.description = "Essential backports that enable many of the nice features of Ruby 1.8.7 up to 2.1.0 for earlier versions."
-  s.email = ["github@marc-andre.ca"]
-  s.homepage = "http://github.com/marcandre/backports"
-  s.licenses = ["MIT"]
-  s.rubygems_version = "2.4.8"
-  s.summary = "Backports of Ruby features for older Ruby."
+  s.description = "Essential backports that enable many of the nice features of Ruby 1.8.7 up to 2.1.0 for earlier versions.".freeze
+  s.email = ["github@marc-andre.ca".freeze]
+  s.homepage = "http://github.com/marcandre/backports".freeze
+  s.licenses = ["MIT".freeze]
+  s.rubygems_version = "2.6.1".freeze
+  s.summary = "Backports of Ruby features for older Ruby.".freeze
 
-  s.installed_by_version = "2.4.8" if s.respond_to? :installed_by_version
+  s.installed_by_version = "2.6.1" if s.respond_to? :installed_by_version
 end
