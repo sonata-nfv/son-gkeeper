@@ -9,16 +9,13 @@ RSpec.describe 'Package API' do
     # curl -F "package=@simplest-example.son" localhost:5000/packages
   
     package_file_name = 'simplest-example.son'
-    uuid = SecureRandom.uuid
-    @request_body = {descriptor_version: "1.0", package_group: "eu.sonata-nfv.package", package_name: "simplest-example", 
-      package_version: "0.1", package_maintainer: "Michael Bredel, NEC Labs Europe"}
-    let(:response_body) {{ uuid: uuid, descriptor_version: "1.0", package_group: "eu.sonata-nfv.package", package_name: "simplest-example", 
-      package_version: "0.1", package_maintainer: "Michael Bredel, NEC Labs Europe"}} # }.merge @request_body}
-    @package = { filename: package_file_name, type: 'application/octet-stream', name: 'package', tempfile: File.read('./'+package_file_name),
+    let(:response_body) {{ 'uuid'=> "dcfb1a6c-770b-460b-bb11-3aa863f84fa0", 'descriptor_version' => "1.0", 'package_group' => "eu.sonata-nfv.package", 'package_name' => "simplest-example", 
+      'package_version' => "0.1", 'package_maintainer' => "Michael Bredel, NEC Labs Europe"}}
+    @package = { filename: package_file_name, type: 'application/octet-stream', name: 'package', tempfile: File.read('./spec/fixtures/'+package_file_name),
       head: "Content-Disposition: form-data; name=\"package\"; filename=\"#{package_file_name}\"\r\nContent-Type: application/octet-stream\r\n"
     }
     let(:package_file) {Rack::Test::UploadedFile.new('./spec/fixtures/simplest-example.son','application/octet-stream', true)}
-    let(:stub) {stub_request(:post, 'http://localhost:5100/packages').to_return(:status=>201, :body=>response_body.to_json, :headers=>{ 'Content-Type'=>'application/json' })}
+    let(:pkgmgr) {stub_request(:post, 'http://localhost:5100/packages').to_return(:status=>201, :body=>response_body, :headers=>{ 'Content-Type'=>'application/json' })}
     # .with(:headers => { 'Content-Type' => 'application/octet-stream' })
     
     #let(:body) { { :key => "abcdef" }.to_json }
@@ -29,6 +26,7 @@ RSpec.describe 'Package API' do
     #it { should be_ok }
     
     before do
+      stub_request(:any, 'localhost:5100/packages').to_return(:status=>201, :body=>response_body.to_json, :headers=>{ 'Content-Type'=>'application/json' })
       post '/packages', :package => package_file
     end
     
@@ -36,24 +34,27 @@ RSpec.describe 'Package API' do
       
     end
 
-    it 'accessed the Package Manager' do
-      expect(stub).to have_been_requested  
-    end
+#    it 'accessed the Package Manager' do
+#      expect(pkgmgr).to have_been_requested  
+#    end
     
     it 'should upload a file' do
       expect(last_response.status).to eq 201
     end
   
-#    it 'returns the JSON related to the resource creation' do
-#      expect(last_response.headers['Content-Type']).to eq 'application/json'
-#      expect(JSON.parse(last_response.body, :quirks_mode => true)).to eq @response_body
-#    end
+    it 'returns the JSON related to the resource creation' do
+      expect(last_response.headers['Content-Type']).to eq 'application/json'
+      parsed_body = JSON.parse(JSON.parse(last_response.body, :quirks_mode => true))
+      expect(parsed_body).to be_an_instance_of(Hash)
+      expect(parsed_body).to eq response_body
+    end
   
-#    it 'should return a UUID' do
-#      uuid = JSON.parse(last_response.body, :quirks_mode => true).fetch('uuid')
-#      expect(uuid).to be_an_instance_of(String)
-#      expect(uuid.length).to eq 36
-#    end
+    it 'should return a UUID' do
+      parsed_body = JSON.parse(JSON.parse(last_response.body, :quirks_mode => true))
+      uuid = parsed_body.fetch('uuid')
+      expect(uuid).to be_an_instance_of(String)
+      expect(uuid.length).to eq 36
+    end
     
 #    it "should upload a file" do
 #      file = Rack::Test::UploadedFile.new("./HelloWorld.bin", "application/octet-stream")
