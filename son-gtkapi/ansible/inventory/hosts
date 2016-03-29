@@ -1,3 +1,0 @@
-[gatekeeper]
-185.17.229.24 ansible_ssh_user=ptin_admin ansible_ssh_port=2221
-

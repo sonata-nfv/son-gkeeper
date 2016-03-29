@@ -112,7 +112,7 @@ post '/packages/?' do
   json_error 400, 'No package file specified'
 end
 
-#get '/download/*.*' do
+get '/packages/:uuid' do
 #  file = "#{params[:splat].first}.#{params[:splat].last}"
 #  path = "<path to files directory>/#{file}"
   #
@@ -123,4 +123,4 @@ end
 #  else
 #      halt 404, "File not found"
 #  end
-#end
+end
