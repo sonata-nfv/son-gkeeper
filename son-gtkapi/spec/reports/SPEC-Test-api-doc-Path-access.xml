@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="Test /api-doc Path access" tests="2" time="0.047222" failures="0" errors="0" skipped="0" timestamp="2016-03-29T16:05:42+01:00">
-  <testcase name="Test /api-doc Path access is successful" time="0.044267">
+<testsuite name="Test /api-doc Path access" tests="2" time="0.078178" failures="0" errors="0" skipped="0" timestamp="2016-03-29T17:03:48+01:00">
+  <testcase name="Test /api-doc Path access is successful" time="0.074109">
   </testcase>
-  <testcase name="Test /api-doc Path access returns the doc" time="0.002182">
+  <testcase name="Test /api-doc Path access returns the doc" time="0.003009">
   </testcase>
 </testsuite>

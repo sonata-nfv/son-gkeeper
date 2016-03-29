@@ -72,7 +72,13 @@ class Package
     #  head: "Content-Disposition: form-data; name=\"package\"; filename=\"#{file_name}\"\r\nContent-Type: application/octet-stream\r\n"
     #}
     begin
-      package = RestClient.get( url+'/'+uuid, headers) 
+#      package = RestClient.get( url+'/'+uuid, headers) 
+      package = {
+        'uuid'=> uuid, #"dcfb1a6c-770b-460b-bb11-3aa863f84fa0",
+        'descriptor_version' => "1.0",
+        'package_group' => "eu.sonata-nfv.package",
+        'package_name' => "simplest-example",
+        'package_version' => "0.1", 'package_maintainer' => "Michael Bredel, NEC Labs Europe"}
     rescue => e
       e.inspect
       [500, '', e]
