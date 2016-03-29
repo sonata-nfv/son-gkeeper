@@ -1,8 +1,8 @@
-swagger: '2.0'
+swagger: "2.0"
 info:
   title: "SONATA's SP API"
   description: "This is a proposal for the SONATA's SP API"
-  version: 1.0.0
+  version: "1.0.0"
 host: sp.sonata-nfv.eu
 schemes:
   - https
@@ -13,21 +13,69 @@ produces:
 paths:
   /:
     get:
-      summary: "Gatekeeper's URL root"
-      description: "Everything starts here."
-      parameters:
+      summary: Gatekeeper's URL root
+      description: Everything starts here.
       tags:
+        - Root
       responses:
-        '200':
-          description: 'This list of paths.'
+        200:
+          description: This list of paths.
   /api-doc:
     get:
-      summary: "Gatekeeper's API documentation."
-      description: "The Gatekeeper's API documentation, in Swagger format."
+      summary: Gatekeeper's API documentation.
+      description: The Gatekeeper's API documentation, in Swagger format.
       produces:
         - text/html
-      parameters:
       tags:
+        - API-doc
       responses:
-        '200':
-          description: 'This HTML API documentation.'
+        200:
+          description: This HTML API documentation.
+  /packages:
+    post:
+      summary: Submit a SONATA package to the Service Platform.
+      description: The SDK uses this endpoint to submit a SONATA package.
+      produces:
+        - application/json
+      parameters:
+        - name: package
+          in: formData
+          description: The Package file, as specified by the son-schema.
+          required: true
+          type: file
+      tags:
+        - Packages
+      responses:
+        201:
+          description: The submited package has been received, validated and submited to the Catalogue.
+  /instantiations:
+    get:
+      summary: ''
+      description: ''
+      produces:
+        - application/json
+      parameters:
+        - name: offset
+          in: query
+          type: integer
+          format: int32
+          description: Offset the list of returned results by this amount. Default is zero.
+        - name: limit
+          in: query
+          type: integer
+          format: int32
+          description: Number of items to retrieve. Default is 5, maximum is 100.
+      tags: []
+      responses:
+        200:
+          description: Instantiations requests list was returned.
+    post:
+      summary: ''
+      description: ''
+      produces:
+        - application/json
+      parameters: []
+      tags: []
+      responses:
+        201:
+          description: The instantiation request was registered.
