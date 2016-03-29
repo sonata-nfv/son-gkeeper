@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="Test Root Path access" tests="1" time="0.006453" failures="0" errors="0" skipped="0" timestamp="2016-03-13T16:53:14+00:00">
-  <testcase name="Test Root Path access is successful" time="0.005988">
+<testsuite name="Test Root Path access" tests="1" time="0.005505" failures="0" errors="0" skipped="0" timestamp="2016-03-29T16:05:42+01:00">
+  <testcase name="Test Root Path access is successful" time="0.004417">
   </testcase>
 </testsuite>

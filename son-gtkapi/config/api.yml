@@ -18,7 +18,7 @@ paths:
       tags:
         - Root
       responses:
-        200:
+        '200':
           description: This list of paths.
   /api-doc:
     get:
@@ -29,7 +29,7 @@ paths:
       tags:
         - API-doc
       responses:
-        200:
+        '200':
           description: This HTML API documentation.
   /packages:
     post:
@@ -46,8 +46,27 @@ paths:
       tags:
         - Packages
       responses:
-        201:
+        '201':
           description: The submited package has been received, validated and submited to the Catalogue.
+    get:
+      summary: Obtain a SONATA package from the Service Platform, based on its UUID.
+      description: The SDK uses this endpoint to retrieve a SONATA package.
+      produces:
+        - application/json
+        - application/octet-stream
+      parameters:
+        - name: uuid
+          in: path
+          description: The Package UUID, as as provided upon a successful creation of the Package in the Service Platform.
+          required: true
+          type: file
+      tags:
+        - Packages
+      responses:
+        '200':
+          description: The required package has been found, and its package is being returned.
+        '404':
+          description: The required package has not been found.
   /instantiations:
     get:
       summary: ''
@@ -67,7 +86,7 @@ paths:
           description: Number of items to retrieve. Default is 5, maximum is 100.
       tags: []
       responses:
-        200:
+        '200':
           description: Instantiations requests list was returned.
     post:
       summary: ''
@@ -77,5 +96,5 @@ paths:
       parameters: []
       tags: []
       responses:
-        201:
+        '201':
           description: The instantiation request was registered.
