@@ -42,6 +42,8 @@ configure do
 		c.on_exists_proc = true
 		c.continue_on_exists_proc = true
 	end
+  
+  mime_type :son, 'application/octet-stream'
 end
 
 class Gtkpkg < Sinatra::Application
