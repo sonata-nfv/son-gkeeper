@@ -36,4 +36,16 @@ class Gtkpkg < Sinatra::Application
       FileUtils.rm_rf(f)
     end
   end
+  
+  def json_error(code, message)
+    content_type :json
+    msg = {'error' => message}
+    logger.error msg.to_s
+    halt code, {content_type: 'application/json'}, msg.to_json
+  end
+  
+  def valid?(uuid)
+    uuid.match /[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89aAbB][a-f0-9]{3}-[a-f0-9]{12}/
+    uuid == $&
+  end
 end
