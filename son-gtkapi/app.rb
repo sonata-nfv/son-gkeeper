@@ -97,6 +97,12 @@ helpers do
     logger.error msg.to_s
     halt code, {content_type: 'application/json'}, msg.to_json
   end
+  
+  def valid?(uuid)
+    uuid.match /[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89aAbB][a-f0-9]{3}-[a-f0-9]{12}/
+    uuid == $&
+  end
+  
 end
 
 get '/' do
