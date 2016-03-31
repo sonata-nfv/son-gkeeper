@@ -1,4 +1,6 @@
 # SONATA's Service Platform Gatekeeper
+[![Build Status](http://jenkins.sonata-nfv.eu/buildStatus/icon?job=son-gkeeper)](http://jenkins.sonata-nfv.eu/job/son-gkeeper)
+
 This is [SONATA](http://www.sonata-nfv.eu)'s Service Platform Gatekeeper's repository.
 
 Communication Service Providers (CSPs) in the 5G era will have to be able to open their infrastructures to Service Providers (SPs) that may not have any kind of close relationship with them, but a Supplier one: the SPs gets some amount of money, according to the agreed business model, from the CSPs. This is a radically distinct model from the one we are used to, in which SPs may, when allowed to, have to spend weeks (or sometimes even months) testing and integrating their services into the CSP’s infrastructure, with the CSP’s personnel having time to look into every aspect of the (new) proposed service, namely security, reliability, etc. In this new model, CSPs will have to:
