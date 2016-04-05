@@ -30,29 +30,31 @@ require_relative 'routes/init'
 require_relative 'helpers/init'
 require_relative 'models/init'
 
-config_file 'config/services.yml'
 
-register Sinatra::CrossOrigin
 
 # https://github.com/achiu/rack-parser
 #use Rack::Parser, :content_types => { 'application/json' => Proc.new { |body| ::MultiJson.decode body } }
 
-configure do
-  set :root, File.dirname(__FILE__)
-  set :public_folder, File.join(File.dirname(__FILE__), 'public')
-  set :bind, '0.0.0.0'
-  set :files, File.join(settings.public_folder, 'files')
-	use Rack::Session::Cookie, :key => 'rack.session', :domain => 'foo.com', :path => '/', :expire_after => 2592000, :secret => '$0nata'
-	enable :logging
-  enable :cross_origin
-
-	Zip.setup do |c|
-		c.on_exists_proc = true
-		c.continue_on_exists_proc = true
-	end
-
-  #mime_type :son, 'application/octet-stream'
-end
-
 class GtkApi < Sinatra::Application
+  register Sinatra::ConfigFile
+  register Sinatra::CrossOrigin
+  
+  config_file 'config/services.yml'
+  
+  configure do
+    set :root, File.dirname(__FILE__)
+    set :public_folder, File.join(File.dirname(__FILE__), 'public')
+    set :bind, '0.0.0.0'
+    set :files, File.join(settings.public_folder, 'files')
+  	use Rack::Session::Cookie, :key => 'rack.session', :domain => 'foo.com', :path => '/', :expire_after => 2592000, :secret => '$0nata'
+  	enable :logging
+    enable :cross_origin
+
+  	Zip.setup do |c|
+  		c.on_exists_proc = true
+  		c.continue_on_exists_proc = true
+  	end
+
+    #mime_type :son, 'application/octet-stream'
+  end
 end

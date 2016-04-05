@@ -29,23 +29,24 @@ require_relative 'routes/init'
 require_relative 'helpers/init'
 require_relative 'models/init'
 
-config_file 'config/services.yml'
+class Gtkpkg < Sinatra::Application
+  register Sinatra::ConfigFile
+  register Sinatra::CrossOrigin
+  
+  config_file 'config/services.yml'
 
 # https://github.com/achiu/rack-parser
-use Rack::Parser, :content_types => { 'application/json' => Proc.new { |body| ::MultiJson.decode body } }
+#use Rack::Parser, :content_types => { 'application/json' => Proc.new { |body| ::MultiJson.decode body } }
 
-configure do
-	set :public_folder, 'public'
-	use Rack::Session::Cookie, :key => 'rack.session', :domain => 'foo.com', :path => '/', :expire_after => 2592000, :secret => '$0nata'
-	enable :logging
+  configure do
+	  set :public_folder, 'public'
+	  use Rack::Session::Cookie, :key => 'rack.session', :domain => 'foo.com', :path => '/', :expire_after => 2592000, :secret => '$0nata'
+	  enable :logging
 
-	Zip.setup do |c|
-		c.on_exists_proc = true
-		c.continue_on_exists_proc = true
-	end
-  
-  mime_type :son, 'application/octet-stream'
-end
-
-class Gtkpkg < Sinatra::Application
+	  Zip.setup do |c|
+		  c.on_exists_proc = true
+		  c.continue_on_exists_proc = true
+  	end
+  #mime_type :son, 'application/octet-stream'
+  end
 end

@@ -4,7 +4,6 @@ GEM
     addressable (2.4.0)
     backports (3.6.8)
     builder (3.2.2)
-    byebug (8.2.2)
     capybara (2.6.2)
       addressable
       mime-types (>= 1.16)
@@ -37,9 +36,6 @@ GEM
       coderay (~> 1.1.0)
       method_source (~> 0.8.1)
       slop (~> 3.4)
-    pry-byebug (3.3.0)
-      byebug (~> 8.0)
-      pry (~> 0.10)
     puma (3.2.0)
     rack (1.6.4)
     rack-parser (0.6.1)
@@ -102,7 +98,6 @@ DEPENDENCIES
   capybara
   ci_reporter_rspec
   pry
-  pry-byebug
   puma
   rack-parser
   rack-test
