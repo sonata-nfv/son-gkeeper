@@ -17,7 +17,7 @@
 # Set environment
 ENV['RACK_ENV'] ||= 'production'
 
-require 'sinatra'
+require 'sinatra/base'
 require 'sinatra/config_file'
 require 'sinatra/cross_origin'
 require 'zip'
