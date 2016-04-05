@@ -13,154 +13,46 @@
 ## WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 ## See the License for the specific language governing permissions and
 ## limitations under the License.
+#
+# Set environment
+ENV['RACK_ENV'] ||= 'production'
+
 require 'sinatra'
 require 'sinatra/config_file'
-require 'json'
-require 'yaml'
-require 'rack/parser'
-require 'rest-client'
 require 'sinatra/cross_origin'
-require 'fileutils'
 require 'zip'
-require 'pp'
 
-set :root, File.dirname(__FILE__)
-set :bind, '0.0.0.0'
-set :public_folder, File.join(File.dirname(__FILE__), 'public')
-set :files, File.join(settings.public_folder, 'files')
+# Require the bundler gem and then call Bundler.require to load in all gems listed in Gemfile.
+require 'bundler'
+Bundler.require :default, ENV['RACK_ENV'].to_sym
 
-use Rack::Session::Cookie, :key => 'rack.session', :domain => 'foo.com', :path => '/', :expire_after => 2592000, :secret => '$0nata'
-
-enable :logging
-enable :cross_origin
+require_relative 'routes/init'
+require_relative 'helpers/init'
+require_relative 'models/init'
 
 config_file 'config/services.yml'
 
+register Sinatra::CrossOrigin
+
 # https://github.com/achiu/rack-parser
-use Rack::Parser, :content_types => { 'application/json' => Proc.new { |body| ::MultiJson.decode body } }
+#use Rack::Parser, :content_types => { 'application/json' => Proc.new { |body| ::MultiJson.decode body } }
 
-# TODO: time to change to a different Sinatra App style
-class Package
-  
-  def self.save(path, params)
-    FileUtils.mkdir_p(path) unless File.exists?(path)
-    
-    package_file_path = File.join(path, params[:package][:filename])
-    File.open(package_file_path, 'wb') do |file|
-      file.write params[:package][:tempfile].read
-    end
-    package_file_path
-  end
-  
-  def self.onboard(url, file_path, file_name)
-    headers = { accept: 'application/json', content_type: 'application/octet-stream'}
-    package = { filename: file_name, type: 'application/octet-stream', name: 'package', tempfile: File.new(file_path, 'rb').read,
-      head: "Content-Disposition: form-data; name=\"package\"; filename=\"#{file_name}\"\r\nContent-Type: application/octet-stream\r\n"
-    }
-    begin
-      RestClient.post( url, {package: package}, headers) 
-    rescue => e
-      e.inspect
-      [500, '', e]
-    end
-  end
-  
-  def self.find_by_id( url, uuid)
-    pp uuid, uuid.class
-    headers = { accept: 'application/json', content_type: 'application/json'}
-    #package = { filename: file_name, type: 'application/octet-stream', name: 'package', tempfile: File.new(file_path, 'rb').read,
-    #  head: "Content-Disposition: form-data; name=\"package\"; filename=\"#{file_name}\"\r\nContent-Type: application/octet-stream\r\n"
-    #}
-    begin
-#      package = RestClient.get( url+'/'+uuid, headers) 
-      package = {
-        'uuid'=> uuid, #"dcfb1a6c-770b-460b-bb11-3aa863f84fa0",
-        'descriptor_version' => "1.0",
-        'package_group' => "eu.sonata-nfv.package",
-        'package_name' => "simplest-example",
-        'package_version' => "0.1", 'package_maintainer' => "Michael Bredel, NEC Labs Europe"}
-    rescue => e
-      e.inspect
-      [500, '', e]
-    end
-  end
-  
+configure do
+  set :root, File.dirname(__FILE__)
+  set :public_folder, File.join(File.dirname(__FILE__), 'public')
+  set :bind, '0.0.0.0'
+  set :files, File.join(settings.public_folder, 'files')
+	use Rack::Session::Cookie, :key => 'rack.session', :domain => 'foo.com', :path => '/', :expire_after => 2592000, :secret => '$0nata'
+	enable :logging
+  enable :cross_origin
+
+	Zip.setup do |c|
+		c.on_exists_proc = true
+		c.continue_on_exists_proc = true
+	end
+
+  #mime_type :son, 'application/octet-stream'
 end
 
-helpers do
-  def content
-    #@content ||= Package.decode(package_file_path) || halt 404
-  end  
-  
-  def json_error(code, message)
-    msg = {'error' => message}
-    logger.error msg.to_s
-    halt code, {content_type: 'application/json'}, msg.to_json
-  end
-  
-  def valid?(uuid)
-    uuid.match /[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89aAbB][a-f0-9]{3}-[a-f0-9]{12}/
-    uuid == $&
-  end
-  
-end
-
-get '/' do
-  headers "Content-Type" => "text/plain; charset=utf8"
-  api = open('./config/api.yml')
-  halt 200, {'Location' => '/'}, api.read.to_s
-end
-
-get '/api-doc/?' do
-  erb :api_doc
-end
-
-post '/packages/?' do
-  unless params[:package].nil?    
-    package_file_path = Package.save( settings.files, params)
-    if package_file_path
-      logger.info "package_file_path: #{package_file_path}"
-      package = Package.onboard( settings.pkgmgmt['url'], package_file_path, params[:package][:filename])
-      if package
-        logger.info "package: #{package}"
-        if package['uuid']
-          headers = {'location'=> "#{settings.pkgmgmt['url']}/#{package['uuid']}", 'content-type'=> 'application/json'}
-          halt 201, headers, package.to_json
-        else
-          json_error 400, 'No UUID given to package'
-        end
-      else
-        json_error 400, 'Package not created'
-      end
-    else
-      json_error 400, 'Package with invalid content'
-    end
-  end
-  json_error 400, 'No package file specified'
-end
-
-get '/packages/:uuid/?' do
-  unless params[:uuid].nil?
-    logger.info "Package UUID = #{params[:uuid]}"
-    package = Package.find_by_id( settings.pkgmgmt['url'], params[:uuid])
-    if package['uuid']
-      headers = {'location'=> "#{settings.pkgmgmt['url']}/#{package['uuid']}", 'content-type'=> 'application/json'}
-      halt 200, headers, package.to_json
-    else
-      json_error 400, "No package with UUID=#{params[:uuid]} was found"
-    end
-    
-  end
-  json_error 400, 'No package UUID specified'
-  
-#  file = "#{params[:splat].first}.#{params[:splat].last}"
-#  path = "<path to files directory>/#{file}"
-  #
-#  if File.exists? path
-#  send_file(
-#    path, :disposition => 'attachment', : filename => file
-#  )
-#  else
-#      halt 404, "File not found"
-#  end
+class GtkApi < Sinatra::Application
 end

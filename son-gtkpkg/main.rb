@@ -27,6 +27,7 @@ Bundler.require :default, ENV['RACK_ENV'].to_sym
 
 require_relative 'routes/init'
 require_relative 'helpers/init'
+require_relative 'models/init'
 
 config_file 'config/services.yml'
 
