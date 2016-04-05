@@ -6,4 +6,4 @@ RUN bundle install --quiet
 EXPOSE 5000
 WORKDIR /app
 ENV PORT 5000
-CMD ["ruby", "app.rb"]
+CMD ["foreman", "start"]

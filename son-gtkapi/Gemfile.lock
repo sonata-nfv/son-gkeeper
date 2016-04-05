@@ -17,11 +17,11 @@ GEM
     ci_reporter_rspec (1.0.0)
       ci_reporter (~> 2.0)
       rspec (>= 2.14, < 4)
-    coderay (1.1.0)
+    coderay (1.1.1)
     crack (0.4.3)
       safe_yaml (~> 1.0.0)
     diff-lcs (1.2.5)
-    domain_name (0.5.20160309)
+    domain_name (0.5.20160310)
       unf (>= 0.0.5, < 1.0.0)
     hashdiff (0.3.0)
     http-cookie (1.0.2)
@@ -40,7 +40,7 @@ GEM
     pry-byebug (3.3.0)
       byebug (~> 8.0)
       pry (~> 0.10)
-    puma (2.14.0)
+    puma (3.2.0)
     rack (1.6.4)
     rack-parser (0.6.1)
       rack
@@ -48,7 +48,7 @@ GEM
       rack
     rack-test (0.6.3)
       rack (>= 1.0)
-    rake (10.5.0)
+    rake (11.1.2)
     rest-client (1.8.0)
       http-cookie (>= 1.0.2, < 2.0)
       mime-types (>= 1.16, < 3.0)
@@ -111,8 +111,8 @@ DEPENDENCIES
   rspec
   rspec-its
   rubyzip (>= 1.0.0)
-  sinatra
-  sinatra-contrib
+  sinatra (~> 1.4.3)
+  sinatra-contrib (~> 1.4.1)
   sinatra-cross_origin
   webmock
 

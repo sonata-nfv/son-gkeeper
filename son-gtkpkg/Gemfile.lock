@@ -106,8 +106,8 @@ DEPENDENCIES
   rspec
   rspec-its
   rubyzip (>= 1.0.0)
-  sinatra
-  sinatra-contrib
+  sinatra (~> 1.4.3)
+  sinatra-contrib (~> 1.4.1)
   sinatra-cross_origin
   webmock
 
