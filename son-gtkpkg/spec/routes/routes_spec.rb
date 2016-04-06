@@ -22,7 +22,7 @@ require 'rspec/its'
 
 RSpec.describe Gtkpkg do
   def app
-    Gtkpkg.new # this defines the active application for this test
+    Gtkpkg # this defines the active application for this test
   end
   
   let(:response_body) {{ 'uuid'=> "dcfb1a6c-770b-460b-bb11-3aa863f84fa0", 'descriptor_version' => "1.0", 'package_group' => "eu.sonata-nfv.package", 'package_name' => "simplest-example", 'package_version' => "0.1", 'package_maintainer' => "Michael Bredel, NEC Labs Europe"}}

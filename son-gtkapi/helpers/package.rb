@@ -13,17 +13,19 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-def content
-  #@content ||= Package.decode(package_file_path) || halt 404
-end  
+module GtkApiHelper
+  def content
+    #@content ||= Package.decode(package_file_path) || halt 404
+  end  
 
-def json_error(code, message)
-  msg = {'error' => message}
-  logger.error msg.to_s
-  halt code, {'Content-type'=>'application/json'}, msg.to_json
-end
+  def json_error(code, message)
+    msg = {'error' => message}
+    logger.error msg.to_s
+    halt code, {'Content-type'=>'application/json'}, msg.to_json
+  end
 
-def valid?(uuid)
-  uuid.match /[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89aAbB][a-f0-9]{3}-[a-f0-9]{12}/
-  uuid == $&
+  def valid?(uuid)
+    uuid.match /[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89aAbB][a-f0-9]{3}-[a-f0-9]{12}/
+    uuid == $&
+  end
 end

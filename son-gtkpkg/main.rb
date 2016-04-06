@@ -29,16 +29,18 @@ require_relative 'routes/init'
 require_relative 'helpers/init'
 require_relative 'models/init'
 
-class Gtkpkg < Sinatra::Application
+class Gtkpkg < Sinatra::Base
   register Sinatra::ConfigFile
   register Sinatra::CrossOrigin
+  
+  helpers GtkPkgHelpers
   
   config_file 'config/services.yml'
 
 # https://github.com/achiu/rack-parser
 #use Rack::Parser, :content_types => { 'application/json' => Proc.new { |body| ::MultiJson.decode body } }
 
-  configure do
+  #configure do
 	  set :public_folder, 'public'
 	  use Rack::Session::Cookie, :key => 'rack.session', :domain => 'foo.com', :path => '/', :expire_after => 2592000, :secret => '$0nata'
 	  enable :logging
@@ -48,5 +50,5 @@ class Gtkpkg < Sinatra::Application
 		  c.continue_on_exists_proc = true
   	end
   #mime_type :son, 'application/octet-stream'
-  end
+  #end
 end

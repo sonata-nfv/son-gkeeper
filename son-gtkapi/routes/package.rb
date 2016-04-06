@@ -13,7 +13,7 @@
 ## WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 ## See the License for the specific language governing permissions and
 ## limitations under the License.
-class GtkApi < Sinatra::Application
+class GtkApi < Sinatra::Base
 
   # buffer = StringIO.new
   # buffer.set_encoding('ASCII-8BIT')
@@ -21,6 +21,7 @@ class GtkApi < Sinatra::Application
   # POST of packages
   post '/packages/?' do
     logger.info params
+    logger.info settings
     
     #content_type 'application/octet-stream'
     

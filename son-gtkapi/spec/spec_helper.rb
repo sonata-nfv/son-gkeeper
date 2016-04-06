@@ -22,7 +22,7 @@ $: << File.expand_path('../..', __FILE__)
 require 'gtk_api'
 
 def app
-  GtkApi.new
+  GtkApi
 end
 
 RSpec.configure do |config|

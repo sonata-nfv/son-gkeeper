@@ -20,7 +20,7 @@ require 'rspec/its'
 
 RSpec.describe GtkApi do
   def app
-    GtkApi.new # this defines the active application for this test
+    GtkApi # this defines the active application for this test
   end
 
   describe 'GET \'/\'' do

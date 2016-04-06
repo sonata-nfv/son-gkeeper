@@ -16,7 +16,7 @@
 require 'json' 
 require 'pp'
 
-class Gtkpkg < Sinatra::Application
+class Gtkpkg < Sinatra::Base
 
   # Receive the Java package
   post '/packages/?' do

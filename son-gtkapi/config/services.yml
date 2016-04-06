@@ -7,7 +7,7 @@ development:
   kpis: ''
   bss: ''
 
-test:
+integration:
   pkgmgmt:
     url: 'http://localhost:5100/packages'
   licenses: ''
@@ -15,7 +15,7 @@ test:
   kpis: ''
   bss: ''
 
-production:
+qualification:
   pkgmgmt:
     url: 'http://localhost:5100/packages'
   licenses: ''
@@ -23,3 +23,11 @@ production:
   kpis: ''
   bss: ''
 
+demonstration:
+  pkgmgmt:
+    url: 'http://localhost:5100/packages'
+  licenses: ''
+  users: ''
+  kpis: ''
+  bss: ''
+  
