@@ -1,3 +1,5 @@
+# encoding: utf-8
+##
 ## Copyright 2015-2017 Portugal Telecom Inovação/Altice Labs
 ##
 ## Licensed under the Apache License, Version 2.0 (the "License");
@@ -11,22 +13,12 @@
 ## WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 ## See the License for the specific language governing permissions and
 ## limitations under the License.
-# spec/spec_helper.rb
-require 'rack/test'
-require 'rspec'
-require 'webmock/rspec'
-
-ENV['RACK_ENV'] = 'test'
-
-$: << File.expand_path('../..', __FILE__)
-require 'main'
-
-def app
-  Gtkpkg
+class GtkApi < Sinatra::Base
+  
+  # Root
+  get '/' do
+    headers "Content-Type" => "text/plain; charset=utf8"
+    api = open('./config/api.yml')
+    halt 200, {'Location' => '/'}, api.read.to_s
+  end
 end
-
-RSpec.configure do |config|
-  config.include Rack::Test::Methods
-end
-
-WebMock.disable_net_connect!(allow_localhost: true)

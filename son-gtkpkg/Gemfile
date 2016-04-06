@@ -1,8 +1,8 @@
 source 'https://rubygems.org'
 
 gem 'rake'
-gem 'sinatra'
-gem 'sinatra-contrib'
+gem "sinatra", "~> 1.4.3", require: 'sinatra/base'
+gem "sinatra-contrib", "~> 1.4.1", require: false
 gem 'pry'
 #gem 'pry-byebug'
 gem 'puma'

@@ -19,6 +19,7 @@ ENV['RACK_ENV'] ||= 'production'
 
 require 'sinatra/base'
 require 'sinatra/config_file'
+require 'sinatra/cross_origin'
 require 'zip'
 
 # Require the bundler gem and then call Bundler.require to load in all gems listed in Gemfile.
@@ -29,26 +30,31 @@ require_relative 'routes/init'
 require_relative 'helpers/init'
 require_relative 'models/init'
 
-class Gtkpkg < Sinatra::Base
-  register Sinatra::ConfigFile
-  register Sinatra::CrossOrigin
-  
-  helpers GtkPkgHelpers
-  
-  config_file 'config/services.yml'
-
 # https://github.com/achiu/rack-parser
 #use Rack::Parser, :content_types => { 'application/json' => Proc.new { |body| ::MultiJson.decode body } }
 
-  #configure do
-	  set :public_folder, 'public'
-	  use Rack::Session::Cookie, :key => 'rack.session', :domain => 'foo.com', :path => '/', :expire_after => 2592000, :secret => '$0nata'
-	  enable :logging
+class GtkApi < Sinatra::Base
+  register Sinatra::ConfigFile
+  register Sinatra::CrossOrigin
+  
+  config_file 'config/services.yml'
+  
+  helpers GtkApiHelper
+  
+  set :root, File.dirname(__FILE__)
+  set :public_folder, File.join(File.dirname(__FILE__), 'public')
+  set :bind, '0.0.0.0'
+  set :files, File.join(settings.public_folder, 'files')
+  set :environments, %w{development integration qualification demonstration}
+  set :pkgmgmt, {'url'=>'http://localhost:5100/packages'}
+	use Rack::Session::Cookie, :key => 'rack.session', :domain => 'foo.com', :path => '/', :expire_after => 2592000, :secret => '$0nata'
+	enable :logging
+  enable :cross_origin
 
-	  Zip.setup do |c|
-		  c.on_exists_proc = true
-		  c.continue_on_exists_proc = true
-  	end
-  #mime_type :son, 'application/octet-stream'
-  #end
+	Zip.setup do |c|
+		c.on_exists_proc = true
+		c.continue_on_exists_proc = true
+	end
+
+    #mime_type :son, 'application/octet-stream'
 end
