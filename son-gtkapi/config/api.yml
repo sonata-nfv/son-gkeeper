@@ -48,6 +48,8 @@ paths:
       responses:
         '201':
           description: The submited package has been received, validated and submited to the Catalogue.
+        '201':
+          description: The submited package has been received, validated and submited to the Catalogue.
     get:
       summary: Obtain a SONATA package from the Service Platform, based on its UUID.
       description: The SDK uses this endpoint to retrieve a SONATA package.
@@ -55,11 +57,35 @@ paths:
         - application/json
         - application/octet-stream
       parameters:
-        - name: uuid
+        - name: package_id
           in: path
-          description: The Package UUID, as as provided upon a successful creation of the Package in the Service Platform.
-          required: true
+          description: The Package UUID, as provided upon a successful creation of the Package in the Service Platform.
+          required: false
           type: file
+          format: uuid
+        - name: vendor
+          in: query
+          description: The vendor of the service required
+          required: false
+          type: string
+        - name: name
+          in: query
+          description: The name of the service required
+          required: false
+          type: string
+        - name: version
+          in: query
+          description: The version of the service required
+          required: false
+          type: string          
+        - name: offset
+          in: query
+          type: integer
+          description: Offset the list of returned results by this amount. Default is zero.
+        - name: limit
+          in: query
+          type: integer
+          description: Number of packages to return. Default is 5, maximum is 100.
       tags:
         - Packages
       responses:
@@ -67,34 +93,99 @@ paths:
           description: The required package has been found, and its package is being returned.
         '404':
           description: The required package has not been found.
-  /instantiations:
+  /services:
     get:
-      summary: ''
-      description: ''
+      summary: Obtain the list of services that can be instantiated.
+      description: Service names may be duplicated.
       produces:
         - application/json
       parameters:
+        - name: service_id
+          in: path
+          description: The UUID of the required service.
+          required: false
+          type: string
+          format: uuid
         - name: offset
           in: query
           type: integer
-          format: int32
           description: Offset the list of returned results by this amount. Default is zero.
         - name: limit
           in: query
           type: integer
-          format: int32
-          description: Number of items to retrieve. Default is 5, maximum is 100.
+          description: Number of services to return. Default is 5, maximum is 100.
+      tags: []
+      responses:
+        '200':
+          description: List of requested services has been returned.
+        '404':
+          description: Specified service wasn't found'.
+  /requests:
+    get:
+      summary: Get the list of instantions requests made.
+      description: ''
+      produces:
+        - application/json
+      parameters:
+        - name: request_id
+          in: path
+          description: The UUID of the request.
+          required: false
+          type: string
+          format: uuid
+        - name: service_id
+          in: query
+          description: The UUID of the service of which all requests done are needed.
+          required: false
+          type: string
+          format: uuid
+        - name: offset
+          in: query
+          type: integer
+          description: Offset the list of returned results by this amount. Default is zero.
+        - name: limit
+          in: query
+          type: integer
+          description: Number of service instances to return. Default is 5, maximum is 100.
       tags: []
       responses:
         '200':
           description: Instantiations requests list was returned.
     post:
-      summary: ''
+      summary: Request the instantion of a given service.
       description: ''
       produces:
         - application/json
-      parameters: []
+      parameters:
+        - name: service_id
+          in: body
+          schema: 
+            $ref: '#/definitions/ServicesInstances'
+          description: The UUID of the service from which an instance is required.
+          required: true
+          type: string
+          format: uuid
       tags: []
       responses:
-        '201':
-          description: The instantiation request was registered.
+        '200':
+          description: Instantiations requests list was returned.
+definitions:
+  ServicesInstance:
+    required:
+      - id
+      - name
+      - created_at
+      - updated_at
+    properties:
+      id:
+        type: string
+        format: uuid
+      name:
+        type: string
+      tag:
+        type: string
+  ServicesInstances:
+    type: array
+    items:
+      $ref: '#/definitions/ServicesInstance'
+  
