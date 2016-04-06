@@ -1,21 +1,13 @@
-# SONATA demo package 
+# SONATA's Service Platform Gatekeeper
+[![Build Status](http://jenkins.sonata-nfv.eu/buildStatus/icon?job=son-gkeeper)](http://jenkins.sonata-nfv.eu/job/son-gkeeper)
 
-The SONATA demo package contains all the information and data needed for the first demo. To this end, it comprises the Network Service Descriptor that constitutes the demo service, comprising the different Virtual Network Functions. Within the package, the NSD can be found at:
+This is [SONATA](http://www.sonata-nfv.eu)'s Service Platform Gatekeeper's repository.
 
- - service_descriptors/sonata-demo.yml
+Communication Service Providers (CSPs) in the 5G era will have to be able to open their infrastructures to Service Providers (SPs) that may not have any kind of close relationship with them, but a Supplier one: the SPs gets some amount of money, according to the agreed business model, from the CSPs. This is a radically distinct model from the one we are used to, in which SPs may, when allowed to, have to spend weeks (or sometimes even months) testing and integrating their services into the CSP’s infrastructure, with the CSP’s personnel having time to look into every aspect of the (new) proposed service, namely security, reliability, etc. In this new model, CSPs will have to:
 
-In addition the package contains the Virtual Network Function Descriptors for an iperf VNF, a firewall VNF based on open-vswitch, and a tcpdump VNF. Within the package, the VNFDs can be found at:
+ * **accept new services**’ descriptions (or updates on existing ones), according to a pre-defined and agreed format;
+ * **validate** those descriptions, to guarantee that they’re both correct and do not seem to introduce any obvious threat to the quality of service that is expected the CSP to provide;
+ * automatically **validate** the new service, namely in areas such as integration with authorized resources, these resources’ consumption and performance;
+ * make the new service **available on its catalogue**, so that other SPs can use it to build new and more complex services.
 
- - function_descriptors/iperf-vnfd.yml
- - function_descriptors/firewall-vnfd.yml
- - function_descriptors/tcpdump-vnfd.yml
-
-Each of the VNFs uses a Docker container to actual provide and run the network function. Thus, the package contains the Docker files that define the Docker containers. Within the package, the Docker files are located at:
-
- - docker_files/iperf/Dockerfile
- - docker_files/firewall/Dockerfile
- - docker_files/tcpdump/Dockerfile
-
-Finally, the packages contains a package descriptor that provides additional information on the strucuture of the package and the contained data. By definition, the package descriptor is located at:
-
- - META-INF/MANIFEST.MF
+When **automatic service scaling** is taken into account, adequately describing it in a service description is not a trivial task, and current service descriptions do not cover it in general. Validating the rest of the service description also poses very interesting difficulties when one goes beyond a simple description of URLs and ports. When the supporting infrastructure is not completely SDN based, or some integration with Physical Network Functions (PNFs) is needed, interfacing to OSS/BSS systems shall have to be considered. Special attention will be paid to the integration with legacy systems of the CSP. This Gatekeeper task deals exactly with this part of the problem, which can generically be called on-boarding. 
