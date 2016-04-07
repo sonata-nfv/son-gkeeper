@@ -17,14 +17,17 @@ require 'addressable/uri'
 
 class GtkApi < Sinatra::Base
 
+  DEFAULT_OFFSET = 0
+  DEFAULT_LIMIT = 5
+  DEFAULT_MAX_LIMIT = 100  
+
   # buffer = StringIO.new
   # buffer.set_encoding('ASCII-8BIT')
   
   # POST of packages
   post '/packages/?' do
-    logger.info params
-    logger.info settings
-    
+    logger.info "GtkApi: entered POST \"/packages/\""
+
     #content_type 'application/octet-stream'
     
     #filename = PackageManagerService.save2(request.body.read)
@@ -57,10 +60,10 @@ class GtkApi < Sinatra::Base
       logger.info "GtkApi: entered GET \"/packages/#{params[:uuid]}\""
       json_error 400, 'Invalid Package UUID' unless valid? params['uuid']
       
-      package = PackageManagerService.find_by_id( settings.pkgmgmt['url'], params[:uuid])
+      package = PackageManagerService.find_by_uuid( params[:uuid])
       logger.info package
       if package['uuid']
-        headers = {location: "#{GtkApi.settings.pkgmgmt['url']}/#{package['uuid']}", content_type: 'application/json'}
+        headers = {'Location'=> "#{GtkApi.settings.pkgmgmt['url']}/#{package['uuid']}", 'Content-Type'=> 'application/json'}
         logger.info "GtkApi: leaving GET \"/packages/#{params[:uuid]}\" with package #{package}"
         halt 200, headers, package
       else
@@ -82,9 +85,27 @@ class GtkApi < Sinatra::Base
     #offset = params[:offset]
     #limit = params[:limit]   
     
-    packages = PackageManagerService.find( GtkApi.settings.pkgmgmt['url'], params)
+    packages = PackageManagerService.find( params)
     logger.info "GtkApi: leaving GET \"/packages/#{uri.query}\" with #{params.inspect}"
     halt 200, packages if packages
+  end
+  
+  # PUT 
+  put '/packages/?' do
+    unless params[:uuid].nil?
+      logger.info "GtkApi: entered PUT \"/packages/#{params[:uuid]}\""
+      logger.info "GtkApi: leaving PUT \"/packages/#{params[:uuid]}\" with \"Not implemented yet\""
+    end
+    json_error 501, "Not implemented yet"
+  end
+  
+  # DELETE
+  delete '/packages/:uuid/?' do
+    unless params[:uuid].nil?
+      logger.info "GtkApi: entered DELETE \"/packages/#{params[:uuid]}\""
+      logger.info "GtkApi: leaving GET \"/packages/#{params[:uuid]}\" with \"Not implemented yet\""
+    end
+    json_error 501, "Not implemented yet"
   end
 end
 

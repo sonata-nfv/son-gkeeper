@@ -19,13 +19,9 @@ require 'addressable/uri'
 
 class Gtkpkg < Sinatra::Base
 
-  DEFAULT_OFFSET = 0
-  DEFAULT_LIMIT = 5
-  DEFAULT_MAX_LIMIT = 100
-  
   # Receive the Java package
   post '/packages/?' do
-    logger.info params.inspect
+    logger.info "GtkPkg: entered POST \"/packages\""
     
     #if params['package']['filename']
     #  filename = params['package']['filename']
@@ -51,8 +47,12 @@ class Gtkpkg < Sinatra::Base
       'uuid'=> "dcfb1a6c-770b-460b-bb11-3aa863f84fa0", 
       'descriptor_version' => "1.0", 'package_group' => "eu.sonata-nfv.package", 
       'package_name' => "simplest-example", 'package_version' => "0.1", 
-      'package_maintainer' => "Michael Bredel, NEC Labs Europe"
-  }
+      'package_maintainer' => "Michael Bredel, NEC Labs Europe",
+      'created_at'=> Time.now.utc,
+      'updated_at'=> Time.now.utc
+    }
+    logger.info "GtkPkg: leaving POST \"/packages\" with package #{body.to_json}"
+    
     # TODO: URL should be absolute
     halt 201, {'Location' => "/packages/#{body['uuid']}"}, body.to_json
   end
@@ -60,13 +60,12 @@ class Gtkpkg < Sinatra::Base
   get '/packages/:uuid' do
     unless params[:uuid].nil?
       logger.info "GtkPkg: entered GET \"/packages/#{params[:uuid]}\""
-      package = Package.find_by_id( Gtkpkg.settings.catalogues['url'], params[:uuid])
+      package = Catalogue.find_by_uuid( params[:uuid])
       logger.info package
       if package['uuid']
         headers = {'Location'=>"#{Gtkpkg.settings.catalogues['url']}/#{package['uuid']}", 'Content-Type'=> 'application/json'}
-        jsoned_package = package.to_json
-        logger.info "GtkPkg: leaving GET \"/packages/#{params[:uuid]}\" with package #{jsoned_package}"
-        halt 200, headers, jsoned_package
+        logger.info "GtkPkg: leaving GET \"/packages/#{params[:uuid]}\" with package #{package}"
+        halt 200, headers, package
       else
         logger.info "GtkPkg: leaving GET \"/packages/#{params[:uuid]}\" with \"No package with UUID=#{params[:uuid]} was found\""
         json_error 400, "No package with UUID=#{params[:uuid]} was found"
@@ -86,7 +85,7 @@ class Gtkpkg < Sinatra::Base
     uri.query_values = params
     logger.info "GtkPkg: entered GET \"/packages/#{uri.query}\""
     
-    packages = Package.find( Gtkpkg.settings.catalogues['url'], params)
+    packages = Catalogue.find( params)
     logger.info "GtkPkg: leaving GET \"/packages/#{uri.query}\" with #{packages.inspect}"
     halt 200, packages if packages
   end
