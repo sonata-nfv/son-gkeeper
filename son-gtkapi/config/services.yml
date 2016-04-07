@@ -8,6 +8,7 @@ development:
   bss: ''
 
 integration:
+#test:
   pkgmgmt:
     url: 'http://localhost:5100/packages'
   licenses: ''
@@ -24,6 +25,7 @@ qualification:
   bss: ''
 
 demonstration:
+#production:
   pkgmgmt:
     url: 'http://localhost:5100/packages'
   licenses: ''

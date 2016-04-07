@@ -95,6 +95,7 @@ PLATFORMS
   ruby
 
 DEPENDENCIES
+  addressable
   capybara
   ci_reporter_rspec
   pry

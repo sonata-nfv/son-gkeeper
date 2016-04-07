@@ -52,5 +52,33 @@ class Package
         end
       end
     end
+    
+    def find_by_id( url, uuid)
+      headers = { 'Accept'=> 'application/json', 'Content-Type'=>'application/json'}
+      headers[:params] = uuid
+      begin
+        response = RestClient.get( url+"/#{uuid}", headers) 
+        pp response
+        response.body
+      rescue => e
+        e.inspect
+        [500, '', e]
+      end
+      
+    end
+    
+    def find( url, params)
+      headers = { 'Accept'=> 'application/json', 'Content-Type'=>'application/json'}
+      headers[:params] = params
+      pp headers
+      begin
+        response = RestClient.get url, headers        
+        response.body
+      rescue => e
+        e.inspect
+        [500, '', e]
+      end
+    end
+    
   end
 end

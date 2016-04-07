@@ -12,6 +12,7 @@
 ## WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 ## See the License for the specific language governing permissions and
 ## limitations under the License.
+# encoding: utf-8
 require 'tempfile'
 
 class PackageManagerService
@@ -74,19 +75,24 @@ class PackageManagerService
     end
   
     def find_by_id( url, uuid)
-      pp uuid, uuid.class
-      headers = { accept: 'application/json', content_type: 'application/json'}
-      #package = { filename: file_name, type: 'application/octet-stream', name: 'package', tempfile: File.new(file_path, 'rb').read,
-      #  head: "Content-Disposition: form-data; name=\"package\"; filename=\"#{file_name}\"\r\nContent-Type: application/octet-stream\r\n"
-      #}
+      headers = { 'Accept'=> 'application/json', 'Content-Type'=>'application/json'}
+      headers[:params] = uuid
       begin
-  #      package = RestClient.get( url+'/'+uuid, headers) 
-        package = {
-          'uuid'=> uuid, #"dcfb1a6c-770b-460b-bb11-3aa863f84fa0",
-          'descriptor_version' => "1.0",
-          'package_group' => "eu.sonata-nfv.package",
-          'package_name' => "simplest-example",
-          'package_version' => "0.1", 'package_maintainer' => "Michael Bredel, NEC Labs Europe"}
+        response = RestClient.get( url+"/#{uuid}", headers) 
+        pp response
+        response
+      rescue => e
+        e.inspect
+        [500, '', e]
+      end
+    end
+    
+    def find( url, params)
+      headers = { 'Accept'=> 'application/json', 'Content-Type'=>'application/json'}
+      headers[:params] = params
+      begin
+        response = RestClient.get url, headers        
+        response
       rescue => e
         e.inspect
         [500, '', e]

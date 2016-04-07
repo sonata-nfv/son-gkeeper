@@ -1,4 +1,3 @@
-# encoding: utf-8
 ##
 ## Copyright 2015-2017 Portugal Telecom Inovação/Altice Labs
 ##
@@ -13,6 +12,9 @@
 ## WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 ## See the License for the specific language governing permissions and
 ## limitations under the License.
+# encoding: utf-8
+require 'addressable/uri'
+
 class GtkApi < Sinatra::Base
 
   # buffer = StringIO.new
@@ -52,27 +54,48 @@ class GtkApi < Sinatra::Base
   # GET a specific package
   get '/packages/:uuid/?' do
     unless params[:uuid].nil?
-      logger.info "Package UUID = #{params[:uuid]}"
+      logger.info "GtkApi: entered GET \"/packages/#{params[:uuid]}\""
+      json_error 400, 'Invalid Package UUID' unless valid? params['uuid']
+      
       package = PackageManagerService.find_by_id( settings.pkgmgmt['url'], params[:uuid])
+      logger.info package
       if package['uuid']
-        headers = {'location'=> "#{settings.pkgmgmt['url']}/#{package['uuid']}", 'content-type'=> 'application/json'}
-        halt 200, headers, package.to_json
+        headers = {location: "#{GtkApi.settings.pkgmgmt['url']}/#{package['uuid']}", content_type: 'application/json'}
+        logger.info "GtkApi: leaving GET \"/packages/#{params[:uuid]}\" with package #{package}"
+        halt 200, headers, package
       else
+        logger.info "GtkApi: leaving GET \"/packages/#{params[:uuid]}\" with \"No package with UUID=#{params[:uuid]} was found\""
         json_error 400, "No package with UUID=#{params[:uuid]} was found"
       end
-      
     end
+    logger.info "GtkApi: leaving GET \"/packages/#{params[:uuid]}\" with \"No package UUID specified\""
     json_error 400, 'No package UUID specified'
+  end
+  
+  # GET potentially many packages
+  get '/packages' do
+    uri = Addressable::URI.new
+    uri.query_values = params
+    logger.info "GtkApi: entered GET \"/packages/#{uri.query}\""
     
-  #  file = "#{params[:splat].first}.#{params[:splat].last}"
-  #  path = "<path to files directory>/#{file}"
-    #
-  #  if File.exists? path
-  #  send_file(
-  #    path, :disposition => 'attachment', : filename => file
-  #  )
-  #  else
-  #      halt 404, "File not found"
-  #  end
+    # TODO: deal with offset and limit
+    #offset = params[:offset]
+    #limit = params[:limit]   
+    
+    packages = PackageManagerService.find( GtkApi.settings.pkgmgmt['url'], params)
+    logger.info "GtkApi: leaving GET \"/packages/#{uri.query}\" with #{params.inspect}"
+    halt 200, packages if packages
   end
 end
+
+  
+#  file = "#{params[:splat].first}.#{params[:splat].last}"
+#  path = "<path to files directory>/#{file}"
+  #
+#  if File.exists? path
+#  send_file(
+#    path, :disposition => 'attachment', : filename => file
+#  )
+#  else
+#      halt 404, "File not found"
+#  end

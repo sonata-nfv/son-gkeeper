@@ -1,3 +1,17 @@
 ---
 development:
   manifest_schema: 'assets/schemas/manifest.json'
+  catalogues:
+    url: 'http://localhost:5200'
+
+integration:
+  catalogues:
+    url: 'http://sp.int.sonata-nfv.eu:4002/'
+
+qualification:
+  catalogues:
+    url: 'http://localhost:5100'
+
+demonstration:
+  catalogues:
+    url: 'http://localhost:5100'

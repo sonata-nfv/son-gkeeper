@@ -11,6 +11,7 @@ gem 'rack-parser', :require => 'rack/parser'
 gem 'sinatra-cross_origin'
 gem 'ci_reporter_rspec'
 gem 'rubyzip', '>= 1.0.0'
+gem 'addressable'
 
 group :test do
   gem 'webmock'
