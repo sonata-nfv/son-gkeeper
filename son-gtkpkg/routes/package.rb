@@ -15,9 +15,14 @@
 ## limitations under the License.
 require 'json' 
 require 'pp'
+require 'addressable/uri'
 
 class Gtkpkg < Sinatra::Base
 
+  DEFAULT_OFFSET = 0
+  DEFAULT_LIMIT = 5
+  DEFAULT_MAX_LIMIT = 100
+  
   # Receive the Java package
   post '/packages/?' do
     logger.info params.inspect
@@ -53,14 +58,36 @@ class Gtkpkg < Sinatra::Base
   end
   
   get '/packages/:uuid' do
-    pp params['uuid']
-    json_error 400, 'Invalid Package UUID' unless valid? params['uuid']
+    unless params[:uuid].nil?
+      logger.info "GtkPkg: entered GET \"/packages/#{params[:uuid]}\""
+      package = Package.find_by_id( Gtkpkg.settings.catalogues['url'], params[:uuid])
+      logger.info package
+      if package['uuid']
+        headers = {'Location'=>"#{Gtkpkg.settings.catalogues['url']}/#{package['uuid']}", 'Content-Type'=> 'application/json'}
+        jsoned_package = package.to_json
+        logger.info "GtkPkg: leaving GET \"/packages/#{params[:uuid]}\" with package #{jsoned_package}"
+        halt 200, headers, jsoned_package
+      else
+        logger.info "GtkPkg: leaving GET \"/packages/#{params[:uuid]}\" with \"No package with UUID=#{params[:uuid]} was found\""
+        json_error 400, "No package with UUID=#{params[:uuid]} was found"
+      end
+    end
+    logger.info "GtkApi: leaving GET \"/packages/#{params[:uuid]}\" with \"No package UUID specified\""
+    json_error 400, 'No package UUID specified'
     
-    # TODO: grab package info from Catalogue
     
     #content_type :son
     #   send_file(file, :disposition => 'attachment', :filename => File.basename(file))
-    send_file('spec/fixtures/simplest-example.son', :disposition => 'inline') #, :type => :son)
+    #send_file('spec/fixtures/simplest-example.son', :disposition => 'inline') #, :type => :son)
   end
 
+  get '/packages' do
+    uri = Addressable::URI.new
+    uri.query_values = params
+    logger.info "GtkPkg: entered GET \"/packages/#{uri.query}\""
+    
+    packages = Package.find( Gtkpkg.settings.catalogues['url'], params)
+    logger.info "GtkPkg: leaving GET \"/packages/#{uri.query}\" with #{packages.inspect}"
+    halt 200, packages if packages
+  end
 end

@@ -20,6 +20,7 @@ ENV['RACK_ENV'] ||= 'production'
 require 'sinatra/base'
 require 'sinatra/config_file'
 require 'sinatra/cross_origin'
+require 'sinatra/reloader'
 require 'zip'
 
 # Require the bundler gem and then call Bundler.require to load in all gems listed in Gemfile.
@@ -36,8 +37,7 @@ require_relative 'models/init'
 class GtkApi < Sinatra::Base
   register Sinatra::ConfigFile
   register Sinatra::CrossOrigin
-  
-  config_file 'config/services.yml'
+  register Sinatra::Reloader
   
   helpers GtkApiHelper
   
@@ -45,8 +45,11 @@ class GtkApi < Sinatra::Base
   set :public_folder, File.join(File.dirname(__FILE__), 'public')
   set :bind, '0.0.0.0'
   set :files, File.join(settings.public_folder, 'files')
+  set :time_at_startup, Time.now.utc
   set :environments, %w{development integration qualification demonstration}
-  set :pkgmgmt, {'url'=>'http://localhost:5100/packages'}
+  set :environment, ENV['RACK_ENV'] || :development
+  config_file File.join( [root, 'config', 'services.yml'] )
+
 	use Rack::Session::Cookie, :key => 'rack.session', :domain => 'foo.com', :path => '/', :expire_after => 2592000, :secret => '$0nata'
 	enable :logging
   enable :cross_origin
@@ -56,5 +59,5 @@ class GtkApi < Sinatra::Base
 		c.continue_on_exists_proc = true
 	end
 
-    #mime_type :son, 'application/octet-stream'
+  #mime_type :son, 'application/octet-stream'
 end
