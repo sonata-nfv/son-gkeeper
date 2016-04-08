@@ -46,7 +46,7 @@ class GtkApi < Sinatra::Base
   set :bind, '0.0.0.0'
   set :files, File.join(settings.public_folder, 'files')
   set :time_at_startup, Time.now.utc
-  set :environments, %w{development integration qualification demonstration}
+  set :environments, %w{development test integration qualification demonstration}
   set :environment, ENV['RACK_ENV'] || :development
   config_file File.join( [root, 'config', 'services.yml'] )
 

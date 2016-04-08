@@ -8,7 +8,9 @@ $packages = [
     package_group: "eu.sonata-nfv.package",
     package_name: "simplest-example",
     package_version: "0.1",
-    package_maintainer: "Michael Bredel, NEC Labs Europe"
+    package_maintainer: "Michael Bredel, NEC Labs Europe",
+    created_at: Time.now.utc,
+    updated_at: Time.now.utc
   },
   { 
     uuid: "0f4eb013-28b1-4590-b59d-d3f094e168d8", 
@@ -16,7 +18,9 @@ $packages = [
     package_group: "eu.sonata-nfv.package",
     package_name: "simplest-example",
     package_version: "0.2",
-    package_maintainer: "Michael Bredel, NEC Labs Europe"
+    package_maintainer: "Michael Bredel, NEC Labs Europe",
+    created_at: Time.now.utc,
+    updated_at: Time.now.utc
   }
 ]
 

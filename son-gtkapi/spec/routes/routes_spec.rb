@@ -19,9 +19,9 @@ require 'pp'
 require 'rspec/its'
 
 RSpec.describe GtkApi do
-  def app
-    GtkApi # this defines the active application for this test
-  end
+  #def app
+  #  GtkApi # this defines the active application for this test
+  #end
 
   describe 'GET \'/\'' do
     before do

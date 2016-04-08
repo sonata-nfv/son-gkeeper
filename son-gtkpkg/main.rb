@@ -45,7 +45,7 @@ class Gtkpkg < Sinatra::Base
   set :public_folder, File.join(File.dirname(__FILE__), 'public')
   set :bind, '0.0.0.0'
   set :time_at_startup, Time.now.utc
-  set :environments, %w{development integration qualification demonstration}
+  set :environments, %w{development test integration qualification demonstration}
   set :environment, ENV['RACK_ENV'] || :development
   config_file File.join( [root, 'config', 'services.yml'] )
   #puts Gtkpkg.settings.catalogues['url']

@@ -74,11 +74,11 @@ class PackageManagerService
       end
     end
   
-    def find_by_id( url, uuid)
+    def find_by_uuid( uuid)
       headers = { 'Accept'=> 'application/json', 'Content-Type'=>'application/json'}
       headers[:params] = uuid
       begin
-        response = RestClient.get( url+"/#{uuid}", headers) 
+        response = RestClient.get( GtkApi.settings.pkgmgmt['url']+"/#{uuid}", headers) 
         pp response
         response
       rescue => e
@@ -87,11 +87,11 @@ class PackageManagerService
       end
     end
     
-    def find( url, params)
+    def find( params)
       headers = { 'Accept'=> 'application/json', 'Content-Type'=>'application/json'}
       headers[:params] = params
       begin
-        response = RestClient.get url, headers        
+        response = RestClient.get GtkApi.settings.pkgmgmt['url'], headers        
         response
       rescue => e
         e.inspect
