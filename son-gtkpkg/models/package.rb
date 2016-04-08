@@ -52,5 +52,41 @@ class Package
         end
       end
     end
+
+    def find_by_uuid( uuid)
+      headers = { 'Accept'=> 'application/json', 'Content-Type'=>'application/json'}
+      headers[:params] = uuid
+      begin
+        response = RestClient.get( Gtkpkg.settings.catalogues['url']+"/#{uuid}", headers) 
+        pp response
+        response.body
+      rescue => e
+        e.inspect
+        [500, '', e]
+      end
+    
+    def find( params)
+      headers = { 'Accept'=> 'application/json', 'Content-Type'=>'application/json'}
+      headers[:params] = params
+      pp headers
+      begin
+        response = RestClient.get Gtkpkg.settings.catalogues['url'], headers        
+        response.body
+      rescue => e
+        e.inspect
+        [500, '', e]
+      end
+    end
+
+    # Encodes a package from its description
+    def encode_package(descriptor)
+      descriptor
+    end
+
+    # Decodes a package 'file' into its descriptor
+    def decode_package(package_io)
+      package_io
+    end
+
   end
 end

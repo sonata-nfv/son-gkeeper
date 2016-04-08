@@ -88,5 +88,7 @@ class Gtkpkg < Sinatra::Base
     packages = Catalogue.find( params)
     logger.info "GtkPkg: leaving GET \"/packages/#{uri.query}\" with #{packages.inspect}"
     halt 200, packages if packages
+    logger.info "GtkPkg: leaving GET \"/packages/#{uri.query}\" with \"No package with parameters #{params} was found\""
+    json_error 404, "No package with parameters #{params} was found"
   end
 end
