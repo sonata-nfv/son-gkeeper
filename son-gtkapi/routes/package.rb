@@ -37,7 +37,7 @@ class GtkApi < Sinatra::Base
         logger.info "package_file_path: #{package_file_path}"
         package = PackageManagerService.onboard2( settings.pkgmgmt['url'], package_file_path)
         if package
-          if package.kind_of?(Hash) && package[:uuid]
+          if package.is_a?(Hash) && package[:uuid]
             logger.info "package: #{package}"
             headers = {'location'=> "#{settings.pkgmgmt['url']}/#{package[:uuid]}", 'Content-Type'=> 'application/json'}
             halt 201, headers, package.to_json
@@ -54,18 +54,39 @@ class GtkApi < Sinatra::Base
     json_error 400, 'No package file specified'
   end
 
+  #post '/uploads' do
+  #  puts "Params: " + params.inspect
+  #  puts "Headers: " + headers.inspect
+  #  if params[:file]
+  #    filename = params[:file][:filename]
+  #    file = params[:file][:tempfile]
+
+  #    puts "Saving file on '/files/p1'..."
+  #    File.open(File.join('files/p1', filename), 'wb') do |f|
+  #      f.write file.read
+  #    end
+
+  #    puts "Posting file..."
+  #    response = RestClient.post('localhost:5678/uploads', :file => File.new(File.join('files/p1', filename,), 'rb'))
+  #    puts "Headers = #{response.headers}"
+  #    puts 'Upload successful'
+  #  else
+  #    puts 'You have to choose a file'
+  #  end
+  #end
+
   # GET a specific package
   get '/packages/:uuid/?' do
     unless params[:uuid].nil?
       logger.info "GtkApi: entered GET \"/packages/#{params[:uuid]}\""
       json_error 400, 'Invalid Package UUID' unless valid? params['uuid']
       
-      package = PackageManagerService.find_by_uuid( params[:uuid])
-      logger.info package
-      if package['uuid']
-        headers = {'Location'=> "#{GtkApi.settings.pkgmgmt['url']}/#{package['uuid']}", 'Content-Type'=> 'application/json'}
-        logger.info "GtkApi: leaving GET \"/packages/#{params[:uuid]}\" with package #{package}"
-        halt 200, headers, package
+      package_file_path = PackageManagerService.find_by_uuid( params[:uuid])
+      logger.info package_file_path
+      if package_file_path #&& package.is_a?(Hash) && package['uuid']
+        #headers = {'Location'=> "#{GtkApi.settings.pkgmgmt['url']}/#{package['uuid']}", 'Content-Type'=> 'application/json'}
+        logger.info "GtkApi: leaving GET /packages/#{params[:uuid]} with package #{package_file_path}"
+        send_file package_file_path
       else
         logger.info "GtkApi: leaving GET \"/packages/#{params[:uuid]}\" with \"No package with UUID=#{params[:uuid]} was found\""
         json_error 400, "No package with UUID=#{params[:uuid]} was found"
@@ -85,8 +106,9 @@ class GtkApi < Sinatra::Base
     #offset = params[:offset]
     #limit = params[:limit]   
     
+    # TODO: index is not working
     packages = PackageManagerService.find( params)
-    logger.info "GtkApi: leaving GET \"/packages/#{uri.query}\" with #{params.inspect}"
+    logger.info "GtkApi: leaving GET \"/packages/#{uri.query}\" with #{packages}"
     halt 200, packages if packages
   end
   
@@ -109,7 +131,21 @@ class GtkApi < Sinatra::Base
   end
 end
 
-  
+#get '/downloads/:filename' do
+#  puts "Params: " + params.inspect
+#  puts "Headers: " + headers.inspect
+#  url = 'http://localhost:5678/downloads/'
+#  puts "Getting file "+params[:filename]+" from "+url
+
+#  response = RestClient.get(url+params[:filename])
+#  puts "Saving file on '/files/p1'..."
+#  File.open(File.join('files/p1', params[:filename]), 'wb') do |f|
+#    f.write response #.body.read
+#  end
+#  send_file 'files/p1/'+params[:filename]
+#end
+
+
 #  file = "#{params[:splat].first}.#{params[:splat].last}"
 #  path = "<path to files directory>/#{file}"
   #

@@ -13,8 +13,18 @@
 ## WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 ## See the License for the specific language governing permissions and
 ## limitations under the License.
-require_relative 'package'
-require_relative 'catalogue'
-require_relative 'n_service'
-require_relative 'v_function'
-require_relative 'docker_file'
+require_relative '../spec_helper'
+
+RSpec.describe Package do
+  describe '#find_by_uuid' do
+  end
+  
+  describe '#find' do
+  end
+  
+  describe '#save' do
+  end
+  
+  describe '#load' do
+  end
+end

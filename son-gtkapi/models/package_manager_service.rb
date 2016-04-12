@@ -62,28 +62,42 @@ class PackageManagerService
     end
 
     def onboard(url, file_path, file_name)
-      headers = { 'Accept' => 'application/json', 'Content-Type' => 'application/octet-stream'}
-      package = { 'filename' => file_name, 'type' => 'application/octet-stream', 'name' => 'package', 'tempfile' => File.open(file_path, 'rb'),
-        'head' => "Content-Disposition: form-data; name=\"package\"; filename=\"#{file_name}\"\r\nContent-Type: application/octet-stream\r\n"
-      }
+      #headers = { 'Accept' => 'application/json', 'Content-Type' => 'application/octet-stream'}
+      #package = { 'filename' => file_name, 'type' => 'application/octet-stream', 'name' => 'package', 'tempfile' => File.open(file_path, 'rb'),
+      #  'head' => "Content-Disposition: form-data; name=\"package\"; filename=\"#{file_name}\"\r\nContent-Type: application/octet-stream\r\n"
+      #}
       begin
-        RestClient.post( url, {package: package}, headers) 
+        response = RestClient.post(url, :package => File.new(File.join(file_path, file_name,), 'rb'))
       rescue => e
-        e.inspect
-        [500, '', e]
+        e.to_json
       end
     end
   
     def find_by_uuid( uuid)
-      headers = { 'Accept'=> 'application/json', 'Content-Type'=>'application/json'}
+      pp "PackageManagerService#find_by_uuid("+uuid+"): entered"
+      
+      headers = { 'Accept'=> '*/*', 'Content-Type'=>'application/json'}
       headers[:params] = uuid
       begin
-        response = RestClient.get( GtkApi.settings.pkgmgmt['url']+"/#{uuid}", headers) 
-        pp response
-        response
+        # Get the meta-data first
+        response = RestClient.get( GtkApi.settings.pkgmgmt['url']+"/#{uuid}", headers)
+        pp "PackageManagerService#find_by_uuid("+uuid+"): response was #{response}"
+        filename = JSON.parse(response)['filepath']
+        pp "PackageManagerService#find_by_uuid("+uuid+"): filename #{filename}"
+        path = File.join('public','packages',uuid)
+        FileUtils.mkdir_p path unless File.exists? path
+        #FileUtils.rm filename if File.file? filename
+        
+        # Get the package it self
+        package = RestClient.get( GtkApi.settings.pkgmgmt['url']+"/#{uuid}/packages")
+        pp "PackageManagerService#find_by_uuid("+uuid+"): package is #{package}"
+        File.open(filename, 'wb') do |f|
+           f.write package
+         end
+         pp "PackageManagerService#find_by_uuid("+uuid+"): exiting by sending #{filename}"
+         filename
       rescue => e
-        e.inspect
-        [500, '', e]
+        e.to_json
       end
     end
     
@@ -94,8 +108,7 @@ class PackageManagerService
         response = RestClient.get GtkApi.settings.pkgmgmt['url'], headers        
         response
       rescue => e
-        e.inspect
-        [500, '', e]
+        e.to_json 
       end
     end
   end
