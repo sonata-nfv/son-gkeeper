@@ -1,6 +1,6 @@
 ## SONATA - Gatekeeper
 ##
-## Copyright 2015-2017 Portugal Telecom Inovação/Altice Labs
+## Copyright 2015-2017 Portugal Telecom Inovacao/Altice Labs
 ##
 ## Licensed under the Apache License, Version 2.0 (the "License");
 ## you may not use this file except in compliance with the License.
@@ -31,26 +31,24 @@ require_relative 'routes/init'
 require_relative 'helpers/init'
 require_relative 'models/init'
 
-# https://github.com/achiu/rack-parser
-#use Rack::Parser, :content_types => { 'application/json' => Proc.new { |body| ::MultiJson.decode body } }
-
+# Concentrates all the REST API of the Gatekeeper
 class GtkApi < Sinatra::Base
   register Sinatra::ConfigFile
   register Sinatra::CrossOrigin
   register Sinatra::Reloader
   
   helpers GtkApiHelper
-  
+
   set :root, File.dirname(__FILE__)
   set :public_folder, File.join(File.dirname(__FILE__), 'public')
   set :bind, '0.0.0.0'
   set :files, File.join(settings.public_folder, 'files')
   set :time_at_startup, Time.now.utc
-  set :environments, %w{development test integration qualification demonstration}
+  set :environments, %w(development test integration qualification demonstration)
   set :environment, ENV['RACK_ENV'] || :development
-  config_file File.join( [root, 'config', 'services.yml'] )
+  config_file File.join(root, 'config', 'services.yml')
 
-	use Rack::Session::Cookie, :key => 'rack.session', :domain => 'foo.com', :path => '/', :expire_after => 2592000, :secret => '$0nata'
+  use Rack::Session::Cookie, key: 'rack.session', domain: 'foo.com', path: '/', expire_after: 2592000, secret: '$0nata'
 	enable :logging
   enable :cross_origin
 
@@ -58,6 +56,4 @@ class GtkApi < Sinatra::Base
 		c.on_exists_proc = true
 		c.continue_on_exists_proc = true
 	end
-
-  #mime_type :son, 'application/octet-stream'
 end

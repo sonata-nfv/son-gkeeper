@@ -4,7 +4,7 @@ require './gtk_api'
 
 task :default => ['ci:all']
 
-desc "Run Unit Tests"
+desc 'Run Unit Tests'
 RSpec::Core::RakeTask.new :specs do |task|
   task.pattern = Dir['spec/**/*_spec.rb']
 end
@@ -15,7 +15,7 @@ namespace :ci do
   task :all => ['ci:setup:rspec', 'specs']
 end
 
-desc "Run the specs whenever a relevant file changes."
+desc 'Run the specs whenever a relevant file changes.'
 task :watch do
-  system "watchr watch.rb"
+  system 'watchr watch.rb'
 end

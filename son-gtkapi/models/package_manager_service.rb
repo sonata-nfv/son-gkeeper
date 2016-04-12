@@ -1,5 +1,5 @@
 ##
-## Copyright 2015-2017 Portugal Telecom Inovação/Altice Labs
+## Copyright 2015-2017 Portugal Telecom Inovacao/Altice Labs
 ##
 ## Licensed under the Apache License, Version 2.0 (the "License");
 ## you may not use this file except in compliance with the License.
@@ -74,28 +74,21 @@ class PackageManagerService
     end
   
     def find_by_uuid( uuid)
-      pp "PackageManagerService#find_by_uuid("+uuid+"): entered"
-      
       headers = { 'Accept'=> '*/*', 'Content-Type'=>'application/json'}
       headers[:params] = uuid
       begin
         # Get the meta-data first
         response = RestClient.get( GtkApi.settings.pkgmgmt['url']+"/#{uuid}", headers)
-        pp "PackageManagerService#find_by_uuid("+uuid+"): response was #{response}"
         filename = JSON.parse(response)['filepath']
-        pp "PackageManagerService#find_by_uuid("+uuid+"): filename #{filename}"
         path = File.join('public','packages',uuid)
         FileUtils.mkdir_p path unless File.exists? path
-        #FileUtils.rm filename if File.file? filename
         
         # Get the package it self
         package = RestClient.get( GtkApi.settings.pkgmgmt['url']+"/#{uuid}/packages")
-        pp "PackageManagerService#find_by_uuid("+uuid+"): package is #{package}"
         File.open(filename, 'wb') do |f|
-           f.write package
-         end
-         pp "PackageManagerService#find_by_uuid("+uuid+"): exiting by sending #{filename}"
-         filename
+          f.write package
+        end
+        filename
       rescue => e
         e.to_json
       end
