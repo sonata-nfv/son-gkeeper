@@ -2,24 +2,24 @@
 development:
   manifest_schema: 'assets/schemas/manifest.json'
   catalogues:
-    url: 'http://localhost:5200'
+    url: 'http://localhost:5200/catalogues/packages'
 
 test:
   manifest_schema: 'assets/schemas/manifest.json'
   catalogues:
-    url: 'http://sp.int.sonata-nfv.eu:4002/'
+    url: 'http://localhost:5200/catalogues/packages'
 
 integration:
   manifest_schema: 'assets/schemas/manifest.json'
   catalogues:
-    url: 'http://sp.int.sonata-nfv.eu:4002/'
+    url: 'http://sp.int.sonata-nfv.eu:4002/catalogues/packages'
 
 qualification:
   manifest_schema: 'assets/schemas/manifest.json'
   catalogues:
-    url: 'http://localhost:5100'
+    url: 
 
 demonstration:
   manifest_schema: 'assets/schemas/manifest.json'
   catalogues:
-    url: 'http://localhost:5100'
+    url: 

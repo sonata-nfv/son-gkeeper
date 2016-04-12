@@ -1,4 +1,3 @@
-## SONATA - Gatekeeper
 ##
 ## Copyright 2015-2017 Portugal Telecom Inovação/Altice Labs
 ##
@@ -13,8 +12,22 @@
 ## WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 ## See the License for the specific language governing permissions and
 ## limitations under the License.
-require_relative 'package'
-require_relative 'catalogue'
-require_relative 'n_service'
-require_relative 'v_function'
-require_relative 'docker_file'
+# encoding: utf-8
+require 'tempfile'
+require 'pp'
+
+class DockerFile
+  
+  def initialize(folder)
+    @folder = File.join(folder, "docker_files") 
+    FileUtils.mkdir @folder unless File.exists? @folder
+  end
+  
+  def build(content)
+    sub_folder = File.join(@folder, content['name'].split('/')[2])
+    FileUtils.mkdir(sub_folder) unless File.exists? sub_folder
+    File.open(File.join( sub_folder, 'Dockerfile'), 'w') do |f|
+      f.write('This is temporary')
+    end
+  end
+end

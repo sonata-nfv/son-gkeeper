@@ -1,5 +1,3 @@
-## SONATA - Gatekeeper
-##
 ## Copyright 2015-2017 Portugal Telecom Inovação/Altice Labs
 ##
 ## Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,8 +11,13 @@
 ## WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 ## See the License for the specific language governing permissions and
 ## limitations under the License.
-require_relative 'package'
-require_relative 'catalogue'
-require_relative 'n_service'
-require_relative 'v_function'
-require_relative 'docker_file'
+require_relative '../spec_helper'
+
+RSpec.describe PackageManagerService do
+  describe '#find_by_uuid' do
+  end
+  describe '#find' do
+  end
+  
+  
+end

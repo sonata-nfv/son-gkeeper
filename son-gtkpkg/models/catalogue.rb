@@ -13,24 +13,26 @@
 ## WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 ## See the License for the specific language governing permissions and
 ## limitations under the License.
+# encoding: utf-8
 require 'tempfile'
+require 'json'
 require 'pp'
 
 class Catalogue
   class << self
     
     def find_by_uuid( uuid)
+      pp "Gtkpkg::Catalogue.find_by_uuid(#{uuid}): entered"
+      
       headers = { 'Accept'=> 'application/json', 'Content-Type'=>'application/json'}
       headers[:params] = uuid
       begin
         response = RestClient.get( Gtkpkg.settings.catalogues['url']+"/#{uuid}", headers) 
-        pp response
-        response.body
+        pp "Gtkpkg::Catalogue.find_by_uuid(#{uuid}): leaving with \"#{response}\""
+        JSON.parse response.body
       rescue => e
-        e.inspect
-        [500, '', e]
+        e.to_json
       end
-      
     end
     
     def find( params)
@@ -41,8 +43,7 @@ class Catalogue
         response = RestClient.get Gtkpkg.settings.catalogues['url'], headers        
         response.body
       rescue => e
-        e.inspect
-        [500, '', e]
+        e.to_json
       end
     end
     
