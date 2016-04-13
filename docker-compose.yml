@@ -1,0 +1,44 @@
+son-gtkapi:
+  image: registry.sonata-nfv.eu:5000/son-gtkapi
+  links:
+   - son-gtkpkg
+#   - son-gtksrv
+  ports:
+    - "32000:5000"
+  restart: always
+
+son-gtkpkg:
+  image: registry.sonata-nfv.eu:5000/son-gtkpkg
+  ports:
+    - "5100"
+  restart: always
+
+#son-gtksrv:
+#  image: registry.sonata-nfv.eu:5000/son-gtksrv
+#  links:
+#   - broker
+#  ports:
+#    - "5300"
+#  restart: always
+#  environment:
+#   - POSTGRES_PASSWORD=sonata-dev
+#   - POSTGRES_USER=sonata-dev
+
+postgres:
+  image: postgres
+  links: 
+   - son-gtkpkg
+  ports:
+   - "5432"
+  restart: always
+  environment:
+   - POSTGRES_PASSWORD=sonata-dev
+   - POSTGRES_USER=sonata-dev
+
+broker:
+  image: rabbitmq:3
+  links: 
+   - son-gtkpkg
+  ports:
+   - "5672"
+  restart: always
