@@ -102,7 +102,6 @@ class GtkApi < Sinatra::Base
     #offset = params[:offset]
     #limit = params[:limit]   
     
-    # TODO: index is not working
     packages = PackageManagerService.find(params)
     logger.info "GtkApi: leaving GET \"/packages/#{uri.query}\" with #{packages}"
     halt 200, packages if packages
