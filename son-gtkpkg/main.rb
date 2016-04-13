@@ -55,6 +55,7 @@ class Gtkpkg < Sinatra::Base
   enable :cross_origin
 
 	Zip.setup do |c|
+    c.unicode_names = true
 	  c.on_exists_proc = true
 	  c.continue_on_exists_proc = true
   end

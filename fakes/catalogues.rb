@@ -74,9 +74,8 @@ end
 
 get '/catalogues/packages' do
   content_type :json
-  puts params.inspect
-  puts params.size
-  if params.size
+  unless params.empty?
+    puts "With params #{params}"
     selected = []
     $packages.each do |p|
       puts p.inspect
@@ -86,6 +85,7 @@ get '/catalogues/packages' do
     end
     selected.to_json
   else
+    puts "With no params"
     $packages.to_json
   end
 end

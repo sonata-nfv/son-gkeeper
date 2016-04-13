@@ -118,37 +118,31 @@ class Gtkpkg < Sinatra::Base
   get '/packages' do
     uri = Addressable::URI.new
     uri.query_values = params
-    logger.info "GtkPkg: entered GET \"/packages/#{uri.query}\""
+    logger.debug "GtkPkg: entered GET \"/packages/#{uri.query}\""
     
-    packages = Catalogue.find( params)
+    packages = Catalogue.find(params)
+    logger.debug "Gtkpkg: GET /packages: #{packages}"
     if packages && packages.is_a?(Array)
-      if package.size == 1
-        logger.info "GtkPkg: in GET /packages/#{uri.query}, found package #{package[0]}"
-        logger.info "GtkPkg: in GET /packages/#{uri.query}, generating package"
+      if packages.size == 1
+        logger.debug "GtkPkg: in GET /packages/#{uri.query}, found package #{packages[0]}"
+        logger.debug "GtkPkg: in GET /packages/#{uri.query}, generating package"
         tmpdir = FileUtils.mkdir(File.join('tmp', SecureRandom.hex))
-        response = Package.new(tmpdir).build(package)        
+        response = Package.new(tmpdir).build(packages[0])        
         #headers = { 'Location'=>"#{Gtkpkg.settings.catalogues['url']}/#{packages[0]['uuid']}", 'Accept' => 'application/octet-stream'}
         if response
-          logger.info "GtkPkg: leaving GET /packages/#{uri.query} with \"Package #{packages[0]['uuid']} found and sent in file \"#{packages[0]['package_name']}\"\""
+          logger.debug "GtkPkg: leaving GET /packages/#{uri.query} with \"Package #{packages[0]['uuid']} found and sent in file \"#{packages[0]['package_name']}\"\""
           send_file tmpdir + package['package_name']
         else
           logger.info "GtkPkg: leaving GET \"/packages/#{params[:uuid]}\", with \"Could not create package file\"."
           json_error 400, "Could not create package file"
         end
       else
-        logger.info "GtkPkg: leaving GET /packages/#{uri.query} with \"Found #{packages.size} packages\""
+        logger.debug "GtkPkg: leaving GET /packages/#{uri.query} with \"Found #{packages.size} packages\""
         halt 200, packages.to_json
       end
     else
-      logger.info "GtkPkg: leaving GET /packages/#{uri.query} with \"No package with params=#{uri.query} was found\""
+      logger.debug "GtkPkg: leaving GET /packages/#{uri.query} with \"No package with params=#{uri.query} was found\""
       json_error 404, "No package with params=#{uri.query} was found"
     end
   end
 end
-
-#get '/downloads/:filename' do
-#  puts "Params: " + params.inspect
-#  puts "Headers: " + headers.inspect
-#  puts "P2: send file #{params[:filename]}"
-#  send_file 'files/p2/'+params[:filename]
-#end

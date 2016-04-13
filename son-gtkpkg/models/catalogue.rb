@@ -21,27 +21,25 @@ require 'pp'
 class Catalogue
   class << self
     
-    def find_by_uuid( uuid)
-      pp "Gtkpkg::Catalogue.find_by_uuid(#{uuid}): entered"
-      
+    def find_by_uuid(uuid)
       headers = { 'Accept'=> 'application/json', 'Content-Type'=>'application/json'}
       headers[:params] = uuid
       begin
         response = RestClient.get( Gtkpkg.settings.catalogues['url']+"/#{uuid}", headers) 
-        pp "Gtkpkg::Catalogue.find_by_uuid(#{uuid}): leaving with \"#{response}\""
         JSON.parse response.body
       rescue => e
         e.to_json
       end
     end
     
-    def find( params)
+    def find(params)
       headers = { 'Accept'=> 'application/json', 'Content-Type'=>'application/json'}
-      headers[:params] = params
-      pp headers
+      headers[:params] = params unless params.empty?
+      pp "Catalogue::find(#{params}): headers #{headers}"
       begin
-        response = RestClient.get Gtkpkg.settings.catalogues['url'], headers        
-        response.body
+        response = RestClient.get Gtkpkg.settings.catalogues['url'], headers
+        pp "Catalogue#find(#{params}): #{response}"      
+        JSON.parse response.body
       rescue => e
         e.to_json
       end
