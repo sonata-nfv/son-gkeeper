@@ -1,5 +1,5 @@
 ##
-## Copyright 2015-2017 Portugal Telecom Inovação/Altice Labs
+## Copyright 2015-2017 Portugal Telecom Inovacao/Altice Labs
 ##
 ## Licensed under the Apache License, Version 2.0 (the "License");
 ## you may not use this file except in compliance with the License.
@@ -27,10 +27,7 @@ class GtkApi < Sinatra::Base
   # POST of packages
   post '/packages/?' do
     logger.info "GtkApi: entered POST \"/packages/\""
-
-    #content_type 'application/octet-stream'
     
-    #filename = PackageManagerService.save2(request.body.read)
     unless params[:package].nil?    
       package_file_path = PackageManagerService.save( settings.files, params)
       if package_file_path
@@ -83,8 +80,7 @@ class GtkApi < Sinatra::Base
       
       package_file_path = PackageManagerService.find_by_uuid( params[:uuid])
       logger.info package_file_path
-      if package_file_path #&& package.is_a?(Hash) && package['uuid']
-        #headers = {'Location'=> "#{GtkApi.settings.pkgmgmt['url']}/#{package['uuid']}", 'Content-Type'=> 'application/json'}
+      if package_file_path
         logger.info "GtkApi: leaving GET /packages/#{params[:uuid]} with package #{package_file_path}"
         send_file package_file_path
       else
@@ -125,7 +121,7 @@ class GtkApi < Sinatra::Base
   delete '/packages/:uuid/?' do
     unless params[:uuid].nil?
       logger.info "GtkApi: entered DELETE \"/packages/#{params[:uuid]}\""
-      logger.info "GtkApi: leaving GET \"/packages/#{params[:uuid]}\" with \"Not implemented yet\""
+      logger.info "GtkApi: leaving DELETE \"/packages/#{params[:uuid]}\" with \"Not implemented yet\""
     end
     json_error 501, "Not implemented yet"
   end

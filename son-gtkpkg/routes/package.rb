@@ -1,6 +1,6 @@
 ## SONATA - Gatekeeper
 ##
-## Copyright 2015-2017 Portugal Telecom Inovação/Altice Labs
+## Copyright 2015-2017 Portugal Telecom Inovacao/Altice Labs
 ##
 ## Licensed under the Apache License, Version 2.0 (the "License");
 ## you may not use this file except in compliance with the License.
@@ -85,9 +85,7 @@ class Gtkpkg < Sinatra::Base
         logger.info "GtkPkg: in GET /packages/#{params[:uuid]}, generating package"
         output_dir = File.join( 'public', 'packages', params[:uuid])
         FileUtils.mkdir_p output_dir unless File.exists? output_dir
-        response = Package.new(tmpdir, output_dir).build(package)  
-        pp "GtkPkg: after building: #{response}"      
-        #headers = { 'Location'=>"#{Gtkpkg.settings.catalogues['url']}/#{package['uuid']}", 'Accept' => 'application/octet-stream'}
+        response = Package.new(tmpdir, output_dir).build(package)    
         if response
           logger.info "GtkPkg: leaving GET /packages/#{params[:uuid]} with package found and sent in file \""+tmpdir+"/#{package['package_name']}.son\"\""
           halt 200, { 'filepath'=>File.join('public', 'packages', params[:uuid], package['package_name']+'.son')}.to_json
