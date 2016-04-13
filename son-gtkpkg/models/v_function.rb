@@ -30,3 +30,8 @@ class VFunction
     end
   end
 end
+
+#@@vnfr_schema=JSON.parse(JSON.dump(YAML.load(open('https://raw.githubusercontent.com/sonata-nfv/son-schema/master/function-record/vnfr-schema.yml'){|f| f.read})))
+#...
+#errors = validate_json(vnf_json,@@vnfr_schema)
+#return 400, errors.to_json if errors
