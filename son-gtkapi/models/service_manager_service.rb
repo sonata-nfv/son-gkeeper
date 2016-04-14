@@ -1,4 +1,3 @@
-## SONATA - Gatekeeper
 ##
 ## Copyright 2015-2017 Portugal Telecom Inovacao/Altice Labs
 ##
@@ -14,19 +13,23 @@
 ## See the License for the specific language governing permissions and
 ## limitations under the License.
 # encoding: utf-8
-require 'tempfile'
-require 'json'
-require 'pp'
-
-class Catalogue
+class ServiceManagerService
   class << self
     
+    # We're not yet using this: it allows for multiple implementations, such as Fakes (for testing)
+    def implementation
+      @implementation
+    end
+    
+    def implementation=(impl)
+      @implementation = impl
+    end
+  
     def find_by_uuid(uuid)
       headers = { 'Accept'=> 'application/json', 'Content-Type'=>'application/json'}
       headers[:params] = uuid
       begin
-        response = RestClient.get( Gtkpkg.settings.catalogues['url']+"/packages/#{uuid}", headers) 
-        JSON.parse response.body
+        response = RestClient.get( GtkApi.settings.services['url']+"/services/#{uuid}", headers)
       rescue => e
         e.to_json
       end
@@ -35,15 +38,11 @@ class Catalogue
     def find(params)
       headers = { 'Accept'=> 'application/json', 'Content-Type'=>'application/json'}
       headers[:params] = params unless params.empty?
-      pp "Catalogue::find(#{params}): headers #{headers}"
       begin
-        response = RestClient.get(Gtkpkg.settings.catalogues['url']+'/packages', headers)
-        pp "Catalogue#find(#{params}): #{response}"      
-        JSON.parse response.body
+        RestClient.get(GtkApi.settings.services['url']+'/services', headers) 
       rescue => e
-        e.to_json
+        e.to_json 
       end
     end
-    
   end
 end

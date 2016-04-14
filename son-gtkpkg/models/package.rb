@@ -27,9 +27,12 @@ class Package
   DEFAULT_MANIFEST_FILE_NAME = 'MANIFEST.MF'
   DEFAULT_PATH = File.join(DEFAULT_META_DIR, DEFAULT_MANIFEST_FILE_NAME)
   
-  def initialize(path, output_folder)
-    @path = path
-    @output_folder = output_folder
+  def initialize(descriptor)
+    pp "Package#initialize: descriptor=#{descriptor}"
+    @descriptor = descriptor
+    @input_folder = FileUtils.mkdir(File.join('tmp', SecureRandom.hex))[0]
+    @output_folder = File.join( 'public', 'packages', descriptor['uuid'])
+    FileUtils.mkdir_p @output_folder unless File.exists? @output_folder
     @services, @functions, @docker_files = []
   end
   
@@ -52,33 +55,49 @@ class Package
   end
   
   # Builds a package file from its descriptors, and return a handle to it
-  def build(descriptor)
+  def build()
     # Clear unwanted parameters
-    [:uuid, :created_at, :updated_at].each { |k| descriptor.delete(k) }
+    [:uuid, :created_at, :updated_at].each { |k| @descriptor.delete(k) }
 
-    meta_dir = FileUtils.mkdir(File.join(@path, DEFAULT_META_DIR))[0]
-    save_package_descriptor descriptor, meta_dir
-    descriptor['package_content'].each do |p_cont|
-      NService.new(@path).build(p_cont) if p_cont['name'] =~ /service_descriptors/
-      VFunction.new(@path).build(p_cont) if p_cont['name'] =~ /function_descriptors/
-      DockerFile.new(@path).build(p_cont) if p_cont['name'] =~ /docker_files/
+    meta_dir = FileUtils.mkdir(File.join(@input_folder, DEFAULT_META_DIR))[0]
+    save_package_descriptor @descriptor, meta_dir
+    @descriptor['package_content'].each do |p_cont|
+      NService.new(@input_folder).build(p_cont) if p_cont['name'] =~ /service_descriptors/
+      VFunction.new(@input_folder).build(p_cont) if p_cont['name'] =~ /function_descriptors/
+      DockerFile.new(@input_folder).build(p_cont) if p_cont['name'] =~ /docker_files/
     end
-    output_file = File.join(@output_folder, descriptor['package_name']+'.son')
+    output_file = File.join(@output_folder, @descriptor['package_name']+'.son')
     FileUtils.rm output_file if File.file? output_file
     zip_it output_file
-    @path
+    pp  "Package.build: output_file #{output_file}"
+    output_file
   end
     
-  class << self     
-    def extract( extract_dir, filename)
-      # Extract the zipped file to a directory
-      Zip::File.open(File.join(extract_dir, filename), 'rb') do |zip_file|
-        # Handle entries one by one
-        zip_file.each do |entry|
-          # Extract to tmp/
-          f_path = File.join(extract_dir, entry.name)
-          entry.extract(f_path)
-        end
+  class << self
+    
+    def find_by_uuid(uuid)
+      headers = { 'Accept'=> 'application/json', 'Content-Type'=>'application/json'}
+      headers[:params] = uuid
+      pp "Package#find_by_uuid(#{uuid}): headers #{headers}"
+      begin
+        response = RestClient.get( Gtkpkg.settings.catalogues['url']+"/packages/#{uuid}", headers) 
+        pp "Package#find_by_uuid(#{uuid}): #{response}"      
+        JSON.parse response.body
+      rescue => e
+        e.to_json
+      end
+    end
+    
+    def find(params)
+      headers = { 'Accept'=> 'application/json', 'Content-Type'=>'application/json'}
+      headers[:params] = params unless params.empty?
+      pp "Package#find(#{params}): headers #{headers}"
+      begin
+        response = RestClient.get(Gtkpkg.settings.catalogues['url']+'/packages', headers)
+        pp "Package#find(#{params}): #{response}"      
+        JSON.parse response.body
+      rescue => e
+        e.to_json
       end
     end
   end
@@ -91,8 +110,7 @@ class Package
   end
 
   def zip_it(zipfile_name)
-    entries = Dir.entries(@path) - %w(. ..)
-
+    entries = Dir.entries(@input_folder) - %w(. ..)
     ::Zip::File.open(zipfile_name, ::Zip::File::CREATE) do |io|
       write_entries entries, '', io
     end
@@ -102,7 +120,7 @@ class Package
   def write_entries(entries, path, io)
     entries.each do |e|
       zip_file_path = path == '' ? e : File.join(path, e)
-      disk_file_path = File.join(@path, zip_file_path)
+      disk_file_path = File.join(@input_folder, zip_file_path)
 
       if File.directory? disk_file_path
         recursively_deflate_directory(disk_file_path, io, zip_file_path)
@@ -124,3 +142,14 @@ class Package
     end
   end
 end
+#def extract( extract_dir, filename)
+  # Extract the zipped file to a directory
+#  Zip::File.open(File.join(extract_dir, filename), 'rb') do |zip_file|
+    # Handle entries one by one
+#    zip_file.each do |entry|
+      # Extract to tmp/
+#      f_path = File.join(extract_dir, entry.name)
+#      entry.extract(f_path)
+#    end
+#  end
+#end

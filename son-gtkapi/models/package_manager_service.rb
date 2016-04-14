@@ -73,18 +73,19 @@ class PackageManagerService
       end
     end
   
-    def find_by_uuid( uuid)
+    def find_by_uuid(uuid)
       headers = { 'Accept'=> '*/*', 'Content-Type'=>'application/json'}
       headers[:params] = uuid
       begin
         # Get the meta-data first
         response = RestClient.get( GtkApi.settings.pkgmgmt['url']+"/#{uuid}", headers)
         filename = JSON.parse(response)['filepath']
+        pp filename
         path = File.join('public','packages',uuid)
         FileUtils.mkdir_p path unless File.exists? path
         
         # Get the package it self
-        package = RestClient.get( GtkApi.settings.pkgmgmt['url']+"/#{uuid}/packages")
+        package = RestClient.get( GtkApi.settings.pkgmgmt['url']+"/#{uuid}/package")
         File.open(filename, 'wb') do |f|
           f.write package
         end
@@ -94,12 +95,11 @@ class PackageManagerService
       end
     end
     
-    def find( params)
+    def find(params)
       headers = { 'Accept'=> 'application/json', 'Content-Type'=>'application/json'}
       headers[:params] = params
       begin
-        response = RestClient.get GtkApi.settings.pkgmgmt['url'], headers        
-        response
+        RestClient.get GtkApi.settings.pkgmgmt['url'], headers        
       rescue => e
         e.to_json 
       end

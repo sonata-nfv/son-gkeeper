@@ -1,5 +1,5 @@
 ##
-## Copyright 2015-2017 Portugal Telecom Inovacao/Altice Labs
+## Copyright 2015-2017 Portugal Telecom Inovação/Altice Labs
 ##
 ## Licensed under the Apache License, Version 2.0 (the "License");
 ## you may not use this file except in compliance with the License.
@@ -12,5 +12,13 @@
 ## WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 ## See the License for the specific language governing permissions and
 ## limitations under the License.
-require_relative 'package_manager_service'
-require_relative 'service_manager_service'
+
+# https://github.com/sinatra/sinatra-recipes/blob/ecc597b3725bb9eb7ac9e30a89f72b0d9b0c9af5/middleware/rack_parser.md
+#use Rack::Parser, :content_types => {
+#  'application/json' => Proc.new { |body| ::MultiJson.decode body }
+#}
+
+root = ::File.dirname(__FILE__)
+require ::File.join(root, 'gtk_srv')
+
+run GtkSrv

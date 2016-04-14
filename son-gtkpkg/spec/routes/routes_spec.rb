@@ -74,12 +74,12 @@ RSpec.describe Gtkpkg do
         stub_request(:get, 'localhost:5200/packages').to_return(:status=>200, :body=>response_body.to_json, :headers=>{ 'Content-Type'=>'application/json' })
         get '/packages/dcfb1a6c-770b-460b-bb11-3aa863f84fa0'
       end
-    
       subject { last_response }
       #its(:status) { is_expected.to eq 200 }
-
     end
-    context 'without (UU)ID given' do
+    context 'with query parameters given' do
+    end
+    context 'without any query parameter given' do
     end
   end
 end

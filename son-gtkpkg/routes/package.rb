@@ -77,17 +77,12 @@ class Gtkpkg < Sinatra::Base
   get '/packages/:uuid' do
     unless params[:uuid].nil?
       logger.info "GtkPkg: entered GET \"/packages/#{params[:uuid]}\""
-      package = Catalogue.find_by_uuid( params[:uuid])
+      package = Package.find_by_uuid( params[:uuid])
       if package && package.is_a?(Hash) && package['uuid']
         logger.info "GtkPkg: in GET /packages/#{params[:uuid]}, found package #{package}"
-        tmpdir = FileUtils.mkdir(File.join('tmp', SecureRandom.hex))[0]
-        logger.info "GtkPkg: in GET /packages/#{params[:uuid]}, tmpdir=#{tmpdir}"
-        logger.info "GtkPkg: in GET /packages/#{params[:uuid]}, generating package"
-        output_dir = File.join( 'public', 'packages', params[:uuid])
-        FileUtils.mkdir_p output_dir unless File.exists? output_dir
-        response = Package.new(tmpdir, output_dir).build(package)    
+        response = Package.new(package).build()    
         if response
-          logger.info "GtkPkg: leaving GET /packages/#{params[:uuid]} with package found and sent in file \""+tmpdir+"/#{package['package_name']}.son\"\""
+          logger.info "GtkPkg: leaving GET /packages/#{params[:uuid]} with package found and sent in file .../#{package['package_name']}.son"
           halt 200, { 'filepath'=>File.join('public', 'packages', params[:uuid], package['package_name']+'.son')}.to_json
         else
           logger.error "GtkPkg: leaving GET \"/packages/#{params[:uuid]}\", with \"Could not create package file\"."
@@ -102,41 +97,39 @@ class Gtkpkg < Sinatra::Base
     json_error 400, 'No package UUID specified'
   end
   
-  get '/packages/:uuid/packages?' do
+  get '/packages/:uuid/package?' do
     unless params[:uuid].nil?
-      logger.info "GtkPkg: entered GET \"/packages/#{params[:uuid]}/package\""
-      entries = Dir.entries(File.join('public','packages',params[:uuid])) - %w(. ..)
-      logger.info "GtkPkg: entries are #{entries}"
-      send_file entries[0] if entries.size
-      logger.error "GtkPkg: leaving GET \"/packages/#{params[:uuid]}/package\" with \"No package file found for package #{params[:uuid]}\""
-      json_error 400, "No package file found for package #{params[:uuid]}"
+      logger.debug "GtkPkg: entered GET /packages/#{params[:uuid]}/package"
+      file_dir = File.join('public','packages',params[:uuid])
+      entries = Dir.entries(file_dir) - %w(. ..)
+      logger.debug "GtkPkg: entries are #{entries}"
+      send_file File.join('public','packages',params[:uuid], entries[0]) if entries.size
     end
-    logger.error "GtkPkg: leaving GET \"/packages/#{params[:uuid]}/package\" with \"No package UUID specified\""
+    logger.info "GtkPkg: leaving GET /packages/#{params[:uuid]}/package with \"No package UUID specified\""
     json_error 400, 'No package UUID specified'
   end
 
   get '/packages' do
     uri = Addressable::URI.new
     uri.query_values = params
-    logger.info "GtkPkg: entered GET \"/packages/#{uri.query}\""
+    logger.debug "GtkPkg: entered GET \"/packages/#{uri.query}\""
     
-    packages = Catalogue.find( params)
+    packages = Package.find(params)
+    logger.debug "Gtkpkg: GET /packages: #{packages}"
     if packages && packages.is_a?(Array)
-      if package.size == 1
-        logger.info "GtkPkg: in GET /packages/#{uri.query}, found package #{package[0]}"
-        logger.info "GtkPkg: in GET /packages/#{uri.query}, generating package"
-        tmpdir = FileUtils.mkdir(File.join('tmp', SecureRandom.hex))
-        response = Package.new(tmpdir).build(package)        
-        #headers = { 'Location'=>"#{Gtkpkg.settings.catalogues['url']}/#{packages[0]['uuid']}", 'Accept' => 'application/octet-stream'}
+      if packages.size == 1
+        logger.debug "GtkPkg: in GET /packages/#{uri.query}, found package #{packages[0]}"
+        logger.debug "GtkPkg: in GET /packages/#{uri.query}, generating package"
+        response = Package.new(packages[0]).build()
         if response
-          logger.info "GtkPkg: leaving GET /packages/#{uri.query} with \"Package #{packages[0]['uuid']} found and sent in file \"#{packages[0]['package_name']}\"\""
-          send_file tmpdir + package['package_name']
+          logger.debug "GtkPkg: leaving GET /packages/#{uri.query} with \"Package #{packages[0]['uuid']} found and sent in file \"#{packages[0]['package_name']}\"\""
+          send_file response #File.join(response, packages[0]['package_name'])
         else
-          logger.info "GtkPkg: leaving GET \"/packages/#{params[:uuid]}\", with \"Could not create package file\"."
+          logger.error "GtkPkg: leaving GET \"/packages/#{params[:uuid]}\", with \"Could not create package file\"."
           json_error 400, "Could not create package file"
         end
       else
-        logger.info "GtkPkg: leaving GET /packages/#{uri.query} with \"Found #{packages.size} packages\""
+        logger.debug "GtkPkg: leaving GET /packages/#{uri.query} with \"Found #{packages.size} packages\""
         halt 200, packages.to_json
       end
     else
@@ -145,10 +138,3 @@ class Gtkpkg < Sinatra::Base
     end
   end
 end
-
-#get '/downloads/:filename' do
-#  puts "Params: " + params.inspect
-#  puts "Headers: " + headers.inspect
-#  puts "P2: send file #{params[:filename]}"
-#  send_file 'files/p2/'+params[:filename]
-#end

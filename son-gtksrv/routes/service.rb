@@ -14,7 +14,25 @@
 ## See the License for the specific language governing permissions and
 ## limitations under the License.
 # encoding: utf-8
-require_relative 'package'
-require_relative 'n_service'
-require_relative 'v_function'
-require_relative 'docker_file'
+require 'json' 
+require 'pp'
+require 'addressable/uri'
+
+class GtkSrv < Sinatra::Base
+
+  get '/services/?' do
+    uri = Addressable::URI.new
+    uri.query_values = params
+    logger.debug "GtkSrv: entered GET /services/#{uri.query}"
+    
+    services = NService.find(params)
+    logger.debug "GtkSrv: GET /services: #{services}"
+    if services
+      logger.debug "GtkSrv: leaving GET /services/#{uri.query}"
+      halt 200, services.to_json
+    else
+      logger.debug "GtkSrv: leaving GET /services/#{uri.query} with \"No service with params=#{uri.query} was found\""
+      json_error 404, "No service with params=#{uri.query} was found"
+    end
+  end
+end

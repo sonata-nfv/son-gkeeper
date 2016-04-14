@@ -2,17 +2,17 @@
 development:
   manifest_schema: 'assets/schemas/manifest.json'
   catalogues:
-    url: 'http://localhost:5200/catalogues/packages'
+    url: 'http://localhost:5200/catalogues'
 
 test:
   manifest_schema: 'assets/schemas/manifest.json'
   catalogues:
-    url: 'http://localhost:5200/catalogues/packages'
+    url: 'http://localhost:5200/catalogues'
 
 integration:
   manifest_schema: 'assets/schemas/manifest.json'
   catalogues:
-    url: 'http://sp.int.sonata-nfv.eu:4002/catalogues/packages'
+    url: 'http://sp.int.sonata-nfv.eu:4002/catalogues'
 
 qualification:
   manifest_schema: 'assets/schemas/manifest.json'

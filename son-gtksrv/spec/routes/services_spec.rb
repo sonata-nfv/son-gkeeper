@@ -1,4 +1,3 @@
-##
 ## Copyright 2015-2017 Portugal Telecom Inovacao/Altice Labs
 ##
 ## Licensed under the Apache License, Version 2.0 (the "License");
@@ -12,5 +11,20 @@
 ## WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 ## See the License for the specific language governing permissions and
 ## limitations under the License.
-require_relative 'package_manager_service'
-require_relative 'service_manager_service'
+require_relative '../spec_helper'
+require 'webmock/rspec'
+require 'json'
+require 'securerandom'
+require 'pp'
+require 'rspec/its'
+
+RSpec.describe GtkSrv do
+  before do
+    get '/services'
+  end
+  
+  it 'answers to services request' do
+    expect(last_response).to be_ok
+    expect(JSON.parse(last_response.body)).to be_a_kind_of(Array)
+  end
+end

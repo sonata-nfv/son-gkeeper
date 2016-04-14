@@ -10,9 +10,8 @@ gem 'rack-parser', require: 'rack/parser'
 gem 'sinatra-cross_origin'
 gem 'ci_reporter_rspec'
 gem 'rubyzip', '>= 1.0.0'
-gem 'foreman'
-gem 'rubocop'
-gem 'rubocop-checkstyle_formatter', require: false
+gem 'addressable'
+gem 'bunny', '>= 2.3.0'
 
 group :test do
   gem 'webmock'
