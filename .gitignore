@@ -5,3 +5,5 @@
 **/vendor
 **/public/files
 **/public/packages
+**/Gemfile.lock
+**/.bundle
