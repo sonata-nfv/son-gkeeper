@@ -1,0 +1,22 @@
+---
+development:
+  catalogues:
+    url: 'http://localhost:5200/catalogues'
+
+test:
+  catalogues:
+    url: 'http://localhost:5200/catalogues'
+
+integration:
+  catalogues:
+    url: 'http://localhost:5200/catalogues'
+
+qualification:
+  catalogues:
+    url: 'http://localhost:5200/catalogues'
+
+demonstration:
+#production:
+  catalogues:
+    url: 'http://localhost:5200/catalogues'
+  
