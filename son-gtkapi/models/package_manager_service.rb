@@ -80,11 +80,12 @@ class PackageManagerService
         # Get the meta-data first
         response = RestClient.get( GtkApi.settings.pkgmgmt['url']+"/#{uuid}", headers)
         filename = JSON.parse(response)['filepath']
+        pp filename
         path = File.join('public','packages',uuid)
         FileUtils.mkdir_p path unless File.exists? path
         
         # Get the package it self
-        package = RestClient.get( GtkApi.settings.pkgmgmt['url']+"/#{uuid}/packages")
+        package = RestClient.get( GtkApi.settings.pkgmgmt['url']+"/#{uuid}/package")
         File.open(filename, 'wb') do |f|
           f.write package
         end
