@@ -20,7 +20,7 @@ require 'addressable/uri'
 
 class GtkSrv < Sinatra::Base
 
-  get '/requests/:uuid' do
+  get '/requests/:uuid/?' do
     logger.debug "GtkPkg: entered GET \"/requests/#{params[:uuid]}\""
     halt 501, "Not yet implemented"    
   end
