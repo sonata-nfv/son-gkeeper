@@ -25,7 +25,7 @@ class Catalogue
       headers = { 'Accept'=> 'application/json', 'Content-Type'=>'application/json'}
       headers[:params] = uuid
       begin
-        response = RestClient.get( Gtkpkg.settings.catalogues['url']+"/#{uuid}", headers) 
+        response = RestClient.get( Gtkpkg.settings.catalogues['url']+"/packages/#{uuid}", headers) 
         JSON.parse response.body
       rescue => e
         e.to_json
@@ -37,7 +37,7 @@ class Catalogue
       headers[:params] = params unless params.empty?
       pp "Catalogue::find(#{params}): headers #{headers}"
       begin
-        response = RestClient.get Gtkpkg.settings.catalogues['url'], headers
+        response = RestClient.get(Gtkpkg.settings.catalogues['url']+'/packages', headers)
         pp "Catalogue#find(#{params}): #{response}"      
         JSON.parse response.body
       rescue => e

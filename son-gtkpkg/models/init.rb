@@ -13,8 +13,8 @@
 ## WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 ## See the License for the specific language governing permissions and
 ## limitations under the License.
+# encoding: utf-8
 require_relative 'package'
-require_relative 'catalogue'
 require_relative 'n_service'
 require_relative 'v_function'
 require_relative 'docker_file'
