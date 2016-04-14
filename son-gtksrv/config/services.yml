@@ -9,7 +9,7 @@ test:
 
 integration:
   catalogues:
-    url: 'http://localhost:5200/catalogues'
+    url: 'http://sp.int.sonata-nfv.eu:4002/catalogues'
 
 qualification:
   catalogues:
