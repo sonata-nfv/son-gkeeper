@@ -13,12 +13,6 @@
 ## See the License for the specific language governing permissions and
 ## limitations under the License.
 # encoding: utf-8
-
-# https://github.com/sinatra/sinatra-recipes/blob/ecc597b3725bb9eb7ac9e30a89f72b0d9b0c9af5/middleware/rack_parser.md
-#use Rack::Parser, :content_types => {
-#  'application/json' => Proc.new { |body| ::MultiJson.decode body }
-#}
-
 root = ::File.dirname(__FILE__)
 require ::File.join(root, 'gtk_srv')
 
