@@ -14,3 +14,4 @@
 ## limitations under the License.
 # encoding: utf-8
 require_relative 'n_service'
+require_relative 'request'

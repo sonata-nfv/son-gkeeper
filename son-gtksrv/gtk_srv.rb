@@ -20,6 +20,7 @@ require 'sinatra/base'
 require 'sinatra/config_file'
 require 'sinatra/cross_origin'
 require 'sinatra/reloader'
+require 'sinatra/activerecord'
 
 # Require the bundler gem and then call Bundler.require to load in all gems listed in Gemfile.
 require 'bundler'
@@ -34,6 +35,7 @@ class GtkSrv < Sinatra::Base
   register Sinatra::ConfigFile
   register Sinatra::CrossOrigin
   register Sinatra::Reloader
+  register Sinatra::ActiveRecordExtension
   
   helpers GtkSrvHelper
   
@@ -46,13 +48,16 @@ class GtkSrv < Sinatra::Base
   config_file File.join(root, 'config', 'services.yml')
   configure do
     set :catalogues, {'url': 'http://localhost:5200/catalogues'}
+    set :database, {adapter: 'postgresql', host: 'localhost', database: 'sonata', encoding: 'utf8', pool: 5}
   end
+  
   configure :integration do
     set :catalogues, {'url': 'http://sp.int.sonata-nfv.eu:4002/catalogues'}
+    set :db, {'url': 'postgres://postgres:sonatatest@jenkins.sonata-nfv.eu/sonata'} # TODO: read this from ENV
+    set :database_file, File.join('config', 'database.yml')
   end
   
 	use Rack::Session::Cookie, key: 'rack.session', domain: 'foo.com', path: '/', expire_after: 2592000, secret: '$0nata'
 	enable :logging
-  puts GtkSrv.catalogues
   enable :cross_origin
 end

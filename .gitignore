@@ -7,3 +7,4 @@
 **/public/packages
 **/Gemfile.lock
 **/.bundle
+son-gtksrv/db/postgres
