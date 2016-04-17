@@ -27,20 +27,23 @@ class GtkApi < Sinatra::Base
     json_error 400, 'No service id specified for the request'
   end
 
-
   # GET many requests
-  get '/requests' do
+  get '/requests/?' do
+
     uri = Addressable::URI.new
+    params['offset'] ||= DEFAULT_OFFSET 
+    params['limit'] ||= DEFAULT_LIMIT
     uri.query_values = params
-    logger.debug "GtkApi: entered GET /requests/#{uri.query}"
+    logger.info "GtkApi: entered GET /requests?#{uri.query}"
     
-    # TODO: deal with offset and limit
-    #offset = params[:offset]
-    #limit = params[:limit]   
-    
-    requests = ServiceManagerService.find(params)
-    logger.debug "GtkApi: leaving GET /requests/#{uri.query} with #{requests}"
-    halt 200, requests.to_json if requests
-    json_error 400, 'No requests were found'
+    requests = JSON.parse(ServiceManagerService.find_requests(params))
+    logger.info "GtkApi: requests=#{requests}"
+    if requests && requests.is_a?(Array)
+      logger.info "GtkApi: leaving GET /requests?#{uri.query} with #{requests}"
+      halt 200, requests.to_json
+    else
+      logger.info "GtkApi: leaving GET /requests?#{uri.query} with 'No requests were found'"
+      json_error 400, 'No requests were found'
+    end
   end
 end

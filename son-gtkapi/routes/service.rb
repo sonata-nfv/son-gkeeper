@@ -18,16 +18,15 @@ require 'addressable/uri'
 class GtkApi < Sinatra::Base
   
   # GET many packages
-  get '/services' do
+  get '/services/?' do
     uri = Addressable::URI.new
     uri.query_values = params
     logger.debug "GtkApi: entered GET /services/#{uri.query}"
     
-    # TODO: deal with offset and limit
-    #offset = params[:offset]
-    #limit = params[:limit]   
+    params[:offset] ||= DEFAULT_OFFSET 
+    params[:limit] ||= DEFAULT_LIMIT
     
-    services = ServiceManagerService.find(params)
+    services = ServiceManagerService.find_services(params)
     logger.debug "GtkApi: leaving GET /services/#{uri.query} with #{services}"
     halt 200, services.to_json if services
   end

@@ -28,7 +28,9 @@ class PackageManagerService
     end
     
     def create(service_uuid)
-      
+      headers = {}
+      request = RestClient.post( GtkApi.settings.pkgmgmt['url'], headers)
+      halt 201, "Request created"
     end
   
     def find_by_uuid(uuid)
