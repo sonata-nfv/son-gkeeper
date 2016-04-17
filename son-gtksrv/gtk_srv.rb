@@ -53,7 +53,7 @@ class GtkSrv < Sinatra::Base
   
   configure :integration do
     set :catalogues, {'url': 'http://sp.int.sonata-nfv.eu:4002/catalogues'}
-    set :db, {'url': 'postgres://postgres:sonatatest@jenkins.sonata-nfv.eu/sonata'} # TODO: read this from ENV
+    set :db, {'url': 'postgres://postgres:sonatatest@jenkins.sonata-nfv.eu:5432/sonata'} # TODO: read this from ENV
     set :database_file, File.join('config', 'database.yml')
   end
   
