@@ -19,8 +19,6 @@
 development:
   catalogues:
     url: 'http://localhost:5200/catalogues'
-  db:
-    url: 'postgres://user:pass@localhost/dbname'
 
 test:
   catalogues:
