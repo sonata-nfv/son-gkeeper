@@ -18,8 +18,14 @@ require 'sinatra/activerecord'
 
 class Request < ActiveRecord::Base
     
-  # RabbitMQ
-  # amqp://guest:guest@jenkins.sonata-nfv.eu:5673/%2F
+  # Establish a connection with a Model (a Table) belong to a database different from default 
+  # establish_connection(ENV['SAR_DB_URL'] || 'postgres://YOURUSERNAME:YOURPASSWORD@HOSTIPADDRESS/sar')
 
+  # set table Name, in case in the existing datbase there is not a 'Rails naming' convention
+  # self.table_name = "notes"
+
+  # validations a la Activerecord 
+  # validates :title, presence: true, length: { minimum: 3 }
+  # validates :body, presence: true
 end
 

@@ -1,4 +1,4 @@
-# encoding: utf-8
+## SONATA - Gatekeeper
 ##
 ## Copyright 2015-2017 Portugal Telecom Inovacao/Altice Labs
 ##
@@ -14,5 +14,10 @@
 ## See the License for the specific language governing permissions and
 ## limitations under the License.
 # encoding: utf-8
-require_relative 'service'
-require_relative 'request'
+class MQServer
+    
+  # RabbitMQ
+  # amqp://guest:guest@jenkins.sonata-nfv.eu:5673/%2F
+
+end
+

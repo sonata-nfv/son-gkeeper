@@ -1,0 +1,10 @@
+development:
+  #adapter: postgresql
+  url: postgresql://localhost/sonata?pool=5
+  encoding: unicode
+  #pool: 10
+  #database: sonata
+  #  port: 5432
+  #host: localhost
+  #  username: <%= ENV['REGISTOS_DATABASE_USER'] %>
+  #  password: <%= ENV['REGISTOS_DATABASE_PASSWORD'] %>
