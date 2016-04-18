@@ -22,7 +22,7 @@ class GtkApi < Sinatra::Base
   
   # POST of packages
   post '/packages/?' do
-    logger.info "GtkApi: entered POST \"/packages/\""
+    logger.info "GtkApi: entered POST /packages/"
     
     unless params[:package].nil?    
       package_file_path = PackageManagerService.save( settings.files, params)

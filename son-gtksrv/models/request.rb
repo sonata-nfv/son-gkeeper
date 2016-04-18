@@ -25,7 +25,6 @@ class Request < ActiveRecord::Base
   # self.table_name = "notes"
 
   # validations a la Activerecord 
-  # validates :title, presence: true, length: { minimum: 3 }
-  # validates :body, presence: true
+  validates :service_uuid, presence: true
 end
 

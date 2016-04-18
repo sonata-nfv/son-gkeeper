@@ -14,10 +14,11 @@
 ## See the License for the specific language governing permissions and
 ## limitations under the License.
 # encoding: utf-8
+require 'bunny'
 class MQServer
-    
-  # RabbitMQ
-  # amqp://guest:guest@jenkins.sonata-nfv.eu:5673/%2F
+  
+  conn = Bunny.new(GtkSrv.mqserver['url'])
+  conn.start
 
 end
 

@@ -17,6 +17,7 @@
 ENV['RACK_ENV'] ||= 'production'
 
 require 'sinatra/base'
+require 'sinatra/json'
 require 'sinatra/config_file'
 require 'sinatra/cross_origin'
 require 'sinatra/reloader'
@@ -48,12 +49,13 @@ class GtkSrv < Sinatra::Base
   config_file File.join(root, 'config', 'services.yml')
   configure do
     set :catalogues, {'url': 'http://localhost:5200/catalogues'}
-    set :database, {adapter: 'postgresql', host: 'localhost', database: 'sonata', encoding: 'utf8', pool: 5}
+    #set :database, {adapter: 'postgresql', host: 'localhost', database: 'sonata', encoding: 'utf8', pool: 5}
   end
   
   configure :integration do
     set :catalogues, {'url': 'http://sp.int.sonata-nfv.eu:4002/catalogues'}
-    set :db, {'url': 'postgres://postgres:sonatatest@jenkins.sonata-nfv.eu:5432/sonata'} # TODO: read this from ENV
+    set :mqserver, {'url': 'amqp://guest:guest@localhost:5673'}
+    #set :db, {'url': 'postgres://postgres:sonatatest@jenkins.sonata-nfv.eu:5432/sonata'} # TODO: read this from ENV
     set :database_file, File.join('config', 'database.yml')
   end
   

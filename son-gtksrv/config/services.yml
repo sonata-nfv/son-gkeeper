@@ -19,21 +19,26 @@
 development:
   catalogues:
     url: 'http://localhost:5200/catalogues'
+  mqserver:
+    url: 'amqp://guest:guest@localhost:5673'
 
 test:
   catalogues:
     url: 'http://localhost:5200/catalogues'
+  mqserver:
+    url: 'amqp://guest:guest@localhost:5673'
 
 integration:
   catalogues:
     url: 'http://sp.int.sonata-nfv.eu:4002/catalogues'
+  mqserver:
+    url: 'amqp://guest:guest@jenkins.sonata-nfv.eu:5673/%2F'
 
 qualification:
   catalogues:
-    url: 'http://localhost:5200/catalogues'
+    url: ''
 
 demonstration:
-#production:
   catalogues:
-    url: 'http://localhost:5200/catalogues'
+    url: ''
   
