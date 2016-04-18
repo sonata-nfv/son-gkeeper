@@ -19,13 +19,13 @@ require 'json'
 require 'pp'
 
 class NService
-    
+  
   def self.find(params)
     headers = { 'Accept'=> 'application/json', 'Content-Type'=>'application/json'}
     headers[:params] = params unless params.empty?
     pp "NService::find(#{params}): headers #{headers}"
     begin
-      response = RestClient.get(GtkSrv.settings.catalogues['url']+'/network-services', headers)
+      response = RestClient.get(GtkSrv.catalogues[:url]+'/network-services', headers)
       pp "NService#find(#{params}): #{response}"      
       JSON.parse response.body
     rescue => e
@@ -37,7 +37,7 @@ class NService
     headers = { 'Accept'=> 'application/json', 'Content-Type'=>'application/json'}
     headers[:params] = uuid
     begin
-      response = RestClient.get( GtkSrv.settings.catalogues['url']+"/network-services/#{uuid}", headers) 
+      response = RestClient.get(GtkSrv.catalogues[:url]+"/network-services/#{uuid}", headers) 
       JSON.parse response.body
     rescue => e
       e.to_json

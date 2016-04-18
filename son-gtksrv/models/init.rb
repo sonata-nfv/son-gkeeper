@@ -1,5 +1,5 @@
 ##
-## Copyright 2015-2017 Portugal Telecom Inovação/Altice Labs
+## Copyright 2015-2017 Portugal Telecom Inovacao/Altice Labs
 ##
 ## Licensed under the Apache License, Version 2.0 (the "License");
 ## you may not use this file except in compliance with the License.
@@ -14,3 +14,5 @@
 ## limitations under the License.
 # encoding: utf-8
 require_relative 'n_service'
+require_relative 'request'
+require_relative 'mq_server'

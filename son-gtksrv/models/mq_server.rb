@@ -1,4 +1,4 @@
-# encoding: utf-8
+## SONATA - Gatekeeper
 ##
 ## Copyright 2015-2017 Portugal Telecom Inovacao/Altice Labs
 ##
@@ -13,16 +13,12 @@
 ## WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 ## See the License for the specific language governing permissions and
 ## limitations under the License.
-class GtkApi < Sinatra::Base
+# encoding: utf-8
+require 'bunny'
+class MQServer
   
-  DEFAULT_OFFSET = "0"
-  DEFAULT_LIMIT = "10"
-  DEFAULT_MAX_LIMIT = "100"
+  #conn = Bunny.new(GtkSrv.mqserver['url'])
+  #conn.start
 
-  # Root
-  get '/' do
-    headers "Content-Type" => "text/plain; charset=utf8"
-    api = open('./config/api.yml')
-    halt 200, {'Location' => '/'}, api.read.to_s
-  end
 end
+

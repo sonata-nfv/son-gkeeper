@@ -25,7 +25,7 @@ class ServiceManagerService
       @implementation = impl
     end
   
-    def find_by_uuid(uuid)
+    def find_services_by_uuid(uuid)
       headers = { 'Accept'=> 'application/json', 'Content-Type'=>'application/json'}
       headers[:params] = uuid
       begin
@@ -35,11 +35,23 @@ class ServiceManagerService
       end
     end
     
-    def find(params)
+    def find_services(params)
       headers = { 'Accept'=> 'application/json', 'Content-Type'=>'application/json'}
       headers[:params] = params unless params.empty?
+      pp "ServiceManagerService#find_services(#{params}): headers=#{headers}"
       begin
         RestClient.get(GtkApi.settings.services['url']+'/services', headers) 
+      rescue => e
+        e.to_json 
+      end
+    end
+
+    def find_requests(params)
+      headers = { 'Accept'=> 'application/json', 'Content-Type'=>'application/json'}
+      headers[:params] = params unless params.empty?
+      pp "ServiceManagerService#find_requests(#{params}): headers=#{headers}"
+      begin
+        RestClient.get(GtkApi.settings.services['url']+'/requests', headers) 
       rescue => e
         e.to_json 
       end
