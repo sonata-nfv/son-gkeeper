@@ -18,37 +18,16 @@ require 'addressable/uri'
 class GtkApi < Sinatra::Base
   
   # GET many packages
-  get '/services' do
+  get '/services/?' do
     uri = Addressable::URI.new
     uri.query_values = params
-    logger.info "GtkApi: entered GET /services/#{uri.query}"
+    logger.debug "GtkApi: entered GET /services/#{uri.query}"
     
-    # TODO: deal with offset and limit
-    #offset = params[:offset]
-    #limit = params[:limit]   
+    params[:offset] ||= DEFAULT_OFFSET 
+    params[:limit] ||= DEFAULT_LIMIT
     
-    services = ServiceManagerService.find(params)
-    logger.info "GtkApi: leaving GET /services/#{uri.query} with #{services}"
+    services = ServiceManagerService.find_services(params)
+    logger.debug "GtkApi: leaving GET /services/#{uri.query} with #{services}"
     halt 200, services.to_json if services
-  end
-  
-  # GET a specific service
-  get '/services/:uuid/?' do
-    unless params[:uuid].nil?
-      logger.info "GtkApi: entered GET /services/#{params[:uuid]}"
-      json_error 400, 'Invalid Package UUID' unless valid? params['uuid']
-      
-      package_file_path = ServiceManagerService.find_by_uuid( params[:uuid])
-      logger.info package_file_path
-      if package_file_path
-        logger.info "GtkApi: leaving GET /packages/#{params[:uuid]} with package #{package_file_path}"
-        send_file package_file_path
-      else
-        logger.info "GtkApi: leaving GET /packages/#{params[:uuid]} with \"No package with UUID=#{params[:uuid]} was found\""
-        json_error 400, "No package with UUID=#{params[:uuid]} was found"
-      end
-    end
-    logger.info "GtkApi: leaving GET /packages/#{params[:uuid]} with \"No package UUID specified\""
-    json_error 400, 'No package UUID specified'
   end
 end

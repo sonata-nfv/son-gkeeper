@@ -3,7 +3,7 @@ development:
   pkgmgmt:
     url: 'http://localhost:5100/packages'
   services:
-    url: 'http://localhost:5300/'
+    url: 'http://localhost:5300'
   licenses: ''
   users: ''
   kpis: ''
@@ -13,7 +13,7 @@ test:
   pkgmgmt:
     url: 'http://localhost:5100/packages'
   services:
-    url: 'http://localhost:5300/'
+    url: 'http://localhost:5300'
   licenses: ''
   users: ''
   kpis: ''
@@ -23,7 +23,7 @@ integration:
   pkgmgmt:
     url: 'http://localhost:5100/packages'
   services:
-    url: 'http://localhost:5300/'
+    url: 'http://localhost:5300'
   licenses: ''
   users: ''
   kpis: ''
@@ -33,7 +33,7 @@ qualification:
   pkgmgmt:
     url: 'http://localhost:5100/packages'
   services:
-    url: 'http://localhost:5300/'
+    url: 'http://localhost:5300'
   licenses: ''
   users: ''
   kpis: ''
@@ -44,7 +44,7 @@ demonstration:
   pkgmgmt:
     url: 'http://localhost:5100/packages'
   services:
-    url: 'http://localhost:5300/'
+    url: 'http://localhost:5300'
   licenses: ''
   users: ''
   kpis: ''

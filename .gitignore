@@ -5,3 +5,6 @@
 **/vendor
 **/public/files
 **/public/packages
+**/Gemfile.lock
+**/.bundle
+son-gtksrv/db/postgres

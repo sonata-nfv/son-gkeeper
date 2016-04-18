@@ -1,4 +1,4 @@
-# encoding: utf-8
+## SONATA - Gatekeeper
 ##
 ## Copyright 2015-2017 Portugal Telecom Inovacao/Altice Labs
 ##
@@ -13,16 +13,19 @@
 ## WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 ## See the License for the specific language governing permissions and
 ## limitations under the License.
-class GtkApi < Sinatra::Base
-  
-  DEFAULT_OFFSET = "0"
-  DEFAULT_LIMIT = "10"
-  DEFAULT_MAX_LIMIT = "100"
+# encoding: utf-8
+require 'sinatra/activerecord'
 
-  # Root
-  get '/' do
-    headers "Content-Type" => "text/plain; charset=utf8"
-    api = open('./config/api.yml')
-    halt 200, {'Location' => '/'}, api.read.to_s
-  end
+class Request < ActiveRecord::Base
+    
+  # Establish a connection with a Model (a Table) belong to a database different from default 
+  # establish_connection(ENV['SAR_DB_URL'] || 'postgres://YOURUSERNAME:YOURPASSWORD@HOSTIPADDRESS/sar')
+
+  # set table Name, in case in the existing datbase there is not a 'Rails naming' convention
+  # self.table_name = "notes"
+
+  # validations a la Activerecord 
+  # validates :title, presence: true, length: { minimum: 3 }
+  # validates :body, presence: true
 end
+

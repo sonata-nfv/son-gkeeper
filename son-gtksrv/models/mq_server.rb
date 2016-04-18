@@ -1,4 +1,4 @@
-# encoding: utf-8
+## SONATA - Gatekeeper
 ##
 ## Copyright 2015-2017 Portugal Telecom Inovacao/Altice Labs
 ##
@@ -13,16 +13,11 @@
 ## WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 ## See the License for the specific language governing permissions and
 ## limitations under the License.
-class GtkApi < Sinatra::Base
-  
-  DEFAULT_OFFSET = "0"
-  DEFAULT_LIMIT = "10"
-  DEFAULT_MAX_LIMIT = "100"
+# encoding: utf-8
+class MQServer
+    
+  # RabbitMQ
+  # amqp://guest:guest@jenkins.sonata-nfv.eu:5673/%2F
 
-  # Root
-  get '/' do
-    headers "Content-Type" => "text/plain; charset=utf8"
-    api = open('./config/api.yml')
-    halt 200, {'Location' => '/'}, api.read.to_s
-  end
 end
+

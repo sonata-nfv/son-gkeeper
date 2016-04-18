@@ -17,10 +17,6 @@ require 'addressable/uri'
 
 class GtkApi < Sinatra::Base
 
-  DEFAULT_OFFSET = 0
-  DEFAULT_LIMIT = 5
-  DEFAULT_MAX_LIMIT = 100  
-
   # buffer = StringIO.new
   # buffer.set_encoding('ASCII-8BIT')
   
@@ -98,9 +94,8 @@ class GtkApi < Sinatra::Base
     uri.query_values = params
     logger.debug "GtkApi: entered GET /packages?#{uri.query}"
     
-    # TODO: deal with offset and limit
-    #offset = params[:offset]
-    #limit = params[:limit]   
+    @offset ||= params[:offset] ||= DEFAULT_OFFSET
+    @limit ||= params[:limit] ||= DEFAULT_LIMIT
     
     packages = PackageManagerService.find(params)
     logger.debug "GtkApi: leaving GET /packages?#{uri.query} with #{packages}"

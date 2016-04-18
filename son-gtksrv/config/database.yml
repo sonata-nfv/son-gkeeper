@@ -1,0 +1,17 @@
+development:
+  url: postgresql://localhost/sonata?pool=5
+  encoding: unicode
+
+test:
+  url: postgresql://localhost/sonata?pool=5
+  encoding: unicode
+  
+integration:
+  adapter: postgresql
+  encoding: unicode
+  pool: 10
+  database: sonata
+  port: 5432
+  host: jenkins.sonata-nfv.eu
+  username: postgres #<%= ENV['POSTGRES_USER'] %>
+  password: sonatatest #<%= ENV['POSTGRES_PASSWORD'] %>
