@@ -7,8 +7,4 @@ COPY . /app
 EXPOSE 5300
 WORKDIR /app
 ENV PORT 5300
-FROM library/postgres
-ENV POSTGRES_USER postgres
-ENV POSTGRES_PASSWORD sonatatest
-ENV POSTGRES_DB sonata
 CMD ["foreman", "start"]
