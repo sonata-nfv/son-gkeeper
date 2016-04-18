@@ -11,5 +11,6 @@ FROM library/postgres
 ENV POSTGRES_USER postgres
 ENV POSTGRES_PASSWORD sonatatest
 ENV POSTGRES_DB sonata
-RUN bundle exec rake db:migrate
+RUN rake db:create
+RUN rake db:migrate
 CMD ["foreman", "start"]
