@@ -17,8 +17,8 @@
 require 'bunny'
 class MQServer
   
-  conn = Bunny.new(GtkSrv.mqserver['url'])
-  conn.start
+  #conn = Bunny.new(GtkSrv.mqserver['url'])
+  #conn.start
 
 end
 
