@@ -24,7 +24,7 @@ class Request < ActiveRecord::Base
   # set table Name, in case in the existing datbase there is not a 'Rails naming' convention
   # self.table_name = "notes"
 
-  # validations a la Activerecord 
+  # validations a la Activerecord   
   validates :service_uuid, presence: true
 end
 

@@ -24,7 +24,7 @@ class GtkSrv < Sinatra::Base
   get '/requests/:uuid/?' do
     logger.debug "GtkSrv: entered GET /requests/#{params[:uuid]}"
     request = Request.find(params[:uuid])
-    halt 206, json request if request
+    halt 206, request.to_json if request
     json_error 404, "GtkSrv: Request #{params[:uuid]} not found"    
   end
 
@@ -46,7 +46,7 @@ class GtkSrv < Sinatra::Base
     
     requests = Request.where(keyed_params).limit(params['limit'].to_i).offset(params['offset'].to_i)
     logger.info "GtkSrv: leaving GET /requests?#{uri.query} with #{requests.inspect}"
-    halt 200, json requests if requests
+    halt 200, requests.to_json if requests
     json_error 404, 'GtkSrv: No requests were found'
   end
 
