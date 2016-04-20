@@ -40,7 +40,9 @@ class ServiceManagerService
       headers[:params] = params unless params.empty?
       pp "ServiceManagerService#find_services(#{params}): headers=#{headers}"
       begin
-        RestClient.get(GtkApi.settings.services['url']+'/services', headers) 
+        response = RestClient.get(GtkApi.settings.services['url']+'/services', headers) 
+        pp "ServiceManagerService#find_services(#{params}): response=#{response}"
+        JSON.parse response.body
       rescue => e
         e.to_json 
       end
