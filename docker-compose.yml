@@ -1,45 +1,50 @@
-son-gtkapi:
-  image: registry.sonata-nfv.eu:5000/son-gtkapi
-  links:
-   - son-gtkpkg
-   - son-gtksrv
-  ports:
-    - "32000:5000"
-  restart: always
+version: '2'
+services:
+  son-gtkapi:
+    image: registry.sonata-nfv.eu:5000/son-gtkapi
+    links:
+     - son-gtkpkg
+     - son-gtksrv
+    ports:
+      - "32001:5000"
+    restart: always
 
-son-gtkpkg:
-  image: registry.sonata-nfv.eu:5000/son-gtkpkg
-  ports:
-    - "5100"
-  restart: always
+  son-gtkpkg:
+    image: registry.sonata-nfv.eu:5000/son-gtkpkg
+    ports:
+      - "5100"
+    restart: always
 
-son-gtksrv:
-  image: registry.sonata-nfv.eu:5000/son-gtksrv
-  links:
-   - broker
-   - postgres
-  ports:
-    - "5300"
-  restart: always
-  environment:
-   - POSTGRES_PASSWORD=sonata
-   - POSTGRES_USER=sonatatest
-   - RACK_ENV=integration
-   - DATABASE_HOST=postgres
-   - DATABASE_PORT=5432
-   - MQSERVER=amqp://guest:guest@broker:5672
+  son-gtksrv:
+    image: registry.sonata-nfv.eu:5000/son-gtksrv
+    links:
+     - broker
+     - postgres
+    ports:
+      - "5300"
+    restart: always
+    environment:
+     - POSTGRES_PASSWORD=sonata
+     - POSTGRES_USER=sonatatest
+     - RACK_ENV=integration
+     - DATABASE_HOST=postgres
+     - DATABASE_PORT=5432
+     - MQSERVER=amqp://guest:guest@broker:5672
+    depends_on:
+     - postgres
 
-postgres:
-  image: postgres
-  ports:
-   - "5432"
-  restart: always
-  environment:
-   - POSTGRES_PASSWORD=sonata
-   - POSTGRES_USER=sonatatest
+  postgres:
+    image: ntboes/postgres-uuid
+    ports:
+     - "5432"
+    restart: always
+    environment:
+     - POSTGRES_PASSWORD=sonata
+     - POSTGRES_USER=sonatatest
+     - POSTGRES_DB=gatekeeper
 
-broker:
-  image: rabbitmq:3
-  ports:
-   - "5672"
-  restart: always
+  broker:
+    image: rabbitmq:3
+    ports:
+     - "5672"
+    restart: always
