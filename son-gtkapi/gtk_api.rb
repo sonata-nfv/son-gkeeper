@@ -13,7 +13,7 @@
 ## WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 ## See the License for the specific language governing permissions and
 ## limitations under the License.
-#
+# encoding: utf-8
 # Set environment
 ENV['RACK_ENV'] ||= 'production'
 
@@ -53,6 +53,7 @@ class GtkApi < Sinatra::Base
   enable :cross_origin
 
 	Zip.setup do |c|
+    c.unicode_names = true
 		c.on_exists_proc = true
 		c.continue_on_exists_proc = true
 	end

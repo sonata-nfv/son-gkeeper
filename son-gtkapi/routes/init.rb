@@ -16,3 +16,5 @@
 require_relative 'root'
 require_relative 'api_doc'
 require_relative 'package'
+require_relative 'service'
+require_relative 'request'

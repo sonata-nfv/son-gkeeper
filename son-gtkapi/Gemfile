@@ -1,13 +1,15 @@
 source 'https://rubygems.org'
 
+#LANG='en_US.UTF-8'
+#LC_ALL='en_US.UTF-8'
+
 gem 'rake'
 gem 'sinatra', '~> 1.4.3', require: 'sinatra/base'
 gem 'sinatra-contrib', '~> 1.4.1', require: false
 gem 'pry'
-#gem 'pry-byebug'
 gem 'puma'
 gem 'rest-client'
-gem 'rack-parser', :require => 'rack/parser'
+gem 'rack-parser', require: 'rack/parser'
 gem 'sinatra-cross_origin'
 gem 'ci_reporter_rspec'
 gem 'rubyzip', '>= 1.0.0'

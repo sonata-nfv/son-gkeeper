@@ -17,16 +17,12 @@ require 'addressable/uri'
 
 class GtkApi < Sinatra::Base
 
-  DEFAULT_OFFSET = 0
-  DEFAULT_LIMIT = 5
-  DEFAULT_MAX_LIMIT = 100  
-
   # buffer = StringIO.new
   # buffer.set_encoding('ASCII-8BIT')
   
   # POST of packages
   post '/packages/?' do
-    logger.info "GtkApi: entered POST \"/packages/\""
+    logger.info "GtkApi: entered POST /packages/"
     
     unless params[:package].nil?    
       package_file_path = PackageManagerService.save( settings.files, params)
@@ -75,20 +71,20 @@ class GtkApi < Sinatra::Base
   # GET a specific package
   get '/packages/:uuid/?' do
     unless params[:uuid].nil?
-      logger.info "GtkApi: entered GET \"/packages/#{params[:uuid]}\""
+      logger.debug "GtkApi: entered GET \"/packages/#{params[:uuid]}\""
       json_error 400, 'Invalid Package UUID' unless valid? params['uuid']
       
       package_file_path = PackageManagerService.find_by_uuid( params[:uuid])
-      logger.info package_file_path
+      logger.debug "GtkApi: package_file_path #{package_file_path}"
       if package_file_path
-        logger.info "GtkApi: leaving GET /packages/#{params[:uuid]} with package #{package_file_path}"
+        logger.debug "GtkApi: leaving GET /packages/#{params[:uuid]} with package #{package_file_path}"
         send_file package_file_path
       else
-        logger.info "GtkApi: leaving GET \"/packages/#{params[:uuid]}\" with \"No package with UUID=#{params[:uuid]} was found\""
+        logger.debug "GtkApi: leaving GET \"/packages/#{params[:uuid]}\" with \"No package with UUID=#{params[:uuid]} was found\""
         json_error 400, "No package with UUID=#{params[:uuid]} was found"
       end
     end
-    logger.info "GtkApi: leaving GET \"/packages/#{params[:uuid]}\" with \"No package UUID specified\""
+    logger.debug "GtkApi: leaving GET \"/packages/#{params[:uuid]}\" with \"No package UUID specified\""
     json_error 400, 'No package UUID specified'
   end
   
@@ -96,23 +92,21 @@ class GtkApi < Sinatra::Base
   get '/packages' do
     uri = Addressable::URI.new
     uri.query_values = params
-    logger.info "GtkApi: entered GET \"/packages/#{uri.query}\""
+    logger.debug "GtkApi: entered GET /packages?#{uri.query}"
     
-    # TODO: deal with offset and limit
-    #offset = params[:offset]
-    #limit = params[:limit]   
+    @offset ||= params[:offset] ||= DEFAULT_OFFSET
+    @limit ||= params[:limit] ||= DEFAULT_LIMIT
     
-    # TODO: index is not working
-    packages = PackageManagerService.find( params)
-    logger.info "GtkApi: leaving GET \"/packages/#{uri.query}\" with #{packages}"
+    packages = PackageManagerService.find(params)
+    logger.debug "GtkApi: leaving GET /packages?#{uri.query} with #{packages}"
     halt 200, packages if packages
   end
   
   # PUT 
   put '/packages/?' do
     unless params[:uuid].nil?
-      logger.info "GtkApi: entered PUT \"/packages/#{params[:uuid]}\""
-      logger.info "GtkApi: leaving PUT \"/packages/#{params[:uuid]}\" with \"Not implemented yet\""
+      logger.info "GtkApi: entered PUT /packages/#{params[:uuid]}"
+      logger.info "GtkApi: leaving PUT /packages/#{params[:uuid]} with \"Not implemented yet\""
     end
     json_error 501, "Not implemented yet"
   end

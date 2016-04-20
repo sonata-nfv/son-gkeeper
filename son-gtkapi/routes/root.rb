@@ -15,6 +15,10 @@
 ## limitations under the License.
 class GtkApi < Sinatra::Base
   
+  DEFAULT_OFFSET = "0"
+  DEFAULT_LIMIT = "10"
+  DEFAULT_MAX_LIMIT = "100"
+
   # Root
   get '/' do
     headers "Content-Type" => "text/plain; charset=utf8"

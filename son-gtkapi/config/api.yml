@@ -119,7 +119,7 @@ paths:
         '200':
           description: List of requested services has been returned.
         '404':
-          description: Specified service wasn't found'.
+          description: Specified service was not found.
   /requests:
     get:
       summary: Get the list of instantions requests made.
@@ -151,6 +151,8 @@ paths:
       responses:
         '200':
           description: Instantiations requests list was returned.
+        '404':
+          description: No request with the provided UUID was found.
     post:
       summary: Request the instantion of a given service.
       description: ''
@@ -169,6 +171,8 @@ paths:
       responses:
         '200':
           description: Instantiations requests list was returned.
+        '404':
+          description: No service with the provided UUID was found.
 definitions:
   ServicesInstance:
     required:

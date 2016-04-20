@@ -2,9 +2,9 @@ require 'rspec/core/rake_task'
 require 'ci/reporter/rake/rspec'
 require './main'
 
-task :default => ['ci:all']
+task default: ['ci:all']
 
-desc "Run Unit Tests"
+desc 'Run Unit Tests'
 RSpec::Core::RakeTask.new :specs do |task|
   task.pattern = Dir['spec/**/*_spec.rb']
 end
@@ -12,5 +12,5 @@ end
 # use like in
 #   rake ci:all
 namespace :ci do
-  task :all => ['ci:setup:rspec', 'specs']
+  task all: ['ci:setup:rspec', 'specs']
 end
