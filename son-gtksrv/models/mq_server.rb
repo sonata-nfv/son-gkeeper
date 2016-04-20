@@ -19,6 +19,8 @@ class MQServer
   
   #conn = Bunny.new(GtkSrv.mqserver['url'])
   #conn.start
-
+  # include correlation ids (a UUID)
+  # channel: 'son-kernel'
+  # topic: 'service.instances.create'
 end
 

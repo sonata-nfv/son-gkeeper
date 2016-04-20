@@ -22,15 +22,13 @@ class GtkApi < Sinatra::Base
   
   # POST of packages
   post '/packages/?' do
-    logger.info "GtkApi: entered POST /packages/"
+    logger.info "GtkApi: entered POST /packages with params = #{params}"
     
-    unless params[:package].nil?    
-      package_file_path = PackageManagerService.save( settings.files, params)
-      if package_file_path
-        logger.info "package_file_path: #{package_file_path}"
-        package = PackageManagerService.onboard2( settings.pkgmgmt['url'], package_file_path)
+    unless params[:package].nil?
+      if params[:package][:tempfile]
+        package = PackageManagerService.create(params)
         if package
-          if package.is_a?(Hash) && package[:uuid]
+          if package.is_a?(Hash) && (package[:uuid] || package['uuid'])
             logger.info "package: #{package}"
             headers = {'location'=> "#{settings.pkgmgmt['url']}/#{package[:uuid]}", 'Content-Type'=> 'application/json'}
             halt 201, headers, package.to_json
@@ -41,7 +39,7 @@ class GtkApi < Sinatra::Base
           json_error 400, 'Package not created'
         end
       else
-        json_error 400, 'Package with invalid content'
+        json_error 400, 'Temp file name not provided'
       end
     end
     json_error 400, 'No package file specified'
