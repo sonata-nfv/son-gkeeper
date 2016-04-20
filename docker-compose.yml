@@ -37,7 +37,6 @@ services:
     image: ntboes/postgres-uuid
     ports:
      - "5432"
-    restart: always
     environment:
      - POSTGRES_PASSWORD=sonata
      - POSTGRES_USER=sonatatest
@@ -47,4 +46,3 @@ services:
     image: rabbitmq:3
     ports:
      - "5672"
-    restart: always
