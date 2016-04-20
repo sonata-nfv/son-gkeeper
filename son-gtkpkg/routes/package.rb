@@ -38,40 +38,17 @@ class Gtkpkg < Sinatra::Base
   #end
 
   post '/packages/?' do
-    logger.info "GtkPkg: entered POST \"/packages\""
+    logger.info "GtkPkg: entered POST /packages with params = #{params}"
     
-    #if params['package']['filename']
-    #  filename = params['package']['filename']
-    #elsif params['package'][:filename]
-    #  filename = params['package'][:filename]
-      #else
-    #  json_error 400, 'File name not specified' unless filename
-      #end
-    
-    #extract_dir = Package.save( filename, request.body.read)
-    #Package.extract( extract_dir, filename)
-
-    # Validate Manifest dir and file existance
-    #json_error 400, 'META-INF directory not found' unless File.directory?(extract_dir + '/META-INF')
-    #json_error 400, 'MANIFEST.MF file not found' unless File.file?(extract_dir + '/META-INF/MANIFEST.MF')
-    # Validate Manifest fields
-    #validate_manifest(YAML.load_file(extract_dir + '/META-INF/MANIFEST.MF'), files: [filename, extract_dir])
-
-    #remove_leftover([filename, extract_dir])
-
-    #TODO: Send package to catalog
-    body =   { 
-      'uuid'=> "dcfb1a6c-770b-460b-bb11-3aa863f84fa0", 
-      'descriptor_version' => "1.0", 'package_group' => "eu.sonata-nfv.package", 
-      'package_name' => "simplest-example", 'package_version' => "0.1", 
-      'package_maintainer' => "Michael Bredel, NEC Labs Europe",
-      'created_at'=> Time.now.utc,
-      'updated_at'=> Time.now.utc
-    }
-    logger.info "GtkPkg: leaving POST \"/packages\" with package #{body.to_json}"
-    
-    # TODO: URL should be absolute
-    halt 201, {'Location' => "/packages/#{body['uuid']}"}, body.to_json
+    #package = Package.new(io: File.open(params[:package][:tempfile], 'rb').read).unbuild()
+    package = Package.new(io: params[:package][:tempfile][:tempfile]).unbuild()
+    if package && package['uuid']
+      logger.info "GtkPkg: leaving POST /packages with package #{package.to_json}"
+      halt 201, {'Location' => "/packages/#{package['uuid']}"}, package.to_json
+    else
+      logger.info "GtkPkg: leaving POST /packages with 'No package created'"
+      json_error 400, 'No package created'
+    end
   end
   
   get '/packages/:uuid' do
@@ -80,7 +57,7 @@ class Gtkpkg < Sinatra::Base
       package = Package.find_by_uuid( params[:uuid])
       if package && package.is_a?(Hash) && package['uuid']
         logger.info "GtkPkg: in GET /packages/#{params[:uuid]}, found package #{package}"
-        response = Package.new(package).build()    
+        response = Package.new(descriptor: package).build()    
         if response
           logger.info "GtkPkg: leaving GET /packages/#{params[:uuid]} with package found and sent in file .../#{package['package_name']}.son"
           halt 200, { 'filepath'=>File.join('public', 'packages', params[:uuid], package['package_name']+'.son')}.to_json
@@ -120,7 +97,7 @@ class Gtkpkg < Sinatra::Base
       if packages.size == 1
         logger.debug "GtkPkg: in GET /packages/#{uri.query}, found package #{packages[0]}"
         logger.debug "GtkPkg: in GET /packages/#{uri.query}, generating package"
-        response = Package.new(packages[0]).build()
+        response = Package.new(descriptor: packages[0]).build()
         if response
           logger.debug "GtkPkg: leaving GET /packages/#{uri.query} with \"Package #{packages[0]['uuid']} found and sent in file \"#{packages[0]['package_name']}\"\""
           send_file response #File.join(response, packages[0]['package_name'])

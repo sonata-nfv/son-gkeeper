@@ -21,9 +21,9 @@ test:
 
 integration:
   pkgmgmt:
-    url: 'http://localhost:5100/packages'
+    url: 'http://son-gtkpkg:5100/packages'
   services:
-    url: 'http://localhost:5300'
+    url: 'http://son-gtksrv:5300'
   licenses: ''
   users: ''
   kpis: ''

@@ -27,11 +27,14 @@ class PackageManagerService
       @implementation = impl
     end
     
-    def create(service_uuid)
-      headers = {}
-      request = RestClient.post( GtkApi.settings.pkgmgmt['url'], headers)
-      halt 201, "Request created"
-    end
+    def create(params)
+      pp "PackageManagerService#create: params=#{params}"
+      tmpfile = params[:package][:tempfile]
+      response = RestClient.post(GtkApi.settings.pkgmgmt['url'], params) #:file => File.open(tmpfile, 'rb').read)
+      pp "PackageManagerService#create: response.class=#{response.class}"
+      pp "PackageManagerService#create: response=#{response}"
+      JSON.parse response
+    end    
   
     def find_by_uuid(uuid)
       headers = { 'Accept'=> '*/*', 'Content-Type'=>'application/json'}
