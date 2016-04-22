@@ -58,5 +58,30 @@ class ServiceManagerService
         e.to_json 
       end
     end
+    
+    def find_requests_uuid(uuid)
+      headers = { 'Accept'=> 'application/json', 'Content-Type'=>'application/json'}
+      headers[:params] = uuid
+      begin
+        response = RestClient.get( GtkApi.settings.services['url']+"/requests/#{uuid}", headers)
+      rescue => e
+        e.to_json
+      end
+    end
+    
+    def create(params)
+      pp "ServiceManagerService#create(#{params})"
+      headers = { 'Accept'=> 'application/json', 'Content-Type'=>'application/json'}
+      begin
+        response = RestClient.post(GtkApi.settings.services['url']+'/requests', { service_uuid: params[:service_uuid]}, headers) 
+        pp "ServiceManagerService#create: response="+response
+        parsed_response = JSON.parse(response)
+        pp "ServiceManagerService#create: parsed_response="+parsed_response
+        parsed_response
+      rescue => e
+        pp "ServiceManagerService#create: e=#{e}"
+        e
+      end      
+    end
   end
 end
