@@ -23,24 +23,25 @@ class VFunction
     FileUtils.mkdir @folder unless File.exists? @folder
   end
   
-  # {"descriptor_version"=>"vnfd-schema-01", "vendor"=>"eu.sonata-nfv", "name"=>"firewall-vnf", "version"=>"0.2", "author"=>"Steven van Rossem, iMinds", "description"=>"\"A first firewall VNF descriptor\"\n", "virtual_deployment_units"=>[{"id"=>"vdu01", "vm_image"=>"file:///docker_files/firewall/Dockerfile", "vm_image_format"=>"docker", "resource_requirements"=>{"cpu"=>{"vcpus"=>1}, "memory"=>{"size"=>2, "size_unit"=>"GB"}, "storage"=>{"size"=>10, "size_unit"=>"GB"}}, "connection_points"=>[{"id"=>"vdu01:cp01", "type"=>"interface"}, {"id"=>"vdu01:cp02", "type"=>"interface"}, {"id"=>"vdu01:cp03", "type"=>"interface"}]}], "virtual_links"=>[{"id"=>"mgmt", "connectivity_type"=>"E-LAN", "connection_points_reference"=>["vdu01:cp01", "vnf:mgmt"]}, {"id"=>"input", "connectivity_type"=>"E-Line", "connection_points_reference"=>["vdu01:cp02", "vnf:input"]}, {"id"=>"output", "connectivity_type"=>"E-Line", "connection_points_reference"=>["vdu01:cp03", "vnf:output"]}], "connection_points"=>[{"id"=>"vnf:mgmt", "type"=>"interface"}, {"id"=>"vnf:input", "type"=>"interface"}, {"id"=>"vnf:output", "type"=>"interface"}]}
   def build(content)
     pp "VFunction.build(#{content})"
     filename = content['name'].split('/')[-1]
     File.open(File.join( @folder, filename), 'w') {|f| YAML.dump(content, f) }
   end
   
-  def unbuild(filename)
-    pp "VFunction.unbuild()"
-    File.open(File.join( @folder, filename), 'r') {|f| YAML.load_file(filename, f) }
+  def self.unbuild(path)
+    pp "VFunction.unbuild("+path+")"
+    content = YAML.load_file path
+    pp "VFunction.unbuild: content = #{content}"
+    content
   end
   
-  def store_to_catalogue(vnfd)
+  def self.store_to_catalogue(vnfd)
     pp "VFunction.store(#{vnfd})"
     headers = {'Accept'=>'application/json', 'Content-Type'=>'application/json'}
     response = RestClient.post( Gtkpkg.settings.catalogues['url']+"/vnfs", :params => vnfd.to_json, :headers=>headers)     
     pp "VFunction.store: #{response}"
-    JSON.parse response.body
+    JSON.parse response
   end
   
   def load_from_catalogue(uuid)
