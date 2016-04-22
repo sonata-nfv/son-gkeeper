@@ -1,11 +1,21 @@
-development:
-  url: postgresql://localhost/sonata?pool=5
+default: &default
+  adapter: postgresql
   encoding: unicode
+  pool: 5
+
+development:
+  <<: *default
+  database: sonata
+#  url: postgresql://localhost/sonata?pool=5
 
 test:
-  url: postgresql://localhost/sonata?pool=5
+  adapter: postgresql
   encoding: unicode
-  
+  pool: 5
+  host: 'localhost'
+  port: 5432
+  database: 'sonata_test'
+
 integration:
   #url: postgresql://postgres:sonatatest@sp.int.sonata-nfv.eu:5432/gatekeeper?pool=10
   adapter: postgresql
