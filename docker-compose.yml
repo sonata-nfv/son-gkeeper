@@ -5,6 +5,8 @@ services:
     links:
      - son-gtkpkg
      - son-gtksrv
+    environment:
+     - RACK_ENV=integration
     ports:
       - "32001:5000"
     restart: always

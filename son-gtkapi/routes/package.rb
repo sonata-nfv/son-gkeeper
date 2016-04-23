@@ -45,27 +45,6 @@ class GtkApi < Sinatra::Base
     json_error 400, 'No package file specified'
   end
 
-  #post '/uploads' do
-  #  puts "Params: " + params.inspect
-  #  puts "Headers: " + headers.inspect
-  #  if params[:file]
-  #    filename = params[:file][:filename]
-  #    file = params[:file][:tempfile]
-
-  #    puts "Saving file on '/files/p1'..."
-  #    File.open(File.join('files/p1', filename), 'wb') do |f|
-  #      f.write file.read
-  #    end
-
-  #    puts "Posting file..."
-  #    response = RestClient.post('localhost:5678/uploads', :file => File.new(File.join('files/p1', filename,), 'rb'))
-  #    puts "Headers = #{response.headers}"
-  #    puts 'Upload successful'
-  #  else
-  #    puts 'You have to choose a file'
-  #  end
-  #end
-
   # GET a specific package
   get '/packages/:uuid/?' do
     unless params[:uuid].nil?
@@ -79,7 +58,7 @@ class GtkApi < Sinatra::Base
         send_file package_file_path
       else
         logger.debug "GtkApi: leaving GET \"/packages/#{params[:uuid]}\" with \"No package with UUID=#{params[:uuid]} was found\""
-        json_error 400, "No package with UUID=#{params[:uuid]} was found"
+        json_error 404, "No package with UUID=#{params[:uuid]} was found"
       end
     end
     logger.debug "GtkApi: leaving GET \"/packages/#{params[:uuid]}\" with \"No package UUID specified\""
