@@ -20,6 +20,7 @@ ENV['RACK_ENV'] ||= 'production'
 require 'sinatra/base'
 require 'sinatra/config_file'
 require 'sinatra/cross_origin'
+require 'sinatra/logger'
 require 'zip'
 
 # Require the bundler gem and then call Bundler.require to load in all gems listed in Gemfile.
@@ -33,6 +34,8 @@ require_relative 'models/init'
 class Gtkpkg < Sinatra::Base
   register Sinatra::ConfigFile
   register Sinatra::CrossOrigin
+  register Sinatra::Logger
+  set :logger_level, :debug # or :fatal, :error, :warn, :info
   
   helpers GtkPkgHelpers
   
@@ -60,4 +63,5 @@ class Gtkpkg < Sinatra::Base
 	  c.continue_on_exists_proc = true
   end
   #mime_type :son, 'application/octet-stream'
+  
 end
