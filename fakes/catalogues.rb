@@ -1,6 +1,7 @@
 require 'sinatra'
 require 'json'
 
+$functions = []
 $packages = [
   {
     "uuid"=> "53676529-b277-4369-8ff9-8668310eab7d", 
@@ -77,6 +78,9 @@ end
 
 get '/catalogues/packages' do
   content_type :json
+  ['offset', 'limit'].each do |p|
+    params.delete(p) 
+  end
   unless params.empty?
     puts "With params #{params}"
     selected = []
@@ -110,4 +114,32 @@ get '/catalogues/network-services/?' do
     puts "With no params"
     $services.to_json
   end
+end
+
+post '/catalogues/vnfs' do
+  puts params
+#  function = {}
+#  function['uuid']=SecureRandom.uuid
+#  function['created_at']= Time.now.utc.to_s
+#  function['updated_at']=Time.new.utc.to_s
+#  puts function
+#  puts params['params']
+#  f = function.merge params['params']
+#  puts "Fake Catalogue POST /catalogues/vnfs with function=#{f}"
+  $functions << params['params']
+  params['params'].to_json
+end
+
+post '/catalogues/network-services' do
+  puts params
+  service = params.merge({ 'uuid'=>SecureRandom.uuid, 'created_at'=> Time.now.utc.to_s, 'updated_at'=>Time.new.utc.to_s})
+  $services << service #params['params']
+  service.to_json #params['params']
+end
+
+post '/catalogues/packages' do
+  puts params
+  package = params.merge({ 'uuid'=>SecureRandom.uuid, 'created_at'=> Time.now.utc.to_s, 'updated_at'=>Time.new.utc.to_s})
+  $packages << package
+  package.to_json
 end

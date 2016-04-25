@@ -17,7 +17,7 @@ require 'addressable/uri'
 
 class GtkApi < Sinatra::Base
   
-  # GET many packages
+  # GET many services
   get '/services/?' do
     uri = Addressable::URI.new
     uri.query_values = params

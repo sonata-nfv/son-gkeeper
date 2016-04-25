@@ -96,23 +96,33 @@ class Package
   def unbuild()
     files = unzip_it @io
     @descriptor ={}
+    @services = []
+    @functions = []
     files.each do |file|
       splited = file.split('/')
       file_name = splited[-1]
-      path = splited.first splited.size-1
-      pp "Package.unbuild: path=#{path} (file_name = #{file_name})"
-      if path =~ /service_descriptors/
-        service = NService.new(path)
-        pp "Package.unbuild: service=#{service}"
-        @descriptor << service.unbuild(file_name)
-        pp "Package.unbuild: @descriptor=#{@descriptor}" 
-      end
-      @descriptor << VFunction.new(path).unbuild(file_name) if path =~ /function_descriptors/
+      path = File.join(splited.first splited.size-1)
+      pp "Package.unbuild: path=#{path}, file_name = #{file_name}"
+      @descriptor = YAML.load_file(file) if path =~ /META-INF/
+      @services << NService.unbuild(file) if path =~ /service_descriptors/      
+      @functions << VFunction.unbuild(file) if path =~ /function_descriptors/
       # DockerFile.new(@input_folder).unbuild(path) if file_name =~ /docker_files/
+      pp  "Package.unbuild: @descriptor #{@descriptor}"
+      pp  "Package.unbuild: @services #{@services}"
+      pp  "Package.unbuild: @functions #{@functions}"
     end
     pp  "Package.unbuild: @descriptor #{@descriptor}"
-    #@descriptor = {"descriptor_version"=>"1.0", "vendor"=>"eu.sonata-nfv.service-descriptor", "name"=>"sonata-demo", "version"=>"0.2", "author"=>"Michael Bredel, NEC Labs Europe", "description"=>"\"The network service descriptor for the SONATA demo,\n comprising iperf, a firewall, and tcpump.\"\n", "network_functions"=>[{"vnf_id"=>"vnf_firewall", "vnf_vendor"=>"eu.sonata-nfv", "vnf_name"=>"firewall-vnf", "vnf_version"=>"0.1"}, {"vnf_id"=>"vnf_iperf", "vnf_vendor"=>"eu.sonata-nfv", "vnf_name"=>"iperf-vnf", "vnf_version"=>"0.1"}, {"vnf_id"=>"vnf_tcpdump", "vnf_vendor"=>"eu.sonata-nfv", "vnf_name"=>"tcpdump-vnf", "vnf_version"=>"0.1"}], "connection_points"=>[{"id"=>"ns:mgmt", "type"=>"interface"}, {"id"=>"ns:input", "type"=>"interface"}, {"id"=>"ns:output", "type"=>"interface"}], "virtual_links"=>[{"id"=>"mgmt", "connectivity_type"=>"E-LAN", "connection_points_reference"=>["vnf_iperf:mgmt", "vnf_firewall:mgmt", "vnf_tcpdump:mgmt", "ns:mgmt"]}, {"id"=>"input-2-iperf", "connectivity_type"=>"E-Line", "connection_points_reference"=>["ns:input", "vnf_iperf:input"]}, {"id"=>"iperf-2-firewall", "connectivity_type"=>"E-Line", "connection_points_reference"=>["vnf_iperf:output", "vns_firewall:input"]}, {"id"=>"firewall-2-tcpdump", "connectivity_type"=>"E-Line", "connection_points_reference"=>["vns_firewall:output", "vnf_tcpdump:input"]}, {"id"=>"tcpdump-2-output", "connectivity_type"=>"E-Line", "connection_points_reference"=>["vnf_firewall:output", "ns:output"]}], "forwarding_graphs"=>[{"fg_id"=>"ns:fg01", "number_of_endpoints"=>2, "number_of_virtual_links"=>4, "constituent_vnfs"=>["vnf_iperf", "vnf_firewall", "vnf_tcpdump"], "network_forwarding_paths"=>[{"fp_id"=>"ns:fg01:fp01", "policy"=>"none", "connection_points"=>[{"connection_point_ref"=>"ns:input", "position"=>1}, {"connection_point_ref"=>"vnf_iperf:input", "position"=>2}, {"connection_point_ref"=>"vnf_iperf:output", "position"=>3}, {"connection_point_ref"=>"vnf_firewall:input", "position"=>4}, {"connection_point_ref"=>"vnf_firewall:output", "position"=>5}, {"connection_point_ref"=>"vnf_tcpdump:input", "position"=>6}, {"connection_point_ref"=>"vnf_tcpdump:output", "position"=>7}, {"connection_point_ref"=>"ns:output", "position"=>8}]}]}]}
-    #@descriptor['uuid'] = SecureRandom.uuid
+    
+    if valid? @descriptor
+      store_to_catalogue @descriptor
+      NService.store_to_catalogue(@services[0]) if @services.size
+      if @functions.size
+        @functions.each do |vf|
+          pp  "Package.unbuild: vf = #{vf}a"/
+          VFunction.store_to_catalogue(vf)
+        end
+      end
+    end
     @descriptor
   end
 
@@ -193,21 +203,31 @@ class Package
   end
 
   def put_into_archive(disk_file_path, io, zip_file_path)
-    io.get_output_stream(zip_file_path) do |f|
-      f.puts(File.open(disk_file_path, 'rb').read)
-    end
+    io.get_output_stream(zip_file_path) { |f| f.puts(File.open(disk_file_path, 'rb').read) }
   end
   
-  #def extract( extract_dir, filename)
-  def unzip_it(io)
+  def unzip_it(io)    
     files = []
-    pp "Package.unzip_it: io = #{io}"
+    pp "Package.unzip_it: io = #{io.inspect}"
     io.rewind
     unzip_folder = FileUtils.mkdir(File.join('tmp', SecureRandom.hex))
-    # Extract the zipped file to a directory
-    Zip::InputStream.open(io) do |io| #StringIO.new(input)) do |io|
-      while entry = io.get_next_entry
-        files << entry.name if valid_entry_name? entry.name
+    
+    # Extract the zipped file into a directory
+    Zip::InputStream.open(io) do |zip_file|
+      pp "Package.unzip_it: zip_file = #{zip_file}"
+      while (entry = zip_file.get_next_entry)
+        pp "Package.unzip_it: entry.name = #{entry.name}"
+        if valid_entry_name? entry.name
+          disk_file_path = File.join(unzip_folder, entry.name) 
+          if entry.name.split('/').size == 1
+            FileUtils.mkdir_p disk_file_path unless File.exists? disk_file_path
+            pp "Package.unzip_it: disk_file_path"+disk_file_path+" is a directory"
+          else
+            pp "Package.unzip_it: disk_file_path is a file "+disk_file_path
+            File.open(disk_file_path, 'w') { |f| f.write entry.get_input_stream.read}
+            files << disk_file_path
+          end
+        end
       end
     end
     pp "Package.unzip_it: files = #{files}"
@@ -215,6 +235,18 @@ class Package
   end
   
   def valid_entry_name?(name)
-    (name =~ /function_descriptors/ || name =~ /service_descriptors/) && name.split('/').size > 1
+    (name =~ /function_descriptors/ || name =~ /service_descriptors/ || name =~ /META-INF/)
+  end
+  
+  def valid?(descriptor)
+    true # TODO: validate the descriptor here
+  end
+  
+  def store_to_catalogue(package_decriptor)
+    pp "Package.store_to_catalogue(#{package_decriptor})"
+    headers = {'Accept'=>'application/json', 'Content-Type'=>'application/json'}
+    response = RestClient.post( Gtkpkg.settings.catalogues['url']+"/packages", :params => package_decriptor.to_json, :headers=>headers)     
+    pp "Package.store_to_catalogue: #{response}"
+    JSON.parse response
   end
 end
