@@ -36,7 +36,7 @@ class GtkSrv < Sinatra::Base
     logger.info "GtkSrv: params=#{params}"
     
     # transform 'string' params Hash into keys
-    keyed_params = Hash[params.map{|(k,v)| [k.to_sym,v]}]
+    keyed_params = keyed_hash(params)
     
     # get rid of :offset and :limit
     [:offset, :limit].each { |k| keyed_params.delete(k)}

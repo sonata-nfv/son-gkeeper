@@ -63,7 +63,7 @@ class Gtkpkg < Sinatra::Base
           logger.info "GtkPkg: leaving GET /packages/#{params[:uuid]} with package found and sent in file .../#{package['package_name']}.son"
           halt 200, { 'filepath'=>File.join('public', 'packages', params[:uuid], package['package_name']+'.son')}.to_json
         else
-          logger.error "GtkPkg: leaving GET \"/packages/#{params[:uuid]}\", with \"Could not create package file\"."
+          logger.error "GtkPkg: leaving GET /packages/#{params[:uuid]}, with 'Could not create package file'."
           json_error 400, "Could not create package file"
         end
       else
@@ -111,8 +111,8 @@ class Gtkpkg < Sinatra::Base
         halt 200, packages.to_json
       end
     else
-      logger.info "GtkPkg: leaving GET /packages/#{uri.query} with \"No package with params=#{uri.query} was found\""
-      json_error 404, "No package with params=#{uri.query} was found"
+      logger.info "GtkPkg: leaving GET /packages/#{uri.query} with \"No package with params #{uri.query} was found\""
+      json_error 404, "No package with params #{uri.query} was found"
     end
   end
 end

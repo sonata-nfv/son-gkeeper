@@ -62,7 +62,9 @@ class PackageManagerService
       headers = { 'Accept'=> 'application/json', 'Content-Type'=>'application/json'}
       headers[:params] = params
       begin
-        RestClient.get GtkApi.settings.pkgmgmt['url'], headers        
+        response = RestClient.get(GtkApi.settings.pkgmgmt['url'], headers)
+        pp "PackageManagerService#find: response #{response}"
+        response
       rescue => e
         e.to_json 
       end

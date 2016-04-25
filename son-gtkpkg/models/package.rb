@@ -28,7 +28,7 @@ class Package
   DEFAULT_PATH = File.join(DEFAULT_META_DIR, DEFAULT_MANIFEST_FILE_NAME)
   
   def initialize(params)
-    @descriptor = init_with_descriptor(params[:descriptor]) if params[:descriptor]
+    init_with_descriptor(params[:descriptor]) if params[:descriptor]
     @io = init_with_io(params[:io]) if params[:io]
     @services, @functions, @docker_files = []
   end
@@ -41,25 +41,6 @@ class Package
       e
     end
   end
-
-  #if params['package']['filename']
-  #  filename = params['package']['filename']
-  #elsif params['package'][:filename]
-  #  filename = params['package'][:filename]
-    #else
-  #  json_error 400, 'File name not specified' unless filename
-    #end
-  
-  #extract_dir = Package.save( filename, request.body.read)
-  #Package.extract( extract_dir, filename)
-
-  # Validate Manifest dir and file existance
-  #json_error 400, 'META-INF directory not found' unless File.directory?(extract_dir + '/META-INF')
-  #json_error 400, 'MANIFEST.MF file not found' unless File.file?(extract_dir + '/META-INF/MANIFEST.MF')
-  # Validate Manifest fields
-  #validate_manifest(YAML.load_file(extract_dir + '/META-INF/MANIFEST.MF'), files: [filename, extract_dir])
-
-  #remove_leftover([filename, extract_dir])
   
   # Loads a package 'file' into its descriptor
   def load(filename = DEFAULT_PATH)
@@ -72,18 +53,20 @@ class Package
   
   # Builds a package file from its descriptors, and returns a handle to it
   def build()
-    # Clear unwanted parameters
-    [:uuid, :created_at, :updated_at].each { |k| @descriptor.delete(k) }
-
+    @descriptor = clear_unwanted_parameters @descriptor
     meta_dir = FileUtils.mkdir(File.join(@input_folder, DEFAULT_META_DIR))[0]
-    save_package_descriptor @descriptor, meta_dir
-    @descriptor['package_content'].each do |p_cont|
+    save_package_descriptor meta_dir
+    pp "\nPackage.build: @descriptor=#{@descriptor}"
+    pp "\nPackage.build: @descriptor[:package_content]=#{@descriptor[:package_content]}"
+    @descriptor[:package_content].each do |p_cont|
       pp "Package.build: p_cont=#{p_cont}"
       NService.new(@input_folder).build(p_cont) if p_cont['name'] =~ /service_descriptors/
       VFunction.new(@input_folder).build(p_cont) if p_cont['name'] =~ /function_descriptors/
+      
+      # No Dockerfiles treated at the moment
       # DockerFile.new(@input_folder).build(p_cont) if p_cont['name'] =~ /docker_files/
     end
-    output_file = File.join(@output_folder, @descriptor['package_name']+'.son')
+    output_file = File.join(@output_folder, @descriptor[:package_name]+'.son')
     
     # Cleans things up before generating
     FileUtils.rm output_file if File.file? output_file
@@ -169,10 +152,24 @@ class Package
     pp "Package#initialize: io=#{io}"
     @io = io
   end
+  
+  def keyed_hash(hash)
+    pp "Package.keyed_hash hash=#{hash}"
+    #Hash[hash.map{|(k,v)| v.is_a?(Hash) ? [k.to_sym,keyed_hash(v)] : [k.to_sym,v]}]
+    Hash[hash.map{|(k,v)| [k.to_sym,v]}]
+  end
+  
+  def clear_unwanted_parameters(hash)
+    pp "Package.clear_unwanted_parameters hash=#{hash}"
+    keyed_hash = keyed_hash(hash)
+    [:uuid, :created_at, :updated_at].each { |k| keyed_hash.delete(k) }
+    pp "Package.clear_unwanted_parameters keyed_hash=#{keyed_hash}"
+    keyed_hash
+  end
 
-  def save_package_descriptor(descriptor, meta_dir)
+  def save_package_descriptor(meta_dir)
     fname = File.join(meta_dir, DEFAULT_MANIFEST_FILE_NAME)
-    File.open( fname, 'w') {|f| YAML.dump(descriptor, f) }
+    File.open( fname, 'w') {|f| YAML.dump(@descriptor, f) }
   end
 
   def zip_it(zipfile_name)
@@ -180,7 +177,6 @@ class Package
     ::Zip::File.open(zipfile_name, ::Zip::File::CREATE) do |io|
       write_entries entries, '', io
     end
-    
   end
   
   def write_entries(entries, path, io)
