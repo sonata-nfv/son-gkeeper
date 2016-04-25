@@ -51,15 +51,7 @@ class GtkApi < Sinatra::Base
       logger.debug "GtkApi: entered GET \"/packages/#{params[:uuid]}\""
       json_error 400, 'Invalid Package UUID' unless valid? params['uuid']
       
-      package_file_path = PackageManagerService.find_by_uuid( params[:uuid])
-      logger.debug "GtkApi: package_file_path #{package_file_path}"
-      if package_file_path
-        logger.debug "GtkApi: leaving GET /packages/#{params[:uuid]} with package #{package_file_path}"
-        send_file package_file_path
-      else
-        logger.debug "GtkApi: leaving GET \"/packages/#{params[:uuid]}\" with \"No package with UUID=#{params[:uuid]} was found\""
-        json_error 404, "No package with UUID=#{params[:uuid]} was found"
-      end
+      get_one_package params[:uuid]
     end
     logger.debug "GtkApi: leaving GET \"/packages/#{params[:uuid]}\" with \"No package UUID specified\""
     json_error 400, 'No package UUID specified'
@@ -75,8 +67,17 @@ class GtkApi < Sinatra::Base
     @limit ||= params[:limit] ||= DEFAULT_LIMIT
     
     packages = PackageManagerService.find(params)
-    logger.debug "GtkApi: leaving GET /packages?#{uri.query} with #{packages}"
-    halt 200, packages if packages
+    if packages
+      if packages.size == 1
+        logger.debug "GtkApi: leaving GET /packages?#{uri.query} with package #{packages[0]['uuid']}"
+        get_one_package( packages[0]['uuid'])
+      else
+        logger.debug "GtkApi: leaving GET /packages?#{uri.query} with #{packages}"
+        halt 200, packages
+      end
+    end
+    logger.debug "GtkApi: leaving GET /packages?#{uri.query} with \"No package found with parameters #{uri.query}\""
+    json_error 404, "No package found with parameters #{uri.query}"
   end
   
   # PUT 
@@ -95,6 +96,21 @@ class GtkApi < Sinatra::Base
       logger.info "GtkApi: leaving DELETE \"/packages/#{params[:uuid]}\" with \"Not implemented yet\""
     end
     json_error 501, "Not implemented yet"
+  end
+  
+  private
+  
+  def get_one_package(uuid)
+    package_file_path = PackageManagerService.find_by_uuid(uuid)
+    logger.debug "GtkApi: package_file_path #{package_file_path}"
+    if package_file_path
+      logger.debug "GtkApi: leaving GET /packages/#{params[:uuid]} with package #{package_file_path}"
+      send_file package_file_path
+    else
+      logger.debug "GtkApi: leaving GET \"/packages/#{params[:uuid]}\" with \"No package with UUID=#{params[:uuid]} was found\""
+      json_error 404, "No package with UUID=#{params[:uuid]} was found"
+    end
+    
   end
 end
 
