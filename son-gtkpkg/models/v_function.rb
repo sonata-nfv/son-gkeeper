@@ -41,7 +41,7 @@ class VFunction
     headers = {'Accept'=>'application/json', 'Content-Type'=>'application/json'}
     response = RestClient.post( Gtkpkg.settings.catalogues['url']+"/vnfs", :params => vnfd.to_json, :headers=>headers)     
     pp "VFunction.store: #{response}"
-    JSON.parse response
+    JSON.parse(response, :quirks_mode => true)
   end
   
   def load_from_catalogue(uuid)
