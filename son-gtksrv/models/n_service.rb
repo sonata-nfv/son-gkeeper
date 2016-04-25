@@ -26,10 +26,16 @@ class NService
     pp "NService#find(#{params}): headers #{headers}"
     begin
       response = RestClient.get(GtkSrv.catalogues[:url]+'/network-services', headers)
-      pp "NService#find(#{params}): response #{response}"      
+      pp "NService#find(#{params}): response #{response}"
       parsed_response = JSON.parse(response.body)
-      pp "NService#find(#{params}): parsed_response #{parsed_response}"      
-      parsed_response
+      pp "NService#find(#{params}): parsed_response #{parsed_response}"
+
+      # Filter for 'status' => 'Active'
+      parsed_response.delete_if {|hash| hash["status"] != "Active"}
+
+      # Return Id, Name, Version, Vendor, Description, SLA
+      n_services = parsed_response.to_json(:only => [ 'id', 'name', 'vendor', 'version', 'description', 'sla' ])
+      JSON.parse n_services
     rescue => e
       e
     end
