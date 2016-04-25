@@ -117,29 +117,26 @@ get '/catalogues/network-services/?' do
 end
 
 post '/catalogues/vnfs' do
-  puts params
-#  function = {}
-#  function['uuid']=SecureRandom.uuid
-#  function['created_at']= Time.now.utc.to_s
-#  function['updated_at']=Time.new.utc.to_s
-#  puts function
-#  puts params['params']
-#  f = function.merge params['params']
-#  puts "Fake Catalogue POST /catalogues/vnfs with function=#{f}"
-  $functions << params['params']
-  params['params'].to_json
+  puts "\nFakeCatalogue POST /catalogues/vnfs params['params']=#{params['params']}"
+  function = { 'uuid'=>SecureRandom.uuid, 'created_at'=> Time.now.utc.to_s, 'updated_at'=> Time.new.utc.to_s}
+  puts "\nFakeCatalogue POST /catalogues/vnfs function=#{function}"
+  function.merge!(JSON.parse(params['params']))
+  puts "\nFakeCatalogue POST /catalogues/vnfs function=#{function}"
+  $functions << function
+  function.to_json
 end
 
 post '/catalogues/network-services' do
-  puts params
+  puts "\nFakeCatalogue POST /catalogues/network-services params['params']=#{params['params']}"
   service = params.merge({ 'uuid'=>SecureRandom.uuid, 'created_at'=> Time.now.utc.to_s, 'updated_at'=>Time.new.utc.to_s})
   $services << service #params['params']
   service.to_json #params['params']
 end
 
 post '/catalogues/packages' do
-  puts params
+  puts "\nFakeCatalogue POST /catalogues/packages params['params']=#{params['params']} (params['params'] is a #{params['params'].class})"
   package = params.merge({ 'uuid'=>SecureRandom.uuid, 'created_at'=> Time.now.utc.to_s, 'updated_at'=>Time.new.utc.to_s})
+  puts "\nFakeCatalogue POST /catalogues/packages package=#{package}"
   $packages << package
   package.to_json
 end

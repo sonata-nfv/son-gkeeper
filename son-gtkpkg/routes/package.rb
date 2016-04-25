@@ -42,6 +42,7 @@ class Gtkpkg < Sinatra::Base
     
     #package = Package.new(io: File.open(params[:package][:tempfile], 'rb').read).unbuild()
     package = Package.new(io: params[:package][:tempfile][:tempfile]).unbuild()
+    logger.info "GtkPkg: POST /packages package #{package.to_json}"
     if package && package['uuid']
       logger.info "GtkPkg: leaving POST /packages with package #{package.to_json}"
       halt 201, {'Location' => "/packages/#{package['uuid']}"}, package.to_json

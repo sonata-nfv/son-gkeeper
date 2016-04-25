@@ -114,11 +114,11 @@ class Package
     pp  "Package.unbuild: @descriptor #{@descriptor}"
     
     if valid? @descriptor
-      store_to_catalogue @descriptor
+      @descriptor = store_to_catalogue 
       NService.store_to_catalogue(@services[0]) if @services.size
       if @functions.size
         @functions.each do |vf|
-          pp  "Package.unbuild: vf = #{vf}a"/
+          pp  "Package.unbuild: vf = #{vf}"
           VFunction.store_to_catalogue(vf)
         end
       end
@@ -242,11 +242,11 @@ class Package
     true # TODO: validate the descriptor here
   end
   
-  def store_to_catalogue(package_decriptor)
-    pp "Package.store_to_catalogue(#{package_decriptor})"
+  def store_to_catalogue
+    pp "Package.store_to_catalogue(#{@descriptor})"
     headers = {'Accept'=>'application/json', 'Content-Type'=>'application/json'}
-    response = RestClient.post( Gtkpkg.settings.catalogues['url']+"/packages", :params => package_decriptor.to_json, :headers=>headers)     
+    response = RestClient.post( Gtkpkg.settings.catalogues['url']+"/packages", :params => @descriptor.to_json, :headers=>headers)     
     pp "Package.store_to_catalogue: #{response}"
-    JSON.parse response
+    @descriptor = JSON.parse response
   end
 end
