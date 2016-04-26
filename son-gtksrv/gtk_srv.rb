@@ -22,6 +22,7 @@ require 'sinatra/config_file'
 require 'sinatra/cross_origin'
 require 'sinatra/reloader'
 require 'sinatra/activerecord'
+require 'sinatra/logger'
 
 # Require the bundler gem and then call Bundler.require to load in all gems listed in Gemfile.
 require 'bundler'
@@ -37,6 +38,8 @@ class GtkSrv < Sinatra::Base
   register Sinatra::CrossOrigin
   register Sinatra::Reloader
   register Sinatra::ActiveRecordExtension
+  register Sinatra::Logger
+  set :logger_level, :debug # or :fatal, :error, :warn, :info
   
   helpers GtkSrvHelper
   
@@ -61,5 +64,6 @@ class GtkSrv < Sinatra::Base
   
 	use Rack::Session::Cookie, key: 'rack.session', domain: 'foo.com', path: '/', expire_after: 2592000, secret: '$0nata'
 	enable :logging
+  FileUtils.mkdir(File.join(settings.root, 'log')) unless File.exists? File.join(settings.root, 'log')
   enable :cross_origin
 end

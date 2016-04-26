@@ -18,6 +18,7 @@ gem 'rubocop-checkstyle_formatter', require: false
 gem 'pg'
 gem 'activerecord'
 gem 'sinatra-activerecord'
+gem 'sinatra-logger'
 
 group :test do
   gem 'webmock'
