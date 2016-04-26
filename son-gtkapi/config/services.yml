@@ -1,7 +1,7 @@
 ---
 development:
   pkgmgmt:
-    url: 'http://localhost:5100/packages'
+    url: 'http://localhost:5100'
   services:
     url: 'http://localhost:5300'
   licenses: ''
@@ -11,7 +11,7 @@ development:
 
 test:
   pkgmgmt:
-    url: 'http://localhost:5100/packages'
+    url: 'http://localhost:5100'
   services:
     url: 'http://localhost:5300'
   licenses: ''
@@ -21,7 +21,7 @@ test:
 
 integration:
   pkgmgmt:
-    url: 'http://son-gtkpkg:5100/packages'
+    url: 'http://son-gtkpkg:5100'
   services:
     url: 'http://son-gtksrv:5300'
   licenses: ''
@@ -31,7 +31,7 @@ integration:
 
 qualification:
   pkgmgmt:
-    url: 'http://localhost:5100/packages'
+    url: 'http://localhost:5100'
   services:
     url: 'http://localhost:5300'
   licenses: ''
@@ -42,7 +42,7 @@ qualification:
 demonstration:
 #production:
   pkgmgmt:
-    url: 'http://localhost:5100/packages'
+    url: 'http://localhost:5100'
   services:
     url: 'http://localhost:5300'
   licenses: ''

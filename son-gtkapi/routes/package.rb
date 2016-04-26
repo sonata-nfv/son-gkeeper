@@ -30,7 +30,7 @@ class GtkApi < Sinatra::Base
         if package
           if package.is_a?(Hash) && (package[:uuid] || package['uuid'])
             logger.info "package: #{package}"
-            headers = {'location'=> "#{settings.pkgmgmt['url']}/#{package[:uuid]}", 'Content-Type'=> 'application/json'}
+            headers = {'location'=> "#{settings.pkgmgmt['url']}/packages/#{package[:uuid]}", 'Content-Type'=> 'application/json'}
             halt 201, headers, package.to_json
           else
             json_error 400, 'No UUID given to package'
@@ -45,12 +45,6 @@ class GtkApi < Sinatra::Base
     json_error 400, 'No package file specified'
   end
 
-  get '/admin/logs' do
-    headers 'Content-Type' => 'text/plain; charset=utf8', 'Location' => '/'
-    logger.debug "GtkApi: entered GET /admin/logs"
-    File.open('log/'+ENV['RACK_ENV']+'.log', 'r').read
-  end
-  
   # GET a specific package
   get '/packages/:uuid/?' do
     unless params[:uuid].nil?
@@ -64,7 +58,7 @@ class GtkApi < Sinatra::Base
   end
   
   # GET potentially many packages
-  get '/packages' do
+  get '/packages/?' do
     uri = Addressable::URI.new
     uri.query_values = params
     logger.debug "GtkApi: entered GET /packages?#{uri.query}"

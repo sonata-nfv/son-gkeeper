@@ -87,7 +87,7 @@ class Gtkpkg < Sinatra::Base
     json_error 400, 'No package UUID specified'
   end
 
-  get '/packages' do
+  get '/packages/?' do
     uri = Addressable::URI.new
     uri.query_values = params
     logger.debug "GtkPkg: entered GET \"/packages/#{uri.query}\""
@@ -116,7 +116,7 @@ class Gtkpkg < Sinatra::Base
     end
   end
   
-  get '/admin/logs' do
+  get '/admin/logs/?' do
     logger.debug "GtkPkg: entered GET /admin/logs"
     File.open('log/'+ENV['RACK_ENV']+'.log', 'r').read
   end

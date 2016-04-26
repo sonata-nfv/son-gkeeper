@@ -13,9 +13,13 @@
 ## WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 ## See the License for the specific language governing permissions and
 ## limitations under the License.
-require_relative 'root'
-require_relative 'api_doc'
-require_relative 'package'
-require_relative 'service'
-require_relative 'request'
-require_relative 'admin'
+class GtkApi < Sinatra::Base
+
+  # Show API Logs
+  get '/admin/logs' do
+    headers 'Content-Type' => 'text/plain; charset=utf8', 'Location' => '/'
+    logger.debug "GtkApi: entered GET /admin/logs"
+    File.open('log/'+ENV['RACK_ENV']+'.log', 'r').read
+  end
+end
+
