@@ -112,8 +112,9 @@ class GtkApi < Sinatra::Base
   
   get '/admin/packages/logs' do
     logger.debug "GtkApi: entered GET /admin/packages/logs"
+    headers 'Content-Type' => 'text/plain; charset=utf8', 'Location' => '/'
     log = PackageManagerService.get_log
-    halt 200, {'Location' => '/'}, log.to_s
+    halt 200, log.to_s
   end
   
   private

@@ -33,9 +33,8 @@ class GtkApi < Sinatra::Base
   
   get '/admin/services/logs' do
     logger.debug "GtkApi: entered GET /admin/services/logs"
-    #File.open('../son-gtksrv/log/'+ENV['RACK_ENV']+'.log', 'r').read
-    #puts File.readlines('../son-gtkpkg/log/'+ENV['RACK_ENV']+'.log').reverse
+    headers 'Content-Type' => 'text/plain; charset=utf8', 'Location' => '/'
     log = ServiceManagerService.get_log
-    halt 200, {'Location' => '/'}, log.to_s
+    halt 200, log.to_s
   end
 end

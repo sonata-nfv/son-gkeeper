@@ -21,8 +21,8 @@ class GtkApi < Sinatra::Base
 
   # Root
   get '/' do
-    headers "Content-Type" => "text/plain; charset=utf8"
+    headers 'Content-Type' => 'text/plain; charset=utf8', 'Location' => '/'
     api = open('./config/api.yml')
-    halt 200, {'Location' => '/'}, api.read.to_s
+    halt 200, api.read.to_s
   end
 end
