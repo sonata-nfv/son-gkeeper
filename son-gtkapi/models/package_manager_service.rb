@@ -30,7 +30,7 @@ class PackageManagerService
     def create(params)
       pp "PackageManagerService#create: params=#{params}"
       tmpfile = params[:package][:tempfile]
-      response = RestClient.post(GtkApi.settings.pkgmgmt['url'], params) #:file => File.open(tmpfile, 'rb').read)
+      response = RestClient.post(GtkApi.settings.pkgmgmt['url']+'/packages', params) #:file => File.open(tmpfile, 'rb').read)
       pp "PackageManagerService#create: response.class=#{response.class}"
       pp "PackageManagerService#create: response=#{response}"
       JSON.parse response
@@ -41,14 +41,14 @@ class PackageManagerService
       headers[:params] = uuid
       begin
         # Get the meta-data first
-        response = RestClient.get( GtkApi.settings.pkgmgmt['url']+"/#{uuid}", headers)
+        response = RestClient.get( GtkApi.settings.pkgmgmt['url']+"/packages/#{uuid}", headers)
         filename = JSON.parse(response)['filepath']
         pp filename
         path = File.join('public','packages',uuid)
         FileUtils.mkdir_p path unless File.exists? path
         
         # Get the package it self
-        package = RestClient.get( GtkApi.settings.pkgmgmt['url']+"/#{uuid}/package")
+        package = RestClient.get( GtkApi.settings.pkgmgmt['url']+"/packages/#{uuid}/package")
         File.open(filename, 'wb') do |f|
           f.write package
         end
@@ -62,7 +62,7 @@ class PackageManagerService
       headers = { 'Accept'=> 'application/json', 'Content-Type'=>'application/json'}
       headers[:params] = params
       begin
-        response = RestClient.get(GtkApi.settings.pkgmgmt['url'], headers)
+        response = RestClient.get(GtkApi.settings.pkgmgmt['url']+'/packages', headers)
         pp "PackageManagerService#find: response #{response}"
         response
       rescue => e
@@ -71,7 +71,7 @@ class PackageManagerService
     end
     
     def get_log
-      RestClient.get(GtkApi.settings.pkgmgmt['url']+"/admin/logs")      
+      RestClient.get(GtkApi.settings.pkgmgmt['url']+'/admin/logs')      
     end
   end
 end
