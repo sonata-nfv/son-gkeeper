@@ -35,4 +35,9 @@ class GtkSrv < Sinatra::Base
       json_error 404, "No service with params=#{uri.query} was found"
     end
   end
+  
+  get '/admin/logs' do
+    logger.debug "GtkSrv: entered GET /admin/logs"
+    File.open('log/'+ENV['RACK_ENV']+'.log', 'r').read
+  end  
 end
