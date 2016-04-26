@@ -45,7 +45,7 @@ class GtkSrv < Sinatra::Base
     json_error 400, "GtkSrv: wrong parameters #{params}" unless keyed_params.keys - valid_fields == []
     
     requests = Request.where(keyed_params).limit(params['limit'].to_i).offset(params['offset'].to_i)
-    logger.info "GtkSrv: leaving GET /requests?#{uri.query} with #{requests.inspect}"
+    logger.info "GtkSrv: leaving GET /requests?#{uri.query} with #{requests.to_json}"
     halt 200, requests.to_json if requests
     json_error 404, 'GtkSrv: No requests were found'
   end

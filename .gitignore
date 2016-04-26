@@ -1,10 +1,12 @@
 **/.DS_Store
 **/tmp
 **/log/*.log
+!**/log
 **/spec/reports
 **/vendor
 **/public/files
-**/public/packages
+**/public/packages/*
+!**/public/packages
 **/Gemfile.lock
 **/.bundle
 son-gtksrv/db/postgres

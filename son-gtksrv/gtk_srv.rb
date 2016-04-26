@@ -64,5 +64,6 @@ class GtkSrv < Sinatra::Base
   
 	use Rack::Session::Cookie, key: 'rack.session', domain: 'foo.com', path: '/', expire_after: 2592000, secret: '$0nata'
 	enable :logging
+  FileUtils.mkdir(File.join(settings.root, 'log')) unless File.exists? File.join(settings.root, 'log')
   enable :cross_origin
 end
