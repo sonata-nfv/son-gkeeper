@@ -51,12 +51,6 @@ class GtkApi < Sinatra::Base
     #puts File.readlines('../son-gtkpkg/log/'+ENV['RACK_ENV']+'.log').reverse
   end
   
-  get '/admin/services/logs' do
-    logger.debug "GtkApi: entered GET /admin/services/logs"
-    File.open('../son-gtksrv/log/'+ENV['RACK_ENV']+'.log', 'r').read
-    #puts File.readlines('../son-gtkpkg/log/'+ENV['RACK_ENV']+'.log').reverse
-  end
-  
   get '/admin/logs' do
     logger.debug "GtkApi: entered GET /admin/logs"
     File.open('log/'+ENV['RACK_ENV']+'.log', 'r').read
@@ -114,6 +108,12 @@ class GtkApi < Sinatra::Base
       logger.info "GtkApi: leaving DELETE \"/packages/#{params[:uuid]}\" with \"Not implemented yet\""
     end
     json_error 501, "Not implemented yet"
+  end
+  
+  get '/admin/packages/logs' do
+    logger.debug "GtkApi: entered GET /admin/packages/logs"
+    log = PackageManagerService.get_log
+    halt 200, {'Location' => '/'}, log.to_s
   end
   
   private

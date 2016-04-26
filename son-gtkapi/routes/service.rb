@@ -30,4 +30,12 @@ class GtkApi < Sinatra::Base
     logger.debug "GtkApi: leaving GET /services/#{uri.query} with #{services}"
     halt 200, services.to_json if services
   end
+  
+  get '/admin/services/logs' do
+    logger.debug "GtkApi: entered GET /admin/services/logs"
+    #File.open('../son-gtksrv/log/'+ENV['RACK_ENV']+'.log', 'r').read
+    #puts File.readlines('../son-gtkpkg/log/'+ENV['RACK_ENV']+'.log').reverse
+    log = ServiceManagerService.get_log
+    halt 200, {'Location' => '/'}, log.to_s
+  end
 end
