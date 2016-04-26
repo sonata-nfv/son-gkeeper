@@ -45,10 +45,16 @@ class GtkApi < Sinatra::Base
     json_error 400, 'No package file specified'
   end
 
+  get '/admin/packages/logs' do
+    logger.debug "GtkApi: entered GET /admin/packages/logs"
+    File.open('../son-gtkpkg/log/'+ENV['RACK_ENV']+'.log', 'r').read
+    #puts File.readlines('../son-gtkpkg/log/'+ENV['RACK_ENV']+'.log').reverse
+  end
+  
   # GET a specific package
   get '/packages/:uuid/?' do
     unless params[:uuid].nil?
-      logger.debug "GtkApi: entered GET \"/packages/#{params[:uuid]}\""
+      logger.debug "GtkApi: entered GET /packages/#{params[:uuid]}"
       json_error 400, 'Invalid Package UUID' unless valid? params['uuid']
       
       get_one_package params[:uuid]
