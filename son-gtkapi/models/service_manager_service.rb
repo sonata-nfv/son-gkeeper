@@ -83,5 +83,9 @@ class ServiceManagerService
         e
       end      
     end
+    
+    def get_log
+      RestClient.get(GtkApi.settings.services['url']+"/admin/logs")      
+    end
   end
 end

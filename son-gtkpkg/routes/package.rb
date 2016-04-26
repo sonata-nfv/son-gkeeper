@@ -115,4 +115,9 @@ class Gtkpkg < Sinatra::Base
       json_error 404, "No package with params #{uri.query} was found"
     end
   end
+  
+  get '/admin/logs' do
+    logger.debug "GtkPkg: entered GET /admin/logs"
+    File.open('log/'+ENV['RACK_ENV']+'.log', 'r').read
+  end
 end

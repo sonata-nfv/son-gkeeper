@@ -69,5 +69,9 @@ class PackageManagerService
         e.to_json 
       end
     end
+    
+    def get_log
+      RestClient.get(GtkApi.settings.pkgmgmt['url']+"/admin/logs")      
+    end
   end
 end
