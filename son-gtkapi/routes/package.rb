@@ -45,16 +45,10 @@ class GtkApi < Sinatra::Base
     json_error 400, 'No package file specified'
   end
 
-  get '/admin/packages/logs' do
-    logger.debug "GtkApi: entered GET /admin/packages/logs"
-    File.open('../son-gtkpkg/log/'+ENV['RACK_ENV']+'.log', 'r').read
-    #puts File.readlines('../son-gtkpkg/log/'+ENV['RACK_ENV']+'.log').reverse
-  end
-  
   get '/admin/logs' do
+    headers 'Content-Type' => 'text/plain; charset=utf8', 'Location' => '/'
     logger.debug "GtkApi: entered GET /admin/logs"
     File.open('log/'+ENV['RACK_ENV']+'.log', 'r').read
-    #puts File.readlines('../son-gtkpkg/log/'+ENV['RACK_ENV']+'.log').reverse
   end
   
   # GET a specific package
