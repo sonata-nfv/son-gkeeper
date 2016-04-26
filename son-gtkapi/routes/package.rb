@@ -51,6 +51,18 @@ class GtkApi < Sinatra::Base
     #puts File.readlines('../son-gtkpkg/log/'+ENV['RACK_ENV']+'.log').reverse
   end
   
+  get '/admin/services/logs' do
+    logger.debug "GtkApi: entered GET /admin/services/logs"
+    File.open('../son-gtksrv/log/'+ENV['RACK_ENV']+'.log', 'r').read
+    #puts File.readlines('../son-gtkpkg/log/'+ENV['RACK_ENV']+'.log').reverse
+  end
+  
+  get '/admin/logs' do
+    logger.debug "GtkApi: entered GET /admin/logs"
+    File.open('log/'+ENV['RACK_ENV']+'.log', 'r').read
+    #puts File.readlines('../son-gtkpkg/log/'+ENV['RACK_ENV']+'.log').reverse
+  end
+  
   # GET a specific package
   get '/packages/:uuid/?' do
     unless params[:uuid].nil?
