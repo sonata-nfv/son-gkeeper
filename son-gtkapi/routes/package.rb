@@ -58,7 +58,7 @@ class GtkApi < Sinatra::Base
   end
   
   # GET potentially many packages
-  get '/packages' do
+  get '/packages/?' do
     uri = Addressable::URI.new
     uri.query_values = params
     logger.debug "GtkApi: entered GET /packages?#{uri.query}"

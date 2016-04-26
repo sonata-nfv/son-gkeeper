@@ -71,6 +71,7 @@ class PackageManagerService
     end
     
     def get_log
+      pp "PackageManagerService#get_log: url "+GtkApi.settings.pkgmgmt['url']+'/admin/logs'
       RestClient.get(GtkApi.settings.pkgmgmt['url']+'/admin/logs')      
     end
   end
