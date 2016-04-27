@@ -23,33 +23,35 @@ require 'zip'
 
 class Package
 
-  DEFAULT_META_DIR = 'META-INF'
-  DEFAULT_MANIFEST_FILE_NAME = 'MANIFEST.MF'
-  DEFAULT_PATH = File.join(DEFAULT_META_DIR, DEFAULT_MANIFEST_FILE_NAME)
+  #DEFAULT_META_DIR = 'META-INF'
+  #DEFAULT_MANIFEST_FILE_NAME = 'MANIFEST.MF'
+  #DEFAULT_PATH = File.join(DEFAULT_META_DIR, DEFAULT_MANIFEST_FILE_NAME)
   
   def initialize(params)
     init_with_descriptor(params[:descriptor]) if params[:descriptor]
-    @io = init_with_io(params[:io]) if params[:io]
-    @services, @functions, @docker_files = []
+    init_with_io(params[:io]) if params[:io]
+    @package, @service = {}
+    @functions = []
+    # @docker_files = []
   end
   
   # Saves a package from its description
-  def save(descriptor, filename = DEFAULT_PATH)   
-    begin      
-      File.open(File.join(@output_folder, filename), 'w') {|f| YAML.dump(descriptor, f)}
-    rescue => e
-      e
-    end
-  end
+  #def save(descriptor, filename = DEFAULT_PATH)   
+  #  begin      
+  #    File.open(File.join(@output_folder, filename), 'w') {|f| YAML.dump(descriptor, f)}
+  #  rescue => e
+  #    e
+  #  end
+  #end
   
   # Loads a package 'file' into its descriptor
-  def load(filename = DEFAULT_PATH)
-    begin
-      YAML.load_file File.join(@path, filename)
-    rescue => e
-      e.to_json
-    end
-  end
+  #def load(filename = DEFAULT_PATH)
+  #  begin
+  #    YAML.load_file File.join(@path, filename)
+  #  rescue => e
+  #    e.to_json
+  #  end
+  #end
   
   # Builds a package file from its descriptors, and returns a handle to it
   def build()
@@ -78,8 +80,7 @@ class Package
   # Unbuilds a package file from its file, and returns a descriptor to it
   def unbuild()
     files = unzip_it @io
-    @descriptor, @package ={}
-    @services = []
+    @service = {}
     @functions = []
     files.each do |file|
       splited = file.split('/')
@@ -87,21 +88,22 @@ class Package
       path = File.join(splited.first splited.size-1)
       pp "Package.unbuild: path=#{path}, file_name = #{file_name}"
       @descriptor = YAML.load_file(file) if path =~ /META-INF/
-      @services << NService.unbuild(file) if path =~ /service_descriptors/      
+      @service = NService.unbuild(file) if path =~ /service_descriptors/      
       @functions << VFunction.unbuild(file) if path =~ /function_descriptors/
       # DockerFile.new(@input_folder).unbuild(path) if file_name =~ /docker_files/
       #pp  "Package.unbuild: @descriptor #{@descriptor}"
-      #pp  "Package.unbuild: @services #{@services}"
+      #pp  "Package.unbuild: @service #{@service}"
       #pp  "Package.unbuild: @functions #{@functions}"
     end
     #pp  "Package.unbuild: @descriptor #{@descriptor}"
     
     if valid? @descriptor
-      store_all
+      return @package if store_all
+      pp "Package.unbuild: couldn't store package based on descriptor (#{@descriptor})"
     else
       pp "Package.unbuild: invalid descriptor (#{@descriptor})"
-      {}
     end
+    {}
   end
 
   class << self
@@ -139,7 +141,7 @@ class Package
     pp "Package#initialize: descriptor=#{descriptor}"
     @descriptor = descriptor
     @input_folder = File.join('tmp', SecureRandom.hex)
-    FileUtils.mkdirp @input_folder unless File.exists? @input_folder
+    FileUtils.mkdir_p @input_folder unless File.exists? @input_folder
     @output_folder = File.join( 'public', 'packages', @descriptor['uuid'])
     FileUtils.mkdir_p @output_folder unless File.exists? @output_folder
   end
@@ -250,8 +252,8 @@ class Package
 
   def store_all
     if @package = store_to_catalogue
-      if @services.size
-        service = NService.store_to_catalogue(@services[0])
+      if @service
+        service = NService.store_to_catalogue(@service)
         
         pp "Package.unbuild: stored service #{service}"
         # TODO: what if storing a service goes wrong?

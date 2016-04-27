@@ -39,8 +39,7 @@ class Gtkpkg < Sinatra::Base
 
   post '/packages/?' do
     logger.info "GtkPkg: entered POST /packages with params = #{params}"
-    
-    #package = Package.new(io: File.open(params[:package][:tempfile], 'rb').read).unbuild()
+
     package = Package.new(io: params[:package][:tempfile][:tempfile]).unbuild()
     logger.info "GtkPkg: POST /packages package #{package.to_json}"
     if package && package['uuid']
