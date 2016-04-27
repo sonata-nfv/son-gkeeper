@@ -78,7 +78,7 @@ class Package
   # Unbuilds a package file from its file, and returns a descriptor to it
   def unbuild()
     files = unzip_it @io
-    @descriptor ={}
+    @descriptor, @package ={}
     @services = []
     @functions = []
     files.each do |file|
@@ -90,23 +90,18 @@ class Package
       @services << NService.unbuild(file) if path =~ /service_descriptors/      
       @functions << VFunction.unbuild(file) if path =~ /function_descriptors/
       # DockerFile.new(@input_folder).unbuild(path) if file_name =~ /docker_files/
-      pp  "Package.unbuild: @descriptor #{@descriptor}"
-      pp  "Package.unbuild: @services #{@services}"
-      pp  "Package.unbuild: @functions #{@functions}"
+      #pp  "Package.unbuild: @descriptor #{@descriptor}"
+      #pp  "Package.unbuild: @services #{@services}"
+      #pp  "Package.unbuild: @functions #{@functions}"
     end
-    pp  "Package.unbuild: @descriptor #{@descriptor}"
+    #pp  "Package.unbuild: @descriptor #{@descriptor}"
     
     if valid? @descriptor
-      @descriptor = store_to_catalogue 
-      NService.store_to_catalogue(@services[0]) if @services.size
-      if @functions.size
-        @functions.each do |vf|
-          pp  "Package.unbuild: vf = #{vf}"
-          VFunction.store_to_catalogue(vf)
-        end
-      end
+      store_all
+    else
+      pp "Package.unbuild: invalid descriptor (#{@descriptor})"
+      {}
     end
-    @descriptor
   end
 
   class << self
@@ -143,7 +138,8 @@ class Package
   def init_with_descriptor(descriptor)
     pp "Package#initialize: descriptor=#{descriptor}"
     @descriptor = descriptor
-    @input_folder = FileUtils.mkdir(File.join('tmp', SecureRandom.hex))[0]
+    @input_folder = File.join('tmp', SecureRandom.hex)
+    FileUtils.mkdirp @input_folder unless File.exists? @input_folder
     @output_folder = File.join( 'public', 'packages', @descriptor['uuid'])
     FileUtils.mkdir_p @output_folder unless File.exists? @output_folder
   end
@@ -239,10 +235,44 @@ class Package
   end
   
   def store_to_catalogue
-    pp "Package.store_to_catalogue(#{@descriptor})"
+    pp "\nPackage.store_to_catalogue(#{@descriptor})"
     headers = {'Accept'=>'application/json', 'Content-Type'=>'application/json'}
     response = RestClient.post( Gtkpkg.settings.catalogues['url']+"/packages", :params => @descriptor.to_json, :headers=>headers)     
-    pp "Package.store_to_catalogue: #{response}"
-    @descriptor = JSON.parse response
+    pp "Package.store_to_catalogue: response=#{response}"
+    if response
+      pp "Package.store_to_catalogue: #{response}"
+      JSON.parse response
+    else
+      pp "Package.store_to_catalogue: failled to store #{@descriptor}"
+      nil
+    end
+  end
+
+  def store_all
+    if @package = store_to_catalogue
+      if @services.size
+        service = NService.store_to_catalogue(@services[0])
+        
+        pp "Package.unbuild: stored service #{service}"
+        # TODO: what if storing a service goes wrong?
+        # rollback!
+      end
+      if @functions.size
+        @functions.each do |vf|
+          pp "Package.unbuild: vf = #{vf}"
+          function = VFunction.store_to_catalogue(vf)
+          if function
+            pp "Package.unbuild: stored function #{function}"
+            
+            # TODO: rollback if failled
+          end
+        end
+      end
+      pp "Package.unbuild: stored package #{@package}"
+      @package
+    else
+      pp "Package.unbuild: failled to store #{@descriptor}"
+      {}
+    end
   end
 end
