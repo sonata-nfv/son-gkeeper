@@ -237,9 +237,11 @@ class Package
   end
   
   def store_to_catalogue
-    pp "\nPackage.store_to_catalogue(#{@descriptor})"
+    pp "\nPackage.store_to_catalogue("+@descriptor.to_s+")"
     headers = {'Accept'=>'application/json', 'Content-Type'=>'application/json'}
-    response = RestClient.post( Gtkpkg.settings.catalogues['url']+"/packages", :params => @descriptor.to_json, :headers=>headers)     
+    uri = Gtkpkg.settings.catalogues['url']+'/packages'
+    response = RestClient.post( uri, :params => @descriptor.to_json, :headers=>headers)     
+    #response = RestClient.post( Gtkpkg.settings.catalogues['url']+"/packages", @descriptor.to_json, {content_type: 'application/json', accept: 'application/json'})     
     pp "Package.store_to_catalogue: response=#{response}"
     if response
       pp "Package.store_to_catalogue: #{response}"
