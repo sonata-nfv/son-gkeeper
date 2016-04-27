@@ -11,3 +11,15 @@ Communication Service Providers (CSPs) in the 5G era will have to be able to ope
  * make the new service **available on its catalogue**, so that other SPs can use it to build new and more complex services.
 
 When **automatic service scaling** is taken into account, adequately describing it in a service description is not a trivial task, and current service descriptions do not cover it in general. Validating the rest of the service description also poses very interesting difficulties when one goes beyond a simple description of URLs and ports. When the supporting infrastructure is not completely SDN based, or some integration with Physical Network Functions (PNFs) is needed, interfacing to OSS/BSS systems shall have to be considered. Special attention will be paid to the integration with legacy systems of the CSP. This Gatekeeper task deals exactly with this part of the problem, which can generically be called on-boarding. 
+
+# Repository organization
+This repository is organized by **micro-service**.
+
+Micro-services currently implemented are the following:
+
+1. son-gtkapi:
+1. son-gtkpkg:
+1. son-gtk-srv:
+
+# Testing strategies
+For testing the code provided you should check each of the the `README.md` files of each of the folders below this one. 

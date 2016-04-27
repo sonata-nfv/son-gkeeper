@@ -59,7 +59,7 @@ class ServiceManagerService
       end
     end
     
-    def find_requests_uuid(uuid)
+    def find_requests_by_uuid(uuid)
       headers = { 'Accept'=> 'application/json', 'Content-Type'=>'application/json'}
       headers[:params] = uuid
       begin

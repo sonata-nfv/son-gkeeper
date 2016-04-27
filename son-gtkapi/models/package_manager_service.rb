@@ -30,7 +30,9 @@ class PackageManagerService
     def create(params)
       pp "PackageManagerService#create: params=#{params}"
       tmpfile = params[:package][:tempfile]
-      response = RestClient.post(GtkApi.settings.pkgmgmt['url']+'/packages', params) #:file => File.open(tmpfile, 'rb').read)
+      uri = GtkApi.settings.pkgmgmt['url']+'/packages'
+      pp "PackageManagerService#create: uri="+uri
+      response = RestClient.post(uri, params)
       pp "PackageManagerService#create: response.class=#{response.class}"
       pp "PackageManagerService#create: response=#{response}"
       JSON.parse response

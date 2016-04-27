@@ -68,5 +68,7 @@ class GtkSrv < Sinatra::Base
   logfile = File.open('log/'+ENV['RACK_ENV']+'.log', 'a+')
   $stdout.reopen(logfile, "w")
   $stderr.reopen(logfile, "w")
+  $stdout.sync = true
+  $stderr.sync = true
   enable :cross_origin
 end

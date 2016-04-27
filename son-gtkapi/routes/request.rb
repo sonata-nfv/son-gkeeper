@@ -54,12 +54,12 @@ class GtkApi < Sinatra::Base
   end
   
   # GET one specific request
-  get '/requests/:uuid?' do
+  get '/requests/:uuid/?' do
     unless params[:uuid].nil?
       logger.debug "GtkApi: GET /requests/#{params[:uuid]}"
       json_error 400, 'Invalid request UUID' unless valid? params[:uuid]
       
-      request = ServiceManagerService.find_requests_uuid(params['uuid'])
+      request = ServiceManagerService.find_requests_by_uuid(params['uuid'])
       json_error 400, "The request UUID #{params[:uuid]} does not exist" unless request
 
       logger.debug "GtkApi: leaving GET /requests/#{params[:uuid]}\" with request #{request}"
