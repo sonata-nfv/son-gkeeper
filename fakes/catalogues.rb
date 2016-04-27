@@ -123,14 +123,14 @@ post '/catalogues/vnfs' do
   function.merge!(JSON.parse(params['params']))
   puts "\nFakeCatalogue POST /catalogues/vnfs function=#{function}"
   $functions << function
-  function.to_json
+  halt 201, function.to_json
 end
 
 post '/catalogues/network-services' do
   puts "\nFakeCatalogue POST /catalogues/network-services params['params']=#{params['params']} (is a #{params['params'].class})"
   service = JSON.parse(params['params']).merge({ 'uuid'=>SecureRandom.uuid, 'created_at'=> Time.now.utc.to_s, 'updated_at'=>Time.new.utc.to_s})
   $services << service #params['params']
-  service.to_json #params['params']
+  halt 201, service.to_json #params['params']
 end
 
 post '/catalogues/packages' do
@@ -140,5 +140,5 @@ post '/catalogues/packages' do
   package.merge!({ 'uuid'=>SecureRandom.uuid, 'created_at'=> Time.now.utc.to_s, 'updated_at'=>Time.new.utc.to_s})
   puts "\nFakeCatalogue POST /catalogues/packages package=#{package}"
   $packages << package
-  package.to_json
+  halt 201, package.to_json
 end
