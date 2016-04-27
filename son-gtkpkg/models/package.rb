@@ -204,7 +204,7 @@ class Package
     files = []
     pp "Package.unzip_it: io = #{io.inspect}"
     io.rewind
-    unzip_folder = FileUtils.mkdir(File.join('tmp', SecureRandom.hex))
+    unzip_folder = FileUtils.mkdir_p(File.join('tmp', SecureRandom.hex))
     
     # Extract the zipped file into a directory
     Zip::InputStream.open(io) do |zip_file|
