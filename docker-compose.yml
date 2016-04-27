@@ -13,6 +13,8 @@ services:
 
   son-gtkpkg:
     image: registry.sonata-nfv.eu:5000/son-gtkpkg
+    environment:
+      - RACK_ENV=integration
     ports:
       - "5100"
     restart: always
