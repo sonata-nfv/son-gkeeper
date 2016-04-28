@@ -117,6 +117,7 @@ get '/catalogues/network-services/?' do
 end
 
 post '/catalogues/vnfs' do
+  halt 415 unless request.content_type == 'application/json'
   puts "\nFakeCatalogue POST /catalogues/vnfs params['params']=#{params['params']}"
   function = { 'uuid'=>SecureRandom.uuid, 'created_at'=> Time.now.utc.to_s, 'updated_at'=> Time.new.utc.to_s}
   puts "\nFakeCatalogue POST /catalogues/vnfs function=#{function}"
@@ -127,6 +128,7 @@ post '/catalogues/vnfs' do
 end
 
 post '/catalogues/network-services' do
+  halt 415 unless request.content_type == 'application/json'
   puts "\nFakeCatalogue POST /catalogues/network-services params['params']=#{params['params']} (is a #{params['params'].class})"
   service = JSON.parse(params['params']).merge({ 'uuid'=>SecureRandom.uuid, 'created_at'=> Time.now.utc.to_s, 'updated_at'=>Time.new.utc.to_s})
   $services << service #params['params']
@@ -134,7 +136,9 @@ post '/catalogues/network-services' do
 end
 
 post '/catalogues/packages' do
-  puts "\nFakeCatalogue POST /catalogues/packages params['params']=#{params['params']} (params['params'] is a #{params['params'].class})"
+  halt 415 unless request.content_type == 'application/json'
+  puts "\nFakeCatalogue POST /catalogues/packages params=#{params}"
+  #puts "\nFakeCatalogue POST /catalogues/packages params['params']=#{params['params']} (params['params'] is a #{params['params'].class})"
   package = JSON.parse(params['params'])
   puts "\nFakeCatalogue POST /catalogues/packages package=#{package} (package is a #{package.class})"
   package.merge!({ 'uuid'=>SecureRandom.uuid, 'created_at'=> Time.now.utc.to_s, 'updated_at'=>Time.new.utc.to_s})
