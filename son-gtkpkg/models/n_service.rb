@@ -38,10 +38,15 @@ class NService
   
   def self.store_to_catalogue(nsd)
     pp "NService.store(#{nsd})"
-    headers = {'Accept'=>'application/json', 'Content-Type'=>'application/json'}
-    response = RestClient.post( Gtkpkg.settings.catalogues['url']+"/network-services", :params => nsd.to_json, :headers=>headers)     
-    pp "NService.store: #{response}"
-    JSON.parse response
+    begin
+      response = RestClient.post( Gtkpkg.settings.catalogues['url']+"/network-services", nsd.to_json, , content_type: :json, accept: :json)     
+      package = JSON.parse response
+    rescue => e
+        puts e.response
+        nil
+    end
+    pp "NService.store: package=#{package}"
+    package
   end
   
   def load_from_catalogue(uuid)

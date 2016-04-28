@@ -241,7 +241,7 @@ class Package
     uri = Gtkpkg.settings.catalogues['url']+'/packages'
     
     begin
-      response = RestClient.post( uri, @descriptor.to_json, :content_type => 'application/json', :accept => 'application/json')
+      response = RestClient.post( uri, @descriptor.to_json, content_type: :json, accept: :json)
       package = JSON.parse response
     rescue => e
         puts e.response
