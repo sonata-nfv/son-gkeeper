@@ -238,9 +238,9 @@ class Package
   
   def store_to_catalogue
     pp "\nPackage.store_to_catalogue("+@descriptor.to_s+")"
-    request = { 'data' => @descriptor }.to_json
     uri = Gtkpkg.settings.catalogues['url']+'/packages'
-    response = RestClient.post( uri, request, :Content_Type => 'application/json', :Accept => 'application/json')
+    
+    response = RestClient.post( uri, @descriptor.to_json, :content_type => 'application/json', :accept => 'application/json')
     package = JSON.parse response
     pp "Package.store_to_catalogue: package=#{package} for response="+response
     if package && package['uuid']
