@@ -38,8 +38,9 @@ class NService
   
   def self.store_to_catalogue(nsd)
     pp "NService.store(#{nsd})"
+    uri = Gtkpkg.settings.catalogues['url']+'/network-services'
     begin
-      response = RestClient.post( Gtkpkg.settings.catalogues['url']+"/network-services", nsd.to_json, , content_type: :json, accept: :json)     
+      response = RestClient.post( uri, nsd.to_json, content_type: :json, accept: :json)     
       package = JSON.parse response
     rescue => e
         puts e.response

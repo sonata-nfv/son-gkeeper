@@ -38,8 +38,9 @@ class VFunction
   
   def self.store_to_catalogue(vnfd)
     pp "VFunction.store(#{vnfd})"
+    uri = Gtkpkg.settings.catalogues['url']+'/vnfs'
     begin
-      response = RestClient.post( Gtkpkg.settings.catalogues['url']+'/vnfs', vnfd.to_json, , content_type: :json, accept: :json)     
+      response = RestClient.post( uri, vnfd.to_json, content_type: :json, accept: :json)     
       function = JSON.parse response
     rescue => e
         puts e.response
