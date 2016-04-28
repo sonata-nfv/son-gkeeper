@@ -29,7 +29,7 @@ class NService
       response = RestClient.get(uri, headers)
       pp "NService#find: response #{response}"
       services = JSON.parse(response.body)
-      pp "NService#find: parsed_response #{services}"
+      pp "NService#find: services #{services}"
       services
     rescue => e
       e
