@@ -38,10 +38,16 @@ class VFunction
   
   def self.store_to_catalogue(vnfd)
     pp "VFunction.store(#{vnfd})"
-    headers = {'Accept'=>'application/json', 'Content-Type'=>'application/json'}
-    response = RestClient.post( Gtkpkg.settings.catalogues['url']+"/vnfs", :params => vnfd.to_json, :headers=>headers)     
-    pp "VFunction.store: #{response}"
-    JSON.parse(response, :quirks_mode => true)
+    uri = Gtkpkg.settings.catalogues['url']+'/vnfs'
+    begin
+      response = RestClient.post( uri, vnfd.to_json, content_type: :json, accept: :json)     
+      function = JSON.parse response
+    rescue => e
+        puts e.response
+        nil
+    end
+    pp "VFunction.store: function=#{function}"
+    function
   end
   
   def load_from_catalogue(uuid)
