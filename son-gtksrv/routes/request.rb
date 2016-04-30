@@ -24,7 +24,8 @@ class GtkSrv < Sinatra::Base
   get '/requests/:uuid/?' do
     logger.debug "GtkSrv: entered GET /requests/#{params[:uuid]}"
     request = Request.find(params[:uuid])
-    halt 206, request.to_json if request
+    json_request = json(request, { root: false })
+    halt 206, json_request if request
     json_error 404, "GtkSrv: Request #{params[:uuid]} not found"    
   end
 
@@ -45,19 +46,23 @@ class GtkSrv < Sinatra::Base
     json_error 400, "GtkSrv: wrong parameters #{params}" unless keyed_params.keys - valid_fields == []
     
     requests = Request.where(keyed_params).limit(params['limit'].to_i).offset(params['offset'].to_i)
-    logger.info "GtkSrv: leaving GET /requests?#{uri.query} with #{requests.to_json}"
-    halt 200, requests.to_json if requests
+    json_requests = json(requests, { root: false })
+    logger.info "GtkSrv: leaving GET /requests?#{uri.query} with "+json_requests
+    halt 200, json_requests if requests
     json_error 404, 'GtkSrv: No requests were found'
   end
 
   # POSTs an instantiation request, given a service_uuid
   post '/requests/?' do
     logger.info "GtkSrv: entered POST /requests with params=#{params}"
-    @request = Request.new(params[:service_uuid])
-    if @request && @request.save
-      logger.info "GtkSrv: returning POST /requests with request=#{@request}"
-      halt 201, @request.to_json
-    else
+    
+    begin
+      request = Request.create(:service_uuid => params[:service_uuid])
+      json_request = json(request, { root: false })
+      pp json_request
+      logger.info 'GtkSrv: returning POST /requests with request='+json_request
+      halt 201, json_request
+    rescue e
       logger.info "GtkSrv: returning POST /requests with 'GtkSrv: Not possible to save the request'"
       json_error 400, 'GtkSrv: Not possible to save the request'
     end

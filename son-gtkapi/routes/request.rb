@@ -60,10 +60,10 @@ class GtkApi < Sinatra::Base
       json_error 400, 'Invalid request UUID' unless valid? params[:uuid]
       
       request = ServiceManagerService.find_requests_by_uuid(params['uuid'])
-      json_error 400, "The request UUID #{params[:uuid]} does not exist" unless request
+      json_error 404, "The request UUID #{params[:uuid]} does not exist" unless request
 
       logger.debug "GtkApi: leaving GET /requests/#{params[:uuid]}\" with request #{request}"
-      halt 200, requests.to_json
+      halt 200, request.to_json
     end
     logger.debug "GtkApi: leaving GET /requests/#{params[:uuid]} with 'No requests UUID specified'"
     json_error 400, 'No requests UUID specified'
