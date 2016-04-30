@@ -19,6 +19,7 @@ gem 'pg'
 gem 'activerecord'
 gem 'sinatra-activerecord'
 gem 'sinatra-logger'
+gem 'sinatra-active-model-serializers', '0.2.0'
 
 group :test do
   gem 'webmock'

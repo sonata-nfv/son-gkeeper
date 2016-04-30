@@ -71,12 +71,12 @@ class ServiceManagerService
     
     def create(params)
       pp "ServiceManagerService#create(#{params})"
-      headers = { 'Accept'=> 'application/json', 'Content-Type'=>'application/json'}
       begin
-        response = RestClient.post(GtkApi.settings.services['url']+'/requests', { service_uuid: params[:service_uuid]}, headers) 
+        uri = GtkApi.settings.services['url']+'/requests'
+        response = RestClient.post(uri, { service_uuid: params[:service_uuid]}, content_type: :json, accept: :json) 
         pp "ServiceManagerService#create: response="+response
         parsed_response = JSON.parse(response)
-        pp "ServiceManagerService#create: parsed_response="+parsed_response
+        pp "ServiceManagerService#create: parsed_response=#{parsed_response}"
         parsed_response
       rescue => e
         pp "ServiceManagerService#create: e=#{e}"
