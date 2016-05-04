@@ -23,9 +23,9 @@ require 'zip'
 
 class Package
 
-  #DEFAULT_META_DIR = 'META-INF'
-  #DEFAULT_MANIFEST_FILE_NAME = 'MANIFEST.MF'
-  #DEFAULT_PATH = File.join(DEFAULT_META_DIR, DEFAULT_MANIFEST_FILE_NAME)
+  DEFAULT_META_DIR = 'META-INF'
+  DEFAULT_MANIFEST_FILE_NAME = 'MANIFEST.MF'
+  DEFAULT_PATH = File.join(DEFAULT_META_DIR, DEFAULT_MANIFEST_FILE_NAME)
   
   def initialize(params)
     init_with_descriptor(params[:descriptor]) if params[:descriptor]
