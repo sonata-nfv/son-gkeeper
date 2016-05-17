@@ -32,7 +32,7 @@ integration:
   catalogues:
     url: 'http://sp.int.sonata-nfv.eu:4002/catalogues'
   mqserver:
-    url: <%= ENV['MQSERVER'] %> || 'broker'
+    url: 'amqp://guest:guest@jenkins.sonata-nfv.eu:5673'
 
 qualification:
   catalogues:
