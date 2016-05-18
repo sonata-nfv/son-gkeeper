@@ -16,3 +16,4 @@
 require_relative 'n_service'
 require_relative 'request'
 require_relative 'mq_server'
+require_relative 'request_manager_service'
