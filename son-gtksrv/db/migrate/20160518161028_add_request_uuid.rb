@@ -1,4 +1,4 @@
-class AddServiceUuid < ActiveRecord::Migration
+class AddRequestUuid < ActiveRecord::Migration
   def change
     add_column :requests, :request_uuid, :uuid
   end
