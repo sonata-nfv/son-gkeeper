@@ -22,10 +22,13 @@ require 'bunny'
 
 class GtkSrv < Sinatra::Base
   
-  attr_accessor :mq_server
-
+  #attr_accessor :mq_server
+  #@token=''
+  
+  
   def initialize()
-  mq_server=MQServer.new(GtkSrv.mqserver['url'])
+  @token=''
+  @mq_server=MQServer.new(GtkSrv.mqserver['url'],logger)
   end
   
   
@@ -71,8 +74,6 @@ class GtkSrv < Sinatra::Base
       
       request = Request.create(:service_uuid => params[:service_uuid])
       
-      json_request = json(request, { root: false })
-      
       service = JSON.parse(RequestManagerService.find_services_by_uuid(params[:service_uuid]))
 
       start_request=Hash.new
@@ -96,11 +97,15 @@ class GtkSrv < Sinatra::Base
       
       logger.debug(start_request_yml)
       
-      generate_token()
+      generate_token
       
-      request.uuid=self.token
+      request['request_uuid']=@token
       
-      smresponse=mq_server.call_sm(start_request_yml,request.uuid)
+      request.save
+      
+      smresponse=@mq_server.call_sm(start_request_yml,request['request_uuid'])
+      
+      json_request = json(request, { root: false })
       
       logger.info 'GtkSrv: returning POST /requests with request='+json_request
       
@@ -129,7 +134,7 @@ class GtkSrv < Sinatra::Base
   end
   
   def generate_token
-    self.token = SecureRandom.uuid
+    @token = SecureRandom.uuid
   end
   
 end
