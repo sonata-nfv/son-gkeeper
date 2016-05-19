@@ -19,54 +19,15 @@ require 'pp'
 require 'addressable/uri'
 require 'yaml'
 require 'bunny'
-require "thread"
 
 class GtkSrv < Sinatra::Base
-  attr_reader
-  attr_accessor :correlation_ids
   
-  def initialize()
-	
-    conn = Bunny.new(GtkSrv.mqserver['url'],:automatically_recover => false)
-    conn.start
-    self.correlation_ids=Hash.new
-    
-    ch   = conn.create_channel
-    @ch             = ch
-    @x              = ch.topic("son-kernel", :auto_delete => false)
-    @server_queue   = "service.instances.create"
-    
-    that = self
-    @q = ch.queue(@server_queue, :auto_delete => true).bind(@x, :routing_key => @server_queue)
-    
-    @q.subscribe do |delivery_info, properties, payload|
-     begin	
-      if properties[:headers]!=nil &&
-         properties[:headers]['type']=='reply' && 
-	 self.correlation_ids[properties[:correlation_id]] != nil 
-        
-	
-	logger.debug(payload.class)
-	#logger.debug("Received #{payload}")
-	
-	parsed_payload = YAML.load(payload)
-	
-	request = Request.find_by(service_uuid: properties[:correlation_id])
-	
-	request['status']=parsed_payload['status']
-	
-	request.save
-	
-	self.correlation_ids.delete(properties[:correlation_id])
-       end
-       rescue Exception => e
-         logger.debug(e.message)
-	 logger.debug(e.backtrace.inspect)
-       end
-      end
-        ObjectSpace.define_finalizer( self, proc { conn.close } )
-  end
+  attr_accessor :mq_server
 
+  def initialize()
+  mq_server=MQServer.new(GtkSrv.mqserver['url'])
+  end
+  
   
   # GETs a request, given an uuid
   get '/requests/:uuid/?' do
@@ -77,13 +38,7 @@ class GtkSrv < Sinatra::Base
     json_error 404, "GtkSrv: Request #{params[:uuid]} not found"    
   end
   
-  get '/mytest/?' do 
-    logger.debug "PRueba!!!" 
-    logger.debug "GtkSrv: entered GET /requests/#{params[:uuid]}" 
-    halt 200, "ok"
-    
-  end
-
+  
   # GET many requests
   get '/requests/?' do
     uri = Addressable::URI.new
@@ -115,7 +70,7 @@ class GtkSrv < Sinatra::Base
       logger.debug "GtkSrv: entered POST /requests with service uuid=#{params[:service_uuid]}"
       
       request = Request.create(:service_uuid => params[:service_uuid])
-
+      
       json_request = json(request, { root: false })
       
       service = JSON.parse(RequestManagerService.find_services_by_uuid(params[:service_uuid]))
@@ -140,8 +95,12 @@ class GtkSrv < Sinatra::Base
       start_request_yml = YAML.dump(start_request)
       
       logger.debug(start_request_yml)
-
-      smresponse=call_sm(start_request_yml,params[:service_uuid])
+      
+      generate_token()
+      
+      request.uuid=self.token
+      
+      smresponse=mq_server.call_sm(start_request_yml,request.uuid)
       
       logger.info 'GtkSrv: returning POST /requests with request='+json_request
       
@@ -169,18 +128,9 @@ class GtkSrv < Sinatra::Base
     end 
   end
   
-  
-  def call_sm(n,correlation_id)
-   
-    self.correlation_ids[correlation_id]=correlation_id
-    logger.debug(correlation_id)
-    @x.publish(n.to_s,
-      :routing_key    => @server_queue,
-      :correlation_id => correlation_id,
-      :reply_to       => @q.name)
-
+  def generate_token
+    self.token = SecureRandom.uuid
   end
-  
   
 end
 
