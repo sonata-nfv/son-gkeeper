@@ -20,7 +20,7 @@ class GtkApi < Sinatra::Base
   before do
 	  if request.request_method == 'OPTIONS'
 		response.headers['Access-Control-Allow-Origin'] = *
-        response.headers['Access-Control-Allow-Methods'] = 'POST, GET, OPTIONS'      
+        response.headers['Access-Control-Allow-Methods'] = 'POST'      
         response.headers['Access-Control-Allow-Headers'] = '*,x-requested-with'
 		halt 200
 	  end
