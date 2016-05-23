@@ -53,7 +53,7 @@ class MQServer
 	
 	
 	
-	request = Request.find_by(request_uuid: properties[:correlation_id])
+	request = Request.find_by(id: properties[:correlation_id])
 
 	if request['status']!=nil &&
           (request['status']=='ERROR' || request['status']=='REJECTED' || request['status']=='Deployment completed')

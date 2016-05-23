@@ -21,7 +21,6 @@ ActiveRecord::Schema.define(version: 20160416163951) do
     t.datetime "created_at"
     t.datetime "updated_at"
     t.uuid     "service_uuid"
-    t.uuid     "request_uuid"
     t.string   "status",       default: "new"
   end
 

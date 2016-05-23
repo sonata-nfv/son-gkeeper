@@ -97,13 +97,13 @@ class GtkSrv < Sinatra::Base
       
       logger.debug(start_request_yml)
       
-      generate_token
+      #generate_token
       
-      request['request_uuid']=@token
+      #request['request_uuid']=@token
       
-      request.save
+      #request.save
       
-      smresponse=@mq_server.call_sm(start_request_yml,request['request_uuid'])
+      smresponse=@mq_server.call_sm(start_request_yml,request['id'])
       
       json_request = json(request, { root: false })
       
