@@ -17,9 +17,21 @@
 require 'json' 
 require 'pp'
 require 'addressable/uri'
+require 'yaml'
+require 'bunny'
 
 class GtkSrv < Sinatra::Base
-    
+  
+  #attr_accessor :mq_server
+  #@token=''
+  
+  
+  def initialize()
+  @token=''
+  @mq_server=MQServer.new(GtkSrv.mqserver['url'],logger)
+  end
+  
+  
   # GETs a request, given an uuid
   get '/requests/:uuid/?' do
     logger.debug "GtkSrv: entered GET /requests/#{params[:uuid]}"
@@ -28,7 +40,8 @@ class GtkSrv < Sinatra::Base
     halt 206, json_request if request
     json_error 404, "GtkSrv: Request #{params[:uuid]} not found"    
   end
-
+  
+  
   # GET many requests
   get '/requests/?' do
     uri = Addressable::URI.new
@@ -57,15 +70,53 @@ class GtkSrv < Sinatra::Base
     logger.info "GtkSrv: entered POST /requests with params=#{params}"
     
     begin
+      logger.debug "GtkSrv: entered POST /requests with service uuid=#{params[:service_uuid]}"
+      
       request = Request.create(:service_uuid => params[:service_uuid])
+      
+      service = JSON.parse(RequestManagerService.find_services_by_uuid(params[:service_uuid]))
+
+      start_request=Hash.new
+      
+      start_request['NSD']=service
+
+      counter=1
+      
+        service['network_functions'].each do |nfd| 
+      
+         complete_nfd=JSON.parse(RequestManagerService.find_function(nfd['vnf_name'],nfd['vnf_vendor'],nfd['vnf_version']))
+         complete_nfd=complete_nfd[0]
+      
+         start_request["VNFD#{counter}"]=complete_nfd
+      
+         counter= counter + 1
+      
+        end
+            
+      start_request_yml = YAML.dump(start_request)
+      
+      logger.debug(start_request_yml)
+      
+      #generate_token
+      
+      #request['request_uuid']=@token
+      
+      #request.save
+      
+      smresponse=@mq_server.call_sm(start_request_yml,request['id'])
+      
       json_request = json(request, { root: false })
-      pp json_request
+      
       logger.info 'GtkSrv: returning POST /requests with request='+json_request
+      
       halt 201, json_request
-    rescue e
-      logger.info "GtkSrv: returning POST /requests with 'GtkSrv: Not possible to save the request'"
-      json_error 400, 'GtkSrv: Not possible to save the request'
-    end
+      
+      rescue Exception => e
+         logger.debug(e.message)
+	 logger.debug(e.backtrace.inspect)
+	 halt 500, 'Internal server error'
+	 
+      end
   end
 
   # PUTs an update on an existing instantiation request, given its UUID
@@ -81,5 +132,10 @@ class GtkSrv < Sinatra::Base
       json_error 400, 'GtkSrv: Not possible to update the request'
     end 
   end
+  
+  def generate_token
+    @token = SecureRandom.uuid
+  end
+  
 end
 
