@@ -21,7 +21,7 @@ require 'addressable/uri'
 class GtkSrv < Sinatra::Base
 
   get '/services/?' do
-    logger.debug "GtkSrv: entered GET /services/#{params}"
+    logger.debug "GtkSrv: entered GET /services with params #{params}"
     uri = Addressable::URI.new
 
     # Remove list of wanted fields from the query parameter list
@@ -36,16 +36,15 @@ class GtkSrv < Sinatra::Base
       if field_list
         fields = field_list.split(',')
         logger.debug "GtkSrv: GET /services: fields=#{fields}"
-        
         response = services.to_json(:only => fields)
       else
         response = services.to_json
       end
-      logger.debug "GtkSrv: leaving GET /services/#{uri.query} with response="+response
+      logger.debug "GtkSrv: leaving GET /services?#{uri.query} with response="+response
       halt 200, response
     else
-      logger.debug "GtkSrv: leaving GET /services/#{uri.query} with \"No service with params=#{uri.query} was found\""
-      json_error 404, "No service with params=#{uri.query} was found"
+      logger.debug "GtkSrv: leaving GET /services?#{uri.query} with \"No service with params #{uri.query} was found\""
+      json_error 404, "No service with params #{uri.query} was found"
     end
   end
   
