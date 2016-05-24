@@ -17,7 +17,6 @@
 class RequestManagerService
   class << self
 
-    
     # We're not yet using this: it allows for multiple implementations, such as Fakes (for testing)
     def implementation
       @implementation
@@ -28,12 +27,9 @@ class RequestManagerService
     end
   
     def find_services_by_uuid(uuid)
-      
       headers = { 'Accept'=> 'application/json', 'Content-Type'=>'application/json'}
       begin
-	
         response = RestClient.get( GtkSrv.settings.catalogues['url']+"/network-services/#{uuid}", headers)
-	
       rescue => e
         e.to_json
       end
@@ -44,16 +40,15 @@ class RequestManagerService
       begin
 	parsed_url = GtkSrv.settings.catalogues['url']+"/vnfs#?name=#{name}&vendor=#{vendor}&version=#{version}"
 	response = RestClient.get(parsed_url, headers)
-	
       rescue => e
         e.to_json
       end
     end
     
-    
-    
     def get_log
       RestClient.get(GtkApi.settings.services['url']+"/admin/logs")      
     end
+
   end
+  
 end
