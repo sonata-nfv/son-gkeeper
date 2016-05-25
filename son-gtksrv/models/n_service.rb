@@ -32,7 +32,7 @@ class NService
       pp "NService#find: services #{services}"
       services
     rescue => e
-      e
+      puts e.backtrace
       nil
     end
   end
@@ -46,7 +46,8 @@ class NService
       pp "NService#find_by_uuid(#{uuid}): #{parsed_response}"
       parsed_response      
     rescue => e
-      e
+      puts e.backtrace
+      nil
     end
   end
 

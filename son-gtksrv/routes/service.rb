@@ -28,6 +28,7 @@ class GtkSrv < Sinatra::Base
     field_list = params.delete('fields')
     uri.query_values = params
     logger.debug 'GtkSrv: GET /services: uri.query='+uri.query
+    logger.debug "GtkSrv: GET /services: params=#{params}"
     
     services = NService.find(params)
     if services
