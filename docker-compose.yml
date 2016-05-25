@@ -36,6 +36,8 @@ services:
      - MQSERVER=amqp://guest:guest@broker:5672
     depends_on:
      - postgres
+    extra_hosts:
+      - "jenkins.sonata-nfv.eu:192.168.60.5"
 
   postgres:
     image: ntboes/postgres-uuid
