@@ -31,7 +31,8 @@ class ServiceManagerService
       begin
         response = RestClient.get( GtkApi.settings.services['url']+"/services/#{uuid}", headers)
       rescue => e
-        e.to_json
+        puts "ServiceManagerService#create: e=#{e.backtrace}"
+        nil 
       end
     end
     
@@ -44,7 +45,8 @@ class ServiceManagerService
         pp "ServiceManagerService#find_services(#{params}): response=#{response}"
         JSON.parse response.body
       rescue => e
-        e.to_json 
+        puts "ServiceManagerService#create: e=#{e.backtrace}"
+        nil 
       end
     end
 
@@ -56,7 +58,8 @@ class ServiceManagerService
         uri = GtkApi.settings.services['url']+'/requests'
         RestClient.get(uri, headers) 
       rescue => e
-        e.to_json 
+        puts "ServiceManagerService#create: e=#{e.backtrace}"
+        nil 
       end
     end
     
@@ -66,7 +69,8 @@ class ServiceManagerService
       begin
         response = RestClient.get( GtkApi.settings.services['url']+"/requests/#{uuid}", headers)
       rescue => e
-        e.to_json
+        puts "ServiceManagerService#create: e=#{e.backtrace}"
+        nil 
       end
     end
     
@@ -80,8 +84,8 @@ class ServiceManagerService
         pp "ServiceManagerService#create: parsed_response=#{parsed_response}"
         parsed_response
       rescue => e
-        pp "ServiceManagerService#create: e=#{e}"
-        e
+        puts "ServiceManagerService#create: e=#{e.backtrace}"
+        nil 
       end      
     end
     
