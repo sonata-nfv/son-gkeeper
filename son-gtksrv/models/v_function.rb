@@ -13,7 +13,14 @@
 ## See the License for the specific language governing permissions and
 ## limitations under the License.
 # encoding: utf-8
-require_relative 'v_function'
-require_relative 'n_service'
-require_relative 'request'
-require_relative 'mq_server'
+class VFunction
+  def find_function(name,vendor,version)
+    headers = { 'Accept'=> 'application/json', 'Content-Type'=>'application/json'}
+    begin
+      parsed_url = GtkSrv.settings.catalogues['url']+"/vnfs#?name=#{name}&vendor=#{vendor}&version=#{version}"
+      response = RestClient.get(parsed_url, headers)
+    rescue => e
+      e.to_json
+    end
+  end
+end

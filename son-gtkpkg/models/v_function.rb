@@ -43,8 +43,8 @@ class VFunction
       response = RestClient.post( uri, vnfd.to_json, content_type: :json, accept: :json)     
       function = JSON.parse response
     rescue => e
-        puts e.response
-        nil
+      puts e.response
+      nil
     end
     pp "VFunction.store: function=#{function}"
     function
