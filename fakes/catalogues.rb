@@ -100,18 +100,22 @@ end
 
 get '/catalogues/network-services/?' do
   content_type :json
-  params.delete!(:offset) if params.has_key? :offset
-  params.delete!(:limit) if params.has_key? :limit
+  puts "With params #{params}: "
+  params.delete("offset") #if params.has_key? "offset"
+  params.delete("limit") #if params.has_key? "limit"
   unless params.empty?
     puts "With params #{params}: "
     selected = []
     $services.each do |s|
-      puts s.inspect
+      puts "service #{s.inspect}"
       selected << s if params['vendor'] && s['package_group'] == params['vendor']
       selected << s if params['version'] && s['package_version'] == params['version']
-      selected << s if params['name'] && s['package_name'] == params['name']
+      if params['name'] && s['package_name'] == params['name']
+        selected << s
+        puts "package_name = "+params['name']
+      end
     end
-    puts selected.to_json
+    puts "selected: #{selected}"
     selected.to_json
   else
     puts "With no params: "

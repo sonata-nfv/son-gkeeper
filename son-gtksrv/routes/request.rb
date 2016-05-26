@@ -78,8 +78,9 @@ class GtkSrv < Sinatra::Base
       #generate_token
       #request['request_uuid']=SecureRandom.uuid
       #request.save
-      
-      smresponse=MQServer.new(GtkSrv.mqserver['url'],logger).call_sm(start_request_yml,request['id'])
+      mq_server = MQServer.new(GtkSrv.mqserver['url'],logger)
+      #smresponse = mq_server.call_sm(start_request_yml,request['id'])
+      smresponse = mq_server.emit(start_request_yml.to_s,request['id'])
       json_request = json(request, { root: false })
       logger.info 'GtkSrv: returning POST /requests with request='+json_request
       halt 201, json_request
