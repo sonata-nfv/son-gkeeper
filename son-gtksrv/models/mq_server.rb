@@ -16,36 +16,45 @@
 # encoding: utf-8
 require 'bunny'
 require 'pp'
-require 'addressable/uri'
 require 'yaml'
 require 'json' 
 
 class MQServer
-
-  attr_reader
   attr_accessor :correlation_ids
   
+  SERVER_QUEUE = 'service.instances.create'
+  
   def initialize(url,logger)
-    
-    @logger=logger    
-    conn = Bunny.new(url,:automatically_recover => false)
-    conn.start
+    @logger=logger
+    @channel = Bunny.new(url,:automatically_recover => false).start.create_channel
+    @topic = @channel.topic("son-kernel", :auto_delete => false)
+    @queue   = @channel.queue(SERVER_QUEUE, :auto_delete => true).bind(@topic, :routing_key => SERVER_QUEUE)
+
     self.correlation_ids=Hash.new
     
-    @channel             = conn.create_channel
-    @x              = @channel.topic("son-kernel", :auto_delete => false)
-    @server_queue   = "service.instances.create"
-    
-    that = self
-    @q = @channel.queue(@server_queue, :auto_delete => true).bind(@x, :routing_key => @server_queue)
-    
-    @q.subscribe do |delivery_info, properties, payload|
-      begin	
-        if properties[:headers]!=nil && properties[:headers]['type']=='reply' && self.correlation_ids[properties[:correlation_id]] != nil 
+  end
+  
+  def call_sm(n,correlation_id)
+    self.correlation_ids[correlation_id]=correlation_id
+    @logger.debug(correlation_id)
+    @topic.publish(n.to_s, :routing_key => SERVER_QUEUE, :correlation_id => correlation_id,:reply_to => @q.name)
+  end
+
+  def emit(msg, correlation_id)
+    @topic.publish(msg, :routing_key => SERVER_QUEUE, :correlation_id => correlation_id)
+  end
+  
+  def consume
+    @queue.subscribe do |delivery_info, properties, payload|
+      begin
+        pp "delivery_info: #{delivery_info}"
+        pp "properties: #{properties}"
+        pp "payload: #{payload}"
+        if valid_response( properties, self.correlation_ids)
           parsed_payload = YAML.load(payload)
           request = Request.find_by(id: properties[:correlation_id])
 
-  	      if request['status']!=nil && (request['status']=='ERROR' || request['status']=='REJECTED' || request['status']=='Deployment completed')
+  	      if valid(request)
             self.correlation_ids.delete(properties[:correlation_id])
           end
           request['status']=parsed_payload['status']
@@ -56,13 +65,16 @@ class MQServer
   	    @logger.debug(e.backtrace.inspect)
       end
     end
-    ObjectSpace.define_finalizer( self, proc { conn.close } )
   end
-
-  def call_sm(n,correlation_id)
-    self.correlation_ids[correlation_id]=correlation_id
-    @logger.debug(correlation_id)
-    @x.publish(n.to_s, :routing_key => @server_queue, :correlation_id => correlation_id,:reply_to => @q.name)
+  
+  private 
+  
+  def valid_response(properties, correlation_ids)
+    properties[:headers]!=nil && properties[:headers]['type']=='reply' && correlation_ids[properties[:correlation_id]] != nil 
+  end
+  
+  def valid(request)
+    request['status']!=nil && (request['status']=='ERROR' || request['status']=='REJECTED' || request['status']=='Deployment completed')
   end
 end
 

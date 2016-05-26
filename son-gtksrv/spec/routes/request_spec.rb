@@ -32,6 +32,8 @@ RSpec.describe GtkSrv do
 
   describe 'POST /requests' do
     it 'accepts new valid (instantiations) requests'
+    it 'publishes the instantiation request'
+    it 'processes the answer to the instantiation request'
     it 'rejects new invalid (instantiations) requests'
   end
 
