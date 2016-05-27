@@ -173,6 +173,44 @@ paths:
           description: Instantiations requests list was returned.
         '404':
           description: No service with the provided UUID was found.
+  /instances:
+    get:
+      summary: Get the list of all the instances registered.
+      description: ''
+      produces:
+        - application/json
+      parameters:
+        - name: offset
+          in: query
+          type: integer
+          description: Offset the list of returned results by this amount. Default is zero.
+        - name: limit
+          in: query
+          type: integer
+          description: Number of service instances to return. Default is 5, maximum is 100.
+      tags: []
+      responses:
+        '200':
+          description: Instances list returned.
+  /instances/{instance_uuid}:
+    get:
+      summary: Gets a registered instance.
+      description: Returns data on a sigle service instance
+      produces:
+        - application/json
+      parameters:
+        - name: instance_uuid
+          in: path
+          description: The UUID of the service instance.
+          required: true
+          type: string
+          format: uuid
+      tags: []
+      responses:
+        '200':
+          description: Instance data is returned.
+        '404':
+          description: No service instance with the provided UUID was found.
 definitions:
   ServicesInstance:
     required:
