@@ -65,18 +65,18 @@ paths:
         - application/json
         - application/octet-stream
       parameters:
-        - name: vendor
-          in: query
+        - in: query
+          name: vendor
           description: The vendor of the service required
           required: false
           type: string
-        - name: name
-          in: query
+        - in: query
+          name: name
           description: The name of the service required
           required: false
           type: string
-        - name: version
-          in: query
+        - in: query
+          name: version
           description: The version of the service required
           required: false
           type: string          
@@ -129,6 +129,21 @@ paths:
           enum:
           - Active
           - New
+        - in: query
+          name: vendor
+          description: The vendor of the service required
+          required: false
+          type: string
+        - in: query
+          name: name
+          description: The name of the service required
+          required: false
+          type: string
+        - in: query
+          name: version
+          description: The version of the service required
+          required: false
+          type: string          
         - $ref: "#/parameters/offset"
         - $ref: "#/parameters/limit"
       tags:
@@ -136,6 +151,8 @@ paths:
       responses:
         "200":
           description: List of requested services has been returned
+          schema:
+            $ref: "#/definitions/Services"
         "404":
           $ref: "#/responses/RequiredRecordDoesNotExistResponse"
         "500":
@@ -159,6 +176,8 @@ paths:
       responses:
         "200":
           description: Data about the given service is returned
+          schema:
+            $ref: "#/definitions/Service"
         "404":
           $ref: "#/responses/RequiredRecordDoesNotExistResponse"
         "500":
@@ -179,6 +198,21 @@ paths:
           enum:
           - Active
           - New
+        - in: query
+          name: vendor
+          description: The vendor of the service required
+          required: false
+          type: string
+        - in: query
+          name: name
+          description: The name of the service required
+          required: false
+          type: string
+        - in: query
+          name: version
+          description: The version of the service required
+          required: false
+          type: string          
         - $ref: "#/parameters/offset"
         - $ref: "#/parameters/limit"
       tags:
@@ -227,6 +261,21 @@ paths:
           required: false
           type: string
           format: uuid
+        - in: query
+          name: vendor
+          description: The vendor of the service required
+          required: false
+          type: string
+        - in: query
+          name: name
+          description: The name of the service required
+          required: false
+          type: string
+        - in: query
+          name: version
+          description: The version of the service required
+          required: false
+          type: string          
         - $ref: "#/parameters/offset"
         - $ref: "#/parameters/limit"
       tags:
@@ -267,7 +316,7 @@ paths:
         - application/json
       parameters:
         - in: body
-          name: service_id
+          name: requestId
           description: The UUID of the service from which an instance is required
           required: true
           type: string
@@ -289,6 +338,11 @@ paths:
       produces:
         - application/json
       parameters:
+        - in: query
+          name: ownerId
+          description: The (UU)ID of owner of the service
+          required: false
+          type: string
         - $ref: "#/parameters/offset"
         - $ref: "#/parameters/limit"
       tags:
@@ -326,15 +380,38 @@ paths:
         "500":
           $ref: "#/responses/Standard500ErrorResponse"
 definitions:
-  ServiceInstance:
+  Service:
     required:
-      - instance_uuid
-      - service_uuid
+      - serviceId
     properties:
-      instance_uuid:
+      serviceId:
         type: string
         format: uuid
-      service_uuid:
+      name:
+        type: string
+      vendor:
+        type: string
+      version:
+        type: string
+      created_at:
+        type: string
+        format: date
+      updated_at:
+        type: string
+        format: date
+  Services:
+    type: array
+    items:
+      $ref: '#/definitions/Service'
+  ServiceInstance:
+    required:
+      - instanceId
+      - serviceId
+    properties:
+      instanceId:
+        type: string
+        format: uuid
+      serviceId:
         type: string
         format: uuid
       created_at:
@@ -347,6 +424,33 @@ definitions:
     type: array
     items:
       $ref: '#/definitions/ServiceInstance'
+  FunctionInstance:
+    required:
+      - instanceId
+      - functionId
+    properties:
+      instanceId:
+        type: string
+        format: uuid
+      functionId:
+        type: string
+        format: uuid
+      name:
+        type: string
+      vendor:
+        type: string
+      version:
+        type: string
+      created_at:
+        type: string
+        format: date
+      updated_at:
+        type: string
+        format: date
+  FunctionsInstances:
+    type: array
+    items:
+      $ref: '#/definitions/FunctionInstance'
   Error:
     properties:
       code:
