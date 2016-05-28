@@ -14,55 +14,57 @@ paths:
   /:
     get:
       summary: Gatekeeper's URL root
-      description: Everything starts here.
+      description: Everything starts here
+      operationId: getRoot
       tags:
         - Root
       responses:
-        '200':
-          description: This list of paths.
+        "200":
+          description: This list of paths
+        "500":
+          $ref: "#/responses/Standard500ErrorResponse"
   /api-doc:
     get:
-      summary: Gatekeeper's API documentation.
-      description: The Gatekeeper's API documentation, in Swagger format.
+      summary: Gatekeeper's API documentation
+      description: The Gatekeeper's API documentation, in Swagger format
+      operationId: getApiDoc
       produces:
         - text/html
       tags:
         - API-doc
       responses:
-        '200':
-          description: This HTML API documentation.
+        "200":
+          description: This HTML API documentation
+        "500":
+          $ref: "#/responses/Standard500ErrorResponse"
   /packages:
     post:
-      summary: Submit a SONATA package to the Service Platform.
-      description: The SDK uses this endpoint to submit a SONATA package.
+      summary: Submit a SONATA package to the Service Platform
+      description: The SDK uses this endpoint to submit a SONATA package
+      operationId: postPackage
       produces:
         - application/json
       parameters:
         - name: package
           in: formData
-          description: The Package file, as specified by the son-schema.
+          description: The Package file, as specified by the son-schema
           required: true
           type: file
       tags:
         - Packages
       responses:
-        '201':
-          description: The submited package has been received, validated and submited to the Catalogue.
-        '201':
-          description: The submited package has been received, validated and submited to the Catalogue.
+        "201":
+          description: The submited package has been received, validated and submited to the Catalogue
+        "500":
+          $ref: "#/responses/Standard500ErrorResponse"
     get:
-      summary: Obtain a SONATA package from the Service Platform, based on its UUID.
-      description: The SDK uses this endpoint to retrieve a SONATA package.
+      summary: Obtain a list of SONATA packages from the Service Platform, based on its UUID
+      description: The SDK uses this endpoint to retrieve a SONATA package
+      operationId: getPackages
       produces:
         - application/json
         - application/octet-stream
       parameters:
-        - name: package_id
-          in: path
-          description: The Package UUID, as provided upon a successful creation of the Package in the Service Platform.
-          required: false
-          type: file
-          format: uuid
         - name: vendor
           in: query
           description: The vendor of the service required
@@ -78,156 +80,296 @@ paths:
           description: The version of the service required
           required: false
           type: string          
-        - name: offset
-          in: query
-          type: integer
-          description: Offset the list of returned results by this amount. Default is zero.
-        - name: limit
-          in: query
-          type: integer
-          description: Number of packages to return. Default is 5, maximum is 100.
+        - $ref: "#/parameters/offset"
+        - $ref: "#/parameters/limit"
       tags:
         - Packages
       responses:
-        '200':
-          description: The required package has been found, and its package is being returned.
-        '404':
-          description: The required package has not been found.
+        "200":
+          description: The required package has been found, and its package is being returned
+        "404":
+          $ref: "#/responses/RequiredRecordDoesNotExistResponse"
+        "500":
+          $ref: "#/responses/Standard500ErrorResponse"
+  /packages/{packageId}:
+    get:
+      summary: Obtain a SONATA package from the Service Platform, based on its UUID
+      description: The SDK uses this endpoint to retrieve a SONATA package
+      operationId: getPackage
+      produces:
+        - application/octet-stream
+      parameters:
+        - in: path
+          name: packageId
+          description: The Package UUID, as provided upon a successful creation of the Package in the Service Platform
+          required: true
+          format: uuid
+      tags:
+        - Packages
+      responses:
+        "200":
+          description: The required package has been found, and its file is being returned
+        "404":
+          $ref: "#/responses/RequiredRecordDoesNotExistResponse"
+        "500":
+          $ref: "#/responses/Standard500ErrorResponse"
   /services:
     get:
-      summary: Obtain the list of services that can be instantiated.
-      description: Service names may be duplicated.
+      summary: Get a list of services
+      description: Obtain the list of services that can be instantiated
+      operationId: getServices
       produces:
         - application/json
       parameters:
-        - name: service_id
-          in: path
-          description: The UUID of the required service.
+        - in: query
+          name: status
+          description: The status of the services to be returned
           required: false
           type: string
-          format: uuid
-        - name: offset
-          in: query
-          type: integer
-          description: Offset the list of returned results by this amount. Default is zero.
-        - name: limit
-          in: query
-          type: integer
-          description: Number of services to return. Default is 5, maximum is 100.
-      tags: []
+          enum:
+          - Active
+          - New
+        - $ref: "#/parameters/offset"
+        - $ref: "#/parameters/limit"
+      tags:
+        - Services
       responses:
-        '200':
-          description: List of requested services has been returned.
-        '404':
-          description: Specified service was not found.
-  /requests:
+        "200":
+          description: List of requested services has been returned
+        "404":
+          $ref: "#/responses/RequiredRecordDoesNotExistResponse"
+        "500":
+          $ref: "#/responses/Standard500ErrorResponse"
+  /services/{serviceID}:
     get:
-      summary: Get the list of instantions requests made.
-      description: ''
+      summary: Get data about a single service
+      description: Obtain data about the service which (UU)ID is given
+      operationId: getService
       produces:
         - application/json
       parameters:
-        - name: request_id
-          in: path
-          description: The UUID of the request.
-          required: false
-          type: string
-          format: uuid
-        - name: service_id
-          in: query
-          description: The UUID of the service of which all requests done are needed.
-          required: false
-          type: string
-          format: uuid
-        - name: offset
-          in: query
-          type: integer
-          description: Offset the list of returned results by this amount. Default is zero.
-        - name: limit
-          in: query
-          type: integer
-          description: Number of service instances to return. Default is 5, maximum is 100.
-      tags: []
-      responses:
-        '200':
-          description: Instantiations requests list was returned.
-        '404':
-          description: No request with the provided UUID was found.
-    post:
-      summary: Request the instantion of a given service.
-      description: ''
-      produces:
-        - application/json
-      parameters:
-        - name: service_id
-          in: body
-          schema: 
-            $ref: '#/definitions/ServicesInstances'
-          description: The UUID of the service from which an instance is required.
+        - in: path
+          name: serviceId
+          description: The UUID of the required service
           required: true
           type: string
           format: uuid
-      tags: []
+      tags:
+        - Services
       responses:
-        '200':
-          description: Instantiations requests list was returned.
-        '404':
-          description: No service with the provided UUID was found.
-  /instances:
+        "200":
+          description: Data about the given service is returned
+        "404":
+          $ref: "#/responses/RequiredRecordDoesNotExistResponse"
+        "500":
+          $ref: "#/responses/Standard500ErrorResponse"
+  /functions:
     get:
-      summary: Get the list of all the instances registered.
-      description: ''
+      summary: Get a list of functions
+      description: Obtain the list of functions
+      operationId: getFunctions
       produces:
         - application/json
       parameters:
-        - name: offset
-          in: query
-          type: integer
-          description: Offset the list of returned results by this amount. Default is zero.
-        - name: limit
-          in: query
-          type: integer
-          description: Number of service instances to return. Default is 5, maximum is 100.
-      tags: []
+        - in: query
+          name: status
+          description: The status of the functions to be returned
+          required: false
+          type: string
+          enum:
+          - Active
+          - New
+        - $ref: "#/parameters/offset"
+        - $ref: "#/parameters/limit"
+      tags:
+        - Functions
       responses:
-        '200':
-          description: Instances list returned.
-  /instances/{instance_uuid}:
+        "200":
+          description: List of requested functions has been returned
+        "404":
+          $ref: "#/responses/RequiredRecordDoesNotExistResponse"
+        "500":
+          $ref: "#/responses/Standard500ErrorResponse"
+  /functions/{functionId}:
+    get:
+      summary: Get data about a single function
+      description: Obtain data about the function which (UU)ID is given
+      operationId: getFunction
+      produces:
+        - application/json
+      parameters:
+        - in: path
+          name: functionId
+          description: The UUID of the required function
+          required: true
+          type: string
+          format: uuid
+      tags:
+        - Functions
+      responses:
+        "200":
+          description: Data about the given function is returned
+        "404":
+          $ref: "#/responses/RequiredRecordDoesNotExistResponse"
+        "500":
+          $ref: "#/responses/Standard500ErrorResponse"
+  /requests:
+    get:
+      summary: Get the list of instantions requests made
+      description: ""
+      operationId: getRequests
+      produces:
+        - application/json
+      parameters:
+        - in: query
+          name: service_id
+          description: The UUID of the service of which all requests done are needed
+          required: false
+          type: string
+          format: uuid
+        - $ref: "#/parameters/offset"
+        - $ref: "#/parameters/limit"
+      tags:
+        - Requests
+      responses:
+        "200":
+          description: Instantiations requests list was returned
+        "500":
+          $ref: "#/responses/Standard500ErrorResponse"
+  /requests/{requestId}:
+    get:
+      summary: Get the the given request
+      description: ""
+      operationId: getRequest
+      produces:
+        - application/json
+      parameters:
+        - in: path
+          name: requestId
+          description: The UUID of the request
+          required: true
+          type: string
+          format: uuid
+      tags:
+        - Requests
+      responses:
+        "200":
+          description: Instantiations request data is returned
+        "404":
+          $ref: "#/responses/RequiredRecordDoesNotExistResponse"
+        "500":
+          $ref: "#/responses/Standard500ErrorResponse"
+    post:
+      summary: Request the instantion of a given service
+      description: ""
+      operationId: postRequest
+      produces:
+        - application/json
+      parameters:
+        - in: body
+          name: service_id
+          description: The UUID of the service from which an instance is required
+          required: true
+          type: string
+          format: uuid
+      tags:
+        - Requests
+      responses:
+        "200":
+          description: Instantiations requests list was returned
+        "404":
+          $ref: "#/responses/RequiredRecordDoesNotExistResponse"
+        "500":
+          $ref: "#/responses/Standard500ErrorResponse"
+  /instances:
+    get:
+      summary: Get the list of all the instances registered
+      description: ""
+      operationId: getInstances
+      produces:
+        - application/json
+      parameters:
+        - $ref: "#/parameters/offset"
+        - $ref: "#/parameters/limit"
+      tags:
+        - Instances
+      responses:
+        "200":
+          description: Instances list returned
+          schema:
+            $ref: "#/definitions/ServiceInstances"
+        "500":
+          $ref: "#/responses/Standard500ErrorResponse"
+  /instances/{instanceId}:
     get:
       summary: Gets a registered instance.
       description: Returns data on a sigle service instance
+      operationId: getInstance
       produces:
         - application/json
       parameters:
-        - name: instance_uuid
-          in: path
-          description: The UUID of the service instance.
+        - in: path
+          name: instanceId
+          description: The UUID of the service instance
           required: true
           type: string
           format: uuid
-      tags: []
+      tags:
+        - Instances
       responses:
-        '200':
-          description: Instance data is returned.
-        '404':
-          description: No service instance with the provided UUID was found.
+        "200":
+          description: Instance data is returned
+          schema:
+            $ref: "#/definitions/ServiceInstance"
+        "404":
+          $ref: "#/responses/RequiredRecordDoesNotExistResponse"
+        "500":
+          $ref: "#/responses/Standard500ErrorResponse"
 definitions:
-  ServicesInstance:
+  ServiceInstance:
     required:
-      - id
-      - name
-      - created_at
-      - updated_at
+      - instance_uuid
+      - service_uuid
     properties:
-      id:
+      instance_uuid:
         type: string
         format: uuid
-      name:
+      service_uuid:
         type: string
-      tag:
+        format: uuid
+      created_at:
         type: string
-  ServicesInstances:
+        format: date
+      updated_at:
+        type: string
+        format: date
+  ServiceInstances:
     type: array
     items:
-      $ref: '#/definitions/ServicesInstance'
-  
+      $ref: '#/definitions/ServiceInstance'
+  Error:
+    properties:
+      code:
+        type: string
+      message:
+        type: string
+responses:
+  Standard500ErrorResponse:
+    description: An unexpected error occured.
+    schema:
+      $ref: "#/definitions/Error"
+  RequiredRecordDoesNotExistResponse:
+    description: The required record does not exist
+    schema:
+      $ref: "#/definitions/Error"
+parameters:
+  limit:
+    name: limit
+    in: query
+    description: Number of service instances to return. Default is 5, maximum is 100
+    type: integer
+  offset:
+    name: offset
+    in: query
+    description: Offset the list of returned results by this amount. Default is zero
+    type: integer
