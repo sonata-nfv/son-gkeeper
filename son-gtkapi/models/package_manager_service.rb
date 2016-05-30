@@ -30,7 +30,7 @@ class PackageManagerService
     def create(params)
       pp "PackageManagerService#create: params=#{params}"
       tmpfile = params[:package][:tempfile]
-      uri = GtkApi.settings.pkgmgmt['url']+'/packages'
+      uri = GtkApi.settings.pkgmgmt+'/packages'
       pp "PackageManagerService#create: uri="+uri
       response = RestClient.post(uri, params)
       pp "PackageManagerService#create: response.class=#{response.class}"
@@ -43,14 +43,14 @@ class PackageManagerService
       headers[:params] = uuid
       begin
         # Get the meta-data first
-        response = RestClient.get( GtkApi.settings.pkgmgmt['url']+"/packages/#{uuid}", headers)
+        response = RestClient.get( GtkApi.settings.pkgmgmt+"/packages/#{uuid}", headers)
         filename = JSON.parse(response)['filepath']
         pp filename
         path = File.join('public','packages',uuid)
         FileUtils.mkdir_p path unless File.exists? path
         
         # Get the package it self
-        package = RestClient.get( GtkApi.settings.pkgmgmt['url']+"/packages/#{uuid}/package")
+        package = RestClient.get( GtkApi.settings.pkgmgmt+"/packages/#{uuid}/package")
         File.open(filename, 'wb') do |f|
           f.write package
         end
@@ -64,7 +64,7 @@ class PackageManagerService
       headers = { 'Accept'=> 'application/json', 'Content-Type'=>'application/json'}
       headers[:params] = params
       begin
-        response = RestClient.get(GtkApi.settings.pkgmgmt['url']+'/packages', headers)
+        response = RestClient.get(GtkApi.settings.pkgmgmt+'/packages', headers)
         pp "PackageManagerService#find: response #{response}"
         response
       rescue => e
@@ -73,8 +73,8 @@ class PackageManagerService
     end
     
     def get_log
-      pp "PackageManagerService#get_log: url "+GtkApi.settings.pkgmgmt['url']+'/admin/logs'
-      RestClient.get(GtkApi.settings.pkgmgmt['url']+'/admin/logs')      
+      pp "PackageManagerService#get_log: url "+GtkApi.settings.pkgmgmt+'/admin/logs'
+      RestClient.get(GtkApi.settings.pkgmgmt+'/admin/logs')      
     end
   end
 end

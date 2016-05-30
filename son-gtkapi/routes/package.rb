@@ -30,7 +30,7 @@ class GtkApi < Sinatra::Base
         if package
           if package.is_a?(Hash) && (package[:uuid] || package['uuid'])
             logger.info "package: #{package}"
-            headers = {'location'=> "#{settings.pkgmgmt['url']}/packages/#{package[:uuid]}", 'Content-Type'=> 'application/json'}
+            headers = {'location'=> "#{settings.pkgmgmt}/packages/#{package[:uuid]}", 'Content-Type'=> 'application/json'}
             halt 201, headers, package.to_json
           else
             json_error 400, 'No UUID given to package'
