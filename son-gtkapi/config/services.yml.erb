@@ -1,0 +1,17 @@
+---
+development: &common_settings
+  pkgmgmt: <%= ENV['PACKAGE_MANAGEMENT_URL'] %>
+  srvmgmt: <%= ENV['SERVICE_MANAGEMENT_URL'] %>
+
+test:
+  <<: *common_settings
+
+integration:
+  <<: *common_settings
+
+qualification:
+  <<: *common_settings
+
+demonstration:
+  <<: *common_settings
+ 

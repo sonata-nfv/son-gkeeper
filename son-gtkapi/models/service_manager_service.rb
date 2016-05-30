@@ -29,7 +29,7 @@ class ServiceManagerService
       headers = { 'Accept'=> 'application/json', 'Content-Type'=>'application/json'}
       headers[:params] = uuid
       begin
-        response = RestClient.get( GtkApi.settings.services['url']+"/services/#{uuid}", headers)
+        response = RestClient.get( GtkApi.settings.srvmgmt+"/services/#{uuid}", headers)
       rescue => e
         puts "ServiceManagerService#create: e=#{e.backtrace}"
         nil 
@@ -41,7 +41,7 @@ class ServiceManagerService
       headers[:params] = params unless params.empty?
       pp "ServiceManagerService#find_services(#{params}): headers=#{headers}"
       begin
-        response = RestClient.get(GtkApi.settings.services['url']+'/services', headers) 
+        response = RestClient.get(GtkApi.settings.srvmgmt+'/services', headers) 
         pp "ServiceManagerService#find_services(#{params}): response=#{response}"
         JSON.parse response.body
       rescue => e
@@ -55,7 +55,7 @@ class ServiceManagerService
       headers[:params] = params unless params.empty?
       pp "ServiceManagerService#find_requests(#{params}): headers=#{headers}"
       begin
-        uri = GtkApi.settings.services['url']+'/requests'
+        uri = GtkApi.settings.srvmgmt+'/requests'
         RestClient.get(uri, headers) 
       rescue => e
         puts "ServiceManagerService#create: e=#{e.backtrace}"
@@ -67,7 +67,7 @@ class ServiceManagerService
       headers = { 'Accept'=> 'application/json', 'Content-Type'=>'application/json'}
       headers[:params] = uuid
       begin
-        response = RestClient.get( GtkApi.settings.services['url']+"/requests/#{uuid}", headers)
+        response = RestClient.get( GtkApi.settings.srvmgmt+"/requests/#{uuid}", headers)
       rescue => e
         puts "ServiceManagerService#create: e=#{e.backtrace}"
         nil 
@@ -77,7 +77,7 @@ class ServiceManagerService
     def create(params)
       pp "ServiceManagerService#create(#{params})"
       begin
-        uri = GtkApi.settings.services['url']+'/requests'
+        uri = GtkApi.settings.srvmgmt+'/requests'
         response = RestClient.post(uri, { service_uuid: params[:service_uuid]}, content_type: :json, accept: :json) 
         pp "ServiceManagerService#create: response="+response
         parsed_response = JSON.parse(response)
@@ -90,7 +90,7 @@ class ServiceManagerService
     end
     
     def get_log
-      RestClient.get(GtkApi.settings.services['url']+"/admin/logs")      
+      RestClient.get(GtkApi.settings.srvmgmt+"/admin/logs")      
     end
   end
 end
