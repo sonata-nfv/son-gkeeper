@@ -102,6 +102,7 @@ paths:
         - in: path
           name: packageId
           description: The Package UUID, as provided upon a successful creation of the Package in the Service Platform
+          type: string          
           required: true
           format: uuid
       tags:
@@ -247,7 +248,7 @@ paths:
           $ref: "#/responses/RequiredRecordDoesNotExistResponse"
         "500":
           $ref: "#/responses/Standard500ErrorResponse"
-  /requests:
+  /requests2:
     get:
       summary: Get the list of instantions requests made
       description: ""
@@ -285,7 +286,29 @@ paths:
           description: Instantiations requests list was returned
         "500":
           $ref: "#/responses/Standard500ErrorResponse"
-  /requests/{requestId}:
+    post:
+      summary: Request the instantion of a given service
+      description: ""
+      operationId: newRequest
+      produces:
+        - application/json
+      parameters:
+        - in: body
+          name: requestId
+          description: The UUID of the service from which an instance is required
+          required: true
+          type: string
+          format: uuid
+      tags:
+        - Requests
+      responses:
+        "200":
+          description: Instantiations requests list was returned
+        "404":
+          $ref: "#/responses/RequiredRecordDoesNotExistResponse"
+        "500":
+          $ref: "#/responses/Standard500ErrorResponse"
+  /requests2/{requestId}:
     get:
       summary: Get the the given request
       description: ""
@@ -304,28 +327,6 @@ paths:
       responses:
         "200":
           description: Instantiations request data is returned
-        "404":
-          $ref: "#/responses/RequiredRecordDoesNotExistResponse"
-        "500":
-          $ref: "#/responses/Standard500ErrorResponse"
-    post:
-      summary: Request the instantion of a given service
-      description: ""
-      operationId: postRequest
-      produces:
-        - application/json
-      parameters:
-        - in: body
-          name: requestId
-          description: The UUID of the service from which an instance is required
-          required: true
-          type: string
-          format: uuid
-      tags:
-        - Requests
-      responses:
-        "200":
-          description: Instantiations requests list was returned
         "404":
           $ref: "#/responses/RequiredRecordDoesNotExistResponse"
         "500":
