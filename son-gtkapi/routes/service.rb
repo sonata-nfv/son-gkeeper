@@ -21,12 +21,14 @@ class GtkApi < Sinatra::Base
   get '/services/?' do
     uri = Addressable::URI.new
     uri.query_values = params
+    logger.debug "Settings Srv. Mgmt. = #{settings.service_management.class}"
+    
     logger.debug "GtkApi: entered GET /services?#{uri.query}"
     
     params[:offset] ||= DEFAULT_OFFSET 
     params[:limit] ||= DEFAULT_LIMIT
     
-    services = ServiceManagerService.find_services(params)
+    services = settings.service_management.find_services(params)
     logger.debug "GtkApi: leaving GET /services?#{uri.query} with #{services}"
     halt 200, services.to_json if services
   end

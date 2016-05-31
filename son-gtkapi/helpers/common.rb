@@ -29,4 +29,8 @@ module GtkApiHelper
     uuid == $&
   end
   
+  def format_error(backtrace)
+    first_line = backtrace[0].split(":")
+    "In "+first_line[0].split("/").last+", "+first_line.last+": "+first_line[1]
+  end
 end

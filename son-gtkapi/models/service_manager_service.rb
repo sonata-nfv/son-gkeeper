@@ -14,83 +14,82 @@
 ## limitations under the License.
 # encoding: utf-8
 class ServiceManagerService
-  class << self
-    
-    # We're not yet using this: it allows for multiple implementations, such as Fakes (for testing)
-    def implementation
-      @implementation
-    end
-    
-    def implementation=(impl)
-      @implementation = impl
-    end
   
-    def find_services_by_uuid(uuid)
-      headers = { 'Accept'=> 'application/json', 'Content-Type'=>'application/json'}
-      headers[:params] = uuid
-      begin
-        response = RestClient.get( GtkApi.settings.srvmgmt+"/services/#{uuid}", headers)
-      rescue => e
-        puts "ServiceManagerService#create: e=#{e.backtrace}"
-        nil 
-      end
-    end
+  def initialize(url, logger)
+    @url = url
+    @logger = logger
+  end
     
-    def find_services(params)
-      headers = { 'Accept'=> 'application/json', 'Content-Type'=>'application/json'}
-      headers[:params] = params unless params.empty?
-      pp "ServiceManagerService#find_services(#{params}): headers=#{headers}"
-      begin
-        response = RestClient.get(GtkApi.settings.srvmgmt+'/services', headers) 
-        pp "ServiceManagerService#find_services(#{params}): response=#{response}"
-        JSON.parse response.body
-      rescue => e
-        puts "ServiceManagerService#create: e=#{e.backtrace}"
-        nil 
-      end
+  def find_services_by_uuid(uuid)
+    headers = { 'Accept'=> 'application/json', 'Content-Type'=>'application/json'}
+    headers[:params] = uuid
+    begin
+      response = RestClient.get( @url+"/services/#{uuid}", headers)
+    rescue => e
+      @logger.error "ServiceManagerService#find_services_by_uuid: e=#{format_error(e.backtrace)}"
+      nil 
     end
+  end
+  
+  def find_services(params)
+    headers = { 'Accept'=> 'application/json', 'Content-Type'=>'application/json'}
+    headers[:params] = params unless params.empty?
+    @logger.debug "ServiceManagerService#find_services(#{params}): headers=#{headers}"
+    begin
+      response = RestClient.get(@url+'/services', headers) 
+      pp "ServiceManagerService#find_services(#{params}): response=#{response}"
+      JSON.parse response.body
+    rescue => e
+      @logger.error "ServiceManagerService#find_services: #{e.message} - #{format_error(e.backtrace)}"
+      nil 
+    end
+  end
 
-    def find_requests(params)
-      headers = { 'Accept'=> 'application/json', 'Content-Type'=>'application/json'}
-      headers[:params] = params unless params.empty?
-      pp "ServiceManagerService#find_requests(#{params}): headers=#{headers}"
-      begin
-        uri = GtkApi.settings.srvmgmt+'/requests'
-        RestClient.get(uri, headers) 
-      rescue => e
-        puts "ServiceManagerService#create: e=#{e.backtrace}"
-        nil 
-      end
+  def find_requests(params)
+    headers = { 'Accept'=> 'application/json', 'Content-Type'=>'application/json'}
+    headers[:params] = params unless params.empty?
+    @logger.debug "ServiceManagerService#find_requests(#{params}): headers=#{headers}"
+    begin
+      RestClient.get(@url+'/requests', headers) 
+    rescue => e
+      @logger.error "ServiceManagerService#find_requests: #{e.message} - #{format_error(e.backtrace)}"
+      nil 
     end
-    
-    def find_requests_by_uuid(uuid)
-      headers = { 'Accept'=> 'application/json', 'Content-Type'=>'application/json'}
-      headers[:params] = uuid
-      begin
-        response = RestClient.get( GtkApi.settings.srvmgmt+"/requests/#{uuid}", headers)
-      rescue => e
-        puts "ServiceManagerService#create: e=#{e.backtrace}"
-        nil 
-      end
+  end
+  
+  def find_requests_by_uuid(uuid)
+    headers = { 'Accept'=> 'application/json', 'Content-Type'=>'application/json'}
+    headers[:params] = uuid
+    begin
+      response = RestClient.get( @url+"/requests/#{uuid}", headers)
+    rescue => e
+      @logger.error "ServiceManagerService#find_requests_by_uuid: #{e.message} - #{format_error(e.backtrace)}"
+      nil 
     end
-    
-    def create(params)
-      pp "ServiceManagerService#create(#{params})"
-      begin
-        uri = GtkApi.settings.srvmgmt+'/requests'
-        response = RestClient.post(uri, { service_uuid: params[:service_uuid]}, content_type: :json, accept: :json) 
-        pp "ServiceManagerService#create: response="+response
-        parsed_response = JSON.parse(response)
-        pp "ServiceManagerService#create: parsed_response=#{parsed_response}"
-        parsed_response
-      rescue => e
-        puts "ServiceManagerService#create: e=#{e.backtrace}"
-        nil 
-      end      
-    end
-    
-    def get_log
-      RestClient.get(GtkApi.settings.srvmgmt+"/admin/logs")      
-    end
+  end
+  
+  def create(params)
+    @logger.debug "ServiceManagerService#create(#{params})"
+    begin
+      response = RestClient.post(@url+'/requests', { service_uuid: params[:service_uuid]}, content_type: :json, accept: :json) 
+      @logger.debug "ServiceManagerService#create: response="+response
+      parsed_response = JSON.parse(response)
+      @logger.debug "ServiceManagerService#create: parsed_response=#{parsed_response}"
+      parsed_response
+    rescue => e
+      @logger.error "ServiceManagerService#create: #{e.message} - #{format_error(e.backtrace)}"
+      nil 
+    end      
+  end
+  
+  def self.get_log
+    RestClient.get(@url+"/admin/logs")      
+  end
+  
+  private
+  
+  def format_error(backtrace)
+    first_line = backtrace[0].split(":")
+    "In "+first_line[0].split("/").last+", "+first_line.last+": "+first_line[1]
   end
 end
