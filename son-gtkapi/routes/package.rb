@@ -117,7 +117,6 @@ class GtkApi < Sinatra::Base
       logger.debug "GtkApi: leaving GET \"/packages/#{params[:uuid]}\" with \"No package with UUID=#{params[:uuid]} was found\""
       json_error 404, "No package with UUID=#{params[:uuid]} was found"
     end
-    
   end
 end
 

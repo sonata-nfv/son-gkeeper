@@ -17,34 +17,34 @@ require 'addressable/uri'
 
 class GtkApi < Sinatra::Base
   
-  # GET many functions
-  get '/functions/?' do
+  # GET many instances
+  get '/instances/?' do
     uri = Addressable::URI.new
     uri.query_values = params
     logger.debug "Settings Srv. Mgmt. = #{settings.service_management.class}"
     
-    logger.debug "GtkApi: entered GET /functions?#{uri.query}"
+    logger.debug "GtkApi: entered GET /instances?#{uri.query}"
     
     params[:offset] ||= DEFAULT_OFFSET 
     params[:limit] ||= DEFAULT_LIMIT
     
-    functions = [] #settings.service_management.find_services(params)
-    logger.debug "GtkApi: leaving GET /functions?#{uri.query} with #{functions}"
-    halt 200, functions.to_json if functions
+    instances = [] #settings.service_management.find_services(params)
+    logger.debug "GtkApi: leaving GET /instances?#{uri.query} with #{instances}"
+    halt 200, instances.to_json if instances
   end
   
-  # GET a specific function
-  get '/functions/:uuid/?' do
+  # GET a specific instance
+  get '/instances/:uuid/?' do
     unless params[:uuid].nil?
-      logger.debug "GtkApi: entered GET /functions/#{params[:uuid]}"
-      json_error 400, 'Invalid Function UUID' unless valid? params['uuid']
+      logger.debug "GtkApi: entered GET /instances/#{params[:uuid]}"
+      json_error 400, 'Invalid Instance UUID' unless valid? params['uuid']
     end
-    logger.debug "GtkApi: leaving GET \"/functions/#{params[:uuid]}\" with \"No function UUID specified\""
-    json_error 400, 'No function UUID specified'
+    logger.debug "GtkApi: leaving GET \"/instances/#{params[:uuid]}\" with \"No instance UUID specified\""
+    json_error 400, 'No instance UUID specified'
   end
   
-  get '/admin/functions/logs' do
-    logger.debug "GtkApi: entered GET /admin/functions/logs"
+  get '/admin/instances/logs' do
+    logger.debug "GtkApi: entered GET /admin/instances/logs"
     headers 'Content-Type' => 'text/plain; charset=utf8', 'Location' => '/'
     log = settings.service_management.get_log
     halt 200, log.to_s
