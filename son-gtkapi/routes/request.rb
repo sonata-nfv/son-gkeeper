@@ -30,7 +30,7 @@ class GtkApi < Sinatra::Base
   post '/requests/?' do
     unless params[:service_uuid].nil?
       logger.debug "GtkApi: POST /requests with :service_uuid="+params[:service_uuid]
-      request = ServiceManagerService.create(params)
+      request = settings.service_management.create(params)
       if request
         logger.debug "GtkApi: POST /requests: request =#{request}"
         halt 201, request.to_json
@@ -51,7 +51,7 @@ class GtkApi < Sinatra::Base
     uri.query_values = params
     logger.info "GtkApi: entered GET /requests?#{uri.query}"
     
-    requests = JSON.parse(ServiceManagerService.find_requests(params))
+    requests = JSON.parse(settings.service_management.find_requests(params))
     logger.info "GtkApi: requests=#{requests}"
     if requests && requests.is_a?(Array)
       logger.info "GtkApi: leaving GET /requests?#{uri.query} with #{requests}"
@@ -68,7 +68,7 @@ class GtkApi < Sinatra::Base
       logger.debug "GtkApi: GET /requests/#{params[:uuid]}"
       json_error 400, 'Invalid request UUID' unless valid? params[:uuid]
       
-      request = ServiceManagerService.find_requests_by_uuid(params['uuid'])
+      request = settings.service_management.find_requests_by_uuid(params['uuid'])
       json_error 404, "The request UUID #{params[:uuid]} does not exist" unless request
 
       logger.debug "GtkApi: leaving GET /requests/#{params[:uuid]}\" with request #{request}"
