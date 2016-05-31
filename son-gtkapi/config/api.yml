@@ -248,7 +248,7 @@ paths:
           $ref: "#/responses/RequiredRecordDoesNotExistResponse"
         "500":
           $ref: "#/responses/Standard500ErrorResponse"
-  /requests2:
+  /requests:
     get:
       summary: Get the list of instantions requests made
       description: ""
@@ -308,7 +308,7 @@ paths:
           $ref: "#/responses/RequiredRecordDoesNotExistResponse"
         "500":
           $ref: "#/responses/Standard500ErrorResponse"
-  /requests2/{requestId}:
+  /requests/{requestId}:
     get:
       summary: Get the the given request
       description: ""
