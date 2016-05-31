@@ -49,18 +49,27 @@ class GtkApi < Sinatra::Base
   set :time_at_startup, Time.now.utc
   set :environments, %w(development test integration qualification demonstration)
   set :environment, ENV['RACK_ENV'] || :development
-  config_file File.join(root, 'config', 'services.yml')
-
+  config_file File.join(root, 'config', 'services.yml.erb')
+  
   use Rack::Session::Cookie, key: 'rack.session', domain: 'foo.com', path: '/', expire_after: 2592000, secret: '$0nata'
+  
+  # Logging
 	enable :logging
   FileUtils.mkdir(File.join(settings.root, 'log')) unless File.exists? File.join(settings.root, 'log')
-  logfile = File.open('log/'+ENV['RACK_ENV']+'.log', 'a+')
-  $stdout.reopen(logfile, "w")
-  $stderr.reopen(logfile, "w")
-  $stdout.sync = true
-  $stderr.sync = true
+  logfile = File.open(File.join('log', ENV['RACK_ENV'])+'.log', 'a+')
+  logfile.sync = true
+  logger = Logger.new(logfile)  
+  #$stdout.reopen(logfile, "w")
+  #$stderr.reopen(logfile, "w")
+  #$stdout.sync = true
+  #$stderr.sync = true
+    
   enable :cross_origin
 
+  set :package_management, PackageManagerService.new(GtkApi.settings.pkgmgmt, logger)
+  set :service_management, ServiceManagerService.new(GtkApi.settings.srvmgmt, logger)
+  
+  logger.info "GtkApi started at #{settings.time_at_startup}"
 	Zip.setup do |c|
     c.unicode_names = true
 		c.on_exists_proc = true

@@ -16,65 +16,61 @@
 require 'tempfile'
 
 class PackageManagerService
-  class << self
-    
-    # We're not yet using this: it allows for multiple implementations, such as Fakes (for testing)
-    def implementation
-      @implementation
-    end
-    
-    def implementation=(impl)
-      @implementation = impl
-    end
-    
-    def create(params)
-      pp "PackageManagerService#create: params=#{params}"
-      tmpfile = params[:package][:tempfile]
-      uri = GtkApi.settings.pkgmgmt+'/packages'
-      pp "PackageManagerService#create: uri="+uri
-      response = RestClient.post(uri, params)
-      pp "PackageManagerService#create: response.class=#{response.class}"
-      pp "PackageManagerService#create: response=#{response}"
-      JSON.parse response
-    end    
   
-    def find_by_uuid(uuid)
-      headers = { 'Accept'=> '*/*', 'Content-Type'=>'application/json'}
-      headers[:params] = uuid
-      begin
-        # Get the meta-data first
-        response = RestClient.get( GtkApi.settings.pkgmgmt+"/packages/#{uuid}", headers)
-        filename = JSON.parse(response)['filepath']
-        pp filename
-        path = File.join('public','packages',uuid)
-        FileUtils.mkdir_p path unless File.exists? path
-        
-        # Get the package it self
-        package = RestClient.get( GtkApi.settings.pkgmgmt+"/packages/#{uuid}/package")
-        File.open(filename, 'wb') do |f|
-          f.write package
-        end
-        filename
-      rescue => e
-        e.to_json
-      end
-    end
+  attr_reader :url, :logger
+  
+  def initialize(url, logger)
+    @url = url
+    @logger = logger
+  end
     
-    def find(params)
-      headers = { 'Accept'=> 'application/json', 'Content-Type'=>'application/json'}
-      headers[:params] = params
-      begin
-        response = RestClient.get(GtkApi.settings.pkgmgmt+'/packages', headers)
-        pp "PackageManagerService#find: response #{response}"
-        response
-      rescue => e
-        e.to_json 
+  def create(params)
+    @logger.debug "PackageManagerService#create: params=#{params}"
+    tmpfile = params[:package][:tempfile]
+    uri = @url+'/packages'
+    @logger.debug "PackageManagerService#create: uri="+uri
+    response = RestClient.post(uri, params)
+    @logger.debug "PackageManagerService#create: response.class=#{response.class}"
+    @logger.debug "PackageManagerService#create: response=#{response}"
+    JSON.parse response
+  end    
+
+  def find_by_uuid(uuid)
+    headers = { 'Accept'=> '*/*', 'Content-Type'=>'application/json'}
+    headers[:params] = uuid
+    begin
+      # Get the meta-data first
+      response = RestClient.get(@url+"/packages/#{uuid}", headers)
+      filename = JSON.parse(response)['filepath']
+      @logger.debug filename
+      path = File.join('public','packages',uuid)
+      FileUtils.mkdir_p path unless File.exists? path
+      
+      # Get the package it self
+      package = RestClient.get(@url+"/packages/#{uuid}/package")
+      File.open(filename, 'wb') do |f|
+        f.write package
       end
+      filename
+    rescue => e
+      e.to_json
     end
-    
-    def get_log
-      pp "PackageManagerService#get_log: url "+GtkApi.settings.pkgmgmt+'/admin/logs'
-      RestClient.get(GtkApi.settings.pkgmgmt+'/admin/logs')      
+  end
+  
+  def find(params)
+    headers = { 'Accept'=> 'application/json', 'Content-Type'=>'application/json'}
+    headers[:params] = params
+    begin
+      response = RestClient.get(@url+'/packages', headers)
+      @logger.debug "PackageManagerService#find: response #{response}"
+      response
+    rescue => e
+      e.to_json 
     end
+  end
+  
+  def get_log
+    @logger.debug "PackageManagerService#get_log: url "+@url+'/admin/logs'
+    RestClient.get(@url+'/admin/logs')      
   end
 end

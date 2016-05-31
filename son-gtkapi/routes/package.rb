@@ -26,11 +26,11 @@ class GtkApi < Sinatra::Base
     
     unless params[:package].nil?
       if params[:package][:tempfile]
-        package = PackageManagerService.create(params)
+        package = settings.package_management.create(params)
         if package
           if package.is_a?(Hash) && (package[:uuid] || package['uuid'])
             logger.info "package: #{package}"
-            headers = {'location'=> "#{settings.pkgmgmt}/packages/#{package[:uuid]}", 'Content-Type'=> 'application/json'}
+            headers = {'location'=> "#{settings.package_management.url}/packages/#{package[:uuid]}", 'Content-Type'=> 'application/json'}
             halt 201, headers, package.to_json
           else
             json_error 400, 'No UUID given to package'
@@ -66,7 +66,7 @@ class GtkApi < Sinatra::Base
     @offset ||= params[:offset] ||= DEFAULT_OFFSET
     @limit ||= params[:limit] ||= DEFAULT_LIMIT
     
-    packages = PackageManagerService.find(params)
+    packages = settings.package_management.find(params)
     if packages
       if packages.size == 1
         logger.debug "GtkApi: leaving GET /packages?#{uri.query} with package #{packages[0]['uuid']}"
@@ -101,14 +101,14 @@ class GtkApi < Sinatra::Base
   get '/admin/packages/logs' do
     logger.debug "GtkApi: entered GET /admin/packages/logs"
     headers 'Content-Type' => 'text/plain; charset=utf8', 'Location' => '/'
-    log = PackageManagerService.get_log
+    log = settings.package_management.get_log
     halt 200, log.to_s
   end
   
   private
   
   def get_one_package(uuid)
-    package_file_path = PackageManagerService.find_by_uuid(uuid)
+    package_file_path = settings.package_management.find_by_uuid(uuid)
     logger.debug "GtkApi: package_file_path #{package_file_path}"
     if package_file_path
       logger.debug "GtkApi: leaving GET /packages/#{params[:uuid]} with package #{package_file_path}"
