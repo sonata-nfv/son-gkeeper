@@ -17,24 +17,24 @@ require 'addressable/uri'
 
 class GtkApi < Sinatra::Base
   
-  # GET many services
-  get '/services/?' do
+  # GET many functions
+  get '/functions/?' do
     uri = Addressable::URI.new
     uri.query_values = params
     logger.debug "Settings Srv. Mgmt. = #{settings.service_management.class}"
     
-    logger.debug "GtkApi: entered GET /services?#{uri.query}"
+    logger.debug "GtkApi: entered GET /functions?#{uri.query}"
     
     params[:offset] ||= DEFAULT_OFFSET 
     params[:limit] ||= DEFAULT_LIMIT
     
-    services = settings.service_management.find_services(params)
-    logger.debug "GtkApi: leaving GET /services?#{uri.query} with #{services}"
-    halt 200, services.to_json if services
+    functions = [] #settings.service_management.find_services(params)
+    logger.debug "GtkApi: leaving GET /functions?#{uri.query} with #{functions}"
+    halt 200, functions.to_json if functions
   end
   
-  get '/admin/services/logs' do
-    logger.debug "GtkApi: entered GET /admin/services/logs"
+  get '/admin/functions/logs' do
+    logger.debug "GtkApi: entered GET /admin/functions/logs"
     headers 'Content-Type' => 'text/plain; charset=utf8', 'Location' => '/'
     log = settings.service_management.get_log
     halt 200, log.to_s
