@@ -19,7 +19,7 @@ require 'webmock/rspec'
 ENV['RACK_ENV'] = 'test'
 
 $: << File.expand_path('../..', __FILE__)
-require 'main'
+require 'gtk_pkg'
 
 def app
   Gtkpkg

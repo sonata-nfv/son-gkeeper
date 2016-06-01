@@ -19,31 +19,36 @@ require 'json'
 require 'pp'
 
 class Catalogue
-  class << self
-    
-    def find_by_uuid(uuid)
-      headers = { 'Accept'=> 'application/json', 'Content-Type'=>'application/json'}
-      headers[:params] = uuid
-      begin
-        response = RestClient.get( Gtkpkg.settings.catalogues['url']+"/packages/#{uuid}", headers) 
-        JSON.parse response.body
-      rescue => e
-        e.to_json
-      end
-    end
-    
-    def find(params)
-      headers = { 'Accept'=> 'application/json', 'Content-Type'=>'application/json'}
-      headers[:params] = params unless params.empty?
-      pp "Catalogue::find(#{params}): headers #{headers}"
-      begin
-        response = RestClient.get(Gtkpkg.settings.catalogues['url']+'/packages', headers)
-        pp "Catalogue#find(#{params}): #{response}"      
-        JSON.parse response.body
-      rescue => e
-        e.to_json
-      end
-    end
-    
+  
+  def initialize(url, logger)
+    @url = url+'/packages'
+    @logger = logger
   end
+    
+  def find_by_uuid(uuid)
+    headers = { 'Accept'=> 'application/json', 'Content-Type'=>'application/json'}
+    headers[:params] = uuid
+    begin
+      response = RestClient.get(@url+"/#{uuid}", headers) 
+      JSON.parse response.body
+    rescue => e
+      @logger.error format_error(e.backtrace)
+      e.to_json
+    end
+  end
+  
+  def find(params)
+    headers = { 'Accept'=> 'application/json', 'Content-Type'=>'application/json'}
+    headers[:params] = params unless params.empty?
+    @logger.debug "Catalogue::find(#{params}): headers #{headers}"
+    begin
+      response = RestClient.get(@url, headers)
+      @logger.debug "Catalogue#find(#{params}): #{response}"      
+      JSON.parse response.body
+    rescue => e
+      @logger.error format_error(e.backtrace)
+      e.to_json
+    end
+  end
+
 end

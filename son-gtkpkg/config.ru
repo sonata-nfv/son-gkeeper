@@ -13,6 +13,6 @@
 ## See the License for the specific language governing permissions and
 ## limitations under the License.
 root = ::File.dirname(__FILE__)
-require ::File.join(root, 'main')
+require ::File.join(root, 'gtk_pkg')
 
-run Gtkpkg
+run GtkPkg

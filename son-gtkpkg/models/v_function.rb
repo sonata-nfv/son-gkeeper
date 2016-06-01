@@ -18,43 +18,46 @@ require 'fileutils'
 
 class VFunction
   
-  def initialize(folder)
-    @folder = File.join(folder, "function_descriptors") 
-    FileUtils.mkdir @folder unless File.exists? @folder
+  def initialize(catalogue, logger, folder: nil)
+    @catalogue = catalogue+'/vnfs'
+    @logger = logger
+    if folder
+      @folder = File.join(folder, "function_descriptors")
+      FileUtils.mkdir @folder unless File.exists? @folder
+    end
   end
   
   def build(content)
-    pp "VFunction.build(#{content})"
+    @logger.debug "VFunction.build(#{content})"
     filename = content['name'].split('/')[-1]
     File.open(File.join( @folder, filename), 'w') {|f| YAML.dump(content, f) }
   end
   
-  def self.unbuild(path)
-    pp "VFunction.unbuild("+path+")"
+  def unbuild(path)
+    @logger.debug "VFunction.unbuild("+path+")"
     content = YAML.load_file path
-    pp "VFunction.unbuild: content = #{content}"
+    @logger.debug "VFunction.unbuild: content = #{content}"
     content
   end
   
   def self.store_to_catalogue(vnfd)
-    pp "VFunction.store(#{vnfd})"
-    uri = Gtkpkg.settings.catalogues['url']+'/vnfs'
+    @logger.debug "VFunction.store(#{vnfd})"
     begin
-      response = RestClient.post( uri, vnfd.to_json, content_type: :json, accept: :json)     
+      response = RestClient.post( @catalogue, vnfd.to_json, content_type: :json, accept: :json)     
       function = JSON.parse response
     rescue => e
-      puts e.response
+      @logger.error e.response
       nil
     end
-    pp "VFunction.store: function=#{function}"
+    @logger.debug "VFunction.store: function=#{function}"
     function
   end
   
   def load_from_catalogue(uuid)
-    pp "VFunction.load(#{uuid})"
+    @logger.debug "VFunction.load(#{uuid})"
     headers = {'Accept'=>'application/json', 'Content-Type'=>'application/json'}
-    response = RestClient.get( Gtkpkg.settings.catalogues['url']+"/vnfs/#{uuid}", headers) 
-    pp "VFunction.load: #{response}"
+    response = RestClient.get(@catalogue+"/#{uuid}", headers) 
+    @logger.debug "VFunction.load: #{response}"
     JSON.parse response.body
   end
   
