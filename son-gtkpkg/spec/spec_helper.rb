@@ -22,7 +22,7 @@ $: << File.expand_path('../..', __FILE__)
 require 'gtk_pkg'
 
 def app
-  Gtkpkg
+  GtkPkg
 end
 
 RSpec.configure do |config|
