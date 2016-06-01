@@ -12,10 +12,10 @@ services:
     ports:
       - "32001:5000"
     restart: always
-    log_driver: "gelf"
-    log_opt:
-      gelf-address: "udp://logs.sonata-nfv.eu:12900"
-      gelf-tag: "int-server-1-gtkapi"
+    logging:
+      driver: gelf
+      options:
+        gelf-address: "udp://logs.sonata-nfv.eu:12900"
 
   son-gtkpkg:
     image: registry.sonata-nfv.eu:5000/son-gtkpkg
@@ -24,10 +24,10 @@ services:
     ports:
       - "5100"
     restart: always
-    log_driver: "gelf"
-    log_opt:
-      gelf-address: "udp://logs.sonata-nfv.eu:12900"
-      gelf-tag: "int-server-1-gtkpkg"
+    logging:
+      driver: gelf
+      options:
+        gelf-address: "udp://logs.sonata-nfv.eu:12900"
 
   son-gtksrv:
     image: registry.sonata-nfv.eu:5000/son-gtksrv
@@ -48,10 +48,10 @@ services:
      - postgres
     extra_hosts:
       - "jenkins.sonata-nfv.eu:192.168.60.5"
-    log_driver: "gelf"
-    log_opt:
-      gelf-address: "udp://logs.sonata-nfv.eu:12900"
-      gelf-tag: "int-server-1-gtksrv"
+    logging:
+      driver: gelf
+      options:
+        gelf-address: "udp://logs.sonata-nfv.eu:12900"
 
   postgres:
     image: ntboes/postgres-uuid
@@ -61,16 +61,16 @@ services:
      - POSTGRES_PASSWORD=sonata
      - POSTGRES_USER=sonatatest
      - POSTGRES_DB=gatekeeper
-    log_driver: "gelf"
-    log_opt:
-      gelf-address: "udp://logs.sonata-nfv.eu:12900"
-      gelf-tag: "int-server-1-postgres"
+    logging:
+      driver: gelf
+      options:
+        gelf-address: "udp://logs.sonata-nfv.eu:12900"
 
   broker:
     image: rabbitmq:3
     ports:
      - "5672"
-    log_driver: "gelf"
-    log_opt:
-      gelf-address: "udp://logs.sonata-nfv.eu:12900"
-      gelf-tag: "int-server-1-broker"
+    logging:
+      driver: gelf
+      options:
+        gelf-address: "udp://logs.sonata-nfv.eu:12900"
