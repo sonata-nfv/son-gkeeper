@@ -18,7 +18,7 @@ require 'json'
 require 'pp'
 require 'addressable/uri'
 
-class Gtkpkg < Sinatra::Base
+class GtkPkg < Sinatra::Base
 
   # Receive the Java package
   #post '/uploads' do
@@ -40,7 +40,7 @@ class Gtkpkg < Sinatra::Base
   post '/packages/?' do
     logger.info "GtkPkg: entered POST /packages with params = #{params}"
 
-    package = Package.new(io: params[:package][:tempfile][:tempfile]).unbuild()
+    package = Package.new(url: GtkPkg.settings.catalogues, logger: logger, params: {io: params[:package][:tempfile][:tempfile]}).unbuild()
     logger.info "GtkPkg: POST /packages package #{package.to_json}"
     if package && package['uuid']
       logger.info "GtkPkg: leaving POST /packages with package #{package.to_json}"
@@ -57,7 +57,7 @@ class Gtkpkg < Sinatra::Base
       package = Package.find_by_uuid( params[:uuid])
       if package && package.is_a?(Hash) && package['uuid']
         logger.info "GtkPkg: in GET /packages/#{params[:uuid]}, found package #{package}"
-        response = Package.new(descriptor: package).build()    
+        response = Package.new(url: GtkPkg.settings.catalogues, logger: logger, params: {descriptor: package}).build()    
         if response
           logger.info "GtkPkg: leaving GET /packages/#{params[:uuid]} with package found and sent in file .../#{package['package_name']}.son"
           halt 200, { 'filepath'=>File.join('public', 'packages', params[:uuid], package['package_name']+'.son')}.to_json
@@ -92,12 +92,12 @@ class Gtkpkg < Sinatra::Base
     logger.debug "GtkPkg: entered GET \"/packages/#{uri.query}\""
     
     packages = Package.find(params)
-    logger.debug "Gtkpkg: GET /packages: #{packages}"
+    logger.debug "GtkPkg: GET /packages: #{packages}"
     if packages && packages.is_a?(Array)
       if packages.size == 1
         logger.debug "GtkPkg: in GET /packages/#{uri.query}, found package #{packages[0]}"
         logger.debug "GtkPkg: in GET /packages/#{uri.query}, generating package"
-        response = Package.new(descriptor: packages[0]).build()
+        response = Package.new(url: GtkPkg.settings.catalogues, logger: logger, params: {descriptor: packages[0]}).build()
         if response
           logger.debug "GtkPkg: leaving GET /packages/#{uri.query} with \"Package #{packages[0]['uuid']} found and sent in file \"#{packages[0]['package_name']}\"\""
           send_file response #File.join(response, packages[0]['package_name'])

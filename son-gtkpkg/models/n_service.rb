@@ -18,43 +18,46 @@ require 'pp'
 
 class NService
   
-  def initialize(folder)
-    @folder = File.join(folder, "service_descriptors") 
-    FileUtils.mkdir @folder unless File.exists? @folder
+  def initialize(catalogue, logger, folder: nil)
+    @catalogue = catalogue+'/network-services'
+    @logger = logger
+    if folder
+      @folder = File.join(folder, "service_descriptors") 
+      FileUtils.mkdir @folder unless File.exists? @folder
+    end
   end
   
   def build(content)
-    pp "NService.build(#{content})"
+    @logger.debug "NService.build(#{content})"
     filename = content['name'].split('/')[-1]
     File.open(File.join( @folder, filename), 'w') {|f| YAML.dump(content, f) }
   end
   
-  def self.unbuild(filename)
-    pp "NService.unbuild(#{filename})"
+  def unbuild(filename)
+    @logger.debug "NService.unbuild(#{filename})"
     content = YAML.load_file filename
-    pp "NService.unbuild: content = #{content}"
+    @logger.debug "NService.unbuild: content = #{content}"
     content
   end
   
   def self.store_to_catalogue(nsd)
-    pp "NService.store(#{nsd})"
-    uri = Gtkpkg.settings.catalogues['url']+'/network-services'
+    @logger.debug "NService.store(#{nsd})"
     begin
-      response = RestClient.post( uri, nsd.to_json, content_type: :json, accept: :json)     
+      response = RestClient.post( @catalogue, nsd.to_json, content_type: :json, accept: :json)     
       package = JSON.parse response
     rescue => e
-        puts e.response
+        @logger.error e.response
         nil
     end
-    pp "NService.store: package=#{package}"
+    @logger.debug "NService.store: package=#{package}"
     package
   end
   
   def load_from_catalogue(uuid)
-    pp "NService.load(#{uuid})"
+    @logger.debug "NService.load(#{uuid})"
     headers = {'Accept'=>'application/json', 'Content-Type'=>'application/json'}
-    response = RestClient.get( Gtkpkg.settings.catalogues['url']+"/network-services/#{uuid}", headers) 
-    pp "NService.load: #{response}"
+    response = RestClient.get( @catalogue+"/#{uuid}", headers) 
+    @logger.debug "NService.load: #{response}"
     JSON.parse response.body
   end
 end
