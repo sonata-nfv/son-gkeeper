@@ -17,7 +17,7 @@ services:
       driver: gelf
       options:
         gelf-address: "udp://logs.sonata-nfv.eu:12900"
-
+  
   son-gtkpkg:
     image: registry.sonata-nfv.eu:5000/son-gtkpkg
     environment:
