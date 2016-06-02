@@ -39,7 +39,11 @@ services:
      - RACK_ENV=integration
     extra_hosts:
       - "jenkins.sonata-nfv.eu:192.168.60.5"
-	
+    logging:
+      driver: gelf
+      options:
+      gelf-address: "udp://logs.sonata-nfv.eu:12900"
+
   son-gtksrv:
     image: registry.sonata-nfv.eu:5000/son-gtksrv
     links:
