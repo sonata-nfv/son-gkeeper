@@ -58,10 +58,15 @@ class GtkPkg < Sinatra::Base
     
   enable :cross_origin
 
-  set :packages_catalogue, Catalogue.new(GtkPkg.settings.catalogues+'/packages', logger)
-  set :services_catalogue, Catalogue.new(GtkPkg.settings.catalogues+'/network-services', logger)
-  set :functions_catalogue, Catalogue.new(GtkPkg.settings.catalogues+'/vnfs', logger)
-
+  if GtkPkg.settings.catalogues
+   set :packages_catalogue, Catalogue.new(GtkPkg.settings.catalogues+'/packages', logger)
+   set :services_catalogue, Catalogue.new(GtkPkg.settings.catalogues+'/network-services', logger)
+   set :functions_catalogue, Catalogue.new(GtkPkg.settings.catalogues+'/vnfs', logger)
+  else
+    puts '    >>>Catalogue url not defined, application being terminated!!'
+    Process.kill('TERM', Process.pid)
+  end
+  
 	Zip.setup do |c|
     c.unicode_names = true
 	  c.on_exists_proc = true
