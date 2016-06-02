@@ -18,52 +18,43 @@ require 'fileutils'
 
 class VFunction
   
-  def initialize(catalogue, logger, folder: nil)
-    @catalogue = catalogue+'/vnfs'
+  attr_accessor :descriptor
+  
+  def initialize(catalogue, logger, folder)
+    @catalogue = catalogue
     @logger = logger
+    @descriptor = {}
     if folder
       @folder = File.join(folder, "function_descriptors")
       FileUtils.mkdir @folder unless File.exists? @folder
     end
   end
   
-  def build(content)
+  def to_file(content)
     @logger.debug "VFunction.build(#{content})"
     filename = content['name'].split('/')[-1]
     File.open(File.join( @folder, filename), 'w') {|f| YAML.dump(content, f) }
   end
   
-  def unbuild(path)
+  def from_file(path)
     @logger.debug "VFunction.unbuild("+path+")"
-    content = YAML.load_file path
-    @logger.debug "VFunction.unbuild: content = #{content}"
-    content
+    @descriptor = YAML.load_file path
+    @logger.debug "VFunction.unbuild: content = #{@descriptor}"
+    @descriptor
   end
   
-  def self.store_to_catalogue(vnfd)
-    @logger.debug "VFunction.store(#{vnfd})"
-    begin
-      response = RestClient.post( @catalogue, vnfd.to_json, content_type: :json, accept: :json)     
-      function = JSON.parse response
-    rescue => e
-      @logger.error e.response
-      nil
-    end
-    @logger.debug "VFunction.store: function=#{function}"
+  def store
+    @logger.debug "VFunction.store(#{@descriptor})"
+    function = @catalogue.create(@descriptor)
+    @logger.debug "VFunction.stored function #{function}"
     function
   end
   
-  def load_from_catalogue(uuid)
+  def find_by_uuid(uuid)
     @logger.debug "VFunction.load(#{uuid})"
     headers = {'Accept'=>'application/json', 'Content-Type'=>'application/json'}
     response = RestClient.get(@catalogue+"/#{uuid}", headers) 
     @logger.debug "VFunction.load: #{response}"
     JSON.parse response.body
   end
-  
 end
-
-#@@vnfr_schema=JSON.parse(JSON.dump(YAML.load(open('https://raw.githubusercontent.com/sonata-nfv/son-schema/master/function-record/vnfr-schema.yml'){|f| f.read})))
-#...
-#errors = validate_json(vnf_json,@@vnfr_schema)
-#return 400, errors.to_json if errors

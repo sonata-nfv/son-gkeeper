@@ -18,46 +18,41 @@ require 'pp'
 
 class NService
   
-  def initialize(catalogue, logger, folder: nil)
-    @catalogue = catalogue+'/network-services'
+  def initialize(catalogue, logger, folder)
+    @catalogue = catalogue
+    @url = @catalogue.url+'/network-services'
     @logger = logger
+    @descriptor = {}
     if folder
       @folder = File.join(folder, "service_descriptors") 
       FileUtils.mkdir @folder unless File.exists? @folder
     end
   end
   
-  def build(content)
+  def to_file(content)
     @logger.debug "NService.build(#{content})"
     filename = content['name'].split('/')[-1]
     File.open(File.join( @folder, filename), 'w') {|f| YAML.dump(content, f) }
   end
   
-  def unbuild(filename)
+  def from_file(filename)
     @logger.debug "NService.unbuild(#{filename})"
-    content = YAML.load_file filename
-    @logger.debug "NService.unbuild: content = #{content}"
-    content
+    @descriptor = YAML.load_file filename
+    @logger.debug "NService.unbuild: content = #{@descriptor}"
+    @descriptor
   end
   
-  def self.store_to_catalogue(nsd)
-    @logger.debug "NService.store(#{nsd})"
-    begin
-      response = RestClient.post( @catalogue, nsd.to_json, content_type: :json, accept: :json)     
-      package = JSON.parse response
-    rescue => e
-        @logger.error e.response
-        nil
-    end
-    @logger.debug "NService.store: package=#{package}"
-    package
+  def store()
+    @logger.debug "NService.store(#{@descriptor})"
+    service = @catalogue.create(@descriptor)
+    @logger.debug "NService.stored service #{service}"
+    service
   end
   
-  def load_from_catalogue(uuid)
-    @logger.debug "NService.load(#{uuid})"
-    headers = {'Accept'=>'application/json', 'Content-Type'=>'application/json'}
-    response = RestClient.get( @catalogue+"/#{uuid}", headers) 
-    @logger.debug "NService.load: #{response}"
-    JSON.parse response.body
+  def find_by_uuid(uuid)
+    @logger.debug "NService.find_by_uuid(#{uuid})"
+    service = @catalogue.find_by_uuid(uuid)
+    @logger.debug "NService.find_by_uuid: #{service}"
+    service
   end
 end

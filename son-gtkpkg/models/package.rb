@@ -27,11 +27,13 @@ class Package
   DEFAULT_MANIFEST_FILE_NAME = 'MANIFEST.MF'
   DEFAULT_PATH = File.join(DEFAULT_META_DIR, DEFAULT_MANIFEST_FILE_NAME)
   
-  def initialize(url: nil, logger: nil, params: nil)
-    @url = url
+  def initialize(catalogue: nil, logger: nil, params: nil)
     @logger = logger
-    @package, @service = {}
+    @package = {}
+    @service = nil
     @functions = []
+    @catalogue = catalogue
+    @url = @catalogue.url
     create_from_descriptor(params[:descriptor]) if params[:descriptor]
     create_from_io(params[:io]) if params[:io]
   end
@@ -55,31 +57,28 @@ class Package
   #end
   
   # Builds a package file from its descriptors, and returns a handle to it
-  def build()
+  def to_file()
     @descriptor = clear_unwanted_parameters @descriptor
     meta_dir = FileUtils.mkdir(File.join(@input_folder, DEFAULT_META_DIR))[0]
     save_package_descriptor meta_dir
-    @logger.debug "\nPackage.build: @descriptor=#{@descriptor}"
-    @logger.debug "\nPackage.build: @descriptor[:package_content]=#{@descriptor[:package_content]}"
+    @logger.debug "Package.to_file: @descriptor=#{@descriptor}"
+    @logger.debug "Package.to_file: @descriptor[:package_content]=#{@descriptor[:package_content]}"
     @descriptor[:package_content].each do |p_cont|
-      @logger.debug "Package.build: p_cont=#{p_cont}"
-      NService.new( @url, @logger, @input_folder).build(p_cont) if p_cont['name'] =~ /service_descriptors/
-      VFunction.new( @url, @logger, @input_folder).build(p_cont) if p_cont['name'] =~ /function_descriptors/
-      
-      # No Dockerfiles treated at the moment
-      # DockerFile.new(@input_folder).build(p_cont) if p_cont['name'] =~ /docker_files/
+      @logger.debug "Package.to_file: p_cont=#{p_cont}"
+      @service = NService.new( GtkPkg.settings.services_catalogue, @logger, @input_folder).to_file(p_cont) if p_cont['name'] =~ /service_descriptors/
+      @functions << VFunction.new( GtkPkg.settings.functions_catalogue, @logger, @input_folder).to_file(p_cont) if p_cont['name'] =~ /function_descriptors/
     end
     output_file = File.join(@output_folder, @descriptor[:package_name]+'.son')
     
     # Cleans things up before generating
     FileUtils.rm output_file if File.file? output_file
     zip_it output_file
-    @logger.debug  "Package.build: output_file #{output_file}"
+    @logger.debug "Package.to_file: output_file #{output_file}"
     output_file
   end
 
   # Unbuilds a package file from its file, and returns a descriptor to it
-  def unbuild()
+  def from_file()
     files = unzip_it @io
     @service = {}
     @functions = []
@@ -87,50 +86,40 @@ class Package
       splited = file.split('/')
       file_name = splited[-1]
       path = File.join(splited.first splited.size-1)
-      @logger.debug "Package.unbuild: path=#{path}, file_name = #{file_name}"
+      @logger.debug "Package.from_file: path=#{path}, file_name = #{file_name}"
       @descriptor = YAML.load_file(file) if path =~ /META-INF/
-      @service = NService.new( @url, @logger).unbuild(file) if path =~ /service_descriptors/      
-      @functions << VFunction.new( @url, @logger).unbuild(file) if path =~ /function_descriptors/
-      # DockerFile.new(@input_folder).unbuild(path) if file_name =~ /docker_files/
-      #pp  "Package.unbuild: @descriptor #{@descriptor}"
-      #pp  "Package.unbuild: @service #{@service}"
-      #pp  "Package.unbuild: @functions #{@functions}"
+      if path =~ /service_descriptors/
+        @service = NService.new(GtkPkg.settings.services_catalogue, @logger, nil)
+        @service.from_file(file) 
+      end
+      if path =~ /function_descriptors/
+        function = VFunction.new( GtkPkg.settings.functions_catalogue, @logger, nil)
+        function.from_file(file)
+        @functions << function
+      end
     end
-    #pp  "Package.unbuild: @descriptor #{@descriptor}"
     
     if valid? @descriptor
       return @package if store_all
-      @logger.error "Package.unbuild: couldn't store package based on descriptor (#{@descriptor})"
+      @logger.error "Package.from_file: couldn't store package based on descriptor (#{@descriptor})"
     else
-      @logger.error "Package.unbuild: invalid descriptor (#{@descriptor})"
+      @logger.error "Package.from_file: invalid descriptor (#{@descriptor})"
     end
     {}
   end
 
-  def self.find_by_uuid(uuid)
-    headers = { 'Accept'=> 'application/json', 'Content-Type'=>'application/json'}
-    headers[:params] = uuid
-    @logger.debug "Package#find_by_uuid(#{uuid}): headers #{headers}"
-    begin
-      response = RestClient.get(@url+"/packages/#{uuid}", headers) 
-      @logger.debug "Package#find_by_uuid(#{uuid}): #{response}"      
-      JSON.parse response.body
-    rescue => e
-      e.to_json
-    end
+  def self.find_by_uuid(uuid, logger)
+    logger.debug "Package#find_by_uuid: #{uuid}"
+    package = @catalogue.find_by_uuid(uuid)
+    logger.debug "Package#find_by_uuid: #{package}"
+    package
   end
   
-  def self.find(params)
-    headers = { 'Accept'=> 'application/json', 'Content-Type'=>'application/json'}
-    headers[:params] = params unless params.empty?
-    @logger.debug "Package#find(#{params}): headers #{headers}"
-    begin
-      response = RestClient.get(@url+'/packages', headers)
-      @logger.debug "Package#find(#{params}): #{response}"      
-      JSON.parse response.body
-    rescue => e
-      e.to_json
-    end
+  def self.find(params, logger)
+    logger.debug "Package#find: #{params}"
+    packages = @catalogue.find(params)
+    logger.debug "Package#find: #{packages}"
+    packages
   end
   
   private 
@@ -234,15 +223,18 @@ class Package
     true # TODO: validate the descriptor here
   end
   
-  def store_to_catalogue
-    @logger.debug "\nPackage.store_to_catalogue("+@descriptor.to_s+")"
+  def store()
+    @logger.debug "Package.store_to_catalogue: descriptor "+@descriptor.to_s
+    @logger.debug "Package.store_to_catalogue: @url "+@url
     
     begin
-      response = RestClient.post( @url+'/packages', @descriptor.to_json, content_type: :json, accept: :json)
+      response = RestClient.post( @url, @descriptor.to_json, content_type: :json, accept: :json)
+      @logger.debug "Package.store_to_catalogue: response is "+response.to_s
       package = JSON.parse response
+      @logger.debug "Package.store_to_catalogue: package is "+package.to_s
     rescue => e
-        puts e.response
-        nil
+      puts e.response
+      nil
     end
     @logger.debug "Package.store_to_catalogue: package=#{package} for response=#{response}"
     if package && package['uuid']
@@ -255,9 +247,9 @@ class Package
   end
 
   def store_all
-    if @package = store_to_catalogue
+    if @package = store()
       if @service
-        service = NService.store_to_catalogue(@service)
+        service = @service.store()
         
         @logger.debug "Package.unbuild: stored service #{service}"
         # TODO: what if storing a service goes wrong?
@@ -266,7 +258,7 @@ class Package
       if @functions.size
         @functions.each do |vf|
           @logger.debug "Package.unbuild: vf = #{vf}"
-          function = VFunction.store_to_catalogue(vf)
+          function = vf.store()
           if function
             @logger.debug "Package.unbuild: stored function #{function}"
             # TODO: rollback if failled

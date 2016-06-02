@@ -58,7 +58,9 @@ class GtkPkg < Sinatra::Base
     
   enable :cross_origin
 
-  #set :catalogues, Catalogue.new(GtkPkg.settings.catalogues, logger)
+  set :packages_catalogue, Catalogue.new(GtkPkg.settings.catalogues+'/packages', logger)
+  set :services_catalogue, Catalogue.new(GtkPkg.settings.catalogues+'/network-services', logger)
+  set :functions_catalogue, Catalogue.new(GtkPkg.settings.catalogues+'/vnfs', logger)
 
 	Zip.setup do |c|
     c.unicode_names = true
