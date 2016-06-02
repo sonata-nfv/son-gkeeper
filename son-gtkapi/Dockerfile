@@ -10,4 +10,6 @@ COPY . /app
 EXPOSE 5000
 WORKDIR /app
 ENV PORT 5000
+ENV PACKAGE_MANAGEMENT_URL http://son-gtkpkg:5100
+ENV SERVICE_MANAGEMENT_URL http://son-gtksrv:5300
 CMD ["foreman", "start"]
