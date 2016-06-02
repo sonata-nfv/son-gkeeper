@@ -9,6 +9,7 @@ services:
      - RACK_ENV=integration
      - PACKAGE_MANAGEMENT_URL=http://son-gtkpkg:5100
      - SERVICE_MANAGEMENT_URL=http://son-gtksrv:5300
+     - FUNCTION_MANAGEMENT_URL=http://son-gtkfnct:5500
     ports:
       - "32001:5000"
     restart: always
@@ -29,6 +30,16 @@ services:
       options:
         gelf-address: "udp://logs.sonata-nfv.eu:12900"
 
+  son-gtkfnct:
+    image: registry.sonata-nfv.eu:5000/son-gtkfnct
+    ports:
+      - "5500"
+    restart: always
+    environment:
+     - RACK_ENV=integration
+    extra_hosts:
+      - "jenkins.sonata-nfv.eu:192.168.60.5"
+	
   son-gtksrv:
     image: registry.sonata-nfv.eu:5000/son-gtksrv
     links:
