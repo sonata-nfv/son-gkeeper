@@ -42,7 +42,7 @@ services:
     logging:
       driver: gelf
       options:
-      gelf-address: "udp://logs.sonata-nfv.eu:12900"
+        gelf-address: "udp://logs.sonata-nfv.eu:12900"
 
   son-gtksrv:
     image: registry.sonata-nfv.eu:5000/son-gtksrv
