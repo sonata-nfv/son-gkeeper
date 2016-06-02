@@ -21,7 +21,7 @@ services:
     image: registry.sonata-nfv.eu:5000/son-gtkpkg
     environment:
      - RACK_ENV=integration
-     - CATALOGUE_URL=http://sp.int.sonata-nfv.eu:4002/catalogues
+     - CATALOGUES_URL=http://sp.int.sonata-nfv.eu:4002/catalogues
     ports:
       - "5100"
     restart: always
