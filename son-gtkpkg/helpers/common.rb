@@ -77,4 +77,8 @@ module GtkPkgHelpers
     first_line = backtrace[0].split(":")
     "In "+first_line[0].split("/").last+", "+first_line.last+": "+first_line[1]
   end
+  
+  def header_json
+    {'Accept'=>'application/json', 'Content-Type'=>'application/json'}
+  end
 end

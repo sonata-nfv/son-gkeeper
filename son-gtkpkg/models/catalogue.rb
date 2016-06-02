@@ -20,14 +20,30 @@ require 'pp'
 
 class Catalogue
   
+  attr_accessor :url
+  
   def initialize(url, logger)
-    @url = url+'/packages'
+    @url = url
     @logger = logger
   end
     
+  def create(descriptor)
+    @logger.debug "Catalogue.create("+descriptor.to_s+")"
+    begin
+      response = RestClient.post( @url, descriptor.to_json, content_type: :json, accept: :json)     
+      object = JSON.parse response
+      @logger.debug "Catalogue.create: object=#{object}"
+      object
+    rescue => e
+      @logger.error format_error(e.backtrace)
+      nil
+    end
+  end
+  
   def find_by_uuid(uuid)
-    headers = { 'Accept'=> 'application/json', 'Content-Type'=>'application/json'}
-    headers[:params] = uuid
+    @logger.debug "Catalogue.find_by_uuid(#{uuid})"
+    headers = {'Accept'=>'application/json', 'Content-Type'=>'application/json'}
+    #headers[:params] = uuid
     begin
       response = RestClient.get(@url+"/#{uuid}", headers) 
       JSON.parse response.body
@@ -38,7 +54,7 @@ class Catalogue
   end
   
   def find(params)
-    headers = { 'Accept'=> 'application/json', 'Content-Type'=>'application/json'}
+    headers = {'Accept'=>'application/json', 'Content-Type'=>'application/json'}
     headers[:params] = params unless params.empty?
     @logger.debug "Catalogue::find(#{params}): headers #{headers}"
     begin
@@ -50,5 +66,18 @@ class Catalogue
       e.to_json
     end
   end
-
+  
+  def update
+  end
+  
+  def delete
+  end
+  
+  private
+  
+  def format_error(backtrace)
+    first_line = backtrace[0].split(":")
+    "In "+first_line[0].split("/").last+", "+first_line.last+": "+first_line[1]
+  end
+  
 end
