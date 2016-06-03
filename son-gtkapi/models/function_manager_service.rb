@@ -51,5 +51,4 @@ class FunctionManagerService
     def get_log
       RestClient.get(@url + "/admin/logs")      
     end
-  end
 end
