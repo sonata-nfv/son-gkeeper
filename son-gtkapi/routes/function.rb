@@ -26,7 +26,7 @@ class GtkApi < Sinatra::Base
     params[:offset] ||= DEFAULT_OFFSET 
     params[:limit] ||= DEFAULT_LIMIT
      
-    functions = settings.function_management(params)
+    functions = settings.function_management.find_functions(params)
     if functions
       logger.debug "GtkApi: leaving GET /functions?#{uri.query} with #{functions}"
       halt 200, functions.to_json if functions
