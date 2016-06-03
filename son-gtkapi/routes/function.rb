@@ -21,32 +21,44 @@ class GtkApi < Sinatra::Base
   get '/functions/?' do
     uri = Addressable::URI.new
     uri.query_values = params
-    logger.debug "Settings Srv. Mgmt. = #{settings.service_management.class}"
-    
     logger.debug "GtkApi: entered GET /functions?#{uri.query}"
     
     params[:offset] ||= DEFAULT_OFFSET 
     params[:limit] ||= DEFAULT_LIMIT
-    
-    functions = [] #settings.service_management.find_services(params)
-    logger.debug "GtkApi: leaving GET /functions?#{uri.query} with #{functions}"
-    halt 200, functions.to_json if functions
+     
+    functions = settings.function_management.find_functions(params)
+    if functions
+      logger.debug "GtkApi: leaving GET /functions?#{uri.query} with #{functions}"
+      halt 200, functions.to_json if functions
+    else 
+      logger.debug "GtkApi: leaving GET /functions?#{uri.query} with \"No function with params #{uri.query} was found\""
+      json_error 404, "No function with params #{uri.query} was found"
+    end  
   end
   
-  # GET a specific function
-  get '/functions/:uuid/?' do
+  # GET function by uuid
+  get '/functions/:uuid' do
     unless params[:uuid].nil?
-      logger.debug "GtkApi: entered GET /functions/#{params[:uuid]}"
-      json_error 400, 'Invalid Function UUID' unless valid? params['uuid']
+      logger.info "GtkApiss: entered GET \"/functions/#{params[:uuid]}\""
+      function = settings.function_management.find_functions_by_uuid(params[:uuid])
+      if function 
+        logger.info "GtkApi: in GET /functions/#{params[:uuid]}, found function #{function}"
+        response = function
+        logger.info "GtkApi: leaving GET /functions/#{params[:uuid]} with response="+response
+        halt 200, response
+      else
+        logger.error "GtkApi: leaving GET \"/functions/#{params[:uuid]}\" with \"No functions with UUID=#{params[:uuid]} was found\""
+        json_error 404, "No function with UUID=#{params[:uuid]} was found"
+      end
     end
-    logger.debug "GtkApi: leaving GET \"/functions/#{params[:uuid]}\" with \"No function UUID specified\""
+    logger.error "GtkApi: leaving GET \"/functions/#{params[:uuid]}\" with \"No function UUID specified\""
     json_error 400, 'No function UUID specified'
   end
   
   get '/admin/functions/logs' do
     logger.debug "GtkApi: entered GET /admin/functions/logs"
     headers 'Content-Type' => 'text/plain; charset=utf8', 'Location' => '/'
-    log = settings.service_management.get_log
+    log = settings.function_management.get_log
     halt 200, log.to_s
   end
 end

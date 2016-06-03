@@ -1,0 +1,31 @@
+source 'https://rubygems.org'
+
+gem 'rake'
+gem 'sinatra', '~> 1.4.3', require: 'sinatra/base'
+gem 'sinatra-contrib', '~> 1.4.1', require: false
+gem 'pry'
+gem 'puma'
+gem 'rest-client'
+gem 'rack-parser', require: 'rack/parser'
+gem 'sinatra-cross_origin'
+gem 'ci_reporter_rspec'
+gem 'rubyzip', '>= 1.0.0'
+gem 'foreman'
+gem 'addressable'
+gem 'rubocop'
+gem 'rubocop-checkstyle_formatter', require: false
+gem 'sinatra-logger'
+gem 'sinatra-active-model-serializers', '~> 0.2.0'
+
+group :test do
+  gem 'webmock'
+  gem 'rspec'
+  gem 'rspec-mocks'
+  gem 'rack-test', require: 'rack/test'
+  gem 'rspec-its'
+end
+
+group :test, :development do
+  gem 'capybara'
+end
+
