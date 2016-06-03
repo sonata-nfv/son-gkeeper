@@ -14,3 +14,4 @@
 ## limitations under the License.
 require_relative 'package_manager_service'
 require_relative 'service_manager_service'
+require_relative 'function_manager_service'
