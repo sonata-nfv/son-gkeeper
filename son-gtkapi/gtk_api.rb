@@ -58,22 +58,18 @@ class GtkApi < Sinatra::Base
   FileUtils.mkdir(File.join(settings.root, 'log')) unless File.exists? File.join(settings.root, 'log')
   logfile = File.open(File.join('log', ENV['RACK_ENV'])+'.log', 'a+')
   logfile.sync = true
-  logger = Logger.new(logfile)  
-  #$stdout.reopen(logfile, "w")
-  #$stderr.reopen(logfile, "w")
-  #$stdout.sync = true
-  #$stderr.sync = true
-    
+  logger = Logger.new(logfile)
+  
   enable :cross_origin
 
-  set :package_management, PackageManagerService.new(GtkApi.settings.pkgmgmt, logger)
-  set :service_management, ServiceManagerService.new(GtkApi.settings.srvmgmt, logger)
-  set :function_management,FunctionManagerService.new(GtkApi.settings.fnctmgmt, logger)
+  set :package_management, PackageManagerService.new(settings.pkgmgmt, logger)
+  set :service_management, ServiceManagerService.new(settings.srvmgmt, logger)
+  set :function_management,FunctionManagerService.new(settings.fnctmgmt, logger)
   
-  logger.info "GtkApi started at #{settings.time_at_startup}"
-	Zip.setup do |c|
+  Zip.setup do |c|
     c.unicode_names = true
-		c.on_exists_proc = true
-		c.continue_on_exists_proc = true
-	end
+    c.on_exists_proc = true
+    c.continue_on_exists_proc = true
+  end
+  logger.info "GtkApi started at #{settings.time_at_startup}"
 end

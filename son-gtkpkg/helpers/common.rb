@@ -38,10 +38,10 @@ module GtkPkgHelpers
       halt 400, $!.message + "\n"
     end
 
-    # Validate package_name
-    halt 400, 'Package name invalid' unless (manifest['package_name'].downcase == manifest['package_name']) && (manifest['package_name'] =~ /^[a-zA-Z\-\d\s]*$/)
+    # Validate name
+    halt 400, 'Package name invalid' unless (manifest['name'].downcase == manifest['name']) && (manifest['name'] =~ /^[a-zA-Z\-\d\s]*$/)
     # Validate package_version
-    halt 400, 'Package version format is invalid' unless manifest['package_version'] =~ /\A\d+(?:\.\d+)*\z/
+    halt 400, 'Package version format is invalid' unless manifest['version'] =~ /\A\d+(?:\.\d+)*\z/
   end
 
   def remove_leftover(files)

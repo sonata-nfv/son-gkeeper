@@ -61,8 +61,8 @@ class GtkPkg < Sinatra::Base
         logger.info "GtkPkg: in GET /packages/#{params[:uuid]}, found package #{package}"
         response = Package.new(catalogue: GtkPkg.settings.packages_catalogue, logger: logger, params: {descriptor: package}).to_file()    
         if response
-          logger.info "GtkPkg: leaving GET /packages/#{params[:uuid]} with package found and sent in file .../#{package['package_name']}.son"
-          halt 200, { 'filepath'=>File.join('public', 'packages', params[:uuid], package['package_name']+'.son')}.to_json
+          logger.info "GtkPkg: leaving GET /packages/#{params[:uuid]} with package found and sent in file .../#{package['name']}.son"
+          halt 200, { 'filepath'=>File.join('public', 'packages', params[:uuid], package['name']+'.son')}.to_json
         else
           logger.error "GtkPkg: leaving GET /packages/#{params[:uuid]}, with 'Could not create package file'."
           json_error 400, "Could not create package file"
@@ -102,8 +102,8 @@ class GtkPkg < Sinatra::Base
         logger.debug "GtkPkg: in GET /packages/#{uri.query}, generating package"
         response = Package.new(catalogue: GtkPkg.settings.packages_catalogue, logger: logger, params: {descriptor: packages[0]}).to_file()
         if response
-          logger.debug "GtkPkg: leaving GET /packages/#{uri.query} with \"Package #{packages[0]['uuid']} found and sent in file \"#{packages[0]['package_name']}\"\""
-          send_file response #File.join(response, packages[0]['package_name'])
+          logger.debug "GtkPkg: leaving GET /packages/#{uri.query} with \"Package #{packages[0]['uuid']} found and sent in file \"#{packages[0]['name']}\"\""
+          send_file response #File.join(response, packages[0]['name'])
         else
           logger.error "GtkPkg: leaving GET \"/packages/#{params[:uuid]}\", with \"Could not create package file\"."
           json_error 400, "Could not create package file"
