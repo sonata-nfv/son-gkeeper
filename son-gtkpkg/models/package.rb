@@ -68,7 +68,7 @@ class Package
       @service = NService.new( GtkPkg.settings.services_catalogue, @logger, @input_folder).to_file(p_cont) if p_cont['name'] =~ /service_descriptors/
       @functions << VFunction.new( GtkPkg.settings.functions_catalogue, @logger, @input_folder).to_file(p_cont) if p_cont['name'] =~ /function_descriptors/
     end
-    output_file = File.join(@output_folder, @descriptor[:package_name]+'.son')
+    output_file = File.join(@output_folder, @descriptor[:name]+'.son')
     
     # Cleans things up before generating
     FileUtils.rm output_file if File.file? output_file

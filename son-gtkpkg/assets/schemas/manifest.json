@@ -11,16 +11,16 @@
       "id": "http://sonata-nfv.eu/$schema",
       "type": "string"
     },
-    "package_group": {
-      "id": "http://sonata-nfv.eu/package_group",
+    "group": {
+      "id": "http://sonata-nfv.eu/group",
       "type": "string"
     },
-    "package_name": {
-      "id": "http://sonata-nfv.eu/package_name",
+    "name": {
+      "id": "http://sonata-nfv.eu/name",
       "type": "string"
     },
-    "package_version": {
-      "id": "http://sonata-nfv.eu/package_version",
+    "version": {
+      "id": "http://sonata-nfv.eu/version",
       "type": "string"
     },
     "package_maintainer": {
@@ -112,8 +112,8 @@
   },
   "required": [
     "descriptor_version",
-    "package_group",
-    "package_name",
-    "package_version"
+    "group",
+    "name",
+    "version"
   ]
 }

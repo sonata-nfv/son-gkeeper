@@ -13,11 +13,14 @@
 ## limitations under the License.
 require_relative '../spec_helper'
 
-RSpec.describe PackageManagerService do
-  describe '#find_by_uuid' do
+RSpec.describe PackageManagerService, type: :model do
+  describe '.find_by_uuid' do
+    it 'should GET /catalogues/packages/:uuid from catalogues'
   end
-  describe '#find' do
+  describe '.find' do
+    it 'should GET /catalogues/packages from catalogues'
   end
-  
-  
+  describe '.create' do
+    it 'should POST /catalogues/packages to catalogues'
+  end
 end
