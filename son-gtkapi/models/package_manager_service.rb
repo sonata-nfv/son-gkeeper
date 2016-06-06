@@ -42,7 +42,7 @@ class PackageManagerService
       # Get the meta-data first
       response = RestClient.get(@url+"/packages/#{uuid}", headers)
       filename = JSON.parse(response)['filepath']
-      @logger.debug filename
+      @logger.debug "PackageManagerService.find_by_uuid(#{uuid}): filename=\""+filename+"\""
       path = File.join('public','packages',uuid)
       FileUtils.mkdir_p path unless File.exists? path
       
