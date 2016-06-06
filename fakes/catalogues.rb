@@ -6,11 +6,11 @@ $packages = [
   {
     "uuid"=> "53676529-b277-4369-8ff9-8668310eab7d", 
     "descriptor_version"=>"1.0",
-    "package_group"=>"eu.sonata-nfv.package",
-    "package_name"=>"sonata-demo",
-    "package_version"=>"0.1.1",
-    "package_maintainer"=>"Michael Bredel, NEC Labs Europe",
-    "package_description"=>"\"The package descriptor for the SONATA demo package that\n comprises the descritors of the demo network service,\n the related VNFs, as well as the virtual machine\n images (or docker files) to instantiate the service.\"\n", "entry_service_template"=>"/service_descriptors/sonata-demo.yml",
+    "group"=>"eu.sonata-nfv.package",
+    "name"=>"sonata-demo",
+    "version"=>"0.1.1",
+    "maintainer"=>"Michael Bredel, NEC Labs Europe",
+    "description"=>"\"The package descriptor for the SONATA demo package that\n comprises the descritors of the demo network service,\n the related VNFs, as well as the virtual machine\n images (or docker files) to instantiate the service.\"\n", "entry_service_template"=>"/service_descriptors/sonata-demo.yml",
     "sealed"=>true,
     "package_content"=>[
       {"name"=>"/service_descriptors/sonata-demo.yml", "content-type"=>"application/sonata.service_descriptor", "md5"=>"a16ce1b66bd6d6916c8f994efca0d778" },
@@ -35,11 +35,11 @@ $packages = [
   { 
     'uuid'=> "0f4eb013-28b1-4590-b59d-d3f094e168d8", 
     "descriptor_version"=>"1.0",
-    "package_group"=>"eu.sonata-nfv.package",
-    "package_name"=>"sonata-demo",
-    "package_version"=>"0.1.2",
-    "package_maintainer"=>"Michael Bredel, NEC Labs Europe",
-    "package_description"=>"\"The package descriptor for the SONATA demo package that\n comprises the descritors of the demo network service,\n the related VNFs, as well as the virtual machine\n images (or docker files) to instantiate the service.\"\n", "entry_service_template"=>"/service_descriptors/sonata-demo.yml",
+    "group"=>"eu.sonata-nfv.package",
+    "name"=>"sonata-demo",
+    "version"=>"0.1.2",
+    "maintainer"=>"Michael Bredel, NEC Labs Europe",
+    "description"=>"\"The package descriptor for the SONATA demo package that\n comprises the descritors of the demo network service,\n the related VNFs, as well as the virtual machine\n images (or docker files) to instantiate the service.\"\n", "entry_service_template"=>"/service_descriptors/sonata-demo.yml",
     "sealed"=>true,
     "package_content"=>[
       {"name"=>"/service_descriptors/sonata-demo.yml", "content-type"=>"application/sonata.service_descriptor", "md5"=>"a16ce1b66bd6d6916c8f994efca0d778" },
@@ -87,9 +87,9 @@ get '/catalogues/packages' do
     $packages.each do |p|
       puts p.inspect
       selected << p if params['uuid'] && p['uuid'] == params['uuid']
-      selected << p if params['vendor'] && p['package_group'] == params['vendor']
-      selected << p if params['version'] && p['package_version'] == params['version']
-      selected << p if params['name'] && p['package_name'] == params['name']
+      selected << p if params['vendor'] && p['group'] == params['vendor']
+      selected << p if params['version'] && p['version'] == params['version']
+      selected << p if params['name'] && p['name'] == params['name']
     end
     selected.to_json
   else
@@ -108,11 +108,11 @@ get '/catalogues/network-services/?' do
     selected = []
     $services.each do |s|
       puts "service #{s.inspect}"
-      selected << s if params['vendor'] && s['package_group'] == params['vendor']
-      selected << s if params['version'] && s['package_version'] == params['version']
-      if params['name'] && s['package_name'] == params['name']
+      selected << s if params['vendor'] && s['group'] == params['vendor']
+      selected << s if params['version'] && s['version'] == params['version']
+      if params['name'] && s['name'] == params['name']
         selected << s
-        puts "package_name = "+params['name']
+        puts "name = "+params['name']
       end
     end
     puts "selected: #{selected}"
