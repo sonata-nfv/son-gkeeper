@@ -29,7 +29,7 @@ class GtkApi < Sinatra::Base
         package = settings.package_management.create(params)
         if package
           if package.is_a?(Hash) && (package[:uuid] || package['uuid'])
-            logger.info "package: #{package}"
+            logger.info "GtkApi: leaving POST /packages with package: #{package}"
             headers = {'location'=> "#{settings.package_management.url}/packages/#{package[:uuid]}", 'Content-Type'=> 'application/json'}
             halt 201, headers, package.to_json
           else
