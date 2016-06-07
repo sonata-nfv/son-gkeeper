@@ -14,41 +14,28 @@
 ## See the License for the specific language governing permissions and
 ## limitations under the License.
 # encoding: utf-8
-require 'tempfile'
 require 'json'
-require 'pp'
 
 class NService
   
-  def self.find(params)
-    headers = { 'Accept'=> 'application/json', 'Content-Type'=>'application/json'}
-    headers[:params] = params unless params.empty?
-    pp "NService#find(#{params}): headers #{headers}"
-    uri = GtkSrv.catalogues[:url]+'/network-services'
-    begin
-      response = RestClient.get(uri, headers)
-      pp "NService#find: response #{response}"
-      services = JSON.parse(response.body)
-      pp "NService#find: services #{services}"
-      services
-    rescue => e
-      puts e.backtrace
-      nil
-    end
+  JSON_HEADERS = { 'Accept'=> 'application/json', 'Content-Type'=>'application/json'}
+  
+  def initialize(catalogue, logger)
+    @catalogue = catalogue
+    @logger = logger
+  end
+  
+  def find(params)
+    @logger.debug "NService.find(#{params})"
+    services = @catalogue.find(params)
+    @logger.debug "NService.find: #{services}"
+    services
   end
 
-  def self.find_by_uuid(uuid)
-    headers = { 'Accept'=> 'application/json', 'Content-Type'=>'application/json'}
-    headers[:params] = uuid
-    begin
-      response = RestClient.get(GtkSrv.catalogues[:url]+"/network-services/#{uuid}", headers) 
-      parsed_response = JSON.parse(response)
-      pp "NService#find_by_uuid(#{uuid}): #{parsed_response}"
-      parsed_response      
-    rescue => e
-      puts e.backtrace
-      nil
-    end
+  def find_by_uuid(uuid)
+    @logger.debug "NService.find_by_uuid(#{uuid})"
+    service = @catalogue.find_by_uuid(uuid)
+    @logger.debug "NService.find_by_uuid: #{service}"
+    service
   end
-
 end

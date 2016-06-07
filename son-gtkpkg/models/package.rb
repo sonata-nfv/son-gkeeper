@@ -190,7 +190,9 @@ class Package
   def unzip_it(io)    
     files = []
     @logger.debug "Package.unzip_it: io = #{io.inspect}"
+    @logger.debug "Package.unzip_it: io is " + (io.closed? ? "closed" : "opened")
     io.rewind
+    @logger.debug "Package.unzip_it: io is " + (io.closed? ? "closed" : "opened")
     unzip_folder = FileUtils.mkdir_p(File.join('tmp', SecureRandom.hex))
     
     # Extract the zipped file into a directory
@@ -200,10 +202,16 @@ class Package
         @logger.debug "Package.unzip_it: entry.name = #{entry.name}"
         if valid_entry_name? entry.name
           disk_file_path = File.join(unzip_folder, entry.name) 
-          if entry.name.split('/').size == 1
+          entry_name_splited = entry.name.split('/')          
+          if entry_name_splited.size == 1
+            # just a folder
             FileUtils.mkdir_p disk_file_path unless File.exists? disk_file_path
             @logger.debug "Package.unzip_it: disk_file_path"+disk_file_path+" is a directory"
           else
+            # a file, and maybe a folder
+            file_name = entry_name_splited.pop
+            file_folders = File.join(unzip_folder, entry_name_splited)
+            FileUtils.mkdir_p file_folders unless File.exists? file_folders
             @logger.debug "Package.unzip_it: disk_file_path is a file "+disk_file_path
             File.open(disk_file_path, 'w') { |f| f.write entry.get_input_stream.read}
             files << disk_file_path
@@ -251,24 +259,24 @@ class Package
       if @service
         service = @service.store()
         
-        @logger.debug "Package.unbuild: stored service #{service}"
+        @logger.debug "Package.store_all: stored service #{service}"
         # TODO: what if storing a service goes wrong?
         # rollback!
       end
       if @functions.size
         @functions.each do |vf|
-          @logger.debug "Package.unbuild: vf = #{vf}"
+          @logger.debug "Package.store_all: vf = #{vf}"
           function = vf.store()
           if function
-            @logger.debug "Package.unbuild: stored function #{function}"
+            @logger.debug "Package.store_all: stored function #{function}"
             # TODO: rollback if failled
           end
         end
       end
-      @logger.debug "Package.unbuild: stored package #{@package}"
+      @logger.debug "Package.store_all: stored package #{@package}"
       @package
     else
-      @logger.debug "Package.unbuild: failled to store #{@descriptor}"
+      @logger.debug "Package.store_all: failled to store #{@descriptor}"
       {}
     end
   end

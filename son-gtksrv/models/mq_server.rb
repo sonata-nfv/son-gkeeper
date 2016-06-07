@@ -25,13 +25,12 @@ class MQServer
   SERVER_QUEUE = 'service.instances.create'
   
   def initialize(url,logger)
+    @url = url
     @logger=logger
     @channel = Bunny.new(url,:automatically_recover => false).start.create_channel
     @topic = @channel.topic("son-kernel", :auto_delete => false)
     @queue   = @channel.queue(SERVER_QUEUE, :auto_delete => true).bind(@topic, :routing_key => SERVER_QUEUE)
-
     self.correlation_ids=Hash.new
-    
   end
   
   def call_sm(n,correlation_id)

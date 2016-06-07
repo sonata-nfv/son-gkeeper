@@ -16,31 +16,19 @@
 # encoding: utf-8
 # psql -h jenkins.sonata-nfv.eu -U postgres -psonatatest
 ---
-development:
-  catalogues:
-    url: 'http://localhost:5200/catalogues'
-  mqserver:
-    url: 'amqp://guest:guest@localhost:5673'
+development: &common_settings
+  catalogues: <%= ENV['CATALOGUES_URL'] %>
+  mqserver_url: <%= ENV['MQSERVER'] %>
 
 test:
-  catalogues:
-    url: 'http://localhost:5200/catalogues'
-  mqserver:
-    url: 'amqp://guest:guest@localhost:5673'
-
+  <<: *common_settings
+  
 integration:
-  catalogues:
-    url: 'http://sp.int.sonata-nfv.eu:4002/catalogues'
-  mqserver:
-    #url: 'amqp://guest:guest@jenkins.sonata-nfv.eu:5673'
-    #url: 'amqp://guest:guest@broker:5673'
-    url: <%= ENV['MQSERVER'] %> || 'broker'
+  <<: *common_settings
 
 qualification:
-  catalogues:
-    url: ''
+  <<: *common_settings
 
 demonstration:
-  catalogues:
-    url: ''
+  <<: *common_settings
   
