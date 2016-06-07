@@ -25,13 +25,13 @@ class PackageManagerService
   end
     
   def create(params)
-    @logger.debug "PackageManagerService#create: params=#{params}"
+    @logger.debug "PackageManagerService.create: params=#{params}"
     tmpfile = params[:package][:tempfile]
     uri = @url+'/packages'
-    @logger.debug "PackageManagerService#create: uri="+uri
+    @logger.debug "PackageManagerService.create: uri="+uri
     response = RestClient.post(uri, params)
-    @logger.debug "PackageManagerService#create: response.class=#{response.class}"
-    @logger.debug "PackageManagerService#create: response=#{response}"
+    @logger.debug "PackageManagerService.create: response.class=#{response.class}"
+    @logger.debug "PackageManagerService.create: response=#{response}"
     JSON.parse response
   end    
 
@@ -62,7 +62,7 @@ class PackageManagerService
     headers[:params] = params
     begin
       response = RestClient.get(@url+'/packages', headers)
-      @logger.debug "PackageManagerService#find: response #{response}"
+      @logger.debug "PackageManagerService.find: response #{response}"
       response
     rescue => e
       e.to_json 
@@ -70,7 +70,7 @@ class PackageManagerService
   end
   
   def get_log
-    @logger.debug "PackageManagerService#get_log: url "+@url+'/admin/logs'
+    @logger.debug "PackageManagerService.get_log: url "+@url+'/admin/logs'
     RestClient.get(@url+'/admin/logs')      
   end
 end
