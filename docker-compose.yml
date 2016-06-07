@@ -60,6 +60,7 @@ services:
      - DATABASE_HOST=postgres
      - DATABASE_PORT=5432
      - MQSERVER=amqp://guest:guest@broker:5672
+     - CATALOGUES_URL=http://sp.int.sonata-nfv.eu:4002/catalogues
     depends_on:
      - postgres
     extra_hosts:

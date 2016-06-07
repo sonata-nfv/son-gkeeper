@@ -30,7 +30,7 @@ class GtkSrv < Sinatra::Base
     logger.debug 'GtkSrv: GET /services: uri.query='+uri.query
     logger.debug "GtkSrv: GET /services: params=#{params}"
     
-    services = NService.find(params)
+    services = NService.new(settings.services_catalogue, logger).find(params)
     if services
       logger.debug "GtkSrv: GET /services: #{services}"
 
@@ -49,6 +49,21 @@ class GtkSrv < Sinatra::Base
     end
   end
   
+  get '/services/:uuid' do
+    logger.debug "GtkSrv: entered GET /services/#{params[:uuid]}"
+    
+    service = NService.new(settings.services_catalogue, logger).find_by_uuid(params[:uuid])
+    if service
+      logger.debug "GtkSrv: GET /service: #{service}"
+      response = service.to_json
+      logger.debug "GtkSrv: leaving GET /services/#{params[:uuid]} with response="+response
+      halt 200, response
+    else
+      logger.debug "GtkSrv: leaving GET /services/#{params[:uuid]} with \"No service with uuid #{params[:uuid]} was found\""
+      json_error 404, "No service with uuid #{params[:uuid]} was found"
+    end
+  end
+
   get '/admin/logs' do
     logger.debug "GtkSrv: entered GET /admin/logs"
     File.open('log/'+ENV['RACK_ENV']+'.log', 'r').read

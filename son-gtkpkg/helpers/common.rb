@@ -40,7 +40,7 @@ module GtkPkgHelpers
 
     # Validate name
     halt 400, 'Package name invalid' unless (manifest['name'].downcase == manifest['name']) && (manifest['name'] =~ /^[a-zA-Z\-\d\s]*$/)
-    # Validate package_version
+    # Validate version
     halt 400, 'Package version format is invalid' unless manifest['version'] =~ /\A\d+(?:\.\d+)*\z/
   end
 
