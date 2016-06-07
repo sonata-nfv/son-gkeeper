@@ -15,16 +15,16 @@
 ## limitations under the License.
 require_relative '../spec_helper'
 
-RSpec.describe Package do
+RSpec.describe Package, type: :model do
   describe '#find_by_uuid' do
   end
   
   describe '#find' do
   end
   
-  describe '#save' do
+  describe '.to_file' do
   end
   
-  describe '#load' do
+  describe '.from_file' do
   end
 end

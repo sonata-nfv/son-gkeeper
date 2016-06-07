@@ -22,15 +22,34 @@ class GtkApi < Sinatra::Base
     uri = Addressable::URI.new
     uri.query_values = params
     logger.debug "Settings Srv. Mgmt. = #{settings.service_management.class}"
-    
     logger.debug "GtkApi: entered GET /services?#{uri.query}"
     
     params[:offset] ||= DEFAULT_OFFSET 
     params[:limit] ||= DEFAULT_LIMIT
     
     services = settings.service_management.find_services(params)
-    logger.debug "GtkApi: leaving GET /services?#{uri.query} with #{services}"
-    halt 200, services.to_json if services
+    if services
+      logger.debug "GtkApi: leaving GET /services?#{uri.query} with #{services}"
+      halt 200, services.to_json if services
+    else
+      logger.debug "GtkApi: leaving GET /services?#{uri.query} with \"No services with #{uri.query} were found\""
+      halt 404, "No services with #{uri.query} were found"
+    end
+  end
+  
+  # GET a specific service
+  get '/services/:uuid' do
+    logger.debug "Settings Srv. Mgmt. = #{settings.service_management.class}"
+    logger.debug "GtkApi: entered GET /services/#{params[:uuid]}"
+    
+    service = settings.service_management.find_services_by_uuid(params[:uuid])
+    if service
+      logger.debug "GtkApi: leaving GET /services/#{params[:uuid]} with #{service}"
+      halt 200, service.to_json if service
+    else
+      logger.debug "GtkApi: leaving GET /services/#{params[:uuid]} with \"Service #{params[:uuid]} no found\""
+      halt 404, "Service #{params[:uuid]} no found"
+    end
   end
   
   get '/admin/services/logs' do

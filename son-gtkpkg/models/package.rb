@@ -251,24 +251,24 @@ class Package
       if @service
         service = @service.store()
         
-        @logger.debug "Package.unbuild: stored service #{service}"
+        @logger.debug "Package.store_all: stored service #{service}"
         # TODO: what if storing a service goes wrong?
         # rollback!
       end
       if @functions.size
         @functions.each do |vf|
-          @logger.debug "Package.unbuild: vf = #{vf}"
+          @logger.debug "Package.store_all: vf = #{vf}"
           function = vf.store()
           if function
-            @logger.debug "Package.unbuild: stored function #{function}"
+            @logger.debug "Package.store_all: stored function #{function}"
             # TODO: rollback if failled
           end
         end
       end
-      @logger.debug "Package.unbuild: stored package #{@package}"
+      @logger.debug "Package.store_all: stored package #{@package}"
       @package
     else
-      @logger.debug "Package.unbuild: failled to store #{@descriptor}"
+      @logger.debug "Package.store_all: failled to store #{@descriptor}"
       {}
     end
   end

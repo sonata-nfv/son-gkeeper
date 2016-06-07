@@ -25,6 +25,7 @@ class ServiceManagerService
     headers[:params] = uuid
     begin
       response = RestClient.get( @url+"/services/#{uuid}", headers)
+      JSON.parse response.body
     rescue => e
       @logger.error "ServiceManagerService#find_services_by_uuid: e=#{format_error(e.backtrace)}"
       nil 
@@ -37,7 +38,7 @@ class ServiceManagerService
     @logger.debug "ServiceManagerService#find_services(#{params}): headers=#{headers}"
     begin
       response = RestClient.get(@url+'/services', headers) 
-      pp "ServiceManagerService#find_services(#{params}): response=#{response}"
+      @logger.debug "ServiceManagerService#find_services(#{params}): response=#{response}"
       JSON.parse response.body
     rescue => e
       @logger.error "ServiceManagerService#find_services: #{e.message} - #{format_error(e.backtrace)}"
@@ -51,6 +52,7 @@ class ServiceManagerService
     @logger.debug "ServiceManagerService#find_requests(#{params}): headers=#{headers}"
     begin
       RestClient.get(@url+'/requests', headers) 
+      JSON.parse response.body
     rescue => e
       @logger.error "ServiceManagerService#find_requests: #{e.message} - #{format_error(e.backtrace)}"
       nil 
@@ -62,6 +64,7 @@ class ServiceManagerService
     headers[:params] = uuid
     begin
       response = RestClient.get( @url+"/requests/#{uuid}", headers)
+      JSON.parse response.body
     rescue => e
       @logger.error "ServiceManagerService#find_requests_by_uuid: #{e.message} - #{format_error(e.backtrace)}"
       nil 

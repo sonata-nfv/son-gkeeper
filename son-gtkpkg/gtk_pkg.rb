@@ -72,4 +72,5 @@ class GtkPkg < Sinatra::Base
 	  c.on_exists_proc = true
 	  c.continue_on_exists_proc = true
   end  
+  logger.info "GtkPkg started at #{settings.time_at_startup}"
 end
