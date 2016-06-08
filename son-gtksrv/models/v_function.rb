@@ -14,13 +14,20 @@
 ## limitations under the License.
 # encoding: utf-8
 class VFunction
+  
+  def initialize(catalogue, logger)
+    @catalogue = catalogue
+    @logger = logger
+  end
+  
   def find_function(name,vendor,version)
     headers = { 'Accept'=> 'application/json', 'Content-Type'=>'application/json'}
+    url = @catalogue.url+"?name=#{name}&vendor=#{vendor}&version=#{version}"
     begin
-      parsed_url = GtkSrv.settings.catalogues['url']+"/vnfs#?name=#{name}&vendor=#{vendor}&version=#{version}"
-      response = RestClient.get(parsed_url, headers)
+      response = RestClient.get(url, headers)
     rescue => e
-      e.to_json
+      @logger.error "No function found for "+url
+      e.message
     end
   end
 end

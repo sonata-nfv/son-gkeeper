@@ -15,43 +15,45 @@
 # encoding: utf-8
 class ServiceManagerService
   
+  JSON_HEADERS = { 'Accept'=> 'application/json', 'Content-Type'=>'application/json'}
+  
   def initialize(url, logger)
     @url = url
     @logger = logger
   end
     
   def find_services_by_uuid(uuid)
-    headers = { 'Accept'=> 'application/json', 'Content-Type'=>'application/json'}
-    headers[:params] = uuid
+    headers = JSON_HEADERS
+    #headers[:params] = uuid
     begin
       response = RestClient.get( @url+"/services/#{uuid}", headers)
       JSON.parse response.body
     rescue => e
-      @logger.error "ServiceManagerService#find_services_by_uuid: e=#{format_error(e.backtrace)}"
+      @logger.error "ServiceManagerService.find_services_by_uuid: e=#{format_error(e.backtrace)}"
       nil 
     end
   end
   
   def find_services(params)
-    headers = { 'Accept'=> 'application/json', 'Content-Type'=>'application/json'}
+    headers = JSON_HEADERS
     headers[:params] = params unless params.empty?
-    @logger.debug "ServiceManagerService#find_services(#{params}): headers=#{headers}"
+    @logger.debug "ServiceManagerService.find_services(#{params}): headers=#{headers}"
     begin
       response = RestClient.get(@url+'/services', headers) 
-      @logger.debug "ServiceManagerService#find_services(#{params}): response=#{response}"
+      @logger.debug "ServiceManagerService.find_services(#{params}): response=#{response}"
       JSON.parse response.body
     rescue => e
-      @logger.error "ServiceManagerService#find_services: #{e.message} - #{format_error(e.backtrace)}"
+      @logger.error "ServiceManagerService.find_services: #{e.message} - #{format_error(e.backtrace)}"
       nil 
     end
   end
 
   def find_requests(params)
-    headers = { 'Accept'=> 'application/json', 'Content-Type'=>'application/json'}
+    headers = JSON_HEADERS
     headers[:params] = params unless params.empty?
     @logger.debug "ServiceManagerService#find_requests(#{params}): headers=#{headers}"
     begin
-      RestClient.get(@url+'/requests', headers) 
+      response = RestClient.get(@url+'/requests', headers) 
       JSON.parse response.body
     rescue => e
       @logger.error "ServiceManagerService#find_requests: #{e.message} - #{format_error(e.backtrace)}"
@@ -60,7 +62,7 @@ class ServiceManagerService
   end
   
   def find_requests_by_uuid(uuid)
-    headers = { 'Accept'=> 'application/json', 'Content-Type'=>'application/json'}
+    headers = JSON_HEADERS
     headers[:params] = uuid
     begin
       response = RestClient.get( @url+"/requests/#{uuid}", headers)
@@ -71,16 +73,17 @@ class ServiceManagerService
     end
   end
   
-  def create(params)
-    @logger.debug "ServiceManagerService#create(#{params})"
+  def create_service_intantiation_request(params)
+    @logger.debug "ServiceManagerService.create_service_intantiation_request(#{params})"
     begin
-      response = RestClient.post(@url+'/requests', { service_uuid: params[:service_uuid]}, content_type: :json, accept: :json) 
-      @logger.debug "ServiceManagerService#create: response="+response
+      @logger.debug "ServiceManagerService.create_service_intantiation_request: @url = "+@url
+      response = RestClient.post(@url+'/requests', params.to_json, content_type: :json, accept: :json) 
+      @logger.debug "ServiceManagerService.create_service_intantiation_request: response="+response
       parsed_response = JSON.parse(response)
-      @logger.debug "ServiceManagerService#create: parsed_response=#{parsed_response}"
+      @logger.debug "ServiceManagerService.create_service_intantiation_request: parsed_response=#{parsed_response}"
       parsed_response
     rescue => e
-      @logger.error "ServiceManagerService#create: #{e.message} - #{format_error(e.backtrace)}"
+      @logger.error "ServiceManagerService.create_service_intantiation_request: #{e.message} - #{format_error(e.backtrace)}"
       nil 
     end      
   end

@@ -65,6 +65,7 @@ class GtkSrv < Sinatra::Base
 
   if settings.catalogues
     set :services_catalogue, Catalogue.new(settings.catalogues+'/network-services', logger)
+    set :functions_catalogue, Catalogue.new(settings.catalogues+'/vnfs', logger)
   else
     puts '    >>>Catalogue url not defined, application being terminated!!'
     Process.kill('TERM', Process.pid)

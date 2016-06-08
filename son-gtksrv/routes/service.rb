@@ -54,7 +54,7 @@ class GtkSrv < Sinatra::Base
     
     service = NService.new(settings.services_catalogue, logger).find_by_uuid(params[:uuid])
     if service
-      logger.debug "GtkSrv: GET /service: #{service}"
+      logger.debug "GtkSrv: GET /services: #{service}"
       response = service.to_json
       logger.debug "GtkSrv: leaving GET /services/#{params[:uuid]} with response="+response
       halt 200, response

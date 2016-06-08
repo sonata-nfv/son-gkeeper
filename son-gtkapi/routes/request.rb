@@ -19,21 +19,22 @@ class GtkApi < Sinatra::Base
   
   before do
 	  if request.request_method == 'OPTIONS'
-		response.headers['Access-Control-Allow-Origin'] = '*'
-        response.headers['Access-Control-Allow-Methods'] = 'POST'      
-        response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Access-Control-Allow-Headers, Authorization, X-Requested-With'
-		halt 200
+		  response.headers['Access-Control-Allow-Origin'] = '*'
+      response.headers['Access-Control-Allow-Methods'] = 'POST'      
+      response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Access-Control-Allow-Headers, Authorization, X-Requested-With'
+		  halt 200
 	  end
 	end
   
   # POST a request
   post '/requests/?' do
-    unless params[:service_uuid].nil?
-      logger.debug "GtkApi: POST /requests with :service_uuid="+params[:service_uuid]
-      request = settings.service_management.create(params)
-      if request
-        logger.debug "GtkApi: POST /requests: request =#{request}"
-        halt 201, request.to_json
+    params = JSON.parse(request.body.read)
+    unless params.nil?
+      logger.debug "GtkApi: POST /requests with params=#{params}"
+      new_request = settings.service_management.create_service_intantiation_request(params)
+      if new_request
+        logger.debug "GtkApi: POST /requests: new_request =#{new_request}"
+        halt 201, new_request.to_json
       else
         logger.debug "GtkApi: leaving POST /requests with 'No request was created'"
         json_error 400, 'No request was created'
@@ -50,9 +51,8 @@ class GtkApi < Sinatra::Base
     params['limit'] ||= DEFAULT_LIMIT
     uri.query_values = params
     logger.info "GtkApi: entered GET /requests?#{uri.query}"
-    
-    requests = JSON.parse(settings.service_management.find_requests(params))
-    logger.info "GtkApi: requests=#{requests}"
+    requests = settings.service_management.find_requests(params)
+    logger.debug "GtkApi: GET /requests?#{uri.query} gave #{requests}"
     if requests && requests.is_a?(Array)
       logger.info "GtkApi: leaving GET /requests?#{uri.query} with #{requests}"
       halt 200, requests.to_json

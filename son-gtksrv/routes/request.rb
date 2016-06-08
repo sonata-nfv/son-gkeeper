@@ -57,31 +57,28 @@ class GtkSrv < Sinatra::Base
 
   # POSTs an instantiation request, given a service_uuid
   post '/requests/?' do
-    logger.info "GtkSrv: entered POST /requests with params=#{params}"
+    original_body = request.body.read
+    logger.info "GtkSrv: entered POST /requests with original_body=#{original_body}"
+    params = JSON.parse(original_body, :quirks_mode => true)
+    logger.info "GtkSrv: POST /requests with params=#{params}"
     
     begin
-      logger.debug "GtkSrv: entered POST /requests with service uuid=#{params[:service_uuid]}"
-      request = Request.create(:service_uuid => params[:service_uuid])
-      service = JSON.parse(NService.find_services_by_uuid(params[:service_uuid]))
+      si_request = Request.create(params)
+      logger.info "GtkSrv: POST /requests with service_uuid=#{params['service_uuid']}: #{si_request.inspect}"
+      service = NService.new(settings.services_catalogue, logger).find_by_uuid(params['service_uuid'])
       start_request=Hash.new
       start_request['NSD']=service
       
-      service['network_functions'].each_with_index do |nfd, index| 
-        complete_nfd=JSON.parse(VFunction.find_function(nfd['vnf_name'],nfd['vnf_vendor'],nfd['vnf_version']))
-        complete_nfd=complete_nfd[0]
-        start_request["VNFD#{index}"]=complete_nfd  
+      service['network_functions'].each_with_index do |function, index|
+        vnfd = VFunction.new(settings.functions_catalogue, logger).find_function(function['name'],function['vendor'],function['version'])
+        start_request["VNFD#{index}"]=vnfd[0]  
       end
             
       start_request_yml = YAML.dump(start_request)
-      logger.debug(start_request_yml)
-      
-      #generate_token
-      #request['request_uuid']=SecureRandom.uuid
-      #request.save
-      mq_server = MQServer.new(GtkSrv.mqserver['url'],logger)
-      #smresponse = mq_server.call_sm(start_request_yml,request['id'])
-      smresponse = mq_server.emit(start_request_yml.to_s,request['id'])
-      json_request = json(request, { root: false })
+      logger.debug "GtkSrv: POST /requests #{params}: "+start_request_yml
+
+      smresponse = settings.mqserver.publish( start_request_yml.to_s, si_request['id'])
+      json_request = json(si_request, { root: false })
       logger.info 'GtkSrv: returning POST /requests with request='+json_request
       halt 201, json_request
       
