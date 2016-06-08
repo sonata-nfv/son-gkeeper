@@ -51,7 +51,7 @@ class GtkFnct < Sinatra::Base
   
   get '/functions/:uuid' do
     unless params[:uuid].nil?
-    logger.info "GtkFnct: entered GET \"/packages/#{params[:uuid]}\""
+    logger.info "GtkFnct: entered GET \"/functions/#{params[:uuid]}\""
     function = VFunction.find_by_uuid(params[:uuid])
       if function && function.is_a?(Hash) && function['uuid']
         logger.info "GtkFnct: in GET /functions/#{params[:uuid]}, found function #{function}"
