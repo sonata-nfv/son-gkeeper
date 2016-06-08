@@ -100,11 +100,11 @@ $services = [
             {"connection_point_ref"=>"ns:output", "position"=>4}
           ]}
         ]
-      }]
-    },
+      }],
     'created_at'=> Time.now.utc.to_s,
     'updated_at'=> Time.now.utc.to_s,
     'uuid'=> "0f4eb013-28b1-4590-b59d-d3f094e168d8"
+  }
 ]
 
 get '/catalogues/packages/:uuid' do
@@ -166,10 +166,13 @@ end
 
 get '/catalogues/network-services/:uuid' do
   content_type :json
-  puts params.inspect
+  puts "In GET /catalogues/network-services/#{params[:uuid]}"
   $services.each do |s|
     puts s.inspect
-    return s.to_json if params['uuid'] == s['uuid']
+    if params['uuid'] == s['uuid']
+      puts "In GET /catalogues/network-services/#{params[:uuid]}: found service #{s.inspect}"
+      return s.to_json 
+    end
   end
   {}.to_json
 end

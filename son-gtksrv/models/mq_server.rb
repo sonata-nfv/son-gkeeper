@@ -20,7 +20,7 @@ require 'yaml'
 require 'json' 
 
 class MQServer
-  attr_accessor :correlation_ids
+  attr_accessor :url, :correlation_ids
   
   SERVER_QUEUE = 'service.instances.create'
   
@@ -30,50 +30,42 @@ class MQServer
     @channel = Bunny.new(url,:automatically_recover => false).start.create_channel
     @topic = @channel.topic("son-kernel", :auto_delete => false)
     @queue   = @channel.queue(SERVER_QUEUE, :auto_delete => true).bind(@topic, :routing_key => SERVER_QUEUE)
-    self.correlation_ids=Hash.new
-  end
-  
-  def call_sm(n,correlation_id)
-    self.correlation_ids[correlation_id]=correlation_id
-    @logger.debug(correlation_id)
-    @topic.publish(n.to_s, :routing_key => SERVER_QUEUE, :correlation_id => correlation_id,:reply_to => @q.name)
+    self.consume
   end
 
-  def emit(msg, correlation_id)
-    @topic.publish(msg, :routing_key => SERVER_QUEUE, :correlation_id => correlation_id)
+  def publish(msg, correlation_id)
+    @logger.debug "MQServer.publish("+msg+", "+correlation_id+")"
+    @topic.publish(msg, :routing_key => SERVER_QUEUE, :correlation_id => correlation_id, :reply_to => @queue.name)
   end
   
   def consume
     @queue.subscribe do |delivery_info, properties, payload|
       begin
-        pp "delivery_info: #{delivery_info}"
-        pp "properties: #{properties}"
-        pp "payload: #{payload}"
-        if valid_response( properties, self.correlation_ids)
-          parsed_payload = YAML.load(payload)
+        @logger.debug "MQServer.consume: delivery_info: #{delivery_info}"
+        @logger.debug "MQServer.consume: properties: #{properties}"
+        @logger.debug "MQServer.consume: payload: #{payload}"
+        parsed_payload = YAML.load(payload)
+        unless parsed_payload['status']
           request = Request.find_by(id: properties[:correlation_id])
-
-  	      if valid(request)
-            self.correlation_ids.delete(properties[:correlation_id])
+          if request
+            request['status']=parsed_payload['status']
+            begin
+              request.save
+              @logger.debug "MQServer.consume: request saved"
+            rescue Exception => e
+              @logger.error e.message
+        	    @logger.error e.backtrace.inspect
+            end
+          else
+            @logger.error "MQServer.consume: request "+properties[:correlation_id]+" not found"
           end
-          request['status']=parsed_payload['status']
-          request.save
+        else
+          @logger.debug "MQServer.consume: parsed_payload['status'] not present"
         end
       rescue Exception => e
-        @logger.debug(e.message)
-  	    @logger.debug(e.backtrace.inspect)
+        @logger.error e.message
+  	    @logger.error e.backtrace.inspect
       end
     end
   end
-  
-  private 
-  
-  def valid_response(properties, correlation_ids)
-    properties[:headers]!=nil && properties[:headers]['type']=='reply' && correlation_ids[properties[:correlation_id]] != nil 
-  end
-  
-  def valid(request)
-    request['status']!=nil && (request['status']=='ERROR' || request['status']=='REJECTED' || request['status']=='Deployment completed')
-  end
 end
-

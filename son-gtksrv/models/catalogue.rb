@@ -56,10 +56,10 @@ class Catalogue
   def find(params)
     headers = JSON_HEADERS
     headers[:params] = params unless params.empty?
-    @logger.debug "Catalogue::find(#{params}): headers #{headers}"
+    @logger.debug "Catalogue.find(#{params}): headers #{headers}"
     begin
       response = RestClient.get(@url, headers)
-      @logger.debug "Catalogue#find(#{params}): #{response}"      
+      @logger.debug "Catalogue.find(#{params}): #{response}"      
       JSON.parse response.body
     rescue => e
       @logger.error format_error(e.backtrace)
@@ -67,10 +67,12 @@ class Catalogue
     end
   end
   
-  def update
+  def update(uuid)
+    @logger.debug "Catalogue.update(#{uuid})"
   end
   
-  def delete
+  def delete(uuid)
+    @logger.debug "Catalogue.delete(#{uuid})"
   end
   
   private
