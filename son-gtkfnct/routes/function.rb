@@ -30,7 +30,7 @@ class GtkFnct < Sinatra::Base
     logger.debug 'GtkFnct: GET /functions: uri.query='+uri.query
     logger.debug "GtkFnct: GET /functions: params=#{params}"
     
-    functions = VFunction.find(params)
+    functions = VFunction.new(settings.services_catalogue, logger).find(params)
     if functions
       logger.debug "GtkFnct: GET /functions: #{functions}"
 
@@ -52,14 +52,14 @@ class GtkFnct < Sinatra::Base
   get '/functions/:uuid' do
     unless params[:uuid].nil?
     logger.info "GtkFnct: entered GET \"/functions/#{params[:uuid]}\""
-    function = VFunction.find_by_uuid(params[:uuid])
+    function = VFunction.new(settings.services_catalogue, logger).find_by_uuid(params[:uuid])
       if function && function.is_a?(Hash) && function['uuid']
         logger.info "GtkFnct: in GET /functions/#{params[:uuid]}, found function #{function}"
         response = function.to_json
         logger.info "GtkFnct: leaving GET /functions/#{params[:uuid]} with response="+response
         halt 200, response
       else
-        logger.error "GtkFnct: leaving GET \"/functions/#{params[:uuid]}\" with \"No functions with UUID=#{params[:uuid]} was found\""
+        logger.error "GtkFnct: leaving GET \"/functions/#{params[:uuid]}\" with \"No function with UUID=#{params[:uuid]} was found\""
         json_error 404, "No function with UUID=#{params[:uuid]} was found"
       end
     end
