@@ -30,7 +30,7 @@ class GtkFnct < Sinatra::Base
     logger.debug 'GtkFnct: GET /functions: uri.query='+uri.query
     logger.debug "GtkFnct: GET /functions: params=#{params}"
     
-    functions = VFunction.new(settings.services_catalogue, logger).find(params)
+    functions = settings.functions_catalogue.find(params)
     if functions
       logger.debug "GtkFnct: GET /functions: #{functions}"
 
@@ -52,7 +52,7 @@ class GtkFnct < Sinatra::Base
   get '/functions/:uuid' do
     unless params[:uuid].nil?
     logger.info "GtkFnct: entered GET \"/functions/#{params[:uuid]}\""
-    function = VFunction.new(settings.services_catalogue, logger).find_by_uuid(params[:uuid])
+    function = settings.functions_catalogue.find_by_uuid(params[:uuid])
       if function && function.is_a?(Hash) && function['uuid']
         logger.info "GtkFnct: in GET /functions/#{params[:uuid]}, found function #{function}"
         response = function.to_json

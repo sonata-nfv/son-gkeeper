@@ -64,7 +64,7 @@ class GtkFnct < Sinatra::Base
   enable :cross_origin
 
   if settings.catalogues
-    set :services_catalogue, Catalogue.new(settings.catalogues+'/network-services', logger)
+    set :functions_catalogue, VFunction.new(settings.catalogues+'/vnfs', logger)
   else
     puts '    >>>Catalogue url not defined, application being terminated!!'
     Process.kill('TERM', Process.pid)
