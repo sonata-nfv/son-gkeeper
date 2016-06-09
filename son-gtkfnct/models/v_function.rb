@@ -30,6 +30,8 @@ class VFunction
     headers = { 'Accept'=> 'application/json', 'Content-Type'=>'application/json'}
     headers[:params] = params unless params.empty?
     pp "VFunction#find(#{params}): headers #{headers}"
+    pp @url
+
     uri = @url + '/vnfs'
     begin
       response = RestClient.get(uri, headers)
@@ -49,7 +51,8 @@ class VFunction
     begin
       response = RestClient.get(@url + "/vnfs/#{uuid}", headers) 
       parsed_response = JSON.parse(response)
-      pp "VFunction#find_by_uuid(#{uuid}): #{parsed_response}"
+      pp "VFunction#find_by_uuid(#{uuid}): #{parsed_response
+      pp @url
       parsed_response      
     rescue => e
       puts e.backtrace
