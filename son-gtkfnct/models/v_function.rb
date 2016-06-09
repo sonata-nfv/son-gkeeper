@@ -26,7 +26,7 @@ class VFunction
     @logger = logger
   end
   
-  def self.find(params)
+  def find(params)
     headers = { 'Accept'=> 'application/json', 'Content-Type'=>'application/json'}
     headers[:params] = params unless params.empty?
     pp "VFunction#find(#{params}): headers #{headers}"
@@ -43,7 +43,7 @@ class VFunction
     end
   end
 
-  def self.find_by_uuid(uuid)
+  def find_by_uuid(uuid)
     headers = { 'Accept'=> 'application/json', 'Content-Type'=>'application/json'}
     headers[:params] = uuid
     begin
