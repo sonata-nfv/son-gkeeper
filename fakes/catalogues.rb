@@ -1,7 +1,15 @@
 require 'sinatra'
 require 'json'
 
-$functions = []
+$functions = [{
+    'uuid'=> "0f4eb013-28b1-4590-b59d-d3f094e168d8",
+    'created_at'=> Time.now.utc.to_s,
+    'updated_at'=> Time.now.utc.to_s,
+    "vnf_id"=>"vnf_firewall",
+    "vendor"=>"eu.sonata-nfv", 
+    "name"=>"firewall-vnf", 
+    "version"=>"0.1"
+  }]
 $packages = [
   {
     "uuid"=> "53676529-b277-4369-8ff9-8668310eab7d", 
@@ -162,6 +170,16 @@ get '/catalogues/network-services/?' do
     puts "With no params: "
     $services.to_json
   end
+end
+
+get '/catalogues/vnfs/?' do
+  content_type :json
+  halt 200, $functions.to_json
+end
+
+get '/catalogues/vnfs/:uuid' do
+  content_type :json
+  halt 200, $functions[0].to_json
 end
 
 get '/catalogues/network-services/:uuid' do

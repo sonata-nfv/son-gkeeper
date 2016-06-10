@@ -35,7 +35,7 @@ class MQServer
 
   def publish(msg, correlation_id)
     @logger.debug "MQServer.publish("+msg+", "+correlation_id+")"
-    @topic.publish(msg, :routing_key => SERVER_QUEUE, :correlation_id => correlation_id, :reply_to => @queue.name)
+    @topic.publish(msg, :content_type =>'text/yaml', :routing_key => SERVER_QUEUE, :correlation_id => correlation_id, :reply_to => @queue.name)
   end
   
   def consume
@@ -44,11 +44,17 @@ class MQServer
         @logger.debug "MQServer.consume: delivery_info: #{delivery_info}"
         @logger.debug "MQServer.consume: properties: #{properties}"
         @logger.debug "MQServer.consume: payload: #{payload}"
-        parsed_payload = YAML.load(payload)
-        unless parsed_payload['status']
+        
+        # This is because the payload is being returned as a string like
+        # {error: null, status: INSTANTIATING, timestamp: 1465488253.8547997}
+        #parsed_payload = YAML.load(payload)
+        status = payload.split(',')[1].split(':')[1].strip
+        @logger.debug "MQServer.consume: status: #{status}"
+        unless status == ''
           request = Request.find_by(id: properties[:correlation_id])
           if request
-            request['status']=parsed_payload['status']
+            @logger.debug "MQServer.consume: status="+status
+            request['status']=status  
             begin
               request.save
               @logger.debug "MQServer.consume: request saved"
@@ -60,7 +66,7 @@ class MQServer
             @logger.error "MQServer.consume: request "+properties[:correlation_id]+" not found"
           end
         else
-          @logger.debug "MQServer.consume: parsed_payload['status'] not present"
+          @logger.debug "MQServer.consume: status not present"
         end
       rescue Exception => e
         @logger.error e.message

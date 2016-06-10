@@ -20,7 +20,7 @@ require 'webmock/rspec'
 ENV['RACK_ENV'] ||= 'test'
 
 $: << File.expand_path('../..', __FILE__)
-require 'gtk_fnct
+require 'gtk_fnct'
 
 def app
   GtkFnct
