@@ -49,26 +49,26 @@ class GtkFnct < Sinatra::Base
   set :time_at_startup, Time.now.utc
   set :environments, %w(development test integration qualification demonstration)
   set :environment, ENV['RACK_ENV'] || :development
-  config_file File.join(root, 'config', 'services.yml')
+  config_file File.join( [root, 'config', 'services.yml.erb'] )
+    
+  use Rack::Session::Cookie, :key => 'rack.session', :domain => 'foo.com', :path => '/', :expire_after => 2592000, :secret => '$0nata'
   
-  configure do
-    set :catalogues, {'url': 'http://localhost:4002/catalogues'}
-    #set :database, {adapter: 'postgresql', host: 'localhost', database: 'sonata', encoding: 'utf8', pool: 5}
-  end
-  
-  configure :integration do
-    set :catalogues, {'url': 'http://sp.int.sonata-nfv.eu:4002/catalogues'}
-    #set :db, {'url': 'postgres://postgres:sonatatest@jenkins.sonata-nfv.eu:5432/sonata'} # TODO: read this from ENV
-    #set :database_file, File.join('config', 'database.yml')
-  end
-  
-	use Rack::Session::Cookie, key: 'rack.session', domain: 'foo.com', path: '/', expire_after: 2592000, secret: '$0nata'
+  # Logging
 	enable :logging
+  set :logger_level, :debug # or :fatal, :error, :warn, :info
   FileUtils.mkdir(File.join(settings.root, 'log')) unless File.exists? File.join(settings.root, 'log')
-  logfile = File.open('log/'+ENV['RACK_ENV']+'.log', 'a+')
-  #$stdout.reopen(logfile, "w")
-  #$stderr.reopen(logfile, "w")
-  #$stdout.sync = true
-  #$stderr.sync = true
+  logfile = File.open(File.join('log', ENV['RACK_ENV'])+'.log', 'a+')
+  logfile.sync = true
+  logger = Logger.new(logfile)
+    
   enable :cross_origin
+
+  if settings.catalogues
+    set :functions_catalogue, VFunction.new(settings.catalogues+'/vnfs', logger)
+  else
+    puts '    >>>Catalogue url not defined, application being terminated!!'
+    Process.kill('TERM', Process.pid)
+  end
+  
+  logger.info "GtkFnct started at #{settings.time_at_startup}"
 end

@@ -16,13 +16,25 @@ require_relative '../spec_helper'
 require 'json'
 
 RSpec.describe GtkFnct do
-  # let(:n_service) {build(:n_service, catalogues: 'http://localhost:5200/catalogues')}
-  let(:uri) { 'http://0.0.0.0:5200/catalogues/network-services' }
-  before    { WebMock.stub_request(:get, uri).to_return(status: 200, body: "[{\"descriptor_version\":\"1.0\",\"vendor\":\"eu.sonata-nfv.service-descriptor\",\"name\":\"sonata-demo\",\"version\":\"0.1\",\"author\":\"Sonata, sonata-nfv\",\"description\":\"\\\"The network service descriptor for the SONATA demo,\\n comprising iperf, a firewall, and tcpump.\\\"\\n\",\"network_functions\":[{\"vnf_id\":\"vnf_firewall\",\"vnf_group\":\"eu.sonata-nfv\",\"vnf_name\":\"firewall-vnf\",\"vnf_version\":\"0.1\"}],\"connection_points\":[{\"id\":\"ns:mgmt\",\"type\":\"interface\"},{\"id\":\"ns:input\",\"type\":\"interface\"},{\"id\":\"ns:output\",\"type\":\"interface\"}],\"virtual_links\":[{\"id\":\"mgmt\",\"connectivity_type\":\"E-LAN\",\"connection_points_reference\":[\"vnf_firewall:mgmt\",\"ns:mgmt\"]},{\"id\":\"input\",\"connectivity_type\":\"E-Line\",\"connection_points_reference\":[\"vnf_firewall:input\",\"ns:input\"]},{\"id\":\"output\",\"connectivity_type\":\"E-Line\",\"connection_points_reference\":[\"vnf_firewall:output\",\"ns:output\"]}],\"forwarding_graphs\":[{\"fg_id\":\"ns:fg01\",\"number_of_endpoints\":2,\"number_of_virtual_links\":2,\"constituent_vnfs\":[\"vnf_firewall\"],\"network_forwarding_paths\":[{\"fp_id\":\"ns:fg01:fp01\",\"policy\":\"none\",\"connection_points\":[{\"connection_point_ref\":\"ns:input\",\"position\":1},{\"connection_point_ref\":\"vnf_firewall:input\",\"position\":2},{\"connection_point_ref\":\"vnf_firewall:output\",\"position\":3},{\"connection_point_ref\":\"ns:output\",\"position\":4}]}]}]}]") }
   
-  it 'answers to services request' do
+  let(:uri) { 'http://0.0.0.0:5200/catalogues/vnfs' }
+  before    { 
+	WebMock.stub_request(:get,uri).to_return(status:200,body:"[{\"uuid\":\"464dfc44-c694-4604-a790-94df6cbe691\",\"descriptor_version\":\"vnfd-schema-01\",\"vendor\":\"eu.sonata-nfv\",\"name\":\"iperf-vnf\",\"version\":\"0.2\",\"author\":\"StevenvanRossem,iMinds\",\"description\":\"AfirstiperfVNFdescriptor.TheiperfVNFactsasatrafficsource\",\"virtual_deployment_units\":[{\"id\":\"vdu01\",\"vm_image\":\"file:///docker_files/iperf/Dockerfile\",\"vm_image_format\":\"docker\",\"resource_requirements\":{\"cpu\":{\"vcpus\":1},\"memory\":{\"size\":2,\"size_unit\":\"GB\"},\"storage\":{\"size\":10,\"size_unit\":\"GB\"}},\"connection_points\":[{\"id\":\"vdu01:cp01\",\"type\":\"interface\"},{\"id\":\"vdu01:cp02\",\"type\":\"interface\"},{\"id\":\"vdu01:cp03\",\"type\":\"interface\"}]}],\"virtual_links\":[{\"id\":\"mgmt\",\"connectivity_type\":\"E-LAN\",\"connection_points_reference\":[\"vdu01:cp01\",\"mgmt\"]},{\"id\":\"input\",\"connectivity_type\":\"E-Line\",\"connection_points_reference\":[\"vdu01:cp02\",\"input\"]},{\"id\":\"output\",\"connectivity_type\":\"E-Line\",\"connection_points_reference\":[\"vdu01:cp03\",\"output\"]}],\"connection_points\":[{\"id\":\"mgmt\",\"type\":\"interface\"},{\"id\":\"input\",\"type\":\"interface\"},{\"id\":\"output\",\"type\":\"interface\"}]}]")
+	
+	WebMock.stub_request(:get,uri+"/464dfc44-c694-4604-a790-94df6cbe691").to_return(status:200,body:"{\"uuid\":\"464dfc44-c694-4604-a790-94df6cbe691\",\"descriptor_version\":\"vnfd-schema-01\",\"vendor\":\"eu.sonata-nfv\",\"name\":\"iperf-vnf\",\"version\":\"0.2\",\"author\":\"StevenvanRossem,iMinds\",\"description\":\"AfirstiperfVNFdescriptor.TheiperfVNFactsasatrafficsource\",\"virtual_deployment_units\":[{\"id\":\"vdu01\",\"vm_image\":\"file:///docker_files/iperf/Dockerfile\",\"vm_image_format\":\"docker\",\"resource_requirements\":{\"cpu\":{\"vcpus\":1},\"memory\":{\"size\":2,\"size_unit\":\"GB\"},\"storage\":{\"size\":10,\"size_unit\":\"GB\"}},\"connection_points\":[{\"id\":\"vdu01:cp01\",\"type\":\"interface\"},{\"id\":\"vdu01:cp02\",\"type\":\"interface\"},{\"id\":\"vdu01:cp03\",\"type\":\"interface\"}]}],\"virtual_links\":[{\"id\":\"mgmt\",\"connectivity_type\":\"E-LAN\",\"connection_points_reference\":[\"vdu01:cp01\",\"mgmt\"]},{\"id\":\"input\",\"connectivity_type\":\"E-Line\",\"connection_points_reference\":[\"vdu01:cp02\",\"input\"]},{\"id\":\"output\",\"connectivity_type\":\"E-Line\",\"connection_points_reference\":[\"vdu01:cp03\",\"output\"]}],\"connection_points\":[{\"id\":\"mgmt\",\"type\":\"interface\"},{\"id\":\"input\",\"type\":\"interface\"},{\"id\":\"output\",\"type\":\"interface\"}]}")
+	}
+
+  
+  it 'answers to functions request' do
     get '/functions'
     expect(last_response).to be_ok
     expect(JSON.parse(last_response.body)).to be_a_kind_of(Array)
   end
+  
+  it 'answers to find request by uuid' do
+    get '/functions/464dfc44-c694-4604-a790-94df6cbe691'
+    expect(last_response).to be_ok
+    expect(JSON.parse(last_response.body)).to be_a_kind_of(Hash)
+  end
+  
 end
