@@ -16,23 +16,18 @@
 # encoding: utf-8
 # psql -h jenkins.sonata-nfv.eu -U postgres -psonatatest
 ---
-development:
-  catalogues:
-    url: 'http://localhost:5200/catalogues'
+development: &common_settings
+  catalogues: <%= ENV['CATALOGUES_URL'] %>
 
 test:
-  catalogues:
-    url: 'http://localhost:5200/catalogues'
-
+  <<: *common_settings
+  
 integration:
-  catalogues:
-    url: 'http://sp.int.sonata-nfv.eu:4002/catalogues'
+  <<: *common_settings
 
 qualification:
-  catalogues:
-    url: ''
+  <<: *common_settings
 
 demonstration:
-  catalogues:
-    url: ''
+  <<: *common_settings
   

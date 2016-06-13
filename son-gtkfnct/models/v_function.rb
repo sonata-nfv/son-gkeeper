@@ -17,11 +17,22 @@ require 'pp'
 
 class VFunction
   
-  def self.find(params)
+  attr_accessor :url
+  
+  JSON_HEADERS = {'Accept'=>'application/json', 'Content-Type'=>'application/json'}
+  
+  def initialize(url, logger)
+    @url = url
+    @logger = logger
+  end
+  
+  def find(params)
     headers = { 'Accept'=> 'application/json', 'Content-Type'=>'application/json'}
     headers[:params] = params unless params.empty?
     pp "VFunction#find(#{params}): headers #{headers}"
-    uri = GtkFnct.settings.catalogues['url']+'/vnfs'
+
+    uri = @url
+    pp "VFunction#find(#{uri})"
     begin
       response = RestClient.get(uri, headers)
       pp "VFunction#find: response #{response}"
@@ -34,11 +45,11 @@ class VFunction
     end
   end
 
-  def self.find_by_uuid(uuid)
+  def find_by_uuid(uuid)
     headers = { 'Accept'=> 'application/json', 'Content-Type'=>'application/json'}
     headers[:params] = uuid
     begin
-      response = RestClient.get(GtkFnct.settings.catalogues['url']+"/vnfs/#{uuid}", headers) 
+      response = RestClient.get(@url + "/#{uuid}", headers) 
       parsed_response = JSON.parse(response)
       pp "VFunction#find_by_uuid(#{uuid}): #{parsed_response}"
       parsed_response      
