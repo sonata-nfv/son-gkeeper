@@ -56,8 +56,15 @@ class Package
     @logger.debug "Package.to_file: @descriptor[:package_content]=#{@descriptor[:package_content]}"
     @descriptor[:package_content].each do |p_cont|
       @logger.debug "Package.to_file: p_cont=#{p_cont}"
-      @service = NService.new(settings.services_catalogue, @logger, @input_folder).to_file(p_cont) if p_cont['name'] =~ /service_descriptors/
-      @functions << VFunction.new(settings.functions_catalogue, @logger, @input_folder).to_file(p_cont) if p_cont['name'] =~ /function_descriptors/
+      if p_cont['name'] =~ /service_descriptors/
+        @service = NService.new(settings.services_catalogue, @logger, @input_folder)
+        @service.to_file(p_cont)
+      end
+      if p_cont['name'] =~ /function_descriptors/
+        function = VFunction.new(settings.functions_catalogue, @logger, @input_folder)
+        function.to_file(p_cont)
+        @functions << function
+      end
     end
     output_file = File.join(@output_folder, @descriptor[:name]+'.son')
     
@@ -100,8 +107,13 @@ class Package
     
     if valid? @descriptor
       stored_descriptor = store_all()
-      @logger.info('Package.from_file') { "stored package based on descriptor=#{stored_descriptor}"}
-      stored_descriptor
+      if stored_descriptor
+        @logger.debug('Package.from_file') { "stored package based on descriptor=#{stored_descriptor}"}
+        stored_descriptor
+      else
+        @logger.error('Package.from_file') { "could not store package based on descriptor=#{stored_descriptor}"}
+        nil
+      end     
     else
       @logger.error('Package.from_file') { "invalid descriptor (#{stored_descriptor})"}
       nil
@@ -219,30 +231,30 @@ class Package
   end
   
   def package_store()
-    @logger.debug "Package.store: descriptor "+@descriptor.to_s
+    @logger.debug('Package.store') {"descriptor "+@descriptor.to_s}
     
     begin
       response = RestClient.post( @url, @descriptor.to_json, content_type: :json, accept: :json)
-      @logger.debug "Package.store: response is "+response.to_s
+      @logger.debug('Package.store') {"response is "+response.to_s}
       saved_descriptor = JSON.parse response
       if saved_descriptor && saved_descriptor['uuid']
-        @logger.debug "Package.store: saved_descriptor is "+saved_descriptor.to_s
+        @logger.debug('Package.store') {"saved_descriptor is "+saved_descriptor.to_s}
         saved_descriptor
       else
-        @logger.debug "Package.store: failled to store #{@descriptor} with #{response}"
+        @logger.debug('Package.store') {"failled to store #{@descriptor} with #{response}"}
         nil
       end
     rescue => e
-      puts e.response
+      @logger.error('Package.store') {e.response}
       nil
     end
   end
 
   def store_all
-    saved_descriptor=package_store()
     @logger.debug('Package.store_all') {"@package is #{@package}"}
     @logger.debug('Package.store_all') {"@service is #{@service}"}
     @logger.debug('Package.store_all') {"@functions is #{@functions}"}
+    saved_descriptor=package_store()
     if saved_descriptor
       if @service
         @logger.debug "Package.store_all: service is #{@service}"
