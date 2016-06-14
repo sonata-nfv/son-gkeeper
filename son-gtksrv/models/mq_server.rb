@@ -47,13 +47,14 @@ class MQServer
         
         # This is because the payload is being returned as a string like
         # {error: null, status: INSTANTIATING, timestamp: 1465488253.8547997}
-        #parsed_payload = YAML.load(payload)
-        status = payload.split(',')[1].split(':')[1].strip
+        parsed_payload = YAML.load(payload)
+        #status = payload.split(',')[1].split(':')[1].strip
+        status = payload['status']
         @logger.debug "MQServer.consume: status: #{status}"
         unless status == ''
           request = Request.find_by(id: properties[:correlation_id])
           if request
-            @logger.debug "MQServer.consume: status="+status
+            @logger.debug "MQServer.consume: request[status] "+request['status']+" turned into "+status
             request['status']=status  
             begin
               request.save

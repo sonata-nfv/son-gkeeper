@@ -27,46 +27,37 @@ class Package
   DEFAULT_MANIFEST_FILE_NAME = 'MANIFEST.MF'
   DEFAULT_PATH = File.join(DEFAULT_META_DIR, DEFAULT_MANIFEST_FILE_NAME)
   
+  attr_accessor :descriptor
+  
   def initialize(catalogue: nil, logger: nil, params: nil)
     @logger = logger
-    @package = {}
-    @service = nil
+    @service = {}
     @functions = []
     @catalogue = catalogue
     @url = @catalogue.url
-    create_from_descriptor(params[:descriptor]) if params[:descriptor]
-    create_from_io(params[:io]) if params[:io]
+    if params[:descriptor]
+      @descriptor = params[:descriptor]
+      @input_folder = File.join('tmp', SecureRandom.hex)
+      FileUtils.mkdir_p @input_folder unless File.exists? @input_folder
+      @output_folder = File.join( 'public', 'packages', @descriptor['uuid'])
+      FileUtils.mkdir_p @output_folder unless File.exists? @output_folder
+    elsif params[:io]
+      @package_file = params[:io]
+    else
+      @logger.error 'Package.initialize: either @descriptor or @io must be given'
+    end 
   end
-  
-  # Saves a package from its description
-  #def save(descriptor, filename = DEFAULT_PATH)   
-  #  begin      
-  #    File.open(File.join(@output_folder, filename), 'w') {|f| YAML.dump(descriptor, f)}
-  #  rescue => e
-  #    e
-  #  end
-  #end
-  
-  # Loads a package 'file' into its descriptor
-  #def load(filename = DEFAULT_PATH)
-  #  begin
-  #    YAML.load_file File.join(@path, filename)
-  #  rescue => e
-  #    e.to_json
-  #  end
-  #end
-  
+    
   # Builds a package file from its descriptors, and returns a handle to it
   def to_file()
     @descriptor = clear_unwanted_parameters @descriptor
-    meta_dir = FileUtils.mkdir(File.join(@input_folder, DEFAULT_META_DIR))[0]
-    save_package_descriptor meta_dir
+    save_package_descriptor()
     @logger.debug "Package.to_file: @descriptor=#{@descriptor}"
     @logger.debug "Package.to_file: @descriptor[:package_content]=#{@descriptor[:package_content]}"
     @descriptor[:package_content].each do |p_cont|
       @logger.debug "Package.to_file: p_cont=#{p_cont}"
-      @service = NService.new( GtkPkg.settings.services_catalogue, @logger, @input_folder).to_file(p_cont) if p_cont['name'] =~ /service_descriptors/
-      @functions << VFunction.new( GtkPkg.settings.functions_catalogue, @logger, @input_folder).to_file(p_cont) if p_cont['name'] =~ /function_descriptors/
+      @service = NService.new(settings.services_catalogue, @logger, @input_folder).to_file(p_cont) if p_cont['name'] =~ /service_descriptors/
+      @functions << VFunction.new(settings.functions_catalogue, @logger, @input_folder).to_file(p_cont) if p_cont['name'] =~ /function_descriptors/
     end
     output_file = File.join(@output_folder, @descriptor[:name]+'.son')
     
@@ -79,33 +70,42 @@ class Package
 
   # Unbuilds a package file from its file, and returns a descriptor to it
   def from_file()
-    files = unzip_it @io
-    @service = {}
+    files = unzip_it @package_file
+    #@service = {}
     @functions = []
     files.each do |file|
       splited = file.split('/')
       file_name = splited[-1]
       path = File.join(splited.first splited.size-1)
-      @logger.debug "Package.from_file: path=#{path}, file_name = #{file_name}"
-      @descriptor = YAML.load_file(file) if path =~ /META-INF/
+      @logger.debug('Package.from_file') { "path=#{path}, file_name = #{file_name}"}
+      if path =~ /META-INF/
+        @descriptor = YAML.load_file(file) 
+        @logger.debug('Package.from_file') { "@descriptor=#{@descriptor}"}
+      end
       if path =~ /service_descriptors/
         @service = NService.new(GtkPkg.settings.services_catalogue, @logger, nil)
-        @service.from_file(file) 
+        @logger.debug('Package.from_file') { "service=#{@service}"}
+        @service.from_file(file)
       end
       if path =~ /function_descriptors/
-        function = VFunction.new( GtkPkg.settings.functions_catalogue, @logger, nil)
+        function = VFunction.new(GtkPkg.settings.functions_catalogue, @logger, nil)
         function.from_file(file)
+        @logger.debug('Package.from_file') { "function=#{function}"}
         @functions << function
       end
     end
+    @logger.debug('Package.from_file') { "@descriptor is #{@descriptor}"}
+    @logger.debug('Package.from_file') { "@service is #{@service}"}
+    @logger.debug('Package.from_file') { "@functions is #{@functions}"}
     
     if valid? @descriptor
-      return @package if store_all
-      @logger.error "Package.from_file: couldn't store package based on descriptor (#{@descriptor})"
+      stored_descriptor = store_all()
+      @logger.info('Package.from_file') { "stored package based on descriptor=#{stored_descriptor}"}
+      stored_descriptor
     else
-      @logger.error "Package.from_file: invalid descriptor (#{@descriptor})"
+      @logger.error('Package.from_file') { "invalid descriptor (#{stored_descriptor})"}
+      nil
     end
-    {}
   end
 
   def self.find_by_uuid(uuid, logger)
@@ -122,21 +122,7 @@ class Package
     packages
   end
   
-  private 
-  
-  def create_from_descriptor(descriptor)
-    @logger.debug "Package#initialize: descriptor=#{descriptor}"
-    @descriptor = descriptor
-    @input_folder = File.join('tmp', SecureRandom.hex)
-    FileUtils.mkdir_p @input_folder unless File.exists? @input_folder
-    @output_folder = File.join( 'public', 'packages', @descriptor['uuid'])
-    FileUtils.mkdir_p @output_folder unless File.exists? @output_folder
-  end
-  
-  def create_from_io(io)
-    @logger.debug "Package#initialize: io=#{io}"
-    @io = io
-  end
+  private
   
   def keyed_hash(hash)
     @logger.debug "Package.keyed_hash hash=#{hash}"
@@ -152,7 +138,8 @@ class Package
     keyed_hash
   end
 
-  def save_package_descriptor(meta_dir)
+  def save_package_descriptor()
+    meta_dir = FileUtils.mkdir(File.join(@input_folder, DEFAULT_META_DIR))[0]
     fname = File.join(meta_dir, DEFAULT_MANIFEST_FILE_NAME)
     File.open( fname, 'w') {|f| YAML.dump(@descriptor, f) }
   end
@@ -190,9 +177,9 @@ class Package
   def unzip_it(io)    
     files = []
     @logger.debug "Package.unzip_it: io = #{io.inspect}"
-    @logger.debug "Package.unzip_it: io is " + (io.closed? ? "closed" : "opened")
-    io.rewind
-    @logger.debug "Package.unzip_it: io is " + (io.closed? ? "closed" : "opened")
+    #@logger.debug "Package.unzip_it: io is " + (io.closed? ? "closed" : "opened")
+    #io.rewind
+    #@logger.debug "Package.unzip_it: io is " + (io.closed? ? "closed" : "opened")
     unzip_folder = FileUtils.mkdir_p(File.join('tmp', SecureRandom.hex))
     
     # Extract the zipped file into a directory
@@ -231,37 +218,42 @@ class Package
     true # TODO: validate the descriptor here
   end
   
-  def store()
-    @logger.debug "Package.store_to_catalogue: descriptor "+@descriptor.to_s
-    @logger.debug "Package.store_to_catalogue: @url "+@url
+  def package_store()
+    @logger.debug "Package.store: descriptor "+@descriptor.to_s
     
     begin
       response = RestClient.post( @url, @descriptor.to_json, content_type: :json, accept: :json)
-      @logger.debug "Package.store_to_catalogue: response is "+response.to_s
-      package = JSON.parse response
-      @logger.debug "Package.store_to_catalogue: package is "+package.to_s
+      @logger.debug "Package.store: response is "+response.to_s
+      saved_descriptor = JSON.parse response
+      if saved_descriptor && saved_descriptor['uuid']
+        @logger.debug "Package.store: saved_descriptor is "+saved_descriptor.to_s
+        saved_descriptor
+      else
+        @logger.debug "Package.store: failled to store #{@descriptor} with #{response}"
+        nil
+      end
     rescue => e
       puts e.response
-      nil
-    end
-    @logger.debug "Package.store_to_catalogue: package=#{package} for response=#{response}"
-    if package && package['uuid']
-      @logger.debug "Package.store_to_catalogue: #{response}"
-      package
-    else
-      @logger.debug "Package.store_to_catalogue: failled to store #{@descriptor} with #{response}"
       nil
     end
   end
 
   def store_all
-    if @package = store()
+    saved_descriptor=package_store()
+    @logger.debug('Package.store_all') {"@package is #{@package}"}
+    @logger.debug('Package.store_all') {"@service is #{@service}"}
+    @logger.debug('Package.store_all') {"@functions is #{@functions}"}
+    if saved_descriptor
       if @service
-        service = @service.store()
-        
-        @logger.debug "Package.store_all: stored service #{service}"
-        # TODO: what if storing a service goes wrong?
-        # rollback!
+        @logger.debug "Package.store_all: service is #{@service}"
+        stored_service = @service.store()
+        if stored_service
+          @logger.debug "Package.store_all: stored service #{stored_service}"
+        else
+          # TODO: what if storing a service goes wrong?
+          # rollback!
+          @logger.debug "Package.store_all: service and package rollback should happen here"
+        end
       end
       if @functions.size
         @functions.each do |vf|
@@ -270,13 +262,15 @@ class Package
           if function
             @logger.debug "Package.store_all: stored function #{function}"
             # TODO: rollback if failled
+          else
+            @logger.debug "Package.store_all: function, service and package rollback should happen here"
           end
         end
       end
-      @logger.debug "Package.store_all: stored package #{@package}"
-      @package
+      @logger.debug "Package.store_all: stored package #{saved_descriptor}"
+      saved_descriptor
     else
-      @logger.debug "Package.store_all: failled to store #{@descriptor}"
+      @logger.debug "Package.store_all: failled to store package with descriptor=#{@descriptor}"
       {}
     end
   end

@@ -31,15 +31,15 @@ class VFunction
   end
   
   def to_file(content)
-    @logger.debug "VFunction.build(#{content})"
+    @logger.debug "VFunction.to_file(#{content})"
     filename = content['name'].split('/')[-1]
     File.open(File.join( @folder, filename), 'w') {|f| YAML.dump(content, f) }
   end
   
   def from_file(path)
-    @logger.debug "VFunction.unbuild("+path+")"
+    @logger.debug "VFunction.from_file("+path+")"
     @descriptor = YAML.load_file path
-    @logger.debug "VFunction.unbuild: content = #{@descriptor}"
+    @logger.debug "VFunction.from_file: content = #{@descriptor}"
     @descriptor
   end
   
@@ -51,10 +51,10 @@ class VFunction
   end
   
   def find_by_uuid(uuid)
-    @logger.debug "VFunction.load(#{uuid})"
+    @logger.debug "VFunction.find_by_uuid(#{uuid})"
     headers = {'Accept'=>'application/json', 'Content-Type'=>'application/json'}
     response = RestClient.get(@catalogue+"/#{uuid}", headers) 
-    @logger.debug "VFunction.load: #{response}"
+    @logger.debug "VFunction.find_by_uuid: #{response}"
     JSON.parse response.body
   end
 end

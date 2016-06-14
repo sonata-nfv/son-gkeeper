@@ -38,28 +38,33 @@ class GtkPkg < Sinatra::Base
   #end
 
   post '/packages/?' do
-    logger.info "GtkPkg: entered POST /packages with params = #{params}"
+    logger.info('GtkPkg.post /packages') {"params = #{params}"}
     
-    package = Package.new(catalogue: GtkPkg.settings.packages_catalogue, logger: logger, params: {io: params[:package][:tempfile][:tempfile]})
-    package_d = package.from_file()
-    logger.info "GtkPkg: POST /packages package #{package_d.to_json}"
-    if package_d && package_d['uuid']
-      logger.info "GtkPkg: leaving POST /packages with package #{package_d.to_json}"
-      halt 201, {'Location' => "/packages/#{package_d['uuid']}"}, package_d.to_json
+    package = Package.new(catalogue: settings.packages_catalogue, logger: logger, params: {io: params[:package][:tempfile][:tempfile]})
+    if package 
+      logger.debug('GtkPkg.post /packages') {"package=#{package.inspect}"}
+      descriptor = package.from_file()
+      if descriptor && descriptor['uuid']
+        logger.info('GtkPkg.post /packages') {"leaving with package #{descriptor.to_json}"}
+        halt 201, {'Location' => "/packages/#{descriptor['uuid']}"}, descriptor.to_json
+      else
+        logger.error('GtkPkg.post /packages') {"leaving with 'Error generating package descriptor'"}
+        json_error 400, 'Error generating package descriptor'
+      end
     else
-      logger.info "GtkPkg: leaving POST /packages with 'No package created'"
+      logger.error('GtkPkg.post /packages') {"leaving with 'No package created'"}
       json_error 400, 'No package created'
     end
   end
   
   get '/packages/:uuid' do
     unless params[:uuid].nil?
-      logger.info "GtkPkg: entered GET \"/packages/#{params[:uuid]}\""
+      logger.info('GtkPkg.get') { "GtkPkg: entered GET \"/packages/#{params[:uuid]}\""}
       #package = Package.find_by_uuid( params[:uuid], logger)
-      package = GtkPkg.settings.packages_catalogue.find_by_uuid( params[:uuid])
+      package = settings.packages_catalogue.find_by_uuid( params[:uuid])
       if package && package.is_a?(Hash) && package['uuid']
         logger.info "GtkPkg: in GET /packages/#{params[:uuid]}, found package #{package}"
-        response = Package.new(catalogue: GtkPkg.settings.packages_catalogue, logger: logger, params: {descriptor: package}).to_file()    
+        response = Package.new(catalogue: settings.packages_catalogue, logger: logger, params: {descriptor: package}).to_file()    
         if response
           logger.info "GtkPkg: leaving GET /packages/#{params[:uuid]} with package found and sent in file .../#{package['name']}.son"
           halt 200, { 'filepath'=>File.join('public', 'packages', params[:uuid], package['name']+'.son')}.to_json
@@ -94,13 +99,13 @@ class GtkPkg < Sinatra::Base
     logger.debug "GtkPkg: entered GET \"/packages/#{uri.query}\""
     
     #packages = Package.find(params, logger)
-    packages = GtkPkg.settings.packages_catalogue.find(params)
+    packages = settings.packages_catalogue.find(params)
     logger.debug "GtkPkg: GET /packages: #{packages}"
     if packages && packages.is_a?(Array)
       if packages.size == 1
         logger.debug "GtkPkg: in GET /packages/#{uri.query}, found package #{packages[0]}"
         logger.debug "GtkPkg: in GET /packages/#{uri.query}, generating package"
-        response = Package.new(catalogue: GtkPkg.settings.packages_catalogue, logger: logger, params: {descriptor: packages[0]}).to_file()
+        response = Package.new(catalogue: settings.packages_catalogue, logger: logger, params: {descriptor: packages[0]}).to_file()
         if response
           logger.debug "GtkPkg: leaving GET /packages/#{uri.query} with \"Package #{packages[0]['uuid']} found and sent in file \"#{packages[0]['name']}\"\""
           send_file response #File.join(response, packages[0]['name'])

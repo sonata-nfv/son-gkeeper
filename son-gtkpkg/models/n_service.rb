@@ -18,6 +18,8 @@ require 'pp'
 
 class NService
   
+  attr_accessor :descriptor
+  
   def initialize(catalogue, logger, folder)
     @catalogue = catalogue
     @url = @catalogue.url+'/network-services'
@@ -30,15 +32,15 @@ class NService
   end
   
   def to_file(content)
-    @logger.debug "NService.build(#{content})"
+    @logger.debug "NService.to_file(#{content})"
     filename = content['name'].split('/')[-1]
     File.open(File.join( @folder, filename), 'w') {|f| YAML.dump(content, f) }
   end
   
   def from_file(filename)
-    @logger.debug "NService.unbuild(#{filename})"
+    @logger.debug "NService.from_file(#{filename})"
     @descriptor = YAML.load_file filename
-    @logger.debug "NService.unbuild: content = #{@descriptor}"
+    @logger.debug "NService.from_file: content = #{@descriptor}"
     @descriptor
   end
   
