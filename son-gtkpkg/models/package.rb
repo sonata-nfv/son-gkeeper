@@ -232,14 +232,15 @@ class Package
     true # TODO: validate the descriptor here
   end
   
-  def duplicate_package?(descriptor)
+  def duplicated_package?(descriptor)
     @catalogue.find({params: {vendor: descriptor['vendor'], name: descriptor['name'], version: descriptor['version']}})
   end
   
   def store()
     @logger.debug('Package.store') {"descriptor "+@descriptor.to_s}
     
-    if (package_descriptor = duplicate_package?(@descriptor))
+    package_descriptor = duplicated_package?(@descriptor)
+    if package_descriptor
       @logger.error('Package.store') {"package exists: #{package_descriptor}"}
       package_descriptor
     else
@@ -268,6 +269,7 @@ class Package
     @logger.debug('Package.store_all') {"@functions is #{@functions}"}
     saved_descriptor=store()
     if saved_descriptor
+      @logger.debug "Package.store_all: stored package #{saved_descriptor}"
       if @service
         @logger.debug "Package.store_all: service is #{@service}"
         stored_service = @service.store()
@@ -291,7 +293,6 @@ class Package
           end
         end
       end
-      @logger.debug "Package.store_all: stored package #{saved_descriptor}"
       saved_descriptor
     else
       @logger.debug "Package.store_all: failled to store package with descriptor=#{@descriptor}"
