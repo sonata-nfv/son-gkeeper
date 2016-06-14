@@ -57,10 +57,12 @@ class Package
     @descriptor[:package_content].each do |p_cont|
       @logger.debug "Package.to_file: p_cont=#{p_cont}"
       if p_cont['name'] =~ /service_descriptors/
+        @logger.debug('Package.to_file') { "p_cont['name']=#{p_cont['name']}"}
         @service = NService.new(settings.services_catalogue, @logger, @input_folder)
         @service.to_file(p_cont)
       end
       if p_cont['name'] =~ /function_descriptors/
+        @logger.debug('Package.to_file') { "p_cont['name']=#{p_cont['name']}"}
         function = VFunction.new(settings.functions_catalogue, @logger, @input_folder)
         function.to_file(p_cont)
         @functions << function
@@ -230,7 +232,7 @@ class Package
     true # TODO: validate the descriptor here
   end
   
-  def package_store()
+  def store()
     @logger.debug('Package.store') {"descriptor "+@descriptor.to_s}
     
     begin
@@ -249,18 +251,13 @@ class Package
       # Check if this was because a duplicate package
       # {"error":"ERROR: Duplicated Package Name, Vendor and Version"}
       if e.response['error'] =~ /Duplicated Package Name, Vendor and Version/
-        begin
-          saved_descriptor = @catalogue.find({vendor: @descriptor['vendor'], name: @descriptor['name'], version: @descriptor['version']})
+        saved_descriptor = @catalogue.find({params: {vendor: @descriptor['vendor'], name: @descriptor['name'], version: @descriptor['version']}})
+        @logger.debug('Package.store') {"saved_descriptor is "+saved_descriptor.to_s}
+        if saved_descriptor && saved_descriptor['uuid']
           @logger.debug('Package.store') {"saved_descriptor is "+saved_descriptor.to_s}
-          if saved_descriptor && saved_descriptor['uuid']
-            @logger.debug('Package.store') {"saved_descriptor is "+saved_descriptor.to_s}
-            saved_descriptor
-          else
-            @logger.error('Package.store') {"failled to find #{@descriptor}"}
-            nil
-          end
-        rescue => e
-          @logger.error('Package.store') {"exception in finding duplicate package: "+e.response}
+          saved_descriptor
+        else
+          @logger.error('Package.store') {"failled to find #{@descriptor}"}
           nil
         end
       else
@@ -273,7 +270,7 @@ class Package
     @logger.debug('Package.store_all') {"@package is #{@package}"}
     @logger.debug('Package.store_all') {"@service is #{@service}"}
     @logger.debug('Package.store_all') {"@functions is #{@functions}"}
-    saved_descriptor=package_store()
+    saved_descriptor=store()
     if saved_descriptor
       if @service
         @logger.debug "Package.store_all: service is #{@service}"
