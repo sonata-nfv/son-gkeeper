@@ -44,6 +44,7 @@ class GtkPkg < Sinatra::Base
     if package 
       logger.debug('GtkPkg.post /packages') {"package=#{package.inspect}"}
       descriptor = package.from_file()
+      logger.info('GtkPkg.post /packages') {"descriptor is #{descriptor}"}
       if descriptor && descriptor['uuid']
         logger.info('GtkPkg.post /packages') {"leaving with package #{descriptor.to_json}"}
         halt 201, {'Location' => "/packages/#{descriptor['uuid']}"}, descriptor.to_json

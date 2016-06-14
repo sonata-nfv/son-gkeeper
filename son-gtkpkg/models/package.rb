@@ -232,35 +232,31 @@ class Package
     true # TODO: validate the descriptor here
   end
   
+  def duplicate_package?(descriptor)
+    @catalogue.find({params: {vendor: descriptor['vendor'], name: descriptor['name'], version: descriptor['version']}})
+  end
+  
   def store()
     @logger.debug('Package.store') {"descriptor "+@descriptor.to_s}
     
-    begin
-      response = RestClient.post( @url, @descriptor.to_json, content_type: :json, accept: :json)
-      @logger.debug('Package.store') {"response is "+response.to_s}
-      saved_descriptor = JSON.parse response
-      if saved_descriptor && saved_descriptor['uuid']
-        @logger.debug('Package.store') {"saved_descriptor is "+saved_descriptor.to_s}
-        saved_descriptor
-      else
-        @logger.debug('Package.store') {"failled to store #{@descriptor} with #{response}"}
-        nil
-      end
-    rescue => e
-      @logger.error('Package.store') {"exception in storing package: "+e.response}
-      # Check if this was because a duplicate package
-      # {"error":"ERROR: Duplicated Package Name, Vendor and Version"}
-      if e.response['error'] =~ /Duplicated Package Name, Vendor and Version/
-        saved_descriptor = @catalogue.find({params: {vendor: @descriptor['vendor'], name: @descriptor['name'], version: @descriptor['version']}})
-        @logger.debug('Package.store') {"saved_descriptor is "+saved_descriptor.to_s}
+    if (package_descriptor = duplicate_package?(@descriptor))
+      @logger.error('Package.store') {"package exists: #{package_descriptor}"}
+      package_descriptor
+    else
+      #response = RestClient.post( @url, @descriptor.to_json, content_type: :json, accept: :json)
+      response = @catalogue.create(@descriptor)
+      if response
+        @logger.debug('Package.store') {"response is "+response.to_s}
+        saved_descriptor = JSON.parse response
         if saved_descriptor && saved_descriptor['uuid']
           @logger.debug('Package.store') {"saved_descriptor is "+saved_descriptor.to_s}
           saved_descriptor
         else
-          @logger.error('Package.store') {"failled to find #{@descriptor}"}
+          @logger.debug('Package.store') {"failled to store #{@descriptor} with #{response}"}
           nil
         end
       else
+        @logger.debug('Package.store') {"failled to store #{@descriptor} with no response"}
         nil
       end
     end
