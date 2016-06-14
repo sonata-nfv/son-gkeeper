@@ -245,8 +245,21 @@ class Package
         nil
       end
     rescue => e
-      @logger.error('Package.store') {e.response}
-      nil
+      @logger.error('Package.store') {"exception in storing package: "+e.response}
+      # Check if this was because a duplicate package
+      # {"error":"ERROR: Duplicated Package Name, Vendor and Version"}
+      if e.response['error'] =~ /Duplicated Package Name, Vendor and Version/
+        saved_descriptor = @catalogue.find({vendor: @descriptor['vendor'], name: @descriptor['name'], version: @descriptor['version']})
+        if saved_descriptor && saved_descriptor['uuid']
+          @logger.debug('Package.store') {"saved_descriptor is "+saved_descriptor.to_s}
+          saved_descriptor
+        else
+          @logger.debug('Package.store') {"failled to find #{@descriptor}"}
+          nil
+        end
+      else
+        nil
+      end
     end
   end
 
