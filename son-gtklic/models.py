@@ -4,10 +4,11 @@ import datetime
 import uuid
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
-from uuid_type import UUID
+from sqlalchemy.dialects.postgresql import UUID
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = settings.SQL_CONNECTION
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db = SQLAlchemy(app)
 
@@ -57,8 +58,8 @@ class Purchase(db.Model):
     __tablename__ = 'purchases'
 
     uuid_user = db.Column(UUID(), primary_key=True)
-    uuid_service = db.Column(UUID(), db.ForeignKey('licenses.uuid'), primary_key=True)
-    uuid_license = db.Column(UUID(), db.ForeignKey('services.uuid'), primary_key=True)
+    uuid_service = db.Column(UUID(), db.ForeignKey('licenses.license_uuid'), primary_key=True)
+    uuid_license = db.Column(UUID(), db.ForeignKey('services.service_uuid'), primary_key=True)
     expiringDate = db.Column(db.DateTime, nullable=False)
     startingDate = db.Column(db.DateTime, nullable=False)
     active = db.Column(db.Boolean, default=True)
@@ -71,3 +72,5 @@ class Purchase(db.Model):
 
 db.create_all()
 db.session.commit()
+
+print "Successfully Created..."

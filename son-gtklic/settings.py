@@ -1,3 +1,3 @@
 
 
-SQL_CONNECTION = 'postgresql://sonata:sonata@localhost:5432/LicenseManager'
+SQL_CONNECTION = 'postgresql://sonata:sonata@192.168.99.100:5432/licensemanager'
