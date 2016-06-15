@@ -57,10 +57,12 @@ class Package
     @descriptor[:package_content].each do |p_cont|
       @logger.debug "Package.to_file: p_cont=#{p_cont}"
       if p_cont['name'] =~ /service_descriptors/
+        @logger.debug('Package.to_file') { "p_cont['name']=#{p_cont['name']}"}
         @service = NService.new(settings.services_catalogue, @logger, @input_folder)
         @service.to_file(p_cont)
       end
       if p_cont['name'] =~ /function_descriptors/
+        @logger.debug('Package.to_file') { "p_cont['name']=#{p_cont['name']}"}
         function = VFunction.new(settings.functions_catalogue, @logger, @input_folder)
         function.to_file(p_cont)
         @functions << function
@@ -230,34 +232,32 @@ class Package
     true # TODO: validate the descriptor here
   end
   
-  def package_store()
+  def duplicated_package?(descriptor)
+    @catalogue.find({params: {vendor: descriptor['vendor'], name: descriptor['name'], version: descriptor['version']}})
+  end
+  
+  def store()
     @logger.debug('Package.store') {"descriptor "+@descriptor.to_s}
     
-    begin
-      response = RestClient.post( @url, @descriptor.to_json, content_type: :json, accept: :json)
-      @logger.debug('Package.store') {"response is "+response.to_s}
-      saved_descriptor = JSON.parse response
-      if saved_descriptor && saved_descriptor['uuid']
-        @logger.debug('Package.store') {"saved_descriptor is "+saved_descriptor.to_s}
-        saved_descriptor
-      else
-        @logger.debug('Package.store') {"failled to store #{@descriptor} with #{response}"}
-        nil
-      end
-    rescue => e
-      @logger.error('Package.store') {"exception in storing package: "+e.response}
-      # Check if this was because a duplicate package
-      # {"error":"ERROR: Duplicated Package Name, Vendor and Version"}
-      if e.response['error'] =~ /Duplicated Package Name, Vendor and Version/
-        saved_descriptor = @catalogue.find({vendor: @descriptor['vendor'], name: @descriptor['name'], version: @descriptor['version']})
+    package_descriptor = duplicated_package?(@descriptor)
+    if package_descriptor
+      @logger.error('Package.store') {"package exists: #{package_descriptor}"}
+      package_descriptor
+    else
+      #response = RestClient.post( @url, @descriptor.to_json, content_type: :json, accept: :json)
+      response = @catalogue.create(@descriptor)
+      if response
+        @logger.debug('Package.store') {"response is "+response.to_s}
+        saved_descriptor = JSON.parse response
         if saved_descriptor && saved_descriptor['uuid']
           @logger.debug('Package.store') {"saved_descriptor is "+saved_descriptor.to_s}
           saved_descriptor
         else
-          @logger.debug('Package.store') {"failled to find #{@descriptor}"}
+          @logger.debug('Package.store') {"failled to store #{@descriptor} with #{response}"}
           nil
         end
       else
+        @logger.debug('Package.store') {"failled to store #{@descriptor} with no response"}
         nil
       end
     end
@@ -267,8 +267,9 @@ class Package
     @logger.debug('Package.store_all') {"@package is #{@package}"}
     @logger.debug('Package.store_all') {"@service is #{@service}"}
     @logger.debug('Package.store_all') {"@functions is #{@functions}"}
-    saved_descriptor=package_store()
+    saved_descriptor=store()
     if saved_descriptor
+      @logger.debug "Package.store_all: stored package #{saved_descriptor}"
       if @service
         @logger.debug "Package.store_all: service is #{@service}"
         stored_service = @service.store()
@@ -292,7 +293,6 @@ class Package
           end
         end
       end
-      @logger.debug "Package.store_all: stored package #{saved_descriptor}"
       saved_descriptor
     else
       @logger.debug "Package.store_all: failled to store package with descriptor=#{@descriptor}"

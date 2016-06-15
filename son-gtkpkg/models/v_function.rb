@@ -45,7 +45,8 @@ class VFunction
   
   def store
     @logger.debug "VFunction.store(#{@descriptor})"
-    function = @catalogue.create(@descriptor)
+    function = duplicated_function?(@descriptor)
+    @catalogue.create(@descriptor) unless function    
     @logger.debug "VFunction.stored function #{function}"
     function
   end
@@ -56,5 +57,11 @@ class VFunction
     response = RestClient.get(@catalogue+"/#{uuid}", headers) 
     @logger.debug "VFunction.find_by_uuid: #{response}"
     JSON.parse response.body
+  end
+  
+  private
+  
+  def duplicated_function?(descriptor)
+    @catalogue.find({params: {vendor: descriptor['vendor'], name: descriptor['name'], version: descriptor['version']}})
   end
 end
