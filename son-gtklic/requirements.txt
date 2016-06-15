@@ -1,4 +1,5 @@
 Flask
 uuid
 flask_SQLAlchemy
+flask_restful
 psycopg2

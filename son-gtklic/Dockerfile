@@ -6,6 +6,7 @@ RUN pip install -r /tmp/requirements.txt
 
 ADD . /code
 WORKDIR /code
+
 EXPOSE 5000
 
-CMD ["python", "models.py"]
+CMD ["python", "app.py"]
