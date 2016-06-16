@@ -47,7 +47,7 @@ class NService
   def store()
     @logger.debug "NService.store(#{@descriptor})"
     service = duplicated_service?(@descriptor)
-    @catalogue.create(@descriptor) unless service
+    service = @catalogue.create(@descriptor) unless service
     @logger.debug "NService.stored service #{service}"
     service
   end
