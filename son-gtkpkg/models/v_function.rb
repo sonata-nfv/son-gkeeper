@@ -62,6 +62,6 @@ class VFunction
   private
   
   def duplicated_function?(descriptor)
-    @catalogue.find({params: {vendor: descriptor['vendor'], name: descriptor['name'], version: descriptor['version']}})
+    @catalogue.find({vendor: descriptor['vendor'], name: descriptor['name'], version: descriptor['version']})
   end
 end
