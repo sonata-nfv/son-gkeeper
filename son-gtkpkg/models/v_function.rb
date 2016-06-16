@@ -45,7 +45,8 @@ class VFunction
   
   def store
     @logger.debug "VFunction.store(#{@descriptor})"
-    function = @catalogue.create(@descriptor)
+    function = duplicated_function?(@descriptor)
+    function = @catalogue.create(@descriptor) unless function    
     @logger.debug "VFunction.stored function #{function}"
     function
   end
