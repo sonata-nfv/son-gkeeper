@@ -49,7 +49,7 @@ class MQServer
         # {error: null, status: INSTANTIATING, timestamp: 1465488253.8547997}
         parsed_payload = YAML.load(payload)
         #status = payload.split(',')[1].split(':')[1].strip
-        status = payload['status']
+        status = parsed_payload['status']
         @logger.debug "MQServer.consume: status: #{status}"
         unless status == ''
           request = Request.find_by(id: properties[:correlation_id])
