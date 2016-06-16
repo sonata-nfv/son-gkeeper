@@ -108,7 +108,7 @@ class Package
     @logger.debug('Package.from_file') { "@functions is #{@functions}"}
     
     if valid? @descriptor
-      stored_descriptor = store_all()
+      stored_descriptor = store_package_service_and_functions()
       if stored_descriptor
         @logger.debug('Package.from_file') { "stored package based on descriptor=#{stored_descriptor}"}
         stored_descriptor
@@ -233,14 +233,14 @@ class Package
   end
   
   def duplicated_package?(descriptor)
-    @catalogue.find({params: {vendor: descriptor['vendor'], name: descriptor['name'], version: descriptor['version']}})
+    @catalogue.find({'vendor'=>descriptor['vendor'], 'name'=>descriptor['name'], 'version'=>descriptor['version']}})
   end
   
   def store()
     @logger.debug('Package.store') {"descriptor "+@descriptor.to_s}
     
     package_descriptor = duplicated_package?(@descriptor)
-    if package_descriptor
+    if package_descriptor.any?
       @logger.error('Package.store') {"package exists: #{package_descriptor}"}
       package_descriptor
     else
@@ -263,39 +263,39 @@ class Package
     end
   end
 
-  def store_all
-    @logger.debug('Package.store_all') {"@package is #{@package}"}
-    @logger.debug('Package.store_all') {"@service is #{@service}"}
-    @logger.debug('Package.store_all') {"@functions is #{@functions}"}
+  def store_package_service_and_functions
+    @logger.debug('Package.store_package_service_and_functions') {"@package is #{@package}"}
+    @logger.debug('Package.store_package_service_and_functions') {"@service is #{@service}"}
+    @logger.debug('Package.store_package_service_and_functions') {"@functions is #{@functions}"}
     saved_descriptor=store()
     if saved_descriptor
-      @logger.debug "Package.store_all: stored package #{saved_descriptor}"
+      @logger.debug "Package.store_package_service_and_functions: stored package #{saved_descriptor}"
       if @service
-        @logger.debug "Package.store_all: service is #{@service}"
+        @logger.debug "Package.store_package_service_and_functions: service is #{@service}"
         stored_service = @service.store()
         if stored_service
-          @logger.debug "Package.store_all: stored service #{stored_service}"
+          @logger.debug "Package.store_package_service_and_functions: stored service #{stored_service}"
         else
           # TODO: what if storing a service goes wrong?
           # rollback!
-          @logger.debug "Package.store_all: service and package rollback should happen here"
+          @logger.debug "Package.store_package_service_and_functions: service and package rollback should happen here"
         end
       end
       if @functions.size
         @functions.each do |vf|
-          @logger.debug "Package.store_all: vf = #{vf}"
+          @logger.debug "Package.store_package_service_and_functions: vf = #{vf}"
           function = vf.store()
           if function
-            @logger.debug "Package.store_all: stored function #{function}"
+            @logger.debug "Package.store_package_service_and_functions: stored function #{function}"
             # TODO: rollback if failled
           else
-            @logger.debug "Package.store_all: function, service and package rollback should happen here"
+            @logger.debug "Package.store_package_service_and_functions: function, service and package rollback should happen here"
           end
         end
       end
       saved_descriptor
     else
-      @logger.debug "Package.store_all: failled to store package with descriptor=#{@descriptor}"
+      @logger.debug "Package.store_package_service_and_functions: failled to store package with descriptor=#{@descriptor}"
       {}
     end
   end
