@@ -233,7 +233,7 @@ class Package
   end
   
   def duplicated_package?(descriptor)
-    @catalogue.find({'vendor'=>descriptor['vendor'], 'name'=>descriptor['name'], 'version'=>descriptor['version']}})
+    @catalogue.find({'vendor'=>descriptor['vendor'], 'name'=>descriptor['name'], 'version'=>descriptor['version']})
   end
   
   def store()
