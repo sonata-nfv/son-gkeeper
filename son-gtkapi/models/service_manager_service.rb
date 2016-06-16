@@ -88,7 +88,7 @@ class ServiceManagerService
     end      
   end
   
-  def self.get_log
+  def get_log
     RestClient.get(@url+"/admin/logs")      
   end
   
