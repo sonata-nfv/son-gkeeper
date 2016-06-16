@@ -63,7 +63,7 @@ class Package
       end
       if p_cont['name'] =~ /function_descriptors/
         @logger.debug('Package.to_file') { "p_cont['name']=#{p_cont['name']}"}
-        function = VFunction.new(settings.functions_catalogue, @logger, @input_folder)
+        function = VFunction.new(GtkPkg.settings.functions_catalogue, @logger, @input_folder)
         function.to_file(p_cont)
         @functions << function
       end
