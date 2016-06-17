@@ -77,7 +77,7 @@ class GtkSrv < Sinatra::Base
         logger.debug('GtkSrv: POST /requests') {"function#{index}=#{vnfd}"}
         if vnfd[0]
           start_request["VNFD#{index}"]=vnfd[0]  
-          logger.debug('GtkSrv: POST /requests') {"start_request[\"VNFD#{index}\"]=#{svnfd[0]}"}
+          logger.debug('GtkSrv: POST /requests') {"start_request[\"VNFD#{index}\"]=#{vnfd[0]}"}
         else
           logger.error('GtkSrv: POST /requests') {"network function not found"}
         end
