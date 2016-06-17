@@ -66,16 +66,21 @@ class GtkSrv < Sinatra::Base
       start_request={}
       
       si_request = Request.create(params)
-      logger.info "GtkSrv: POST /requests with service_uuid=#{params['service_uuid']}: #{si_request.inspect}"
+      logger.info('GtkSrv: POST /requests') { "with service_uuid=#{params['service_uuid']}: #{si_request.inspect}"}
       service = NService.new(settings.services_catalogue, logger).find_by_uuid(params['service_uuid'])
       start_request['NSD']=service
-      logger.debug "GtkSrv: POST /requests service=#{service}"
+      logger.debug('GtkSrv: POST /requests') { "service=#{service}"}
       
       service['network_functions'].each_with_index do |function, index|
-        logger.debug "GtkSrv: POST /requests function=[#{function['name']}, #{function['vendor']}, #{function['version']}]"
-        vnfd = VFunction.new(settings.functions_catalogue, logger).find_function(function['name'],function['vendor'],function['version'])
-        logger.debug "GtkSrv: POST /requests function#{index}=#{vnfd}"
-        start_request["VNFD#{index}"]=vnfd[0]  
+        logger.debug('GtkSrv: POST /requests') { "function=[#{function['vnf_name']}, #{function['vnf_vendor']}, #{function['vnf_version']}]"}
+        vnfd = VFunction.new(settings.functions_catalogue, logger).find_function(function['vnf_name'],function['vnf_vendor'],function['vnf_version'])
+        logger.debug('GtkSrv: POST /requests') {"function#{index}=#{vnfd}"}
+        if vnfd[0]
+          start_request["VNFD#{index}"]=vnfd[0]  
+          logger.debug('GtkSrv: POST /requests') {"start_request[\"VNFD#{index}\"]=#{svnfd[0]}"}
+        else
+          logger.error('GtkSrv: POST /requests') {"network function not found"}
+        end
       end
             
       start_request_yml = YAML.dump(start_request)
