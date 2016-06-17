@@ -53,12 +53,11 @@ class Package
     @descriptor = clear_unwanted_parameters @descriptor
     save_package_descriptor()
     @logger.debug "Package.to_file: @descriptor=#{@descriptor}"
-    @logger.debug "Package.to_file: @descriptor[:package_content]=#{@descriptor[:package_content]}"
     @descriptor[:package_content].each do |p_cont|
       @logger.debug "Package.to_file: p_cont=#{p_cont}"
       if p_cont['name'] =~ /service_descriptors/
         @logger.debug('Package.to_file') { "p_cont['name']=#{p_cont['name']}"}
-        @service = NService.new(settings.services_catalogue, @logger, @input_folder)
+        @service = NService.new(GtkPkg.settings.services_catalogue, @logger, @input_folder)
         @service.to_file(p_cont)
       end
       if p_cont['name'] =~ /function_descriptors/
@@ -253,6 +252,7 @@ class Package
     @logger.debug('Package.store_package_service_and_functions') {"@service is #{@service}"}
     @logger.debug('Package.store_package_service_and_functions') {"@functions is #{@functions}"}
     
+    # The verification of duplicates may have to migrate to the router, in order to make it return '200' instead of '201' 
     package_descriptor = duplicated_package?(@descriptor)
     if package_descriptor.one?
       @logger.error('Package.store_package_service_and_functions') {"package exists: #{package_descriptor[0]}"}
