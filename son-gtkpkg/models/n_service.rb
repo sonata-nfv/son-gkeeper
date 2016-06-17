@@ -47,8 +47,8 @@ class NService
   def store()
     @logger.debug "NService.store(#{@descriptor})"
     service = duplicated_service?(@descriptor)
-    @catalogue.create(@descriptor) unless service
-    @logger.debug "NService.stored service #{service}"
+    service = @catalogue.create(@descriptor) unless service.any?
+    @logger.debug "NService.store service #{service}"
     service
   end
   
@@ -62,6 +62,6 @@ class NService
   private
   
   def duplicated_service?(descriptor)
-    @catalogue.find({params: {vendor: descriptor['vendor'], name: descriptor['name'], version: descriptor['version']}})
+    @catalogue.find({'vendor'=>descriptor['vendor'], 'name'=>descriptor['name'], 'version'=>descriptor['version']})
   end
 end

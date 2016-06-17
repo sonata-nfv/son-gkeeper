@@ -56,10 +56,10 @@ class Catalogue
   def find(params)
     headers = {'Accept'=>'application/json', 'Content-Type'=>'application/json'}
     headers[:params] = params unless params.empty?
-    @logger.debug "Catalogue::find(#{params}): headers #{headers}"
+    @logger.debug "Catalogue.find #{params} (with headers #{headers})"
     begin
       response = RestClient.get(@url, headers)
-      @logger.debug "Catalogue#find(#{params}): #{response}"      
+      @logger.debug "Catalogue.find: response was #{response}"      
       JSON.parse response.body
     rescue => e
       @logger.error format_error(e.backtrace)

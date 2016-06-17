@@ -44,10 +44,14 @@ class VFunction
   end
   
   def store
-    @logger.debug "VFunction.store(#{@descriptor})"
+    @logger.debug "VFunction.store #{@descriptor}"
     function = duplicated_function?(@descriptor)
-    @catalogue.create(@descriptor) unless function    
-    @logger.debug "VFunction.stored function #{function}"
+    if function && function.any?
+      @logger.debug "VFunction.store function #{function} is duplicated"
+    else 
+      function = @catalogue.create(@descriptor)
+    end
+    @logger.debug "VFunction.store function #{function}"
     function
   end
   
@@ -62,6 +66,6 @@ class VFunction
   private
   
   def duplicated_function?(descriptor)
-    @catalogue.find({params: {vendor: descriptor['vendor'], name: descriptor['name'], version: descriptor['version']}})
+    @catalogue.find({'vendor'=> descriptor['vendor'], 'name'=> descriptor['name'], 'version'=> descriptor['version']})
   end
 end
