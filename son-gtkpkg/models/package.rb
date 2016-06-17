@@ -244,18 +244,10 @@ class Package
       @logger.error('Package.store') {"package exists: #{package_descriptor}"}
       package_descriptor
     else
-      #response = RestClient.post( @url, @descriptor.to_json, content_type: :json, accept: :json)
-      response = @catalogue.create(@descriptor)
-      if response
-        @logger.debug('Package.store') {"response is "+response.to_s}
-        saved_descriptor = JSON.parse response
-        if saved_descriptor && saved_descriptor['uuid']
-          @logger.debug('Package.store') {"saved_descriptor is "+saved_descriptor.to_s}
-          saved_descriptor
-        else
-          @logger.debug('Package.store') {"failled to store #{@descriptor} with #{response}"}
-          nil
-        end
+      saved_descriptor = @catalogue.create(@descriptor)
+      if saved_descriptor && saved_descriptor['uuid']
+        @logger.debug('Package.store') {"saved_descriptor is "+saved_descriptor.to_s}
+        saved_descriptor
       else
         @logger.debug('Package.store') {"failled to store #{@descriptor} with no response"}
         nil
