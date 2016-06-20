@@ -27,16 +27,13 @@ class GtkVim < Sinatra::Base
     original_body = request.body.read
 
     logger.info "GtkVim: GET /vim with params=#{params}"
-    
     begin
       start_request={}
-      
       query_request = VimsQuery.create(params)
       smresponse = settings.mqserver.publish( start_request.to_json, VimsQuery['id'])
       json_request = json(VimsQuery, { root: false })
       logger.info 'GtkVim: returning GET /vim with request='+json_request
       halt 201, json_request
-      
     rescue Exception => e
       logger.debug(e.message)
 	    logger.debug(e.backtrace.inspect)
