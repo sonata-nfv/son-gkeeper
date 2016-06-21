@@ -1,7 +1,5 @@
 
-import settings
 from flask import Flask
-from flask_sqlalchemy import SQLAlchemy
 from flask_restful import reqparse, abort, Api, Resource
 from views.types import TypesList, Types
 

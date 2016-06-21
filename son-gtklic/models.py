@@ -1,8 +1,6 @@
 
 import datetime
 import uuid
-from sqlalchemy.dialects.postgresql import UUID
-from sqlalchemy.orm import relationship
 from sqlalchemy import Column, Integer, String, Boolean, DateTime, ForeignKey
 from db import Base
 
@@ -20,7 +18,7 @@ class Type(Base):
         self.active = True
 
     def __repr__(self):
-        return "<License(uuid='%s', description='%s')>" % (self.type_uuid, self.description)
+        return "<License(uuid='%s', type='%s', active='%s')>" % (self.type_uuid, self.type, self.active)
 
     @property
     def serialize(self):
