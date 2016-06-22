@@ -33,7 +33,7 @@ class Types(Resource):
         type = Type.query.filter_by(type_uuid=typeID).first()
 
         if type is None:
-            return "Type ID not found", 404
+            return "License Type doesn't exist", 410
 
         type.active = False
         db_session.commit()

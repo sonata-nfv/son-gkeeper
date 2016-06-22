@@ -1,76 +1,75 @@
 
-import settings
-import datetime
-import uuid
-from flask import Flask
-from flask_sqlalchemy import SQLAlchemy
-from sqlalchemy.dialects.postgresql import UUID
+import sys
+import os
+from datetime import datetime
+from flask_restful import reqparse, abort, Api, Resource
+from flask import request
+from flask import jsonify
 
-app = Flask(__name__)
-app.config['SQLALCHEMY_DATABASE_URI'] = settings.SQL_CONNECTION
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+sys.path.insert(1, os.path.join(sys.path[0], '..'))
 
-db = SQLAlchemy(app)
-
-class Type(db.Model):
-    __tablename__ = 'types'
-
-    type_uuid = db.Column(UUID(), primary_key=True, default=uuid.uuid4())
-    description = db.Column(db.String)
-    active = db.Column(db.Boolean, default=True)
-
-    def __repr__(self):
-        return "<License(uuid='%s', description='%s')>" % (self.type_uuid, self.description)
-
-class License(db.Model):
-    __tablename__ = 'licenses'
-
-    license_uuid = db.Column(UUID(), primary_key=True, default=uuid.uuid4())
-    description = db.Column(db.String)
-    startingDate = db.Column(db.DateTime, default=datetime.datetime.now())
-    expiringDate = db.Column(db.DateTime, nullable=False)
-    active = db.Column(db.Boolean, default=True)
-    suspended = db.Column(db.Boolean, default=False)
-    type = db.Column(UUID(), db.ForeignKey("types.type_uuid"), nullable=False)
-
-    def __repr__(self):
-        return "<License(uuid='%s', description='%s', statingDate='%s', expiringDate='%s')>" % (
-            self.license_uuid, self.description, self.startingDate, self.expiringDate)
+from models import License, Purchase
+from db import db_session
 
 
-class Service(db.Model):
-    __tablename__ = 'services'
+class LicensesList(Resource):
 
-    service_uuid = db.Column(UUID(), primary_key=True, default = uuid.uuid4())
-    description = db.Column(db.String)
-    expiringDate = db.Column(db.DateTime, nullable=False)
-    startingDate = db.Column(db.DateTime, nullable=False, default = datetime.datetime.now())
-    active = db.Column(db.Boolean, default=True)
+    def get(self):
+        if request.form['user_uuid'] is None:
+            return "No user uuid provided", 404
 
-    purchases = db.relationship("purchases")
+        licenses = License.query.filter(user_uuid=request.form['user_uuid']).all()
 
-    def __repr__(self):
-        return "<Service(service_uuid='%s', description='%s', expiringDate='%s', startingDate='%s', active='%s')>" % (
-            self.service_uuid, self.description, self.expiringDate, self.startingDate, self.active)
+        return jsonify({"licenses": [o.serialize for o in licenses]})
 
 
-class Purchase(db.Model):
-    __tablename__ = 'purchases'
+    def post(self):
+        if request.form['user_uuid'] is None:
+            return "No user uuid provided", 404
 
-    uuid_user = db.Column(UUID(), primary_key=True)
-    uuid_service = db.Column(UUID(), db.ForeignKey('licenses.license_uuid'), primary_key=True)
-    uuid_license = db.Column(UUID(), db.ForeignKey('services.service_uuid'), primary_key=True)
-    expiringDate = db.Column(db.DateTime, nullable=False)
-    startingDate = db.Column(db.DateTime, nullable=False)
-    active = db.Column(db.Boolean, default=True)
+        if request.form['user_uuid'] is None:
+            return "No user uuid provided", 404
 
-    def __repr__(self):
-        return "<Purchase(uuid_user='%s', uuid_service='%s', uuid_license='%s', expiringDate='%s', startingDate='%s', active='%s')>" % (
-            self.uuid_user, self.uuid_service, self.uuid_license, self.expiringDate, self.startingDate, self.active)
+        new_license = License(request.form['type'])
+        db_session.add(new_license)
+        db_session.commit()
 
+        return new_type.serialize, 200
 
 
-db.create_all()
-db.session.commit()
+class Licenses(Resource):
 
-print "Successfully Created..."
+    def head(self, licenseID):
+        license = License.query.filter(license_uuid=licenseID).get()
+        if license is None:
+            return "License doesn't exist", 404
+
+        if license.user_uuid != request.form['user_uuid']:
+            return "Service user doesn't have that license", 401
+
+        if license.startingDate > datetime.now():
+            return "License not valid", 403
+
+        if license.expiringDate < datetime.now():
+            return "License not valid", 403
+
+        return "License is valid", 200
+
+    def get(self, licenseID):
+        pass
+
+    def put(self, licenseID):
+        pass
+
+    def delete(self, licenseID):
+        type = Type.query.filter_by(type_uuid=licenseID).first()
+
+        if type is None:
+            return "Type ID not found", 404
+
+        type.active = False
+        db_session.commit()
+
+        return jsonify(type.serialize)
+
+
