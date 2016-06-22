@@ -70,11 +70,20 @@ class License(Base):
 class Service(Base):
     __tablename__ = 'services'
 
-    service_uuid = Column(String, primary_key=True, default = uuid.uuid4())
+    service_uuid = Column(String, primary_key=True, default = str(uuid.uuid4()))
     description = Column(String)
     expiringDate = Column(DateTime, nullable=False)
     startingDate = Column(DateTime, nullable=False, default = datetime.datetime.now())
     active = Column(Boolean, default=True)
+
+    def __init__(self, descpt, expDate, startDate, active):
+        self.service_uuid = str(uuid.uuid4())
+        self.description = descpt
+        self.expiringDate = expDate
+        if not (active is None):
+            self.active = active
+        if not (startDate is None):
+            self.startingDate = startDate
 
     def __repr__(self):
         return "<Service(service_uuid='%s', description='%s', expiringDate='%s', startingDate='%s', active='%s')>" % (
@@ -86,8 +95,8 @@ class Service(Base):
         return {
             'service_uuid': self.service_uuid,
             'description': self.description,
-            'startingDate': self.startingDate,
-            'expiringDate': self.expiringDate,
+            'startingDate': self.startingDate.strftime('%d-%m-%y %H:%M'),
+            'expiringDate': self.expiringDate.strftime('%d-%m-%y %H:%M'),
             'active': self.active
         }
 
