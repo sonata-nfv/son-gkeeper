@@ -24,7 +24,7 @@ class TypesList(Resource):
         db_session.add(new_type)
         db_session.commit()
 
-        return new_type.serialize, 200
+        return jsonify(new_type.serialize)
 
 
 class Types(Resource):

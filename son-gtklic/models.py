@@ -33,18 +33,29 @@ class Type(Base):
 class License(Base):
     __tablename__ = 'licenses'
 
-    type = Column(String, ForeignKey("types.type_uuid"), primary_key=True)
-    uuid_service = Column(String, ForeignKey('services.service_uuid'), primary_key=True)
+    type_uuid = Column(String, ForeignKey("types.type_uuid"), primary_key=True)
+    service_uuid = Column(String, ForeignKey('services.service_uuid'), primary_key=True)
     user_uuid = Column(String, primary_key=True)
 
-    license_uuid = Column(String, unique=True, default=uuid.uuid4())
+    license_uuid = Column(String, unique=True, default=str(uuid.uuid4()))
     description = Column(String)
     startingDate = Column(DateTime, default=datetime.datetime.now())
     expiringDate = Column(DateTime, nullable=False)
     active = Column(Boolean, default=True)
     suspended = Column(Boolean, default=False)
 
-
+    def __init__(self, type_uuid, service_uuid, user_uuid, description, startingDate, expiringDate, active):
+        self.type_uuid = type_uuid
+        self.service_uuid = service_uuid
+        self.user_uuid = user_uuid
+        self.license_uuid = str(uuid.uuid4())
+        self.description = description
+        if not startingDate is None:
+            self.startingDate = startingDate
+        self.expiringDate = expiringDate
+        if not active is None:
+            self.active = active
+        self.suspended = False
 
     def __repr__(self):
         return "<License(license_uuid='%s', user_uuid='%s', service_uuid='%s', description='%s', statingDate='%s', expiringDate='%s', \
