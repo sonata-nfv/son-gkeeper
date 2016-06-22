@@ -29,22 +29,27 @@ class Type(Base):
             'active': self.active
         }
 
+
 class License(Base):
     __tablename__ = 'licenses'
 
-    license_uuid = Column(String, primary_key=True, default=uuid.uuid4())
-    user_uuid = Column(String)
+    type = Column(String, ForeignKey("types.type_uuid"), primary_key=True)
+    uuid_service = Column(String, ForeignKey('services.service_uuid'), primary_key=True)
+    user_uuid = Column(String, primary_key=True)
+
+    license_uuid = Column(String, unique=True, default=uuid.uuid4())
     description = Column(String)
     startingDate = Column(DateTime, default=datetime.datetime.now())
     expiringDate = Column(DateTime, nullable=False)
     active = Column(Boolean, default=True)
     suspended = Column(Boolean, default=False)
-    type = Column(String, ForeignKey("types.type_uuid"), nullable=False)
+
+
 
     def __repr__(self):
-        return "<License(license_uuid='%s', user_uuid='%s', description='%s', statingDate='%s', expiringDate='%s', \
+        return "<License(license_uuid='%s', user_uuid='%s', service_uuid='%s', description='%s', statingDate='%s', expiringDate='%s', \
                                                                                     active='%s', suspended='%s')>" \
-               %(self.license_uuid, self.user_uuid, self.description, self.startingDate, self.expiringDate, self.active,
+               %(self.license_uuid, self.user_uuid, self.uuid_service, self.description, self.startingDate, self.expiringDate, self.active,
             self.suspended)
 
     @property
@@ -53,6 +58,7 @@ class License(Base):
         return {
             'license_uuid': self.license_uuid,
             'user_uuid': self.user_uuid,
+            'uuid_service': self.uuid_service,
             'description': self.description,
             'startingDate': self.startingDate,
             'expiringDate': self.expiringDate,
@@ -85,21 +91,3 @@ class Service(Base):
             'active': self.active
         }
 
-
-class Purchase(Base):
-    __tablename__ = 'purchases'
-
-    uuid_service = Column(String, ForeignKey('services.service_uuid'), primary_key=True)
-    uuid_license = Column(String, ForeignKey('licenses.license_uuid'), primary_key=True)
-
-    def __repr__(self):
-        return "<Purchase(uuid_service='%s', uuid_license='%s')>" % (
-            self.uuid_service, self.uuid_license)
-
-    @property
-    def serialize(self):
-        """Return object data in easily serializeable format"""
-        return {
-            'uuid_service': self.uuid_service,
-            'uuid_license': self.uuid_license,
-        }
