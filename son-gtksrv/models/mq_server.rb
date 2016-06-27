@@ -34,13 +34,13 @@ class MQServer
   end
 
   def publish(msg, correlation_id)
-    logmsg= 'MQServer.publish: '
-    @logger.debug(logmsg) {msg+", "+correlation_id}
+    logmsg= 'MQServer.publish'
+    @logger.debug(logmsg) {"msg="+msg+", correlation_id="+correlation_id}
     @topic.publish(msg, :content_type =>'text/yaml', :routing_key => SERVER_QUEUE, :correlation_id => correlation_id, :reply_to => @queue.name)
   end
   
   def consume
-    logmsg= 'MQServer.consume: '
+    logmsg= 'MQServer.consume'
     @queue.subscribe do |delivery_info, properties, payload|
       begin
         @logger.debug(logmsg) { "delivery_info: #{delivery_info}"}
@@ -53,8 +53,8 @@ class MQServer
         parsed_payload = YAML.load(payload)
         @logger.debug(logmsg) { "parsed_payload: #{parsed_payload}"}
         status = parsed_payload['status']
-        @logger.debug(logmsg) { "status: #{status}"}
-        unless status == ''
+        if status
+          @logger.debug(logmsg) { "status: #{status}"}
           request = Request.find_by(id: properties[:correlation_id])
           if request
             @logger.debug(logmsg) { "request[status] #{request['status']} turned into "+status}
