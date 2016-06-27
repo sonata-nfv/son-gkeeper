@@ -41,7 +41,7 @@ class GtkVim < Sinatra::Base
   register Sinatra::Logger
   set :logger_level, :debug # or :fatal, :error, :warn, :info
   
-  helpers GtkSrvHelper
+  helpers GtkVimHelper
   
   set :root, File.dirname(__FILE__)
   set :public_folder, File.join(File.dirname(__FILE__), 'public')
@@ -64,7 +64,11 @@ class GtkVim < Sinatra::Base
   enable :cross_origin
 
   if settings.mqserver_url
-    set :mqserver, MQServer.new(settings.mqserver_url, logger)
+    SERVER_LIST_QUEUE = 'infrastructure.management.compute.list'
+    SERVER_ADD_QUEUE = 'infrastructure.management.compute.add'
+    set :mqserver_list, MQServer.new(SERVER_LIST_QUEUE,settings.mqserver_url, logger)
+    set :mqserver_add, MQServer.new(SERVER_ADD_QUEUE,settings.mqserver_url, logger)
+    
   else
     puts '    >>>MQServer url not defined, application being terminated!!'
     Process.kill('TERM', Process.pid)

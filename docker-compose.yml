@@ -72,6 +72,30 @@ services:
       options:
         gelf-address: "udp://logs.sonata-nfv.eu:12900"
 
+  son-gtkvim:
+    image: registry.sonata-nfv.eu:5700/son-gtkvim
+    links:
+     - broker
+     - postgres
+    ports:
+      - "5700"
+    restart: always
+    environment:
+     - POSTGRES_PASSWORD=sonata
+     - POSTGRES_USER=sonatatest
+     - RACK_ENV=integration
+     - DATABASE_HOST=postgres
+     - DATABASE_PORT=5432
+     - MQSERVER=amqp://guest:guest@broker:5672
+    depends_on:
+     - postgres
+    extra_hosts:
+      - "jenkins.sonata-nfv.eu:192.168.60.5"
+    logging:
+      driver: gelf
+      options:
+        gelf-address: "udp://logs.sonata-nfv.eu:12900"
+	
   postgres:
     image: ntboes/postgres-uuid
     ports:

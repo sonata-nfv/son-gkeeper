@@ -1,7 +1,7 @@
 require 'rspec/core/rake_task'
 require 'ci/reporter/rake/rspec'
 require 'sinatra/activerecord/rake'
-require './gtk_srv'
+require './gtk_vim'
 
 task default: ['ci:all']
 

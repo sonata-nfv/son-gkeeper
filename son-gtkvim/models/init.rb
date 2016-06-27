@@ -14,5 +14,5 @@
 ## limitations under the License.
 # encoding: utf-8
 
-require_relative 'vimsquery'
+require_relative 'vimsrequest'
 require_relative 'mq_server'

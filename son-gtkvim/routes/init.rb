@@ -14,5 +14,4 @@
 ## See the License for the specific language governing permissions and
 ## limitations under the License.
 # encoding: utf-8
-require_relative 'service'
 require_relative 'request'

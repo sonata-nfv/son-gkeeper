@@ -16,14 +16,8 @@
 # encoding: utf-8
 require 'sinatra/activerecord'
 
-class VimsQuery < ActiveRecord::Base
+class VimsRequest < ActiveRecord::Base
     
   # validations a la Activerecord
-  validates :id, presence: true
+  #validates :id, presence: true
 end
-
-# Establish a connection with a Model (a Table) belong to a database different from default 
-# establish_connection(ENV['SAR_DB_URL'] || 'postgres://YOURUSERNAME:YOURPASSWORD@HOSTIPADDRESS/sar')
-
-# set table Name, in case in the existing datbase there is not a 'Rails naming' convention
-# self.table_name = "notes"

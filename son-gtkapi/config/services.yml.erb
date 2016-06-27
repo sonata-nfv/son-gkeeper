@@ -19,6 +19,7 @@ development: &common_settings
   pkgmgmt: <%= ENV['PACKAGE_MANAGEMENT_URL'] %>
   srvmgmt: <%= ENV['SERVICE_MANAGEMENT_URL'] %>
   fnctmgmt: <%= ENV['FUNCTION_MANAGEMENT_URL'] %>
+  vimmgmt: <%= ENV['VIM_MANAGEMENT_URL'] %>
 
 test:
   <<: *common_settings
