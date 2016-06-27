@@ -20,7 +20,7 @@ class TypesList(Resource):
 
 
     def post(self):
-        new_type = Type(request.form['type'])
+        new_type = Type(request.form['type'], request.form['duration'])
         db_session.add(new_type)
         db_session.commit()
 
