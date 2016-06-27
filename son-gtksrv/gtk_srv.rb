@@ -43,6 +43,8 @@ class GtkSrv < Sinatra::Base
   
   helpers GtkSrvHelper
   
+  MODULE='GtkSrv'
+  
   set :root, File.dirname(__FILE__)
   set :public_folder, File.join(File.dirname(__FILE__), 'public')
   set :bind, '0.0.0.0'

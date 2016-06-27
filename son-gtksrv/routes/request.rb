@@ -24,11 +24,11 @@ class GtkSrv < Sinatra::Base
   
   # GETs a request, given an uuid
   get '/requests/:uuid/?' do
-    logger.debug "GtkSrv: entered GET /requests/#{params[:uuid]}"
+    logger.debug(MODULE) {" entered GET /requests/#{params[:uuid]}"}
     request = Request.find(params[:uuid])
     json_request = json(request, { root: false })
     halt 206, json_request if request
-    json_error 404, "GtkSrv: Request #{params[:uuid]} not found"    
+    json_error 404, "#{MODULE}: Request #{params[:uuid]} not found"    
   end
   
   
@@ -36,8 +36,8 @@ class GtkSrv < Sinatra::Base
   get '/requests/?' do
     uri = Addressable::URI.new
     uri.query_values = params
-    logger.info "GtkSrv: entered GET /requests?#{uri.query}"
-    logger.info "GtkSrv: params=#{params}"
+    logger.info(MODULE) {" entered GET /requests?#{uri.query}"}
+    logger.info(MODULE) {" params=#{params}"}
     
     # transform 'string' params Hash into keys
     keyed_params = keyed_hash(params)
@@ -45,12 +45,12 @@ class GtkSrv < Sinatra::Base
     # get rid of :offset and :limit
     [:offset, :limit].each { |k| keyed_params.delete(k)}
     valid_fields = [:service_uuid, :status, :created_at, :updated_at]
-    logger.info "GtkSrv: keyed_params.keys - valid_fields = #{keyed_params.keys - valid_fields}"
+    logger.info(MODULE) {" keyed_params.keys - valid_fields = #{keyed_params.keys - valid_fields}"}
     json_error 400, "GtkSrv: wrong parameters #{params}" unless keyed_params.keys - valid_fields == []
     
     requests = Request.where(keyed_params).limit(params['limit'].to_i).offset(params['offset'].to_i)
     json_requests = json(requests, { root: false })
-    logger.info "GtkSrv: leaving GET /requests?#{uri.query} with "+json_requests
+    logger.info(MODULE) {" leaving GET /requests?#{uri.query} with "+json_requests}
     halt 200, json_requests if json_requests
     json_error 404, 'GtkSrv: No requests were found'
   end
@@ -58,13 +58,14 @@ class GtkSrv < Sinatra::Base
   # POSTs an instantiation request, given a service_uuid
   post '/requests/?' do
     original_body = request.body.read
-    logger.info "GtkSrv: entered POST /requests with original_body=#{original_body}"
+    logger.info(MODULE) {" entered POST /requests with original_body=#{original_body}"}
     params = JSON.parse(original_body, :quirks_mode => true)
-    logger.info "GtkSrv: POST /requests with params=#{params}"
+    logger.info(MODULE) {" POST /requests with params=#{params}"}
     
     begin
       start_request={}
       
+      start_request['app_id']='son-gatekeeper'
       si_request = Request.create(params)
       logger.info('GtkSrv: POST /requests') { "with service_uuid=#{params['service_uuid']}: #{si_request.inspect}"}
       service = NService.new(settings.services_catalogue, logger).find_by_uuid(params['service_uuid'])
@@ -88,7 +89,7 @@ class GtkSrv < Sinatra::Base
 
       smresponse = settings.mqserver.publish( start_request_yml.to_s, si_request['id'])
       json_request = json(si_request, { root: false })
-      logger.info 'GtkSrv: returning POST /requests with request='+json_request
+      logger.info(MODULE) {' returning POST /requests with request='+json_request}
       halt 201, json_request
       
     rescue Exception => e
