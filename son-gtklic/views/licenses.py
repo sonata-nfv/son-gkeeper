@@ -91,7 +91,28 @@ class Licenses(Resource):
         return jsonify(license.serialize)
 
     def post(self, licenseID):
-        pass
+        try:
+            license = License.query.filter_by(license_uuid=licenseID).get()
+
+            license_type = Type.query.filter_by(type_uuid=license.type_uuid).get()
+
+            service = Service.query.filter_by(service_uuid=license.service_uuid).get()
+
+
+            new_date = license.expiringDate + datetime.timedelta(days=license_type.duration)
+
+            if new_date > service.expiringDate:
+                return "Service no longer available for the license period", 410
+                
+            license.expiringDate = new_date
+
+        except:
+            return "Invalid arguments", 400
+        
+        db_session.commit()
+
+        return jsonify(license.serialize)
+
 
     def put(self, licenseID):
         license = License.query.filter(license_uuid=licenseID).get()
