@@ -34,13 +34,13 @@ class MQServer
   end
 
   def publish(msg, correlation_id)
-    MSG= self.class.to_s + '.publish: '
+    MSG= 'MQServer.publish: '
     @logger.debug(MSG) {msg+", "+correlation_id}
     @topic.publish(msg, :content_type =>'text/yaml', :routing_key => SERVER_QUEUE, :correlation_id => correlation_id, :reply_to => @queue.name)
   end
   
   def consume
-    MSG= self.class.to_s + '.consume: '
+    MSG= 'MQServer.consume: '
     @queue.subscribe do |delivery_info, properties, payload|
       begin
         @logger.debug(MSG) { "delivery_info: #{delivery_info}"}
