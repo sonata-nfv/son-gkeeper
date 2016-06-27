@@ -35,6 +35,8 @@ class LicensesList(Resource):
 
             new_license = License(request.form['type_uuid'], request.form['service_uuid'], request.form['user_uuid'],
                                   request.form['description'], request.form['startingDate'], expiringDate, )
+        except:
+            return "Invalid date format", 406
         db_session.add(new_license)
         db_session.commit()
 
