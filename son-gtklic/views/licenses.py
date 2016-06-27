@@ -8,7 +8,7 @@ from flask import jsonify, make_response
 
 sys.path.insert(1, os.path.join(sys.path[0], '..'))
 
-from models import License, Type
+from models import License, Type, Service
 from db import db_session
 
 
@@ -28,15 +28,28 @@ class LicensesList(Resource):
         try:
             license_type = Type.query.filter_by(type_uuid=request.form['type_uuid']).get()
 
-            # Doesnt work need to be done
-            expiringDate = None
-            #expiringDate = request.form['startingDate'] + license_type.duration
+            if license_type is None:
+                return "License type not found", 404
 
+            service = Service.query.filter_by(service_uuid=request.form['service_uuid']).get()
 
-            new_license = License(request.form['type_uuid'], request.form['service_uuid'], request.form['user_uuid'],
-                                  request.form['description'], request.form['startingDate'], expiringDate, )
+            if service is None:
+                return "Service not found", 404
+
+            startingDate = datetime.datetime.now()
+            if not (request.form.get('startingDate') is None):
+                startingDate = datetime.datetime.strptime(str(request.form.get('startingDate')), "%d-%m-%y %H:%M")
+
+            expiringDate = startingDate + datetime.timedelta(days=license_type.duration)
+
+            if expiringDate > service.expiringDate:
+                return "Service no longer available for the license period", 410
+
+            new_license = License(license_type.type_uuid, service.service_uuid, request.form['user_uuid'],
+                                  request.form['description'], startingDate, expiringDate, request.form['active'])
+            
         except:
-            return "Invalid date format", 406
+            return "Invalid arguments", 400
         db_session.add(new_license)
         db_session.commit()
 
