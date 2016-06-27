@@ -14,8 +14,8 @@ api.add_resource(Types, '/types/<typeID>')
 
 api.add_resource(Services, '/services')
 
-api.add_resource(Licenses, '/licenses')
-api.add_resource(LicensesList, '/licenses/<licenseID>')
+api.add_resource(LicensesList, '/licenses')
+api.add_resource(Licenses, '/licenses/<licenseID>')
 
 if __name__ == '__main__':
     app.run(port=5000, host="0.0.0.0")
