@@ -51,7 +51,7 @@ class MQServer
         # This is because the payload is being returned as a string like
         # {error: null, status: INSTANTIATING, timestamp: 1465488253.8547997}
         parsed_payload = YAML.load(payload)
-        #status = payload.split(',')[1].split(':')[1].strip
+        @logger.debug(logmsg) { "parsed_payload: #{parsed_payload}"}
         status = parsed_payload['status']
         @logger.debug(logmsg) { "status: #{status}"}
         unless status == ''
