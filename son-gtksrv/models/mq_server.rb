@@ -45,6 +45,7 @@ class MQServer
         @logger.debug "MQServer.consume: properties: #{properties}"
         @logger.debug "MQServer.consume: payload: #{payload}"
         
+        # 'app_id' has 'son-plugin.slm'
         # This is because the payload is being returned as a string like
         # {error: null, status: INSTANTIATING, timestamp: 1465488253.8547997}
         parsed_payload = YAML.load(payload)
@@ -67,7 +68,7 @@ class MQServer
             @logger.error "MQServer.consume: request "+properties[:correlation_id]+" not found"
           end
         else
-          @logger.debug "MQServer.consume: status not present"
+          @logger.debug('MQServer.consume') {'status not present'}
         end
       rescue Exception => e
         @logger.error e.message
