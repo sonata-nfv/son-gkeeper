@@ -95,7 +95,7 @@ services:
       driver: gelf
       options:
         gelf-address: "udp://logs.sonata-nfv.eu:12900"
-	
+
   postgres:
     image: ntboes/postgres-uuid
     ports:
