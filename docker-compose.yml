@@ -73,7 +73,7 @@ services:
         gelf-address: "udp://logs.sonata-nfv.eu:12900"
 
   son-gtkvim:
-    image: registry.sonata-nfv.eu:5700/son-gtkvim
+    image: registry.sonata-nfv.eu:5000/son-gtkvim
     links:
      - broker
      - postgres
