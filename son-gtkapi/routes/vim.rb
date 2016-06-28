@@ -36,12 +36,12 @@ class GtkApi < Sinatra::Base
         logger.debug "GtkApi: POST /vim: new_request =#{new_request}"
         halt 201, new_request.to_json
       else
-        logger.debug "GtkApi: leaving POST /vims with 'No request was created'"
-        json_error 400, 'No request was created'
+        logger.debug "GtkApi: leaving POST /vim with 'No vim creation request was created'"
+        json_error 400, 'No vim create_request was created'
       end
     end
-    logger.debug "GtkApi: leaving POST /vims with 'No service id specified for the request'"
-    json_error 400, 'No service id specified for the request'
+    logger.debug "GtkApi: leaving POST /vim with 'No request id specified'"
+    json_error 400, 'No params specified for the create request'
   end
 
   # GET many vims
@@ -53,12 +53,12 @@ class GtkApi < Sinatra::Base
     logger.info "GtkApi: entered GET /vim?#{uri.query}"
     vims = settings.vim_management.find_vims(params)
     logger.debug "GtkApi: GET /vims?#{uri.query} gave #{vims}"
-    if vims && vims.is_a?(Array)
-      logger.info "GtkApi: leaving GET /vims?#{uri.query} with #{vims}"
+    if vims 
+      logger.info "GtkApi: leaving GET /vim?#{uri.query} with #{vims}"
       halt 200, vims.to_json
     else
-      logger.info "GtkApi: leaving GET /vims?#{uri.query} with 'No vims were found'"
-      json_error 400, 'No vims were found'
+      logger.info "GtkApi: leaving GET /vim?#{uri.query} with 'No get vims request were created'"
+      json_error 400, 'No get list of vims request was created'
     end
   end
   
