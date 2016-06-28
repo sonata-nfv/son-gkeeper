@@ -63,7 +63,7 @@ class License(Base):
     def __repr__(self):
         return "<License(license_uuid='%s', user_uuid='%s', service_uuid='%s', description='%s', statingDate='%s', expiringDate='%s', \
                                                                                     active='%s', suspended='%s')>" \
-               %(self.license_uuid, self.user_uuid, self.uuid_service, self.description, self.startingDate, self.expiringDate, self.active,
+               %(self.license_uuid, self.user_uuid, self.service_uuid, self.description, self.startingDate, self.expiringDate, self.active,
             self.suspended)
 
     @property
@@ -72,10 +72,10 @@ class License(Base):
         return {
             'license_uuid': self.license_uuid,
             'user_uuid': self.user_uuid,
-            'uuid_service': self.uuid_service,
+            'service_uuid': self.service_uuid,
             'description': self.description,
-            'startingDate': self.startingDate,
-            'expiringDate': self.expiringDate,
+            'startingDate': self.startingDate.strftime('%d-%m-%y %H:%M'),
+            'expiringDate': self.expiringDate.strftime('%d-%m-%y %H:%M'),
             'active': self.active,
             'suspended': self.suspended
         }
