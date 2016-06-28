@@ -36,7 +36,8 @@ class MQServer
   def publish(msg, correlation_id)
     logmsg= 'MQServer.publish'
     @logger.debug(logmsg) {"msg="+msg+", correlation_id="+correlation_id}
-    @topic.publish(msg, :content_type =>'text/yaml', :routing_key => SERVER_QUEUE, :correlation_id => correlation_id, :reply_to => @queue.name)
+    @topic.publish(msg, :content_type =>'text/yaml', :routing_key => SERVER_QUEUE, :correlation_id => correlation_id, 
+      :reply_to => @queue.name, :app_id => 'son-gatekeeper')
   end
   
   def consume
