@@ -49,7 +49,7 @@ class GtkVim < Sinatra::Base
       query_request['status']='new'
       query_request.save
       
-      smresponse = settings.mqserver_list.publish( start_request.to_yaml, query_request['id'])
+      smresponse = settings.mqserver_list.publish( start_request.to_json, query_request['id'])
       response=Hash["request_uuid"=>query_request['id']]
       json_request = json(response, { root: false })
       logger.info 'GtkVim: returning GET /vim with request='+json_request
@@ -78,7 +78,7 @@ class GtkVim < Sinatra::Base
       start_request=params
       logger.debug "GtkVim: POST /vim #{params} with #{start_request}"
       logger.debug "GtkVim: POST /vim #{params} with #{start_request.to_yaml}"
-      smresponse = settings.mqserver_add.publish( start_request.to_yaml, add_request['id'])
+      smresponse = settings.mqserver_add.publish( start_request.to_json, add_request['id'])
       response=Hash["request_uuid"=>add_request['id']]
       json_request = json(response, { root: false })
       logger.info 'GtkVim: returning POST /vim with request='+json_request
