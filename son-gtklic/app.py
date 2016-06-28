@@ -1,6 +1,7 @@
 
 from flask import Flask
 from flask_restful import reqparse, abort, Api, Resource
+
 from views.types import TypesList, Types
 from views.services import Services
 from views.licenses import Licenses, LicensesList

@@ -47,7 +47,7 @@ class LicensesList(Resource):
 
             new_license = License(license_type.type_uuid, service.service_uuid, request.form['user_uuid'],
                                   request.form['description'], startingDate, expiringDate, request.form['active'])
-            
+
         except:
             return "Invalid arguments", 400
         db_session.add(new_license)

@@ -9,6 +9,7 @@ WORKDIR /code
 
 EXPOSE 5000
 
-CMD ["python", "app.py"]
 
-#CMD ["tail", "-f", "app.py"]
+RUN ["python", "tests/tests.py"]
+
+CMD ["python", "app.py"]
