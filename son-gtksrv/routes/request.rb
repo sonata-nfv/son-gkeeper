@@ -77,6 +77,9 @@ class GtkSrv < Sinatra::Base
         vnfd = VFunction.new(settings.functions_catalogue, logger).find_function(function['vnf_name'],function['vnf_vendor'],function['vnf_version'])
         logger.debug('GtkSrv: POST /requests') {"function#{index}=#{vnfd}"}
         if vnfd[0]
+          vnfd[0].delete(:status) if vnfd[0][:status]
+          vnfd[0].delete('status') if vnfd[0]['status']
+          
           start_request["VNFD#{index}"]=vnfd[0]  
           logger.debug('GtkSrv: POST /requests') {"start_request[\"VNFD#{index}\"]=#{vnfd[0]}"}
         else
