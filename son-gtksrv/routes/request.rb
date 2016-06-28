@@ -65,7 +65,7 @@ class GtkSrv < Sinatra::Base
     begin
       start_request={}
       
-      start_request['app_id']='son-gatekeeper'
+      #start_request['app_id']='son-gatekeeper'
       si_request = Request.create(params)
       logger.info('GtkSrv: POST /requests') { "with service_uuid=#{params['service_uuid']}: #{si_request.inspect}"}
       service = NService.new(settings.services_catalogue, logger).find_by_uuid(params['service_uuid'])

@@ -16,6 +16,7 @@
 class ServiceManagerService
   
   JSON_HEADERS = { 'Accept'=> 'application/json', 'Content-Type'=>'application/json'}
+  CLASS = 'ServiceManagerService'
   
   def initialize(url, logger)
     @url = url
