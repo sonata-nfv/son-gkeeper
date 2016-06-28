@@ -69,32 +69,40 @@ class GtkSrv < Sinatra::Base
       si_request = Request.create(params)
       logger.info('GtkSrv: POST /requests') { "with service_uuid=#{params['service_uuid']}: #{si_request.inspect}"}
       service = NService.new(settings.services_catalogue, logger).find_by_uuid(params['service_uuid'])
-      start_request['NSD']=service
-      logger.debug('GtkSrv: POST /requests') { "service=#{service}"}
+      if service
+        service.delete(:status) if service[:status]
+        service.delete('status') if service['status']
+        service.delete(:uuid) if service[:uuid]
+        service.delete('uuid') if service['uuid']
+        
+        start_request['NSD']=service
+        logger.debug('GtkSrv: POST /requests') { "service=#{service}"}
       
-      service['network_functions'].each_with_index do |function, index|
-        logger.debug('GtkSrv: POST /requests') { "function=[#{function['vnf_name']}, #{function['vnf_vendor']}, #{function['vnf_version']}]"}
-        vnfd = VFunction.new(settings.functions_catalogue, logger).find_function(function['vnf_name'],function['vnf_vendor'],function['vnf_version'])
-        logger.debug('GtkSrv: POST /requests') {"function#{index}=#{vnfd}"}
-        if vnfd[0]
-          vnfd[0].delete(:status) if vnfd[0][:status]
-          vnfd[0].delete('status') if vnfd[0]['status']
+        service['network_functions'].each_with_index do |function, index|
+          logger.debug('GtkSrv: POST /requests') { "function=[#{function['vnf_name']}, #{function['vnf_vendor']}, #{function['vnf_version']}]"}
+          vnfd = VFunction.new(settings.functions_catalogue, logger).find_function(function['vnf_name'],function['vnf_vendor'],function['vnf_version'])
+          logger.debug('GtkSrv: POST /requests') {"function#{index}=#{vnfd}"}
+          if vnfd[0]
+            vnfd[0].delete(:status) if vnfd[0][:status]
+            vnfd[0].delete('status') if vnfd[0]['status']
           
-          start_request["VNFD#{index}"]=vnfd[0]  
-          logger.debug('GtkSrv: POST /requests') {"start_request[\"VNFD#{index}\"]=#{vnfd[0]}"}
-        else
-          logger.error('GtkSrv: POST /requests') {"network function not found"}
+            start_request["VNFD#{index}"]=vnfd[0]  
+            logger.debug('GtkSrv: POST /requests') {"start_request[\"VNFD#{index}\"]=#{vnfd[0]}"}
+          else
+            logger.error('GtkSrv: POST /requests') {"network function not found"}
+          end
         end
-      end
             
-      start_request_yml = YAML.dump(start_request)
-      logger.debug "GtkSrv: POST /requests #{params}: "+start_request_yml
+        start_request_yml = YAML.dump(start_request)
+        logger.debug "GtkSrv: POST /requests #{params}: "+start_request_yml
 
-      smresponse = settings.mqserver.publish( start_request_yml.to_s, si_request['id'])
-      json_request = json(si_request, { root: false })
-      logger.info(MODULE) {' returning POST /requests with request='+json_request}
-      halt 201, json_request
-      
+        smresponse = settings.mqserver.publish( start_request_yml.to_s, si_request['id'])
+        json_request = json(si_request, { root: false })
+        logger.info(MODULE) {' returning POST /requests with request='+json_request}
+        halt 201, json_request
+      else
+        logger.error('GtkSrv: POST /requests') {"network service not found"}
+      end
     rescue Exception => e
       logger.debug(e.message)
 	    logger.debug(e.backtrace.inspect)
