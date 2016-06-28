@@ -20,7 +20,7 @@ To add a VIM you can do this:
   {"wr_type":"compute","tenant_ext_net":"ext-subnet","tenant_ext_router":"ext-router","vim_type":"Mock","vim_address":"http://localhost:9999","username":"Eve","pass":"Operator","tenant":"op_sonata"} 
 
 
-## Obtain the status of a request by its uuid
+## Obtain the status of a vim create/get request by its uuid
 To obtain the status of the request with uuid 7dfbb948-144d-41d7-839c-256cc242201b you can do:
 
 ```curl -X GET -H "Content-Type:application/json" http://sp.int3.sonata-nfv.eu:32001/vim_request/7dfbb948-144d-41d7-839c-256cc242201b```
