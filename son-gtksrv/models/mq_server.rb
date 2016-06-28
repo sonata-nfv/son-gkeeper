@@ -37,7 +37,7 @@ class MQServer
     logmsg= 'MQServer.publish'
     @logger.debug(logmsg) {"msg="+msg+", correlation_id="+correlation_id}
     @topic.publish(msg, :content_type =>'text/yaml', :routing_key => SERVER_QUEUE, :correlation_id => correlation_id, 
-      :reply_to => @queue.name, :app_id => 'son-gatekeeper')
+      :reply_to => @queue.name, :app_id => 'son-gkeeper')
   end
   
   def consume
@@ -47,31 +47,32 @@ class MQServer
         @logger.debug(logmsg) { "delivery_info: #{delivery_info}"}
         @logger.debug(logmsg) { "properties: #{properties}"}
         @logger.debug(logmsg) { "payload: #{payload}"}
-        
-        # 'app_id' has 'son-plugin.slm'
-        # This is because the payload is being returned as a string like
-        # {error: null, status: INSTANTIATING, timestamp: 1465488253.8547997}
-        parsed_payload = YAML.load(payload)
-        @logger.debug(logmsg) { "parsed_payload: #{parsed_payload}"}
-        status = parsed_payload['status']
-        if status
-          @logger.debug(logmsg) { "status: #{status}"}
-          request = Request.find_by(id: properties[:correlation_id])
-          if request
-            @logger.debug(logmsg) { "request[status] #{request['status']} turned into "+status}
-            request['status']=status  
-            begin
-              request.save
-              @logger.debug(logmsg) { "request saved"}
-            rescue Exception => e
-              @logger.error e.message
-        	    @logger.error e.backtrace.inspect
+
+        # We know our own messages, so just skip them
+        unless properties[:app_id] == 'son-gkeeper'
+          # We're interested in app_id == 'son-plugin.slm'
+          parsed_payload = YAML.load(payload)
+          @logger.debug(logmsg) { "parsed_payload: #{parsed_payload}"}
+          status = parsed_payload['status']
+          if status
+            @logger.debug(logmsg) { "status: #{status}"}
+            request = Request.find_by(id: properties[:correlation_id])
+            if request
+              @logger.debug(logmsg) { "request[status] #{request['status']} turned into "+status}
+              request['status']=status  
+              begin
+                request.save
+                @logger.debug(logmsg) { "request saved"}
+              rescue Exception => e
+                @logger.error e.message
+          	    @logger.error e.backtrace.inspect
+              end
+            else
+              @logger.error(logmsg) { "request "+properties[:correlation_id]+" not found"}
             end
           else
-            @logger.error(logmsg) { "request "+properties[:correlation_id]+" not found"}
+            @logger.debug('MQServer.consume') {'status not present'}
           end
-        else
-          @logger.debug('MQServer.consume') {'status not present'}
         end
       rescue Exception => e
         @logger.error e.message
