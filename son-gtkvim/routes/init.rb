@@ -13,12 +13,5 @@
 ## WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 ## See the License for the specific language governing permissions and
 ## limitations under the License.
-require_relative 'root'
-require_relative 'api_doc'
-require_relative 'package'
-require_relative 'service'
+# encoding: utf-8
 require_relative 'request'
-require_relative 'admin'
-require_relative 'function'
-require_relative 'instance'
-require_relative 'vim'
