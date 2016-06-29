@@ -85,6 +85,8 @@ class GtkSrv < Sinatra::Base
           if vnfd[0]
             vnfd[0].delete(:status) if vnfd[0][:status]
             vnfd[0].delete('status') if vnfd[0]['status']
+            vnfd[0].delete(:uuid) if vnfd[0][:uuid]
+            vnfd[0].delete('uuid') if vnfd[0]['uuid']
           
             start_request["VNFD#{index}"]=vnfd[0]  
             logger.debug('GtkSrv: POST /requests') {"start_request[\"VNFD#{index}\"]=#{vnfd[0]}"}
