@@ -42,3 +42,11 @@ RSpec.describe GtkSrv do
     it 'rejects updating invalid (instantiations) requests'
   end
 end
+
+#it "should be able to be instantiated" do
+#  expect { Mail }.not_to raise_error
+#end
+
+#it "should be able to make a new email" do
+#  expect(Mail.new.class).to eq Mail::Message
+#end
