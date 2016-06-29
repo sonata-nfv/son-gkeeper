@@ -1,4 +1,3 @@
----
 # SONATA - Gatekeeper
 #
 # Copyright 2015-2017 Portugal Telecom Inovacao/Altice Labs
@@ -15,21 +14,25 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # encoding: utf-8
-development: &common_settings
-  pkgmgmt: <%= ENV['PACKAGE_MANAGEMENT_URL'] %>
-  srvmgmt: <%= ENV['SERVICE_MANAGEMENT_URL'] %>
-  fnctmgmt: <%= ENV['FUNCTION_MANAGEMENT_URL'] %>
-  vimmgmt: <%= ENV['VIM_MANAGEMENT_URL'] %>
+module GtkVimHelper
+  def correct(val, default_val)
+    return defalt_val unless val
+    return 0 if val < 0
+    val
+  end
 
-test:
-  <<: *common_settings
+  def json_error(code, message)
+    msg = {'error' => message}
+    logger.error msg.to_s
+    halt code, {'Content-type'=>'application/json'}, msg.to_json
+  end
 
-integration:
-  <<: *common_settings
-
-qualification:
-  <<: *common_settings
-
-demonstration:
-  <<: *common_settings
- 
+  def valid?(uuid)
+    uuid.match /[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89aAbB][a-f0-9]{3}-[a-f0-9]{12}/
+    uuid == $&
+  end
+  
+  def keyed_hash(hash)
+    Hash[hash.map{|(k,v)| [k.to_sym,v]}]
+  end
+end
