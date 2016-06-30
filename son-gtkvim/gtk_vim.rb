@@ -14,14 +14,14 @@
 ## See the License for the specific language governing permissions and
 ## limitations under the License.
 # encoding: utf-8
-# Set environment
 ENV['RACK_ENV'] ||= 'production'
 
 require 'sinatra/base'
+require 'sinatra/json'
 require 'sinatra/config_file'
 require 'sinatra/cross_origin'
 require 'sinatra/reloader'
-require 'zip'
+require 'sinatra/activerecord'
 require 'sinatra/logger'
 
 # Require the bundler gem and then call Bundler.require to load in all gems listed in Gemfile.
@@ -32,45 +32,46 @@ require_relative 'routes/init'
 require_relative 'helpers/init'
 require_relative 'models/init'
 
-# Concentrates all the REST API of the Gatekeeper
-class GtkApi < Sinatra::Base
+# Main class supporting the Gatekeeper's Service Management micro-service
+class GtkVim < Sinatra::Base
   register Sinatra::ConfigFile
   register Sinatra::CrossOrigin
   register Sinatra::Reloader
+  register Sinatra::ActiveRecordExtension
   register Sinatra::Logger
   set :logger_level, :debug # or :fatal, :error, :warn, :info
   
-  helpers GtkApiHelper
-
+  helpers GtkVimHelper
+  
   set :root, File.dirname(__FILE__)
   set :public_folder, File.join(File.dirname(__FILE__), 'public')
   set :bind, '0.0.0.0'
-  set :files, File.join(settings.public_folder, 'files')
   set :time_at_startup, Time.now.utc
   set :environments, %w(development test integration qualification demonstration)
   set :environment, ENV['RACK_ENV'] || :development
-  config_file File.join(root, 'config', 'services.yml.erb')
-  
-  use Rack::Session::Cookie, key: 'rack.session', domain: 'foo.com', path: '/', expire_after: 2592000, secret: '$0nata'
+  config_file File.join( [root, 'config', 'services.yml.erb'] )
+    
+  use Rack::Session::Cookie, :key => 'rack.session', :domain => 'foo.com', :path => '/', :expire_after => 2592000, :secret => '$0nata'
   
   # Logging
 	enable :logging
+  set :logger_level, :debug # or :fatal, :error, :warn, :info
   FileUtils.mkdir(File.join(settings.root, 'log')) unless File.exists? File.join(settings.root, 'log')
   logfile = File.open(File.join('log', ENV['RACK_ENV'])+'.log', 'a+')
   logfile.sync = true
   logger = Logger.new(logfile)
-  
+    
   enable :cross_origin
 
-  set :package_management, PackageManagerService.new(settings.pkgmgmt, logger)
-  set :service_management, ServiceManagerService.new(settings.srvmgmt, logger)
-  set :function_management,FunctionManagerService.new(settings.fnctmgmt, logger)
-  set :vim_management,VimManagerService.new(settings.vimmgmt, logger)
-  
-  Zip.setup do |c|
-    c.unicode_names = true
-    c.on_exists_proc = true
-    c.continue_on_exists_proc = true
+  if settings.mqserver_url
+    SERVER_LIST_QUEUE = 'infrastructure.management.compute.list'
+    SERVER_ADD_QUEUE = 'infrastructure.management.compute.add'
+    set :mqserver_list, MQServer.new(SERVER_LIST_QUEUE,settings.mqserver_url, logger)
+    set :mqserver_add, MQServer.new(SERVER_ADD_QUEUE,settings.mqserver_url, logger)
+    
+  else
+    puts '    >>>MQServer url not defined, application being terminated!!'
+    Process.kill('TERM', Process.pid)
   end
-  logger.info "GtkApi started at #{settings.time_at_startup}"
+  logger.info "GtkVim started at #{settings.time_at_startup}"
 end

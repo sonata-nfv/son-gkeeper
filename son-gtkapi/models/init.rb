@@ -15,3 +15,4 @@
 require_relative 'package_manager_service'
 require_relative 'service_manager_service'
 require_relative 'function_manager_service'
+require_relative 'vim_manager_service'

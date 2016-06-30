@@ -331,6 +331,59 @@ paths:
           $ref: "#/responses/RequiredRecordDoesNotExistResponse"
         "500":
           $ref: "#/responses/Standard500ErrorResponse"
+  /vims:
+    get:
+      summary: Creates a new "get list of vims" request and returns its uuid.
+      description: ""
+      operationId: getVims
+      produces:
+        - application/json
+      tags:
+        - Vims
+      responses:
+        "200":
+          description: "Get list of vims" request's uuid returned
+        "500":
+          $ref: "#/responses/Standard500ErrorResponse"
+    post:
+      summary: Creates a new "add vim" request
+      description: ""
+      operationId: newAddVimRequest
+      produces:
+        - application/json
+      parameters:
+      tags:
+        - Requests
+      responses:
+        "200":
+          description: "Add vim" request's uuid returned
+        "404":
+          $ref: "#/responses/RequiredRecordDoesNotExistResponse"
+        "500":
+          $ref: "#/responses/Standard500ErrorResponse"
+  /vim_requests/{requestId}:
+    get:
+      summary: Get the the given VIMs request
+      description: ""
+      operationId: getVimRequests
+      produces:
+        - application/json
+      parameters:
+        - in: path
+          name: requestId
+          description: The UUID of the request
+          required: true
+          type: string
+          format: uuid
+      tags:
+        - Requests
+      responses:
+        "200":
+          description: Vim request data is returned
+        "404":
+          $ref: "#/responses/RequiredRecordDoesNotExistResponse"
+        "500":
+          $ref: "#/responses/Standard500ErrorResponse"
   /instances:
     get:
       summary: Get the list of all the instances registered

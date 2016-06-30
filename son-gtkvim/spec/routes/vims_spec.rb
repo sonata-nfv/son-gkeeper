@@ -1,5 +1,3 @@
-# encoding: utf-8
-##
 ## Copyright 2015-2017 Portugal Telecom Inovacao/Altice Labs
 ##
 ## Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,12 +11,27 @@
 ## WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 ## See the License for the specific language governing permissions and
 ## limitations under the License.
-require_relative 'root'
-require_relative 'api_doc'
-require_relative 'package'
-require_relative 'service'
-require_relative 'request'
-require_relative 'admin'
-require_relative 'function'
-require_relative 'instance'
-require_relative 'vim'
+# encoding: utf-8
+require_relative '../spec_helper'
+require 'json'
+
+RSpec.describe GtkVim do
+
+  describe 'GET /vims' do
+    it 'accepts listing vims'
+    it 'publishes get vims request'
+    it 'returns uuid of newly created request'
+  end
+
+  describe 'POST /vims' do
+    it 'accepts new valid (instantiations) requests'
+    it 'publishes the new vim request'
+    it 'returns uuid of newly created request'
+  end
+
+  describe 'GET /vim_requests/:uuid' do
+    it 'accepts getting vim request by uuid'
+    it 'returns vim request by uuid'
+  end
+  
+end

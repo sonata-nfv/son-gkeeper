@@ -10,6 +10,7 @@ services:
      - PACKAGE_MANAGEMENT_URL=http://son-gtkpkg:5100
      - SERVICE_MANAGEMENT_URL=http://son-gtksrv:5300
      - FUNCTION_MANAGEMENT_URL=http://son-gtkfnct:5500
+     - VIM_MANAGEMENT_URL=http://son-gtkfvim:5700
     ports:
       - "32001:5000"
     restart: always
@@ -71,6 +72,29 @@ services:
       options:
         gelf-address: "udp://logs.sonata-nfv.eu:12900"
 
+  son-gtkvim:
+    image: registry.sonata-nfv.eu:5000/son-gtkvim
+    links:
+     - broker
+     - postgres
+    ports:
+      - "5700"
+    restart: always
+    environment:
+     - POSTGRES_PASSWORD=sonata
+     - POSTGRES_USER=sonatatest
+     - RACK_ENV=integration
+     - DATABASE_HOST=postgres
+     - DATABASE_PORT=5432
+     - MQSERVER=amqp://guest:guest@broker:5672
+    depends_on:
+     - postgres
+    extra_hosts:
+      - "jenkins.sonata-nfv.eu:192.168.60.5"
+    logging:
+      driver: gelf
+      options:
+        gelf-address: "udp://logs.sonata-nfv.eu:12900"
   postgres:
     image: ntboes/postgres-uuid
     ports:

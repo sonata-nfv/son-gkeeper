@@ -1,4 +1,3 @@
-# encoding: utf-8
 ##
 ## Copyright 2015-2017 Portugal Telecom Inovacao/Altice Labs
 ##
@@ -13,12 +12,8 @@
 ## WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 ## See the License for the specific language governing permissions and
 ## limitations under the License.
-require_relative 'root'
-require_relative 'api_doc'
-require_relative 'package'
-require_relative 'service'
-require_relative 'request'
-require_relative 'admin'
-require_relative 'function'
-require_relative 'instance'
-require_relative 'vim'
+# encoding: utf-8
+root = ::File.dirname(__FILE__)
+require ::File.join(root, 'gtk_vim')
+
+run GtkVim
