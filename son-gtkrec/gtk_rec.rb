@@ -21,7 +21,6 @@ require 'sinatra/json'
 require 'sinatra/config_file'
 require 'sinatra/cross_origin'
 require 'sinatra/reloader'
-require 'sinatra/activerecord'
 require 'sinatra/logger'
 
 # Require the bundler gem and then call Bundler.require to load in all gems listed in Gemfile.
@@ -33,17 +32,16 @@ require_relative 'helpers/init'
 require_relative 'models/init'
 
 # Main class supporting the Gatekeeper's Service Management micro-service
-class GtkSrv < Sinatra::Base
+class GtkRec < Sinatra::Base
   register Sinatra::ConfigFile
   register Sinatra::CrossOrigin
   register Sinatra::Reloader
-  register Sinatra::ActiveRecordExtension
   register Sinatra::Logger
   set :logger_level, :debug # or :fatal, :error, :warn, :info
   
-  helpers GtkSrvHelper
+  helpers GtkRecHelper
   
-  MODULE='GtkSrv'
+  MODULE='GtkRec'
   
   set :root, File.dirname(__FILE__)
   set :public_folder, File.join(File.dirname(__FILE__), 'public')
@@ -65,17 +63,13 @@ class GtkSrv < Sinatra::Base
     
   enable :cross_origin
 
-  if settings.catalogues
-    set :services_catalogue, Catalogue.new(settings.catalogues+'/network-services', logger)
-    set :functions_catalogue, Catalogue.new(settings.catalogues+'/vnfs', logger)
+  # "/records/nsr/ns-instances"
+  # "/records/vnfr/vnf-instances"
+  if settings.repositories
+    set :services_repository, Repository.new(settings.repositories+'/nsr/ns-instances', logger)
+    set :functions_repository, Repository.new(settings.repositories+'/vnfr/vnf-instances', logger)
   else
-    logger.error(MODULE) {'>>>Catalogue url not defined, application being terminated!!'}
-    Process.kill('TERM', Process.pid)
-  end
-  if settings.mqserver_url
-    set :mqserver, MQServer.new(settings.mqserver_url, logger)
-  else
-    logger.error(MODULE) {'>>>MQServer url not defined, application being terminated!!'}
+    logger.error(MODULE) {'>>>Repository url not defined, application being terminated!!'}
     Process.kill('TERM', Process.pid)
   end
   logger.info(MODULE) {"started at #{settings.time_at_startup}"}
