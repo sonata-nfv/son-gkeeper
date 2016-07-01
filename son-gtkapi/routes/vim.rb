@@ -63,7 +63,7 @@ class GtkApi < Sinatra::Base
   end
   
   # GET one specific request
-  get '/vim_requests/:uuid/?' do
+  get '/vims/:uuid/?' do
     unless params[:uuid].nil?
       logger.debug "GtkApi: GET /vim_request/#{params[:uuid]}"
       json_error 400, 'Invalid request UUID' unless valid? params[:uuid]
