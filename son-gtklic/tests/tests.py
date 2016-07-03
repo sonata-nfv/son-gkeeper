@@ -3,6 +3,7 @@ import sys
 import unittest
 import logging
 import json
+from datetime import datetime, timedelta
 
 sys.path.insert(1, os.path.join(sys.path[0], '..'))
 
@@ -62,8 +63,8 @@ class TestCase(unittest.TestCase):
         global service_uuid
 
         response = self.app.post("/services", data=dict(description="Test",
-                                                        expiringDate="22-07-20 13:46",
-                                                        startingDate="03-07-20 13:46",
+                                                        expiringDate="03-07-20 13:46",
+                                                        startingDate="22-06-16 13:46",
                                                         active=True))
         self.assertEqual(response.status_code, 200)
         resp_json = json.loads(response.data)
@@ -72,7 +73,7 @@ class TestCase(unittest.TestCase):
         expiringDate = resp_json["expiringDate"]
         desc = resp_json["description"]
 
-        self.assertEqual(expiringDate, "22-07-20 13:46")
+        self.assertEqual(expiringDate, "03-07-20 13:46")
         self.assertEqual(desc, "Test")
 
     def test_get_service(self):
@@ -102,7 +103,7 @@ class TestCase(unittest.TestCase):
                                                         service_uuid=service_uuid,
                                                         user_uuid="aaa-aaa-aaaa-aaa",
                                                         description="Test",
-                                                        startingDate="03-06-20 13:46",
+                                                        startingDate="30-06-16 13:46",
                                                         active=True))
         self.assertEqual(response.status_code, 200)
         resp_json = json.loads(response.data)
@@ -111,10 +112,10 @@ class TestCase(unittest.TestCase):
         expiringDate = resp_json["expiringDate"]
         desc = resp_json["description"]
 
-        self.assertEqual(expiringDate, "03-07-20 13:46")
+        self.assertEqual(expiringDate, "30-07-16 13:46")
         self.assertEqual(desc, "Test")
 
-    def test_zget_service(self):
+    def test_zget_license(self):
 
         response = self.app.get("/licenses", query_string="user_uuid=aaa-aaa-aaaa-aaa")
         self.assertEqual(response.status_code, 200)
@@ -125,6 +126,47 @@ class TestCase(unittest.TestCase):
             license_list.append(i["license_uuid"])
 
         self.assertTrue(license_uuid in license_list)
+
+    def test_zcheck_license_valid_get(self):
+
+        response = self.app.get("/licenses/" + license_uuid, query_string="user_uuid=aaa-aaa-aaaa-aaa")
+        resp_json = json.loads(response.data)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(resp_json["license_uuid"], license_uuid)
+
+    def test_zcheck_license_valid_head(self):
+
+        response = self.app.head("/licenses/" + license_uuid, query_string="user_uuid=aaa-aaa-aaaa-aaa")
+        self.assertEqual(response.status_code, 200)
+
+    def test_zrenew_license(self):
+
+        response = self.app.get("/licenses/" + license_uuid, query_string="user_uuid=aaa-aaa-aaaa-aaa")
+        resp_json = json.loads(response.data)
+        expiringDate = datetime.strptime(str(resp_json["expiringDate"]), "%d-%m-%y %H:%M")
+
+        response = self.app.post("/licenses/" + license_uuid)
+        self.assertEqual(response.status_code, 200)
+        resp_json = json.loads(response.data)
+
+        self.assertEqual(datetime.strptime(str(resp_json["expiringDate"]), "%d-%m-%y %H:%M"),
+                         expiringDate + timedelta(days=30))
+
+    def test_zsuspend_license(self):
+
+        response = self.app.put("/licenses/" + license_uuid)
+        self.assertEqual(response.status_code, 200)
+        resp_json = json.loads(response.data)
+
+        self.assertTrue(resp_json["suspended"])
+
+    def test_zcancel_license(self):
+
+        response = self.app.delete("/licenses/" + license_uuid)
+        self.assertEqual(response.status_code, 200)
+        resp_json = json.loads(response.data)
+
+        self.assertFalse(resp_json["active"])
 
 if __name__ == '__main__':
     logging.basicConfig(stream=sys.stderr)
