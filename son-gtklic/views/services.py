@@ -21,19 +21,19 @@ class Services(Resource):
 
 
     def post(self):
-        
+
         try:
             startingDate = datetime.datetime.now()
             if not (request.form.get('startingDate') is None):
                 startingDate = datetime.datetime.strptime(str(request.form.get('startingDate')),"%d-%m-%y %H:%M")
 
-            new_service = Service(request.form['description'], 
-                    datetime.datetime.strptime(str(request.form['expiringDate']),"%d-%m-%y %H:%M"), 
-                    startingDate, 
+            new_service = Service(request.form['description'],
+                    datetime.datetime.strptime(str(request.form['expiringDate']),"%d-%m-%y %H:%M"),
+                    startingDate,
                     request.form.get('active'))
         except:
             return "Invalid date format", 406
-        
+
 
         db_session.add(new_service)
         db_session.commit()
@@ -41,13 +41,13 @@ class Services(Resource):
         return jsonify(new_service.serialize)
 
     def delete(self):
-        service = Service.query.filter_by(service_uuid=request.form.get('active')).first()
+        service = Service.query.filter_by(service_uuid=request.form.get('service_uuid')).first()
 
         if service is None:
             return "Service ID not found", 404
 
         if service.active is False:
-            
+
             return make_response(jsonify(service.serialize), 304)
 
         service.active = False
