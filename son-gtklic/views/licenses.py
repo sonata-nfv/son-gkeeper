@@ -48,8 +48,8 @@ class LicensesList(Resource):
 
             new_license = License(license_type.type_uuid, service.service_uuid, request.form['user_uuid'],
                                   request.form['description'], startingDate, expiringDate, request.form['active'])
-            
-        except e:
+
+        except:
             return "Invalid arguments", 400
         db_session.add(new_license)
         db_session.commit()
@@ -106,12 +106,12 @@ class Licenses(Resource):
 
             if new_date > service.expiringDate:
                 return "Service no longer available for the license period", 410
-                
+
             license.expiringDate = new_date
 
         except:
             return "Invalid arguments", 400
-        
+
         db_session.commit()
 
         return jsonify(license.serialize)
