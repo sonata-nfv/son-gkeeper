@@ -12,7 +12,7 @@ import db
 
 type_uuid = None
 service_uuid = None
-
+license_uuid = None
 
 class TestCase(unittest.TestCase):
 
@@ -95,6 +95,36 @@ class TestCase(unittest.TestCase):
 
         self.assertFalse(resp_json["active"])
 
+    def test_zadd_license(self):
+        global license_uuid
+
+        response = self.app.post("/licenses", data=dict(type_uuid=type_uuid,
+                                                        service_uuid=service_uuid,
+                                                        user_uuid="aaa-aaa-aaaa-aaa",
+                                                        description="Test",
+                                                        startingDate="03-06-20 13:46",
+                                                        active=True))
+        self.assertEqual(response.status_code, 200)
+        resp_json = json.loads(response.data)
+
+        license_uuid = resp_json["license_uuid"]
+        expiringDate = resp_json["expiringDate"]
+        desc = resp_json["description"]
+
+        self.assertEqual(expiringDate, "03-07-20 13:46")
+        self.assertEqual(desc, "Test")
+
+    def test_zget_service(self):
+
+        response = self.app.get("/licenses", query_string="user_uuid=aaa-aaa-aaaa-aaa")
+        self.assertEqual(response.status_code, 200)
+        resp_json = json.loads(response.data)
+
+        license_list = []
+        for i in resp_json["licenses"]:
+            license_list.append(i["license_uuid"])
+
+        self.assertTrue(license_uuid in license_list)
 
 if __name__ == '__main__':
     logging.basicConfig(stream=sys.stderr)
