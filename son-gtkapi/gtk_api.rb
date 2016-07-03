@@ -65,7 +65,8 @@ class GtkApi < Sinatra::Base
   set :package_management, PackageManagerService.new(settings.pkgmgmt, logger)
   set :service_management, ServiceManagerService.new(settings.srvmgmt, logger)
   set :function_management,FunctionManagerService.new(settings.fnctmgmt, logger)
-  set :vim_management,VimManagerService.new(settings.vimmgmt, logger)
+  set :vim_management, VimManagerService.new(settings.vimmgmt, logger)
+  set :record_management, RecordManagerService.new(settings.recmgmt, logger)
   
   Zip.setup do |c|
     c.unicode_names = true

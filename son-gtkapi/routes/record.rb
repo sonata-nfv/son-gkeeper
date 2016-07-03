@@ -18,19 +18,23 @@ require 'addressable/uri'
 class GtkApi < Sinatra::Base
   
   # GET many instances
-  get '/instances/?' do
+  get '/records/nsrs/?' do
+    method = 'GtkApi GET /records/nsrs'
     uri = Addressable::URI.new
     uri.query_values = params
-    logger.debug "Settings Srv. Mgmt. = #{settings.service_management.class}"
-    
-    logger.debug "GtkApi: entered GET /instances?#{uri.query}"
+    logger.debug(method) {"entered with #{uri.query}"}
     
     params[:offset] ||= DEFAULT_OFFSET 
     params[:limit] ||= DEFAULT_LIMIT
     
-    instances = [] #settings.service_management.find_services(params)
-    logger.debug "GtkApi: leaving GET /instances?#{uri.query} with #{instances}"
-    halt 200, instances.to_json if instances
+    records = settings.record_management.find_services(params)
+    if records
+      logger.debug(method) {"leaving with #{records}"}
+      halt 200, records.to_json
+    else
+      logger.debug(method) {'No service records found'}
+      halt 404, 'No service records found'
+    end
   end
   
   # GET a specific instance
