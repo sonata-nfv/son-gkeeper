@@ -31,12 +31,7 @@ class TestCase(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         resp_json = json.loads(response.data)
 
-        log = logging.getLogger()
-        log.debug(response.status_code)
-        log.debug(response.data)
-
         type_uuid = resp_json["type_uuid"]
-        log.debug(resp_json["type_uuid"])
         duration = resp_json["duration"]
         desc = resp_json["type"]
 
@@ -49,9 +44,6 @@ class TestCase(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         resp_json = json.loads(response.data)
 
-        log = logging.getLogger()
-        log.debug(response.status_code)
-
         types_list = []
         for i in resp_json["types"]:
             types_list.append(i["type_uuid"])
@@ -63,9 +55,6 @@ class TestCase(unittest.TestCase):
         response = self.app.delete("/types/" + type_uuid)
         self.assertEqual(response.status_code, 200)
         resp_json = json.loads(response.data)
-
-        log = logging.getLogger()
-        log.debug(response.status_code)
 
         self.assertFalse(resp_json["active"])
 
@@ -110,5 +99,5 @@ class TestCase(unittest.TestCase):
 if __name__ == '__main__':
     logging.basicConfig(stream=sys.stderr)
     logging.getLogger().setLevel(logging.DEBUG)
-    unittest.main()
+    unittest.main(verbosity=2)
 
