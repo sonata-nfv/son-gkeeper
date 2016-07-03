@@ -60,12 +60,12 @@ class LicensesList(Resource):
 class Licenses(Resource):
 
     def head(self, licenseID):
-        license = License.query.filter(license_uuid=licenseID).first()
+        license = License.query.filter_by(license_uuid=licenseID).first()
 
         if license is None:
             return "License doesn't exist", 404
 
-        if license.user_uuid != request.form['user_uuid']:
+        if license.user_uuid != request.args.get('user_uuid'):
             return "Service user doesn't have that license", 401
 
         if license.startingDate > datetime.now():
@@ -77,12 +77,13 @@ class Licenses(Resource):
         return "License is valid", 200
 
     def get(self, licenseID):
-        license = License.query.filter(license_uuid=licenseID).first()
+
+        license = License.query.filter_by(license_uuid=licenseID).first()
 
         if license is None:
             return "License doesn't exist", 404
 
-        if license.user_uuid != request.form['user_uuid']:
+        if license.user_uuid != request.args.get('user_uuid'):
             return "Service user doesn't have that license", 401
 
         if license.startingDate > datetime.now():
@@ -118,7 +119,7 @@ class Licenses(Resource):
 
 
     def put(self, licenseID):
-        license = License.query.filter(license_uuid=licenseID).first()
+        license = License.query.filter_by(license_uuid=licenseID).first()
 
         if license is None:
             return "License ID not found", 404
@@ -134,7 +135,7 @@ class Licenses(Resource):
         return jsonify(license.serialize)
 
     def delete(self, licenseID):
-        license = License.query.filter(license_uuid=licenseID).first()
+        license = License.query.filter_by(license_uuid=licenseID).first()
 
         if license is None:
             return "License ID not found", 404
