@@ -15,10 +15,10 @@ from db import db_session
 class LicensesList(Resource):
 
     def get(self):
-        if request.form['user_uuid'] is None:
+        if request.args.get('user_uuid') is None:
             return "No user uuid provided", 404
 
-        licenses = License.query.filter(user_uuid=request.form['user_uuid']).all()
+        licenses = License.query.filter_by(user_uuid=request.args.get('user_uuid')).all()
 
         return jsonify({"licenses": [o.serialize for o in licenses]})
 
