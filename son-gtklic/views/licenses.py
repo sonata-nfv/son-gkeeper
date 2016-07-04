@@ -98,6 +98,9 @@ class Licenses(Resource):
         try:
             license = License.query.filter_by(license_uuid=licenseID).first()
 
+            if license is None:
+                return "License doesn't exist", 404
+
             license_type = Type.query.filter_by(type_uuid=license.type_uuid).first()
 
             service = Service.query.filter_by(service_uuid=license.service_uuid).first()
