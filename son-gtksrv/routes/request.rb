@@ -72,8 +72,8 @@ class GtkSrv < Sinatra::Base
       if service
         service.delete(:status) if service[:status]
         service.delete('status') if service['status']
-        service.delete(:uuid) if service[:uuid]
-        service.delete('uuid') if service['uuid']
+        #service.delete(:uuid) if service[:uuid]
+        #service.delete('uuid') if service['uuid']
         
         start_request['NSD']=service
         logger.debug('GtkSrv: POST /requests') { "service=#{service}"}
@@ -85,8 +85,8 @@ class GtkSrv < Sinatra::Base
           if vnfd[0]
             vnfd[0].delete(:status) if vnfd[0][:status]
             vnfd[0].delete('status') if vnfd[0]['status']
-            vnfd[0].delete(:uuid) if vnfd[0][:uuid]
-            vnfd[0].delete('uuid') if vnfd[0]['uuid']
+            #vnfd[0].delete(:uuid) if vnfd[0][:uuid]
+            #vnfd[0].delete('uuid') if vnfd[0]['uuid']
           
             start_request["VNFD#{index}"]=vnfd[0]  
             logger.debug('GtkSrv: POST /requests') {"start_request[\"VNFD#{index}\"]=#{vnfd[0]}"}
