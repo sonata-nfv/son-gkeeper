@@ -1,8 +1,10 @@
 import os
 import sys
-import unittest
 import logging
 import json
+import unittest
+import xmlrunner
+
 from datetime import datetime, timedelta
 
 sys.path.insert(1, os.path.join(sys.path[0], '..'))
@@ -171,5 +173,4 @@ class TestCase(unittest.TestCase):
 if __name__ == '__main__':
     logging.basicConfig(stream=sys.stderr)
     logging.getLogger().setLevel(logging.DEBUG)
-    unittest.main(verbosity=2)
-
+    unittest.main(testRunner=xmlrunner.XMLTestRunner(output='test-reports'))
