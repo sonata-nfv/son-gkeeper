@@ -12,8 +12,23 @@
 ## WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 ## See the License for the specific language governing permissions and
 ## limitations under the License.
-require_relative 'package_manager_service'
-require_relative 'service_manager_service'
-require_relative 'function_manager_service'
-require_relative 'vim_manager_service'
-require_relative 'record_manager_service'
+# encoding: utf-8
+class VFunction
+  
+  def initialize(catalogue, logger)
+    @catalogue = catalogue
+    @logger = logger
+  end
+  
+  def find_function(name,vendor,version)
+    headers = { 'Accept'=> 'application/json', 'Content-Type'=>'application/json'}
+    url = @catalogue.url+"?name=#{name}&vendor=#{vendor}&version=#{version}"
+    begin
+      response = RestClient.get(url, headers)
+      JSON.parse response.body
+    rescue => e
+      @logger.error "No function found for "+url
+      e.message
+    end
+  end
+end

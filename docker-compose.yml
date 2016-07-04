@@ -95,6 +95,22 @@ services:
       driver: gelf
       options:
         gelf-address: "udp://logs.sonata-nfv.eu:12900"
+
+  son-gtkrec:
+    image: registry.sonata-nfv.eu:5000/son-gtkrec
+    ports:
+      - "5800"
+    restart: always
+    environment:
+     - RACK_ENV=integration
+     - REPOSITORIES_URL=http://sp.int.sonata-nfv.eu:4002/records
+    extra_hosts:
+      - "jenkins.sonata-nfv.eu:192.168.60.5"
+    logging:
+      driver: gelf
+      options:
+        gelf-address: "udp://logs.sonata-nfv.eu:12900"
+
   postgres:
     image: ntboes/postgres-uuid
     ports:

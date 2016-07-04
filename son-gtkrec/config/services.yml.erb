@@ -1,4 +1,3 @@
----
 # SONATA - Gatekeeper
 #
 # Copyright 2015-2017 Portugal Telecom Inovacao/Altice Labs
@@ -15,16 +14,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # encoding: utf-8
+# psql -h jenkins.sonata-nfv.eu -U postgres -psonatatest
+---
 development: &common_settings
-  pkgmgmt: <%= ENV['PACKAGE_MANAGEMENT_URL'] %>
-  srvmgmt: <%= ENV['SERVICE_MANAGEMENT_URL'] %>
-  fnctmgmt: <%= ENV['FUNCTION_MANAGEMENT_URL'] %>
-  vimmgmt: <%= ENV['VIM_MANAGEMENT_URL'] %>
-  recmgmt: <%= ENV['RECORD_MANAGEMENT_URL'] %>
+  repositories: <%= ENV['REPOSITORIES_URL'] %>
 
 test:
   <<: *common_settings
-
+  
 integration:
   <<: *common_settings
 
@@ -33,4 +30,4 @@ qualification:
 
 demonstration:
   <<: *common_settings
- 
+  

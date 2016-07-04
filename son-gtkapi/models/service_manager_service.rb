@@ -49,6 +49,21 @@ class ServiceManagerService
     end
   end
 
+  def find_records(params)
+    method = "GtkApi: ServiceManagerService.find_records(#{params})"
+    headers = JSON_HEADERS
+    headers[:params] = params unless params.empty?
+    @logger.debug(method) {"headers=#{headers}"}
+    begin
+      response = RestClient.get(@url+'/services', headers) 
+      @logger.debug "ServiceManagerService.find_services(#{params}): response=#{response}"
+      JSON.parse response.body
+    rescue => e
+      @logger.error "ServiceManagerService.find_services: #{e.message} - #{format_error(e.backtrace)}"
+      nil 
+    end
+  end
+
   def find_requests(params)
     headers = JSON_HEADERS
     headers[:params] = params unless params.empty?
