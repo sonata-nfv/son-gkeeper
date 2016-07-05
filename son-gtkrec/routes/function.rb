@@ -23,8 +23,8 @@ class GtkRec < Sinatra::Base
   # "/records/nsr/ns-instances"
   # "/records/vnfr/vnf-instances"
   
-  get '/services/?' do
-    method = MODULE + 'GET /services'
+  get '/functions/?' do
+    method = MODULE + ' GET /functions'
     logger.debug(method) {"entered with params #{params}"}
 
     uri = Addressable::URI.new
@@ -34,43 +34,43 @@ class GtkRec < Sinatra::Base
     uri.query_values = params
     logger.debug(method) {'uri.query='+uri.query}
     
-    services = NService.new(settings.services_catalogue, logger).find(params)
-    if services
-      logger.debug(method) { "GtkSrv: GET /services: #{services}"}
+    functions = VFunction.new(settings.functions_repository, logger).find(params)
+    if functions
+      logger.debug(method) { "functions=#{functions}"}
 
       if field_list
         fields = field_list.split(',')
         logger.debug(method) {"fields=#{fields}"}
-        response = services.to_json(:only => fields)
+        response = functions.to_json(:only => fields)
       else
-        response = services.to_json
+        response = functions.to_json
       end
       logger.debug(method) {'leaving with response='+response}
       halt 200, response
     else
-      logger.debug(method) {"leaving with \"No service with params #{uri.query} was found\""}
-      json_error 404, "No service with params #{uri.query} was found"
+      logger.debug(method) {"leaving with \"No function with params #{uri.query} was found\""}
+      json_error 404, "No function with params #{uri.query} was found"
     end
   end
   
-  get '/services/:uuid' do
-    method = MODULE + 'GET /services/:uuid'
+  get '/functions/:uuid' do
+    method = MODULE + ' GET /functions/:uuid'
     logger.debug(method) {"entered with :uuid=#{params[:uuid]}"}
     
-    service = NService.new(settings.services_catalogue, logger).find_by_uuid(params[:uuid])
-    if service
-      logger.debug(method) {"service: #{service}"}
-      response = service.to_json
+    function = VFunction.new(settings.functions_catalogue, logger).find_by_uuid(params[:uuid])
+    if function
+      logger.debug(method) {"function: #{function}"}
+      response = function.to_json
       logger.debug(method) {"leaving with response="+response}
       halt 200, response
     else
-      logger.debug(method) {"leaving with \"No service with uuid #{params[:uuid]} was found\""}
-      json_error 404, "No service with uuid #{params[:uuid]} was found"
+      logger.debug(method) {"leaving with \"No function with uuid #{params[:uuid]} was found\""}
+      json_error 404, "No function with uuid #{params[:uuid]} was found"
     end
   end
 
   get '/admin/logs' do
-    method = MODULE + 'GET /admin/logs'
+    method = MODULE + ' GET /admin/logs'
     logger.debug(method) {'entered'}
     File.open('log/'+ENV['RACK_ENV']+'.log', 'r').read
   end  

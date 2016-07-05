@@ -14,11 +14,9 @@
 ## See the License for the specific language governing permissions and
 ## limitations under the License.
 # encoding: utf-8
-require 'tempfile'
 require 'json'
-require 'pp'
 
-class Catalogue
+class Repository
   
   attr_accessor :url
   
@@ -30,11 +28,11 @@ class Catalogue
   end
     
   def create(descriptor)
-    @logger.debug "Catalogue.create("+descriptor.to_s+")"
+    @logger.debug "Repository.create("+descriptor.to_s+")"
     begin
       response = RestClient.post( @url, descriptor.to_json, content_type: :json, accept: :json)     
       object = JSON.parse response
-      @logger.debug "Catalogue.create: object=#{object}"
+      @logger.debug "Repository.create: object=#{object}"
       object
     rescue => e
       @logger.error format_error(e.backtrace)
@@ -43,7 +41,7 @@ class Catalogue
   end
   
   def find_by_uuid(uuid)
-    @logger.debug "Catalogue.find_by_uuid(#{uuid})"
+    @logger.debug "Repository.find_by_uuid(#{uuid})"
     begin
       response = RestClient.get(@url+"/#{uuid}", JSON_HEADERS) 
       JSON.parse response.body
@@ -56,23 +54,18 @@ class Catalogue
   def find(params)
     headers = JSON_HEADERS
     headers[:params] = params unless params.empty?
-    @logger.debug "Catalogue.find(#{params}): headers #{headers}"
+    method = "Repository.find(#{params}): "
+    @logger.debug(method) {"headers #{headers}"}
+    @logger.debug(method) {"calling #{@url}"}
+    
     begin
       response = RestClient.get(@url, headers)
-      @logger.debug "Catalogue.find(#{params}): #{response}"      
+      @logger.debug(method) {"response=#{response}"}  
       JSON.parse response.body
     rescue => e
-      @logger.error format_error(e.backtrace)
+      @logger.error(method) {format_error(e.backtrace)}
       e.to_json
     end
-  end
-  
-  def update(uuid)
-    @logger.debug "Catalogue.update(#{uuid})"
-  end
-  
-  def delete(uuid)
-    @logger.debug "Catalogue.delete(#{uuid})"
   end
   
   private
@@ -80,6 +73,5 @@ class Catalogue
   def format_error(backtrace)
     first_line = backtrace[0].split(":")
     "In "+first_line[0].split("/").last+", "+first_line.last+": "+first_line[1]
-  end
-  
+  end  
 end

@@ -15,20 +15,15 @@
 # encoding: utf-8
 class VFunction
   
-  def initialize(catalogue, logger)
-    @catalogue = catalogue
+  def initialize(repository, logger)
+    @repository = repository
     @logger = logger
   end
   
-  def find_function(name,vendor,version)
-    headers = { 'Accept'=> 'application/json', 'Content-Type'=>'application/json'}
-    url = @catalogue.url+"?name=#{name}&vendor=#{vendor}&version=#{version}"
-    begin
-      response = RestClient.get(url, headers)
-      JSON.parse response.body
-    rescue => e
-      @logger.error "No function found for "+url
-      e.message
-    end
+  def find(params)
+    @logger.debug "VFunction.find(#{params})"
+    functions = @repository.find(params)
+    @logger.debug "NService.find: #{functions}"
+    functions
   end
 end

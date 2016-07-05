@@ -9,8 +9,9 @@ services:
      - RACK_ENV=integration
      - PACKAGE_MANAGEMENT_URL=http://son-gtkpkg:5100
      - SERVICE_MANAGEMENT_URL=http://son-gtksrv:5300
-     - FUNCTION_MANAGEMENT_URL=http://son-gtkfnct:5500
-     - VIM_MANAGEMENT_URL=http://son-gtkfvim:5700
+     - FUNCTION_MANAGEMENT_URL=http://son-gtkfnct:5500 # 5600?
+     - VIM_MANAGEMENT_URL=http://son-gtkvim:5700
+     - RECORD_MANAGEMENT_URL=http://son-gtkrec:5800
     ports:
       - "32001:5000"
     restart: always
