@@ -23,29 +23,19 @@ class RecordManagerService
     @logger = logger
   end
     
-  def find_services_by_uuid(uuid)
+  def find_records(params)
+    method = "GtkApi::RecordManagerService.find_records(#{params}): "
     headers = JSON_HEADERS
-    #headers[:params] = uuid
-    begin
-      response = RestClient.get( @url+"/services/#{uuid}", headers)
-      JSON.parse response.body
-    rescue => e
-      @logger.error "ServiceManagerService.find_services_by_uuid: e=#{format_error(e.backtrace)}"
-      nil 
-    end
-  end
-
-  def find_services(params)
-    method = "GtkApi: ServiceManagerService.find_records(#{params})"
-    headers = JSON_HEADERS
+    kind = params['kind']
+    params.delete('kind')
     headers[:params] = params unless params.empty?
     @logger.debug(method) {"headers=#{headers}"}
     begin
-      response = RestClient.get(@url+'/services', headers) 
-      @logger.debug "ServiceManagerService.find_services(#{params}): response=#{response}"
+      response = RestClient.get(@url+'/'+kind, headers) 
+      @logger.debug(method) {"response=#{response}"}
       JSON.parse response.body
     rescue => e
-      @logger.error "ServiceManagerService.find_services: #{e.message} - #{format_error(e.backtrace)}"
+      @logger.error(method) {"#{e.message} - #{format_error(e.backtrace)}"}
       nil 
     end
   end

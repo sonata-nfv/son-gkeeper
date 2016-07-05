@@ -21,7 +21,7 @@ require 'addressable/uri'
 class GtkRec < Sinatra::Base
 
   get '/services/?' do
-    method = MODULE + 'GET /services'
+    method = MODULE + ' GET /services'
     logger.debug(method) {"entered with params #{params}"}
 
     uri = Addressable::URI.new
@@ -31,9 +31,9 @@ class GtkRec < Sinatra::Base
     uri.query_values = params
     logger.debug(method) {'uri.query='+uri.query}
     
-    services = NService.new(settings.services_catalogue, logger).find(params)
+    services = NService.new(settings.services_repository, logger).find(params)
     if services
-      logger.debug(method) { "GtkSrv: GET /services: #{services}"}
+      logger.debug(method) { "services=#{services}"}
 
       if field_list
         fields = field_list.split(',')
@@ -51,10 +51,10 @@ class GtkRec < Sinatra::Base
   end
   
   get '/services/:uuid' do
-    method = MODULE + 'GET /services/:uuid'
+    method = MODULE + ' GET /services/:uuid'
     logger.debug(method) {"entered with :uuid=#{params[:uuid]}"}
     
-    service = NService.new(settings.services_catalogue, logger).find_by_uuid(params[:uuid])
+    service = NService.new(settings.services_repository, logger).find_by_uuid(params[:uuid])
     if service
       logger.debug(method) {"service: #{service}"}
       response = service.to_json
@@ -67,7 +67,7 @@ class GtkRec < Sinatra::Base
   end
 
   get '/admin/logs' do
-    method = MODULE + 'GET /admin/logs'
+    method = MODULE + ' GET /admin/logs'
     logger.debug(method) {'entered'}
     File.open('log/'+ENV['RACK_ENV']+'.log', 'r').read
   end  

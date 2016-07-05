@@ -20,21 +20,21 @@ class NService
   
   JSON_HEADERS = { 'Accept'=> 'application/json', 'Content-Type'=>'application/json'}
   
-  def initialize(catalogue, logger)
-    @catalogue = catalogue
+  def initialize(repository, logger)
+    @repository = repository
     @logger = logger
   end
   
   def find(params)
     @logger.debug "NService.find(#{params})"
-    services = @catalogue.find(params)
+    services = @repository.find(params)
     @logger.debug "NService.find: #{services}"
     services
   end
 
   def find_by_uuid(uuid)
     @logger.debug "NService.find_by_uuid(#{uuid})"
-    service = @catalogue.find_by_uuid(uuid)
+    service = @repository.find_by_uuid(uuid)
     @logger.debug "NService.find_by_uuid: #{service}"
     service
   end
