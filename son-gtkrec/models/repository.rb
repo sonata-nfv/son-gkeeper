@@ -14,9 +14,7 @@
 ## See the License for the specific language governing permissions and
 ## limitations under the License.
 # encoding: utf-8
-require 'tempfile'
 require 'json'
-require 'pp'
 
 class Repository
   
