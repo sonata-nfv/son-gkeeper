@@ -69,14 +69,14 @@ class GtkSrv < Sinatra::Base
     set :services_catalogue, Catalogue.new(settings.catalogues+'/network-services', logger)
     set :functions_catalogue, Catalogue.new(settings.catalogues+'/vnfs', logger)
   else
-    puts '    >>>Catalogue url not defined, application being terminated!!'
+    logger.error(MODULE) {'>>>Catalogue url not defined, application being terminated!!'}
     Process.kill('TERM', Process.pid)
   end
   if settings.mqserver_url
     set :mqserver, MQServer.new(settings.mqserver_url, logger)
   else
-    puts '    >>>MQServer url not defined, application being terminated!!'
+    logger.error(MODULE) {'>>>MQServer url not defined, application being terminated!!'}
     Process.kill('TERM', Process.pid)
   end
-  logger.info "GtkApi started at #{settings.time_at_startup}"
+  logger.info(MODULE) {"started at #{settings.time_at_startup}"}
 end

@@ -1,4 +1,3 @@
----
 # SONATA - Gatekeeper
 #
 # Copyright 2015-2017 Portugal Telecom Inovacao/Altice Labs
@@ -14,23 +13,24 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# encoding: utf-8
-development: &common_settings
-  pkgmgmt: <%= ENV['PACKAGE_MANAGEMENT_URL'] %>
-  srvmgmt: <%= ENV['SERVICE_MANAGEMENT_URL'] %>
-  fnctmgmt: <%= ENV['FUNCTION_MANAGEMENT_URL'] %>
-  vimmgmt: <%= ENV['VIM_MANAGEMENT_URL'] %>
-  recmgmt: <%= ENV['RECORD_MANAGEMENT_URL'] %>
+module GtkRecHelper
+  def content
+    #@content ||= Package.decode(package_file_path) || halt 404
+  end  
 
-test:
-  <<: *common_settings
+  def json_error(code, message)
+    msg = {'error' => message}
+    logger.error msg.to_s
+    halt code, {'Content-type'=>'application/json'}, msg.to_json
+  end
 
-integration:
-  <<: *common_settings
-
-qualification:
-  <<: *common_settings
-
-demonstration:
-  <<: *common_settings
- 
+  def valid?(uuid)
+    uuid.match /[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89aAbB][a-f0-9]{3}-[a-f0-9]{12}/
+    uuid == $&
+  end
+  
+  def format_error(backtrace)
+    first_line = backtrace[0].split(":")
+    "In "+first_line[0].split("/").last+", "+first_line.last+": "+first_line[1]
+  end
+end

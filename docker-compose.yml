@@ -10,7 +10,8 @@ services:
      - PACKAGE_MANAGEMENT_URL=http://son-gtkpkg:5100
      - SERVICE_MANAGEMENT_URL=http://son-gtksrv:5300
      - FUNCTION_MANAGEMENT_URL=http://son-gtkfnct:5500
-     - VIM_MANAGEMENT_URL=http://son-gtkfvim:5700
+     - VIM_MANAGEMENT_URL=http://son-gtkvim:5700
+     - RECORD_MANAGEMENT_URL=http://son-gtkrec:5800
     ports:
       - "32001:5000"
     restart: always
@@ -95,6 +96,22 @@ services:
       driver: gelf
       options:
         gelf-address: "udp://logs.sonata-nfv.eu:12900"
+
+  son-gtkrec:
+    image: registry.sonata-nfv.eu:5000/son-gtkrec
+    ports:
+      - "5800"
+    restart: always
+    environment:
+     - RACK_ENV=integration
+     - REPOSITORIES_URL=http://sp.int.sonata-nfv.eu:4002/records
+    extra_hosts:
+      - "jenkins.sonata-nfv.eu:192.168.60.5"
+    logging:
+      driver: gelf
+      options:
+        gelf-address: "udp://logs.sonata-nfv.eu:12900"
+
   postgres:
     image: ntboes/postgres-uuid
     ports:

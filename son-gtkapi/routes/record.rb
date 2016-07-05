@@ -18,35 +18,43 @@ require 'addressable/uri'
 class GtkApi < Sinatra::Base
   
   # GET many instances
-  get '/instances/?' do
+  get '/records/:kind/?' do
+    method = "GtkApi GET /records/#{params[:kind]}"
+    params.delete('splat')
+    params.delete('captures')
     uri = Addressable::URI.new
     uri.query_values = params
-    logger.debug "Settings Srv. Mgmt. = #{settings.service_management.class}"
-    
-    logger.debug "GtkApi: entered GET /instances?#{uri.query}"
+    logger.debug(method) {"entered with query parameters '#{uri.query}'"}
     
     params[:offset] ||= DEFAULT_OFFSET 
     params[:limit] ||= DEFAULT_LIMIT
     
-    instances = [] #settings.service_management.find_services(params)
-    logger.debug "GtkApi: leaving GET /instances?#{uri.query} with #{instances}"
-    halt 200, instances.to_json if instances
+    records = settings.record_management.find_records(params)
+    if records
+      logger.debug(method) {"leaving with #{records}"}
+      halt 200, records.to_json
+    else
+      logger.debug(method) {"No #{params[:kind]} records found"}
+      halt 404, "No #{params[:kind]} records found"
+    end
   end
   
   # GET a specific instance
-  get '/instances/:uuid/?' do
+  get '/records/:kind/:uuid/?' do
+    method = "GtkApi GET /records/#{params[:kind]}/#{params[:uuid]}: "
     unless params[:uuid].nil?
-      logger.debug "GtkApi: entered GET /instances/#{params[:uuid]}"
-      json_error 400, 'Invalid Instance UUID' unless valid? params['uuid']
+      logger.debug(method) {'entered'}
+      json_error 400, 'Invalid Instance UUID' unless valid? params[:uuid]
     end
-    logger.debug "GtkApi: leaving GET \"/instances/#{params[:uuid]}\" with \"No instance UUID specified\""
+    logger.debug(method) {"leaving with \"No instance UUID specified\""}
     json_error 400, 'No instance UUID specified'
   end
   
-  get '/admin/instances/logs' do
-    logger.debug "GtkApi: entered GET /admin/instances/logs"
+  get '/admin/records/logs' do
+    method = "GtkApi GET /admin/records/logs: "
+    logger.debug(method) {"entered"}
     headers 'Content-Type' => 'text/plain; charset=utf8', 'Location' => '/'
-    log = settings.service_management.get_log
+    log = settings.record_management.get_log
     halt 200, log.to_s
   end
 end
