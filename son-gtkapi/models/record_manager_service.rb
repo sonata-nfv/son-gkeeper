@@ -31,6 +31,7 @@ class RecordManagerService
     headers[:params] = params unless params.empty?
     @logger.debug(method) {"headers=#{headers}"}
     begin
+      @logger.debug(method) {"getting #{kind} from #{@url}"}
       response = RestClient.get(@url+'/'+kind, headers) 
       @logger.debug(method) {"response=#{response}"}
       JSON.parse response.body

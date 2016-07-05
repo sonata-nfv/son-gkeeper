@@ -11,6 +11,7 @@ services:
      - SERVICE_MANAGEMENT_URL=http://son-gtksrv:5300
      - FUNCTION_MANAGEMENT_URL=http://son-gtkfnct:5500
      - VIM_MANAGEMENT_URL=http://son-gtkfvim:5700
+     - RECORD_MANAGEMENT_URL=http://son-gtkfvim:5800
     ports:
       - "32001:5000"
     restart: always
