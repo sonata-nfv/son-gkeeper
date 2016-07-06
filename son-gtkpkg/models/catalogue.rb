@@ -17,6 +17,9 @@
 require 'tempfile'
 require 'json'
 require 'pp'
+require 'uri'
+require 'net/http'
+require 'rest-client'
 
 class Catalogue
   
@@ -38,6 +41,21 @@ class Catalogue
       @logger.error format_error(e.backtrace)
       nil
     end
+  end
+
+  def create_zip(zip)
+    #url = URI("http://api.int.sonata-nfv.eu:4002/catalogues/son-packages")
+    url = URI(@url)
+    http = Net::HTTP.new(url.host, url.port)
+    data = File.read('/home/tchalas/Documents/Sonata/sonata_example.son')  #File.read("/usr/test.amr")
+    request = Net::HTTP::Post.new(url)
+    request.body = data
+    # These fields are mandatory
+    request["content-type"] = 'application/zip'
+    request["content-disposition"] = 'attachment; filename=<filename.son>'
+    response = http.request(request)
+    puts response.read_body
+    # Response should return code 201, and ID of the stored son-package
   end
   
   def find_by_uuid(uuid)
