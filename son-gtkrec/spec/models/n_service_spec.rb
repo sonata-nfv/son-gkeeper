@@ -15,7 +15,7 @@
 ## limitations under the License.
 require_relative '../spec_helper'
 
-RSpec.describe Repository, type: :model do
+RSpec.describe NService, type: :model do
   describe '#find_by_uuid' do
   end
   

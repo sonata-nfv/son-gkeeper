@@ -105,7 +105,11 @@ class ServiceManagerService
   end
   
   def get_log
-    RestClient.get(@url+"/admin/logs")      
+    method = "GtkApi::ServiceManagerService.get_log: "
+    @logger.debug(method) {'entered'}
+    full_url = @url+'/admin/logs'
+    @logger.debug(method) {'url=' + full_url}
+    RestClient.get(full_url)      
   end
   
   private

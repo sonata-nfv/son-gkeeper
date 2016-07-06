@@ -70,7 +70,10 @@ class PackageManagerService
   end
   
   def get_log
-    @logger.debug "PackageManagerService.get_log: url "+@url+'/admin/logs'
-    RestClient.get(@url+'/admin/logs')      
+    method = "GtkApi::PackageManagerService.get_log: "
+    @logger.debug(method) {'entered'}
+    full_url = @url+'/admin/logs'
+    @logger.debug(method) {'url=' + full_url}
+    RestClient.get(full_url)      
   end
 end
