@@ -1,16 +1,59 @@
-# SONATA's Service Platform Gatekeeper
 [![Build Status](http://jenkins.sonata-nfv.eu/buildStatus/icon?job=son-gkeeper)](http://jenkins.sonata-nfv.eu/job/son-gkeeper)
 
+# SON-GKEEPER
 This is [SONATA](http://www.sonata-nfv.eu)'s Service Platform Gatekeeper's repository.
 
-Communication Service Providers (CSPs) in the 5G era will have to be able to open their infrastructures to Service Providers (SPs) that may not have any kind of close relationship with them, but a Supplier one: the SPs gets some amount of money, according to the agreed business model, from the CSPs. This is a radically distinct model from the one we are used to, in which SPs may, when allowed to, have to spend weeks (or sometimes even months) testing and integrating their services into the CSP’s infrastructure, with the CSP’s personnel having time to look into every aspect of the (new) proposed service, namely security, reliability, etc. In this new model, CSPs will have to:
+The Gatekeeper is the component that implements all the **Northbound Interface** (NBI) of the Servive Platform.
+ 
+This NBI provides systems like the [son-push](http://github.com/sonata-nfv/son-push), [son-gui](http://github.com/sonata-nfv/son-gui) and [son-bss](http://github.com/sonata-nfv/son-bss) access to the **Service Platform**, for features like:
 
- * **accept new services**’ descriptions (or updates on existing ones), according to a pre-defined and agreed format;
- * **validate** those descriptions, to guarantee that they’re both correct and do not seem to introduce any obvious threat to the quality of service that is expected the CSP to provide;
- * automatically **validate** the new service, namely in areas such as integration with authorized resources, these resources’ consumption and performance;
- * make the new service **available on its catalogue**, so that other SPs can use it to build new and more complex services.
+ * **accepting new developers**' to be part of the contributors of new developed services;
+ * **accepting new services** to be deployed in the platform;
+ * **accepting new service instance requests** from customers interested in instantiating a service;
+ * etc..
 
-When **automatic service scaling** is taken into account, adequately describing it in a service description is not a trivial task, and current service descriptions do not cover it in general. Validating the rest of the service description also poses very interesting difficulties when one goes beyond a simple description of URLs and ports. When the supporting infrastructure is not completely SDN based, or some integration with Physical Network Functions (PNFs) is needed, interfacing to OSS/BSS systems shall have to be considered. Special attention will be paid to the integration with legacy systems of the CSP. This Gatekeeper task deals exactly with this part of the problem, which can generically be called on-boarding. 
+## Development
+(if applicable)
+
+### Building
+Describe briefly how to build the software.
+
+### Dependencies
+Name all the dependencies needed by the software, including version, license (!), and a link. For example
+
+* [pyaml](https://pypi.python.org/pypi/pyaml) >=15.8.2 (WTFPL)
+
+### Contributing
+(if applicable) Description (encouraging) how to contribute to this project/repository.
+
+## Installation
+(if applicable) Describe briefly how to install the software. You may want to put a link to son-install instead:
+
+The installation of this component can be done using the [son-install](https://github.com/sonata-nfv/son-install) script.
+
+## Usage
+(if applicable) Describe briefly how to use the software.
+
+## License
+
+#### Useful Links
+
+* Any useful link and brief description. For example:
+* http://www.google/ Don't be evil.
+
+---
+#### Lead Developers
+
+The following lead developers are responsible for this repository and have admin rights. They can, for example, merge pull requests.
+
+* José Bonnet (jbonnet)
+* Name of lead developer (GitHub-username)
+
+#### Feedback-Chanel
+
+* Mailing list
+* GitHub issues
+----
 
 # Repository organization
 This repository is organized by **micro-service**.
