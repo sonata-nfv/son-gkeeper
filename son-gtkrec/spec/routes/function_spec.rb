@@ -15,10 +15,12 @@
 ## limitations under the License.
 require_relative '../spec_helper'
 
-RSpec.describe Repository, type: :model do
-  describe '#find_by_uuid' do
+RSpec.describe Function, type: :controller do
+  describe 'GET /functions' do
   end
   
-  describe '#find' do
+  describe 'GET /functions/:uuid' do
+    context 'with valid :uuid'
+    context 'with invalid :uuid'
   end
 end

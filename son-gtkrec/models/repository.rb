@@ -27,19 +27,6 @@ class Repository
     @logger = logger
   end
     
-  def create(descriptor)
-    @logger.debug "Repository.create("+descriptor.to_s+")"
-    begin
-      response = RestClient.post( @url, descriptor.to_json, content_type: :json, accept: :json)     
-      object = JSON.parse response
-      @logger.debug "Repository.create: object=#{object}"
-      object
-    rescue => e
-      @logger.error format_error(e.backtrace)
-      nil
-    end
-  end
-  
   def find_by_uuid(uuid)
     @logger.debug "Repository.find_by_uuid(#{uuid})"
     begin

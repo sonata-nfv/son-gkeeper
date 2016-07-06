@@ -68,10 +68,4 @@ class GtkRec < Sinatra::Base
       json_error 404, "No function with uuid #{params[:uuid]} was found"
     end
   end
-
-  get '/admin/logs' do
-    method = MODULE + ' GET /admin/logs'
-    logger.debug(method) {'entered'}
-    File.open('log/'+ENV['RACK_ENV']+'.log', 'r').read
-  end  
 end
