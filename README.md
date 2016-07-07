@@ -1,18 +1,21 @@
-# SONATA's Service Platform Gatekeeper
 [![Build Status](http://jenkins.sonata-nfv.eu/buildStatus/icon?job=son-gkeeper)](http://jenkins.sonata-nfv.eu/job/son-gkeeper)
 
+# SON-GKEEPER
 This is [SONATA](http://www.sonata-nfv.eu)'s Service Platform Gatekeeper's repository.
 
-Communication Service Providers (CSPs) in the 5G era will have to be able to open their infrastructures to Service Providers (SPs) that may not have any kind of close relationship with them, but a Supplier one: the SPs gets some amount of money, according to the agreed business model, from the CSPs. This is a radically distinct model from the one we are used to, in which SPs may, when allowed to, have to spend weeks (or sometimes even months) testing and integrating their services into the CSP’s infrastructure, with the CSP’s personnel having time to look into every aspect of the (new) proposed service, namely security, reliability, etc. In this new model, CSPs will have to:
+The Gatekeeper is the component that implements all the **Northbound Interface** (NBI) of the Servive Platform.
+ 
+This NBI provides systems like the [son-push](http://github.com/sonata-nfv/son-push), [son-gui](http://github.com/sonata-nfv/son-gui) and [son-bss](http://github.com/sonata-nfv/son-bss) access to the **Service Platform**, for features like:
 
- * **accept new services**’ descriptions (or updates on existing ones), according to a pre-defined and agreed format;
- * **validate** those descriptions, to guarantee that they’re both correct and do not seem to introduce any obvious threat to the quality of service that is expected the CSP to provide;
- * automatically **validate** the new service, namely in areas such as integration with authorized resources, these resources’ consumption and performance;
- * make the new service **available on its catalogue**, so that other SPs can use it to build new and more complex services.
+ * **accepting new developers**' to be part of the contributors of new developed services;
+ * **accepting new services**, in the **package format**, to be deployed in the platform;
+ * **validating submited packages**, both in terms of file format and developer submitting the package;
+ * **accepting new service instance requests** from customers interested in instantiating a service;
+ * **following a service performance** through automatically monitoring each on-boarded service or function;
+ * etc..
 
-When **automatic service scaling** is taken into account, adequately describing it in a service description is not a trivial task, and current service descriptions do not cover it in general. Validating the rest of the service description also poses very interesting difficulties when one goes beyond a simple description of URLs and ports. When the supporting infrastructure is not completely SDN based, or some integration with Physical Network Functions (PNFs) is needed, interfacing to OSS/BSS systems shall have to be considered. Special attention will be paid to the integration with legacy systems of the CSP. This Gatekeeper task deals exactly with this part of the problem, which can generically be called on-boarding. 
-
-# Repository organization
+## Development
+This section details what is needed for developing the Gatekeeper.
 This repository is organized by **micro-service**.
 
 Micro-services currently implemented are the following:
@@ -24,5 +27,81 @@ Micro-services currently implemented are the following:
 
 The remaining micro-services ([`son-gtkusr`](https://github.com/sonata-nfv/son-gkeeper/tree/master/son-gtkusr), [`son-gtklic`](https://github.com/sonata-nfv/son-gkeeper/tree/master/son-gtklic) and [`son-gtkkpi`](https://github.com/sonata-nfv/son-gkeeper/tree/master/son-gtkkpi), and eventually others), will be implemented in the course of the project.
 
-# Testing strategies
-For testing the code provided you should check each of the the `README.md` files of each of the folders below this one. 
+### Building
+Describe briefly how to build the software.
+
+### Dependencies
+Name all the dependencies needed by the software, including version, license (!), and a link. For example
+
+* [activerecord]
+* [addressable]
+* [bunny], >= 2.3.0
+* [ci_reporter_rspec]
+* [foreman]
+* [pg]
+* [pry]
+* [puma]
+* [rack-parser], require: rack/parser
+* [rack-test], require: rack/test
+* [rake]
+* [rest-client]
+* [rspec-its]
+* [rspec-mocks]
+* [rspec]
+* [rubocop-checkstyle_formatter], require: false
+* [rubocop]
+* [ruby]
+* [rubyzip], >= 1.0.0
+* [sinatra-active-model-serializers], ~> 0.2.0
+* [sinatra-activerecord]
+* [sinatra-contrib], ~> 1.4.1, require: false
+* [sinatra-cross_origin]
+* [sinatra-logger]
+* [sinatra], ~> 1.4.3, require: sinatra/base
+
+
+
+* [pyaml](https://pypi.python.org/pypi/pyaml) >=15.8.2 (WTFPL)
+
+### Contributing
+Contributing to the Gatekeeper is really easy. You must:
+
+1. Clone [this repository](http://github.com/sonata-nfv/son-gkeeper);
+1. Work on your proposed changes, preferably through submiting [issues](https://github.com/sonata-nfv/son-gkeeper/issues);
+1. Submit a Pull Request;
+1. Follow/answer related [issues](https://github.com/sonata-nfv/son-gkeeper/issues) (see Feedback-Chanel, below).
+
+## Installation
+Installing the Gatekeeper is really easy. You'll need:
+
+1. the [ruby](http://www.ruby-lang.org) programming language: we prefer doing this by using a version manager tool such as [rvm](https://rvm.io) or [rbenv](http://rbenv.org) (we are using version **2.2.3**);
+1. in each one of the subfolders, just run:
+  1. `bundle install`
+  1. please follow each specific folder's instructions on which environment variables to set
+1. ...
+
+The installation of this component can be done using the [son-install](https://github.com/sonata-nfv/son-install) script.
+
+## Usage
+(if applicable) Describe briefly how to use the software.
+
+## License
+
+#### Useful Links
+
+* Any useful link and brief description. For example:
+* http://www.google/ Don't be evil.
+
+---
+#### Lead Developers
+
+The following lead developers are responsible for this repository and have admin rights. They can, for example, merge pull requests.
+
+* José Bonnet ([jbonnet](https://github.com/jbonnet))
+* Name of lead developer (GitHub-username)
+
+#### Feedback-Chanel
+
+* Mailing list
+* [GitHub issues](https://github.com/sonata-nfv/son-gkeeper/issues)
+
