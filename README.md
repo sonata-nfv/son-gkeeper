@@ -16,14 +16,17 @@ This NBI provides systems like the [son-push](http://github.com/sonata-nfv/son-p
 
 ## Development
 This section details what is needed for developing the Gatekeeper.
+
 This repository is organized by **micro-service**.
 
 Micro-services currently implemented are the following:
 
-1. [`son-gtkapi`](https://github.com/sonata-nfv/son-gkeeper/tree/master/son-gtkapi): the only 'door' to the Gatekeeper, where the API is exposed;
-1. [`son-gtkpkg`](https://github.com/sonata-nfv/son-gkeeper/tree/master/son-gtkpkg): where all Packages features are implemented;
-1. [`son-gtksrv`](https://github.com/sonata-nfv/son-gkeeper/tree/master/son-gtksrv): where all Services features are implemented;
-1. [`son-gtkvim`](https://github.com/sonata-nfv/son-gkeeper/tree/master/son-gtkvim): where all Vims features are implemented;
+* [`son-gtkapi`](https://github.com/sonata-nfv/son-gkeeper/tree/master/son-gtkapi): the only 'door' to the Gatekeeper, where the API is exposed;
+* [`son-gtkpkg`](https://github.com/sonata-nfv/son-gkeeper/tree/master/son-gtkpkg): where all Packages features are implemented;
+* [`son-gtksrv`](https://github.com/sonata-nfv/son-gkeeper/tree/master/son-gtksrv): where all Services features are implemented;
+* [`son-gtkfcnt`](https://github.com/sonata-nfv/son-gkeeper/tree/master/son-gtkfcnt): where all Functions features are implemented;
+* [`son-gtkvim`](https://github.com/sonata-nfv/son-gkeeper/tree/master/son-gtkvim): where all Vims features are implemented;
+* [`son-gtkrec`](https://github.com/sonata-nfv/son-gkeeper/tree/master/son-gtkrec): where all Records features are implemented;
 
 The remaining micro-services ([`son-gtkusr`](https://github.com/sonata-nfv/son-gkeeper/tree/master/son-gtkusr), [`son-gtklic`](https://github.com/sonata-nfv/son-gkeeper/tree/master/son-gtklic) and [`son-gtkkpi`](https://github.com/sonata-nfv/son-gkeeper/tree/master/son-gtkkpi), and eventually others), will be implemented in the course of the project.
 
@@ -104,4 +107,3 @@ The following lead developers are responsible for this repository and have admin
 
 * Mailing list
 * [GitHub issues](https://github.com/sonata-nfv/son-gkeeper/issues)
-
