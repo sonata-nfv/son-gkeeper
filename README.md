@@ -17,7 +17,7 @@ This NBI provides systems like the [son-push](http://github.com/sonata-nfv/son-p
 ## Development
 This section details what is needed for developing the Gatekeeper.
 
-This repository is organized by **micro-service**.
+This repository is organized by **micro-service** (one folder to one micro-service).
 
 Micro-services currently implemented are the following:
 
@@ -28,10 +28,16 @@ Micro-services currently implemented are the following:
 1. [`son-gtkvim`](https://github.com/sonata-nfv/son-gkeeper/tree/master/son-gtkvim): where all Vims features are implemented;
 1. [`son-gtkrec`](https://github.com/sonata-nfv/son-gkeeper/tree/master/son-gtkrec): where all Records§ features are implemented;
 
+All these micro-services have been implemented using [`ruby`](https://github.com/ruby/ruby/tree/ruby_2_2) programming language and the [`sinatra`](https://github.com/sinatra/sinatra) framework. This is not mandatory, as long as the micro-service to be implemented provides a REST API.
+
 The remaining micro-services ([`son-gtkusr`](https://github.com/sonata-nfv/son-gkeeper/tree/master/son-gtkusr), [`son-gtklic`](https://github.com/sonata-nfv/son-gkeeper/tree/master/son-gtklic) and [`son-gtkkpi`](https://github.com/sonata-nfv/son-gkeeper/tree/master/son-gtkkpi), and eventually others), will be implemented in the course of the project.
 
 ### Building
-Describe briefly how to build the software.
+'Building' the Gatekkeper, given the approach mentioned above, is more like 'composing' it from the available micro-services. So:
+
+* each micro-service is provided in its own container (we're using [`docker`](https://github.com/docker/docker));
+* the `Dockerfile` in each folder specifies the environment the container needs to work;
+* the `docker-compose.yml` file in the root of this repository provides the linking of all the micro-services.
 
 ### Dependencies
 Name all the dependencies needed by the software, including version, license (!), and a link. For example
@@ -56,7 +62,8 @@ Name all the dependencies needed by the software, including version, license (!)
 * [`rspec-mocks`](https://github.com/rspec/rspec-mocks) >=3.5.0 (MIT)
 * [`rspec-support`](https://github.com/rspec/rspec-support) >=3.5.0 (MIT)
 * [`rubocop`](https://github.com/bbatsov/rubocop) >=0.41.2 (MIT)
-* [`rubocop-checkstyle_formatter`](https://github.com/eitoball/rubocop-checkstyle_formatter) >=0.2.0 MIT()
+* [`rubocop-checkstyle_formatter`](https://github.com/eitoball/rubocop-checkstyle_formatter) >=0.2.0 (MIT)
+* [`ruby`](https://github.com/ruby/ruby/tree/ruby_2_2) >=2.2.0 (MIT)
 * [`rubyzip`](https://github.com/rubyzip/rubyzip) >=1.2.0 (BSD-2-CLAUSE)
 * [`sinatra`](https://github.com/sinatra/sinatra) >=1.4.7 (MIT)
 * [`sinatra-active-model-serializers`](https://github.com/SauloSilva/sinatra-active-model-serializers) 0.2.0 (MIT)
