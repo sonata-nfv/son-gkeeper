@@ -234,6 +234,17 @@ class Package
   def duplicated_package?(descriptor)
     @catalogue.find({'vendor'=>descriptor['vendor'], 'name'=>descriptor['name'], 'version'=>descriptor['version']})
   end
+
+  def store_zip()
+    saved_zip = @catalogue.create_zip(@package_file)
+    if saved_zip && saved_zip['uuid']
+      @logger.debug('Package.store') {"saved_zip is "+saved_zip.to_s}
+      saved_zip
+    else
+      @logger.debug('Package.store') {'failled to store zip with no response'}
+      nil
+    end
+  end
   
   def store()
     @logger.debug('Package.store') {"descriptor "+@descriptor.to_s}
