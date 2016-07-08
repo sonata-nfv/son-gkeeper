@@ -17,6 +17,9 @@
 require 'tempfile'
 require 'json'
 require 'pp'
+require 'uri'
+require 'net/http'
+require 'rest-client'
 
 class Catalogue
   
