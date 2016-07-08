@@ -21,12 +21,12 @@ This repository is organized by **micro-service**.
 
 Micro-services currently implemented are the following:
 
-* [`son-gtkapi`](https://github.com/sonata-nfv/son-gkeeper/tree/master/son-gtkapi): the only 'door' to the Gatekeeper, where the API is exposed;
-* [`son-gtkpkg`](https://github.com/sonata-nfv/son-gkeeper/tree/master/son-gtkpkg): where all Packages features are implemented;
-* [`son-gtksrv`](https://github.com/sonata-nfv/son-gkeeper/tree/master/son-gtksrv): where all Services features are implemented;
-* [`son-gtkfcnt`](https://github.com/sonata-nfv/son-gkeeper/tree/master/son-gtkfcnt): where all Functions features are implemented;
-* [`son-gtkvim`](https://github.com/sonata-nfv/son-gkeeper/tree/master/son-gtkvim): where all Vims features are implemented;
-* [`son-gtkrec`](https://github.com/sonata-nfv/son-gkeeper/tree/master/son-gtkrec): where all Records features are implemented;
+1. [`son-gtkapi`](https://github.com/sonata-nfv/son-gkeeper/tree/master/son-gtkapi): the only 'door' to the Gatekeeper, where the API is exposed;
+1. [`son-gtkpkg`](https://github.com/sonata-nfv/son-gkeeper/tree/master/son-gtkpkg): where all Packages features are implemented;
+1. [`son-gtksrv`](https://github.com/sonata-nfv/son-gkeeper/tree/master/son-gtksrv): where all Services features are implemented;
+1. [`son-gtkfnct`](https://github.com/sonata-nfv/son-gkeeper/tree/master/son-gtkfnct): where all Functions features are implemented;
+1. [`son-gtkvim`](https://github.com/sonata-nfv/son-gkeeper/tree/master/son-gtkvim): where all Vims features are implemented;
+1. [`son-gtkrec`](https://github.com/sonata-nfv/son-gkeeper/tree/master/son-gtkrec): where all Records§ features are implemented;
 
 The remaining micro-services ([`son-gtkusr`](https://github.com/sonata-nfv/son-gkeeper/tree/master/son-gtkusr), [`son-gtklic`](https://github.com/sonata-nfv/son-gkeeper/tree/master/son-gtklic) and [`son-gtkkpi`](https://github.com/sonata-nfv/son-gkeeper/tree/master/son-gtkkpi), and eventually others), will be implemented in the course of the project.
 
@@ -36,35 +36,35 @@ Describe briefly how to build the software.
 ### Dependencies
 Name all the dependencies needed by the software, including version, license (!), and a link. For example
 
-* [activerecord]
-* [addressable]
-* [bunny], >= 2.3.0
-* [ci_reporter_rspec]
-* [foreman]
-* [pg]
-* [pry]
-* [puma]
-* [rack-parser], require: rack/parser
-* [rack-test], require: rack/test
-* [rake]
-* [rest-client]
-* [rspec-its]
-* [rspec-mocks]
-* [rspec]
-* [rubocop-checkstyle_formatter], require: false
-* [rubocop]
-* [ruby]
-* [rubyzip], >= 1.0.0
-* [sinatra-active-model-serializers], ~> 0.2.0
-* [sinatra-activerecord]
-* [sinatra-contrib], ~> 1.4.1, require: false
-* [sinatra-cross_origin]
-* [sinatra-logger]
-* [sinatra], ~> 1.4.3, require: sinatra/base
-
-
-
-* [pyaml](https://pypi.python.org/pypi/pyaml) >=15.8.2 (WTFPL)
+* [`activerecord`](https://github.com/rails/rails/tree/master/activerecord) >=5.0.0 (MIT)
+* [`addressable`](https://github.com/sporkmonger/addressable) >=2.4.0 (Apache 2.0)
+* [`bunny`](https://github.com/ruby-amqp/bunny) >=2.4.0 (MIT)
+* [`ci_reporter`](https://github.com/ci-reporter/ci_reporter) >=2.0.0 (MIT)
+* [`ci_reporter_rspec`](https://github.com/ci-reporter/ci_reporter_rspec) >=1.0.0 (MIT)
+* [`foreman`](https://github.com/ddollar/foreman) >=0.82.0 (MIT)
+* [`pg`](https://bitbucket.org/ged/ruby-pg/wiki/Home) >=0.18.4 (MIT)
+* [`pry`](https://github.com/pry/pry) 0.10.3 (MIT)
+* [`puma`](https://github.com/puma/puma) >=3.4.0 (BSD-3-CLAUSE)
+* [`rack-parser`](https://github.com/achiu/rack-parser) >=0.7.0 (MIT)
+* [`rack-test`](https://github.com/brynary/rack-test) >=0.6.3 (MIT)
+* [`rake`](https://github.com/ruby/rake) >=11.2.2 (MIT)
+* [`rest-client`](https://github.com/rest-client/rest-client) >=2.0.0 (Apache 2.0)
+* [`rspec`](https://github.com/rspec/rspec) >=3.5.0 (MIT)
+* [`rspec-core`](https://github.com/rspec/rspec-core) >=3.5.1 (MIT)
+* [`rspec-expectations`](https://github.com/rspec/rspec-expectations) >=3.5.0 (MIT)
+* [`rspec-its`](https://github.com/rspec/rspec-its) >=1.2.0 (MIT)
+* [`rspec-mocks`](https://github.com/rspec/rspec-mocks) >=3.5.0 (MIT)
+* [`rspec-support`](https://github.com/rspec/rspec-support) >=3.5.0 (MIT)
+* [`rubocop`](https://github.com/bbatsov/rubocop) >=0.41.2 (MIT)
+* [`rubocop-checkstyle_formatter`](https://github.com/eitoball/rubocop-checkstyle_formatter) >=0.2.0 MIT()
+* [`rubyzip`](https://github.com/rubyzip/rubyzip) >=1.2.0 (BSD-2-CLAUSE)
+* [`sinatra`](https://github.com/sinatra/sinatra) >=1.4.7 (MIT)
+* [`sinatra-active-model-serializers`](https://github.com/SauloSilva/sinatra-active-model-serializers) 0.2.0 (MIT)
+* [`sinatra-activerecord`](https://github.com/SauloSilva/sinatra-activerecord) 2.0.4 (MIT)
+* [`sinatra-contrib`](https://github.com/sinatra/sinatra-contrib) >=1.4.7 (MIT)
+* [`sinatra-cross_origin`](https://github.com/britg/sinatra-cross_origin) >=0.3.2 (MIT)
+* [`sinatra-logger`](https://github.com/kematzy/sinatra-logger) >=0.1.1 (MIT)
+* [`webmock`](https://github.com/bblimke/webmock) >=2.1.0 (MIT)
 
 ### Contributing
 Contributing to the Gatekeeper is really easy. You must:
