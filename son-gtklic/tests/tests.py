@@ -53,7 +53,7 @@ class TestCase(unittest.TestCase):
 
         self.assertTrue(type_uuid in types_list)
 
-    def test_delete_type(self):
+    def test_zdelete_type(self):
 
         response = self.app.delete("/types/" + type_uuid)
         self.assertEqual(response.status_code, 200)
@@ -90,9 +90,15 @@ class TestCase(unittest.TestCase):
 
         self.assertTrue(service_uuid in service_list)
 
-    def test_delete_service(self):
+        response = self.app.get("/services/"+service_uuid)
+        self.assertEqual(response.status_code, 200)
+        resp_json = json.loads(response.data)
+        self.assertEqual(resp_json['service_uuid'], service_uuid)
 
-        response = self.app.delete("/services", data=dict(service_uuid=service_uuid))
+
+    def test_zdelete_service(self):
+
+        response = self.app.delete("/services/"+service_uuid)
         self.assertEqual(response.status_code, 200)
         resp_json = json.loads(response.data)
 

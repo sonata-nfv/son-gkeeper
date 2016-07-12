@@ -31,6 +31,9 @@ class LicensesList(Resource):
             if license_type is None:
                 return "License type not found", 404
 
+            if license_type.active == False:
+                return "License type is not active", 400
+
             service = Service.query.filter_by(service_uuid=request.form['service_uuid']).first()
 
 

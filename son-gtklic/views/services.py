@@ -13,6 +13,26 @@ from db import db_session
 
 
 class Services(Resource):
+    def get(self, serviceID):
+        service = Service.query.filter_by(service_uuid=serviceID).first()
+
+        return jsonify(service.serialize)
+
+    def delete(self, serviceID):
+        service = Service.query.filter_by(service_uuid=serviceID).first()
+
+        if service is None:
+            return "Service ID not found", 404
+
+        if service.active is False:
+            return make_response(jsonify(service.serialize), 304)
+
+        service.active = False
+        db_session.commit()
+
+        return jsonify(service.serialize)
+
+class ServicesList(Resource):
 
     def get(self):
         service = Service.query.all()
@@ -40,17 +60,4 @@ class Services(Resource):
 
         return jsonify(new_service.serialize)
 
-    def delete(self):
-        service = Service.query.filter_by(service_uuid=request.form.get('service_uuid')).first()
 
-        if service is None:
-            return "Service ID not found", 404
-
-        if service.active is False:
-
-            return make_response(jsonify(service.serialize), 304)
-
-        service.active = False
-        db_session.commit()
-
-        return jsonify(service.serialize)
