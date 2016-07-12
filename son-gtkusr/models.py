@@ -5,31 +5,34 @@ from sqlalchemy import Column, Integer, String, Boolean, DateTime, ForeignKey
 from db import Base
 
 
-class Type(Base):
-    __tablename__ = 'types'
+class Users(Base):
+    __tablename__ = 'users'
 
-    type_uuid = Column(String, primary_key=True, default=str(uuid.uuid4()))
-    type = Column(String)
-    duration = Column(Integer)
-    active = Column(Boolean, default=True)
+    user_uuid = Column(String, primary_key=True, default=str(uuid.uuid4()))
+    access_token = Column(String)
+    platform = Column(String)
+    username = Column(String)
+    email = Column(String)
 
-    def __init__(self, arg_type, duration):
-        self.type_uuid = str(uuid.uuid4())
-        self.type = arg_type
-        self.duration = duration
-        self.active = True
+    def __init__(self, access_token, platform, username, email):
+        self.user_uuid = str(uuid.uuid4())
+        self.access_token = access_token
+        self.platform = platform
+        self.username = username
+        self.email = email
 
     def __repr__(self):
-        return "<License(uuid='%s', type='%s', duration='%s', active='%s')>" % (self.type_uuid, self.type, self.duration, self.active)
+        return "<GitHub(uuid='%s', access_token='%s', platform='%s', username='%s', email='%s')>" % (self.user_uuid, self.access_token, self.platform, self.username, self.email)
 
     @property
     def serialize(self):
         """Return object data in easily serializeable format"""
         return {
-            'type_uuid': self.type_uuid,
-            'type': self.type,
-            'duration': self.duration,
-            'active': self.active
+            'user_uuid': self.user_uuid,
+            'access_token': self.access_token,
+            'platform': self.platform,
+            'username': self.username,
+            'email': self.email
         }
 
 
