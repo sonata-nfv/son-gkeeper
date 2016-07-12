@@ -65,8 +65,8 @@ class TestCase(unittest.TestCase):
         global service_uuid
 
         response = self.app.post("/services", data=dict(description="Test",
-                                                        expiringDate="03-07-20 13:46",
-                                                        startingDate="22-06-16 13:46",
+                                                        expiringDate="03-07-2020 13:46",
+                                                        startingDate="22-06-2016 13:46",
                                                         active=True))
         self.assertEqual(response.status_code, 200)
         resp_json = json.loads(response.data)
@@ -75,7 +75,7 @@ class TestCase(unittest.TestCase):
         expiringDate = resp_json["expiringDate"]
         desc = resp_json["description"]
 
-        self.assertEqual(expiringDate, "03-07-20 13:46")
+        self.assertEqual(expiringDate, "03-07-2020 13:46")
         self.assertEqual(desc, "Test")
 
     def test_get_service(self):
@@ -105,7 +105,7 @@ class TestCase(unittest.TestCase):
                                                         service_uuid=service_uuid,
                                                         user_uuid="aaa-aaa-aaaa-aaa",
                                                         description="Test",
-                                                        startingDate="30-06-16 13:46",
+                                                        startingDate="30-06-2016 13:46",
                                                         active=True))
         self.assertEqual(response.status_code, 200)
         resp_json = json.loads(response.data)
@@ -114,7 +114,7 @@ class TestCase(unittest.TestCase):
         expiringDate = resp_json["expiringDate"]
         desc = resp_json["description"]
 
-        self.assertEqual(expiringDate, "30-07-16 13:46")
+        self.assertEqual(expiringDate, "30-07-2016 13:46")
         self.assertEqual(desc, "Test")
 
     def test_zget_license(self):
@@ -145,13 +145,13 @@ class TestCase(unittest.TestCase):
 
         response = self.app.get("/licenses/" + license_uuid, query_string="user_uuid=aaa-aaa-aaaa-aaa")
         resp_json = json.loads(response.data)
-        expiringDate = datetime.strptime(str(resp_json["expiringDate"]), "%d-%m-%y %H:%M")
+        expiringDate = datetime.strptime(str(resp_json["expiringDate"]), "%d-%m-%Y %H:%M")
 
         response = self.app.post("/licenses/" + license_uuid)
         self.assertEqual(response.status_code, 200)
         resp_json = json.loads(response.data)
 
-        self.assertEqual(datetime.strptime(str(resp_json["expiringDate"]), "%d-%m-%y %H:%M"),
+        self.assertEqual(datetime.strptime(str(resp_json["expiringDate"]), "%d-%m-%Y %H:%M"),
                          expiringDate + timedelta(days=30))
 
     def test_zsuspend_license(self):

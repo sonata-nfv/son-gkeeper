@@ -25,10 +25,10 @@ class Services(Resource):
         try:
             startingDate = datetime.datetime.now()
             if not (request.form.get('startingDate') is None):
-                startingDate = datetime.datetime.strptime(str(request.form.get('startingDate')),"%d-%m-%y %H:%M")
+                startingDate = datetime.datetime.strptime(str(request.form.get('startingDate')),"%d-%m-%Y %H:%M")
 
             new_service = Service(request.form['description'],
-                    datetime.datetime.strptime(str(request.form['expiringDate']),"%d-%m-%y %H:%M"),
+                    datetime.datetime.strptime(str(request.form['expiringDate']),"%d-%m-%Y %H:%M"),
                     startingDate,
                     request.form.get('active'))
         except:

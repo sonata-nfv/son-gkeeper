@@ -39,7 +39,7 @@ class LicensesList(Resource):
 
             startingDate = datetime.now()
             if not (request.form.get('startingDate') is None):
-                startingDate = datetime.strptime(str(request.form.get('startingDate')), "%d-%m-%y %H:%M")
+                startingDate = datetime.strptime(str(request.form.get('startingDate')), "%d-%m-%Y %H:%M")
 
             expiringDate = startingDate + timedelta(days=license_type.duration)
 

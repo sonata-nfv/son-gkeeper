@@ -74,8 +74,8 @@ class License(Base):
             'user_uuid': self.user_uuid,
             'service_uuid': self.service_uuid,
             'description': self.description,
-            'startingDate': self.startingDate.strftime('%d-%m-%y %H:%M'),
-            'expiringDate': self.expiringDate.strftime('%d-%m-%y %H:%M'),
+            'startingDate': self.startingDate.strftime('%d-%m-%Y %H:%M'),
+            'expiringDate': self.expiringDate.strftime('%d-%m-%Y %H:%M'),
             'active': self.active,
             'suspended': self.suspended
         }
@@ -109,8 +109,8 @@ class Service(Base):
         return {
             'service_uuid': self.service_uuid,
             'description': self.description,
-            'startingDate': self.startingDate.strftime('%d-%m-%y %H:%M'),
-            'expiringDate': self.expiringDate.strftime('%d-%m-%y %H:%M'),
+            'startingDate': self.startingDate.strftime('%d-%m-%Y %H:%M'),
+            'expiringDate': self.expiringDate.strftime('%d-%m-%Y %H:%M'),
             'active': self.active
         }
 
