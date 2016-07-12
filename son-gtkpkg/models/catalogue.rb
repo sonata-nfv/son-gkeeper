@@ -47,7 +47,7 @@ class Catalogue
     #url = URI("http://api.int.sonata-nfv.eu:4002/catalogues/son-packages")
     url = URI(@url)
     http = Net::HTTP.new(url.host, url.port)
-    data = File.read('/home/tchalas/Documents/Sonata/sonata_example.son')  #File.read("/usr/test.amr")
+    data = File.read(zip)  #File.read("/usr/test.amr")
     request = Net::HTTP::Post.new(url)
     request.body = data
     # These fields are mandatory
