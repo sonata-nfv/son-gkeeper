@@ -33,20 +33,19 @@ class Package
     @logger = logger
     @service = {}
     @functions = []
-    require_relative 'catalogue'
-    @catalogue = Catalogue.new("ff","ff")
-    #@url = @catalogue.url
-    #if params[:descriptor]
-    # @descriptor = params[:descriptor]
-    #  @input_folder = File.join('tmp', SecureRandom.hex)
-    #  FileUtils.mkdir_p @input_folder unless File.exists? @input_folder
-    #  @output_folder = File.join( 'public', 'packages', @descriptor['uuid'])
-    #  FileUtils.mkdir_p @output_folder unless File.exists? @output_folder
-    #elsif params[:io]
-    #  @package_file = params[:io]
-    #else
-    #  @logger.error 'Package.initialize: either @descriptor or @io must be given'
-    #end
+    @catalogue = catalogue
+    @url = @catalogue.url
+    if params[:descriptor]
+     @descriptor = params[:descriptor]
+      @input_folder = File.join('tmp', SecureRandom.hex)
+      FileUtils.mkdir_p @input_folder unless File.exists? @input_folder
+      @output_folder = File.join( 'public', 'packages', @descriptor['uuid'])
+      FileUtils.mkdir_p @output_folder unless File.exists? @output_folder
+    elsif params[:io]
+      @package_file = params[:io]
+    else
+      @logger.error 'Package.initialize: either @descriptor or @io must be given'
+    end
   end
     
   # Builds a package file from its descriptors, and returns a handle to it
