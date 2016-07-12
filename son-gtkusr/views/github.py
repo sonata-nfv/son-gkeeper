@@ -16,6 +16,7 @@ from db import db_session
 github = Blueprint('github', __name__)
 
 
-@github.route("/auth_callback")
+@github.route("/auth_callback", methods = ['GET'])
 def auth_callback():
-    return request.args.get('code'), 200
+    return request.args.get("code"), 200
+
