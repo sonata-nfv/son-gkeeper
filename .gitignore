@@ -10,3 +10,4 @@
 **/Gemfile.lock
 **/.bundle
 son-gtksrv/db/postgres
+son-gtkpkg/vendor
