@@ -1,4 +1,5 @@
 
+import settings
 from flask import Flask
 from flask_restful import reqparse, abort, Api, Resource
 
@@ -19,5 +20,5 @@ api.add_resource(LicensesList, '/licenses')
 api.add_resource(Licenses, '/licenses/<licenseID>')
 
 if __name__ == '__main__':
-    app.run(port=5000, host="0.0.0.0")
+    app.run(port=settings.PORT, host=settings.HOST)
 
