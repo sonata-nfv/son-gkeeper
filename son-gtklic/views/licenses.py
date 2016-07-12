@@ -37,6 +37,9 @@ class LicensesList(Resource):
             if service is None:
                 return "Service not found", 404
 
+            if service.active == False:
+                return "Service is not active", 400
+
             startingDate = datetime.now()
             if not (request.form.get('startingDate') is None):
                 startingDate = datetime.strptime(str(request.form.get('startingDate')), "%d-%m-%Y %H:%M")
