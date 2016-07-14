@@ -90,17 +90,11 @@ Installing the Gatekeeper is really easy. You'll need:
   1. please follow each specific folder's instructions on which environment variables to set
 1. ...
 
-The installation of this component can be done using the [son-install](https://github.com/sonata-nfv/son-install) script.
-
 ## Usage
-(if applicable) Describe briefly how to use the software.
+Please refer to the [`son-gtkapi`](https://github.com/sonata-nfv/son-gkeeper/tree/master/son-gtkapi) repository for examples of usage of each one of the already developed micro-services.
 
 ## License
-
-#### Useful Links
-
-* Any useful link and brief description. For example:
-* http://www.google/ Don't be evil.
+The license of the SONATA Gatekeeper is Apache 2.0 (see [LICENSE.md](https://github.com/sonata-nfv/son-editorgkeeper/blob/master/LICENSE).
 
 ---
 #### Lead Developers
