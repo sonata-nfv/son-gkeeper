@@ -15,14 +15,47 @@ The configuration of the Gatekeeper's API micro-service is done mostly by defini
 
 Future work includes evolving the way we store these environment variables, as well as avoiding at least some of the repetition between this information and the one provided in the [`docker-compose.yml`](https://github.com/sonata-nfv/son-gkeeper/blob/master/docker-compose.yml).
 
-## Tests
-Testing is done with the `RSpec` framework.
+For the configuration of the other micro-services, please see their `README` files.
 
-To support `XML` reports, the [`ci_reporter`](https://github.com/ci-reporter/ci_reporter) `gem` was used. You can run tests by invoking
+## Usage
+To use this application, we write
+```sh
+$ foreman start
+```
+
+[`Foreman`](https://github.com/ddollar/foreman) is a `ruby gem` for managing applications based on a `Procfile`. In our case, this file has, at the moment of writing, the following content:
+
+```sh
+web: bundle exec rackup -p $PORT
+```
+
+If the environment variable `PORT` is not defined, the `5000` value is assumed for it.
+
+### Implemented API
+The implemented API of the Gatekeeper is the following:
+
+* `/`:
+** `GET`: 
+* `/api-doc`: 
+** `GET`: 
+* `/packages`:
+** `GET`:
+* `/services`:
+* `/functions`:
+* `/vims`:
+* `/records`:
+
+## Tests
+We do three kinds of automated tests:
+
+* Unit tests, which are done with the `RSpec` framework (see the `./spec/`folder);
+* Integration tests, which are done with a set of `shell` scripts and the `curl` command (see the [`son-tests`](https://github.com/sonata-nfv/son-tests));
+* White-box tests, which are done by using the [`ci_reporter`](https://github.com/ci-reporter/ci_reporter) `gem`, generating `XML` reports by executing the command
 
 ```sh
 $ bundle exec rake ci:all
 ```
+everytime a *pull request* is done.
 
 ###Manual testing
 Manual testing of the current version of the `API` can be done either using a web browser or the `curl` command, using the **Integration** environment (for now), with the Athens Testbed coonected and using the following `IP` adrress:
@@ -93,18 +126,6 @@ To obtain the status of the request with uuid 7dfbb948-144d-41d7-839c-256cc24220
 curl -X GET -H "Content-Type:application/json" http://sp.int3.sonata-nfv.eu:32001/vim_requests/7dfbb948-144d-41d7-839c-256cc242201b```
 ```
 
-## Usage
-To use this application, we write
-```sh
-$ foreman start
-```
 
-[`Foreman`](https://github.com/ddollar/foreman) is a `ruby gem` for managing applications based on a `Procfile`. In our case, this file has, at the moment of writing, the following content:
-
-```sh
-web: bundle exec rackup -p $PORT
-```
-
-If the environment variable `PORT` is not defined, the `5000` value is assumed for it.
 
 
