@@ -4,14 +4,14 @@
 This folder has the code and tests for the Gatekeeper's API.
 
 ## Configuration
-The configuration of the Gatekeeper's API micro-service is done mostly by defining `ENV` variables in the `Dockerfile`. These variables are:
+The configuration of the Gatekeeper's API micro-service is done mostly by defining `ENV` variables in the [`Dockerfile`](https://github.com/sonata-nfv/son-gkeeper/blob/master/son-gtkapi/Dockerfile). These variables are:
 
 * `PORT`: the port the micro-service is to provide it's services, currently `5000`;
-* `PACKAGE_MANAGEMENT_URL`: the , currently `http://son-gtkpkg:5100`;
-* `SERVICE_MANAGEMENT_URL`: the , currently `http://son-gtksrv:5300`;
-* `FUNCTION_MANAGEMENT_URL`: the  , currently `http://son-gtkfnct:5500`;
-* `VIM_MANAGEMENT_URL`: the  , currently `http://son-gtkvim:5700`;
-* `RECORD_MANAGEMENT_URL`: the  , currently `http://son-gtkrec:5800`;
+* `PACKAGE_MANAGEMENT_URL`: the URL of the Package Management micro-service, currently `http://son-gtkpkg:5100`;
+* `SERVICE_MANAGEMENT_URL`: the URL of the Service Management micro-service, currently `http://son-gtksrv:5300`;
+* `FUNCTION_MANAGEMENT_URL`: the URL of the Function Management micro-service, currently `http://son-gtkfnct:5500`;
+* `VIM_MANAGEMENT_URL`: the URL of the VIMs Management micro-service, currently `http://son-gtkvim:5700`;
+* `RECORD_MANAGEMENT_URL`: the URL of the Record Management micro-service, currently `http://son-gtkrec:5800`;
 
 Future work includes evolving the way we store these environment variables.
 
@@ -56,8 +56,6 @@ So, getting a package with that UUID is done by
 ```
 http://sp.int.sonata-nfv.eu:32001/packages/dcfb1a6c-770b-460b-bb11-3aa863f84fa0
 ```
-
-**Note:** the current implementation simply returns the `UUID` passed as a parameter, together with the `simplest-example.son` meta-data.
 
 ###POST '/packages'
 This manual test has to be executed by using `curl` (or some browser plugin allowing the execution of POSTs):
