@@ -40,7 +40,7 @@ The remaining micro-services ([`son-gtkusr`](https://github.com/sonata-nfv/son-g
 * the `docker-compose.yml` file in the root of this repository provides the linking of all the micro-services.
 
 ### Dependencies
-Name all the dependencies needed by the software, including version, license (!), and a link. For example
+The libraries the Gatekeep depends on are the following:
 
 * [`activerecord`](https://github.com/rails/rails/tree/master/activerecord) >=5.0.0 (MIT)
 * [`addressable`](https://github.com/sporkmonger/addressable) >=2.4.0 (Apache 2.0)
@@ -72,6 +72,8 @@ Name all the dependencies needed by the software, including version, license (!)
 * [`sinatra-cross_origin`](https://github.com/britg/sinatra-cross_origin) >=0.3.2 (MIT)
 * [`sinatra-logger`](https://github.com/kematzy/sinatra-logger) >=0.1.1 (MIT)
 * [`webmock`](https://github.com/bblimke/webmock) >=2.1.0 (MIT)
+
+For the micro-services implemented in [ruby](http://www.ruby-lang.org) these dependencies can be checked in each folder's `Gemfile`.
 
 ### Contributing
 Contributing to the Gatekeeper is really easy. You must:
