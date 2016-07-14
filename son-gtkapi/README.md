@@ -13,12 +13,12 @@ The configuration of the Gatekeeper's API micro-service is done mostly by defini
 * `VIM_MANAGEMENT_URL`: the URL of the VIMs Management micro-service, currently `http://son-gtkvim:5700`;
 * `RECORD_MANAGEMENT_URL`: the URL of the Record Management micro-service, currently `http://son-gtkrec:5800`;
 
-Future work includes evolving the way we store these environment variables.
+Future work includes evolving the way we store these environment variables, as well as avoiding at least some of the repetition between this information and the one provided in the [`docker-compose.yml`](https://github.com/sonata-nfv/son-gkeeper/blob/master/docker-compose.yml).
 
 ## Tests
 Testing is done with the `RSpec` framework.
 
-To support `XML` reports, the `[ci_reporter](https://github.com/ci-reporter/ci_reporter)` `gem` was used. You can run tests by invoking
+To support `XML` reports, the [`ci_reporter`](https://github.com/ci-reporter/ci_reporter) `gem` was used. You can run tests by invoking
 
 ```sh
 $ bundle exec rake ci:all
