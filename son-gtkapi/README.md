@@ -4,6 +4,16 @@
 This folder has the code and tests for the Gatekeeper's API.
 
 ## Configuration
+The configuration of the Gatekeeper's API micro-service is done mostly by defining `ENV` variables in the `Dockerfile`. These variables are:
+
+* `PORT`: the port the micro-service is to provide it's services, currently `5000`;
+* `PACKAGE_MANAGEMENT_URL`: the , currently `http://son-gtkpkg:5100`;
+* `SERVICE_MANAGEMENT_URL`: the , currently `http://son-gtksrv:5300`;
+* `FUNCTION_MANAGEMENT_URL`: the  , currently `http://son-gtkfnct:5500`;
+* `VIM_MANAGEMENT_URL`: the  , currently `http://son-gtkvim:5700`;
+* `RECORD_MANAGEMENT_URL`: the  , currently `http://son-gtkrec:5800`;
+
+Future work includes evolving the way we store these environment variables.
 
 ## Tests
 Testing is done with the `RSpec` framework.
