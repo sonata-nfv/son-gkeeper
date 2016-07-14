@@ -104,7 +104,6 @@ The following lead developers are responsible for this repository and have admin
 * José Bonnet ([jbonnet](https://github.com/jbonnet))
 * Name of lead developer (GitHub-username)
 
-#### Feedback-Chanel
+#### Feedback-Chanels
 
-* Mailing list
-* [GitHub issues](https://github.com/sonata-nfv/son-gkeeper/issues)
+Please use the [GitHub issues](https://github.com/sonata-nfv/son-gkeeper/issues) and the SONATA development mailing list `sonata-dev@lists.atosresearch.eu` for feedback.
