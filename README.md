@@ -90,7 +90,7 @@ Installing the Gatekeeper is really easy. You'll need:
 1. in each one of the subfolders, just run:
   1. `bundle install`
   1. please follow each specific folder's instructions on which environment variables to set
-1. ...
+  1. `foreman start`
 
 ## Usage
 Please refer to the [`son-gtkapi`](https://github.com/sonata-nfv/son-gkeeper/tree/master/son-gtkapi) repository for examples of usage of each one of the already developed micro-services.
