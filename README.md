@@ -104,7 +104,7 @@ The license of the SONATA Gatekeeper is Apache 2.0 (please see the [license](htt
 The following lead developers are responsible for this repository and have admin rights. They can, for example, merge pull requests.
 
 * José Bonnet ([jbonnet](https://github.com/jbonnet))
-* Name of lead developer (GitHub-username)
+* Felipe Vicens ([felipevicens](https://github.com/felipevicens))
 
 #### Feedback-Chanels
 
