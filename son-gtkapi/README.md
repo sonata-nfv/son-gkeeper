@@ -35,15 +35,24 @@ If the environment variable `PORT` is not defined, the `5000` value is assumed f
 The implemented API of the Gatekeeper is the following:
 
 * `/`:
-** `GET`: 
+** `GET`: provides a list of the API's endpoints;
 * `/api-doc`: 
-** `GET`: 
+** `GET`: the same as `/`, but in the HTML/[`OpenAPI`](https://openapis.org/) format;
 * `/packages`:
-** `GET`:
+** `GET`: provides a (paginated) list of packages, or a package file if the result is a single package;
+** `/:uuid`:
+** `POST`: 
+*** `GET`: provides the package file with the given `:uuid`;
 * `/services`:
 * `/functions`:
 * `/vims`:
 * `/records`:
+
+**Note:** all `GET`operations support pagination, though this still needs some work. This pagination can be done by using the `offset` and `limit` parameters, like in:
+```sh
+$ curl <resource_url>?offset=0,limit=10
+```
+This command will result in a list of `10`values (the `limit`) of the first page (`offset` zero). These are the default values used for those parameters.
 
 ## Tests
 We do three kinds of automated tests:
