@@ -35,18 +35,31 @@ If the environment variable `PORT` is not defined, the `5000` value is assumed f
 The implemented API of the Gatekeeper is the following:
 
 * `/`:
-** `GET`: provides a list of the API's endpoints;
+    * `GET`: provides a list of the API's endpoints;
 * `/api-doc`: 
-** `GET`: the same as `/`, but in the HTML/[`OpenAPI`](https://openapis.org/) format;
+    * `GET`: the same as `/`, but in the HTML/[`OpenAPI`](https://openapis.org/) format;
 * `/packages`:
-** `GET`: provides a (paginated) list of packages, or a package file if the result is a single package;
-** `/:uuid`:
-** `POST`: 
-*** `GET`: provides the package file with the given `:uuid`;
+    * `GET`: provides a (paginated) list of packages, or a package file if the result is a single package;
+    * `/:uuid`: provides the package file with the given `:uuid`;
+    * `POST`: accepts a **package description file** (see [`son-schema`](https://github.com/sonata-nfv/son-schema)), returning the extracted metadata in `JSON`;
 * `/services`:
+    * `GET`: provides a list of services available in the Catalogue;
+    * `/:uuid`: provides the service data with the given `:uuid`;
 * `/functions`:
+    * `GET`: provides a list of functions available in the Catalogue;
+    * `/:uuid`: provides the function data with the given `:uuid`;
+* `/requests`:
+    * `GET`: provides a list of service instantiations requests;
+    * `/:uuid`: provides the service instantiation request data with the given `:uuid`;
+    * `POST`: accepts a **service instantiation request**, returning the extracted metadata in `JSON`;
 * `/vims`:
+    * `GET`: provides a list of VIM registration requests;
+    * `/:uuid`: provides the VIM request with the given `:uuid` (**note:** the VIM `:uuid` is part of the data returned, if the request was successful);
+    * `POST`: accepts a **VIM creation 
 * `/records`:
+    * `GET`:
+        * `/services`:provides a list of services records (instances of `services`) available in the Repository;
+        * `/functions`:provides a list of functions records (instances of `functions`) available in the Repository;
 
 **Note:** all `GET`operations support pagination, though this still needs some work. This pagination can be done by using the `offset` and `limit` parameters, like in:
 ```sh
