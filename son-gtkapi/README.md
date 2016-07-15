@@ -62,6 +62,7 @@ The implemented API of the Gatekeeper is the following:
         * `/functions`:provides a list of functions records (instances of `functions`) available in the Repository;
 
 **Note 1:** `PUT`and `DELETE`operations are already supported by some of the micro-services, and will be described in the next version(s);
+
 **Note 2:** all `GET`operations support pagination, though this still needs some work. This pagination can be done by using the `offset` and `limit` parameters, like in:
 ```sh
 $ curl <resource_url>?offset=0,limit=10
