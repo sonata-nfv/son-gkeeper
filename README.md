@@ -92,8 +92,20 @@ Installing the Gatekeeper is really easy. You'll need:
   1. please follow each specific folder's instructions on which environment variables to set
   1. `foreman start`
 
+## Tests
+We do three kinds of automated tests:
+
+* Unit tests, which are done with the `RSpec` framework (see the `./spec/`folder);
+* Integration tests, which are done with a set of `shell` scripts and the `curl` command (see the [`son-tests`](https://github.com/sonata-nfv/son-tests));
+* White-box tests, which are done by using the [`ci_reporter`](https://github.com/ci-reporter/ci_reporter) `gem`, generating `XML` reports by executing the command
+
+```sh
+$ bundle exec rake ci:all
+```
+everytime a *pull request* is done.
+
 ## Usage
-Please refer to the [`son-gtkapi`](https://github.com/sonata-nfv/son-gkeeper/tree/master/son-gtkapi) repository for examples of usage of each one of the already developed micro-services.
+Please refer to the [`son-gtkapi`](https://github.com/sonata-nfv/son-gkeeper/tree/master/son-gtkapi) repository and each one of the other folders in this repository for examples of usage of each one of the already developed micro-services.
 
 ## License
 The license of the SONATA Gatekeeper is Apache 2.0 (please see the [license](https://github.com/sonata-nfv/son-editorgkeeper/blob/master/LICENSE) file).
