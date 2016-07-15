@@ -55,13 +55,14 @@ The implemented API of the Gatekeeper is the following:
 * `/vims`:
     * `GET`: provides a list of VIM registration requests;
     * `/:uuid`: provides the VIM request with the given `:uuid` (**note:** the VIM `:uuid` is part of the data returned, if the request was successful);
-    * `POST`: accepts a **VIM creation 
+    * `POST`: accepts a **VIM** creation 
 * `/records`:
     * `GET`:
         * `/services`:provides a list of services records (instances of `services`) available in the Repository;
         * `/functions`:provides a list of functions records (instances of `functions`) available in the Repository;
 
-**Note:** all `GET`operations support pagination, though this still needs some work. This pagination can be done by using the `offset` and `limit` parameters, like in:
+**Note 1:** `PUT`and `DELETE`operations are already supported by some of the micro-services, and will be described in the next version(s);
+**Note 2:** all `GET`operations support pagination, though this still needs some work. This pagination can be done by using the `offset` and `limit` parameters, like in:
 ```sh
 $ curl <resource_url>?offset=0,limit=10
 ```
@@ -112,41 +113,7 @@ So, getting a package with that UUID is done by
 http://sp.int.sonata-nfv.eu:32001/packages/dcfb1a6c-770b-460b-bb11-3aa863f84fa0
 ```
 
-###POST '/packages'
-This manual test has to be executed by using `curl` (or some browser plugin allowing the execution of POSTs):
 
-```sh
-$ curl -F "package=@simplest-example.son" localhost:5000/packages
-```
-
-###GET '/vims'
-The full list of VIMs can be obtained with
-
-```sh
-& curl -X GET -H "Content-Type:application/json" http://sp.int3.sonata-nfv.eu:32001/vims
-```
-
-**Note:** For this version, no user authentication/authorization is being done. In the future, with authentication/authorization mechanisms in place, this list will be adequately filtered.
-
-
-###POST '/vims' 
-To add a VIM you can do this:
-
-```sh
-curl -X POST --data-binary @vim.json -H "Content-Type:application/json" http://sp.int3.sonata-nfv.eu:5700/vims
-```
-
-  where the content of vim.json in this test is:
-```
-  {"wr_type":"compute","tenant_ext_net":"ext-subnet","tenant_ext_router":"ext-router","vim_type":"Mock","vim_address":"http://localhost:9999","username":"Eve","pass":"Operator","tenant":"op_sonata"} 
-```
-
-###GET '/vim_requests/:uuid'
-To obtain the status of the request with uuid 7dfbb948-144d-41d7-839c-256cc242201b you can do:
-
-```sh
-curl -X GET -H "Content-Type:application/json" http://sp.int3.sonata-nfv.eu:32001/vim_requests/7dfbb948-144d-41d7-839c-256cc242201b```
-```
 
 
 
