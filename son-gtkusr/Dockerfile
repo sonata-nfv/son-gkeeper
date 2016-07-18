@@ -10,6 +10,6 @@ WORKDIR /code
 EXPOSE 5001
 
 
-#RUN ["python", "tests/tests.py"]
+RUN ["python", "tests/tests.py"]
 
 CMD ["python", "app.py"]

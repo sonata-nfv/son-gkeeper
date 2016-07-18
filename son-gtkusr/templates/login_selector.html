@@ -1,1 +1,41 @@
-ola
+<html>
+    <head>
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+        <title>Login</title>
+
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.0/jquery.min.js"></script>
+
+        <script type="text/javascript">
+        function login_github(){
+            console.log("Login");
+            $.ajax({
+                type: "POST",
+                url: "/authorize",
+                data: {"platform": "github"},
+                dataType: "html",
+                async: false,
+                success: function(data, textStatus, request) {
+                    var url = request.getResponseHeader('location');
+                    console.log(url);
+
+                    window.location.href = url;
+
+
+
+                                    },
+                error: function(err) {
+                    alert(err+" did happen, please retry");
+                }
+            });
+        }
+
+        </script>
+    </head>
+
+    <body>
+        <button onclick="login_github()" >Login</button>
+    </body>
+
+
+
+</html>

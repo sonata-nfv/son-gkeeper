@@ -27,13 +27,13 @@ def authorize_url():
 
     if platform == "github":
         state = str(uuid.uuid4())
-        params = {  "client_id": settings.CLIENT_ID,
+        params = {  "client_id": settings.GITHUB_CLIENT_ID,
                     "state": state,
-                    "scope": "user:email"
+                    "scope": "user"
                     }
 
-        url = settings.GITHUB_AUTH_URL+urllib.urlencode(params)
-        return redirect(url, code=300)
+        url = settings.GITHUB_AUTH_URL+ "?" +urllib.urlencode(params)
+        return redirect(url, code=200)
 
     return "ERROR", 200
 

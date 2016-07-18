@@ -4,3 +4,4 @@ flask_SQLAlchemy
 flask_restful
 psycopg2
 xmlrunner
+requests
