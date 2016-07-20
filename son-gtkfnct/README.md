@@ -1,27 +1,42 @@
 # [SONATA](http://www.sonata-nfv.eu)'s Gatekeeper Function Management micro-service
 [![Build Status](http://jenkins.sonata-nfv.eu/buildStatus/icon?job=son-gkeeper)](http://jenkins.sonata-nfv.eu/job/son-gkeeper)
 
-# Tests
+This is the folder of the **Functions Management** micro-service. This micro-service is used by the [`Gatekeeper API`](https://github.com/sonata-nfv/son-gkeeper/son-gtkapi).
 
-## Obtain a list of available functions
-The full list of functions registered in the Catalogues can be obrained with
+## Configuration
+The configuration of the Gatekeeper's Function Management micro-service is done mostly by defining `ENV` variables in the [`Dockerfile`](https://github.com/sonata-nfv/son-gkeeper/blob/master/son-gtkfnct/Dockerfile). These variables are:
 
-```curl -vi http://sp.int.sonata-nfv.eu:32001/functions```
+* `PORT`: the port the micro-service is to provide it's services, currently `5500`;
+* `CATALOGUES_URL`: the Catalogues URL, currently `http://catalogues:4002/catalogues`;
 
-**Note:** For this version, no user authentication/authorization is being done. In the future, with authentication/authorization mechanisms in place, this list will be adequately filtered.
+Future work includes evolving the way we store these environment variables, as well as avoiding at least some of the repetition between this information and the one provided in the [`docker-compose.yml`](https://github.com/sonata-nfv/son-gkeeper/blob/master/docker-compose.yml).
 
-## Obtain a list of functions with specific attribute values
-To obtain only the list of functions that have specific values for some of the attributes (e.g., `status=Active`), you can do this:
+## Usage
+To use this application, we write
+```sh
+$ foreman start
+```
 
-```curl -vi http://sp.int.sonata-nfv.eu:32001/functions?status=Active```
+[`Foreman`](https://github.com/ddollar/foreman) is a `ruby gem` for managing applications based on a [`Procfile`](https://github.com/sonata-nfv/son-gkeeper/blob/master/son-gtkfnct/Procfile).
 
-## Obtain specific attributes on a list of functions
-To obtain only specific attributes (e.g., only `uuid`, `vendor`, `name` and `version`), you can do this:
+### Implemented API
+The implemented API of the Gatekeeper is the following:
 
-```curl -vi http://sp.int.sonata-nfv.eu:32001/functions?fields=uuid,vendor,name,version```
+* `/functions`:
+    * `GET`: provides a list of functions records, available in the Repository;
+    * `/:uuid`: provides the function record data with the given `:uuid`;
+    * `/functions?status=active`: provides the function with the status active;
+    * `/functions?fields=uuid,vendor,name,version`: provides the function data with the given `uuid`, `vendor`, `name` and `version`;
+ * `/admin/logs`:
+ 	*  `GET`: Retrieve the currently available log file    
 
-**Note:** We are assuming there aren't any attributes of the entity called `fields`.
+**Note 1:** `PUT`and `DELETE`operations are already supported by some of the micro-services, and will be described in the next version(s);
 
-## Check directly in the Catalogue
+**Note 2:** all `GET`operations support pagination, though this still needs some work. This pagination can be done by using the `offset` and `limit` parameters, like in:
+```sh
+$ curl <resource_url>?offset=0,limit=10
+```
+This command will result in a list of `10`values (the `limit`) of the first page (`offset` zero). These are the default values used for those parameters.
 
-```curl -vi -H "Content-Type: application/json" http://sp.int.sonata-nfv.eu:4002/catalogues/vnfs```
+## Tests
+At the module level, we only do **automated unit tests**, using the `RSpec` framework (see the `./spec/`folder). For the remaining tests please see the repositorie's [`README`](https://github.com/sonata-nfv/son-gkeeper/blob/master/README.md) file.
