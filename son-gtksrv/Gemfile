@@ -16,7 +16,7 @@ gem 'bunny', '>= 2.3.0'
 gem 'rubocop'
 gem 'rubocop-checkstyle_formatter', require: false
 gem 'pg'
-gem 'activerecord'
+gem 'activerecord', '4.2.5.1'
 gem 'sinatra-activerecord', '2.0.4'
 gem 'sinatra-logger'
 gem 'sinatra-active-model-serializers', '0.2.0'
