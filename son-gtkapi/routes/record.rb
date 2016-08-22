@@ -76,7 +76,7 @@ class GtkApi < Sinatra::Base
         # TODO: from here on, a request must be submited to the MANO Framework
         update_request = settings.record_management.create_service_update_request(params)
         if update_request
-          logger.debug(method) { "PUT /records/services/#{params[:uuid]}: update_request =#{update_request}"
+          logger.debug(method) { "PUT /records/services/#{params[:uuid]}: update_request =#{update_request}"}
           halt 201, update_request.to_json
         else
           message = 'No request was created'
