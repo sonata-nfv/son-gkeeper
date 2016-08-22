@@ -142,7 +142,7 @@ class GtkSrv < Sinatra::Base
   put '/requests/services/:uuid/?' do
     method = MODULE + "PUT /requests/services/#{params[:uuid]}"
     logger.debug(method) {"entered"}
-    unless params[:uuid].nil? do
+    unless params[:uuid].nil?
       # find the NSD UUID, from the NSR UUID
       # grab the NSD from the catalogue
       # pass it to the SLM
