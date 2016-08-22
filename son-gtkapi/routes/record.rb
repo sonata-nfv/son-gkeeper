@@ -31,7 +31,7 @@ class GtkApi < Sinatra::Base
   
   # GET many instances
   get '/records/:kind/?' do
-    method = "GtkApi GET /records/#{params[:kind]}"
+    method = MODULE + "GET /records/#{params[:kind]}"
     params.delete('splat')
     params.delete('captures')
     uri = Addressable::URI.new
@@ -53,17 +53,50 @@ class GtkApi < Sinatra::Base
   
   # GET a specific instance
   get '/records/:kind/:uuid/?' do
-    method = "GtkApi GET /records/#{params[:kind]}/#{params[:uuid]}: "
+    method = MODULE + "GET /records/#{params[:kind]}/#{params[:uuid]}: "
     unless params[:uuid].nil?
       logger.debug(method) {'entered'}
       json_error 400, 'Invalid Instance UUID' unless valid? params[:uuid]
     end
     logger.debug(method) {"leaving with \"No instance UUID specified\""}
+    # TODO!!
     json_error 400, 'No instance UUID specified'
   end
   
+  # PUT service instance
+  put '/records/services/:uuid/?' do
+    method = MODULE + "PUT /records/services/#{params[:uuid]}: "
+    unless params[:uuid].nil?
+      logger.debug(method) {'entered'}
+      json_error 400, method + "Invalid Instance UUID=#{params[:uuid]}" unless valid? params[:uuid]
+
+      record = settings.record_management.find_service_by_uuid(params[:uuid])
+      if record
+        logger.debug(method) {"found #{record}"}
+        # TODO: from here on, a request must be submited to the MANO Framework
+        update_request = settings.record_management.create_service_update_request(params)
+        if update_request
+          logger.debug(method) { "PUT /records/services/#{params[:uuid]}: update_request =#{update_request}"
+          halt 201, update_request.to_json
+        else
+          message = 'No request was created'
+          logger.debug(method) { "leaving PUT /records/services/#{params[:uuid]} with #{message}"}
+          json_error 400, message
+        end
+      else
+        message = "No record with uuid=#{params[:uuid]} found"
+        logger.debug(method) {"leaving with \"#{message}\""}
+        halt 404, message
+      end
+    end
+    message = 'No instance UUID specified'
+    logger.debug(method) {"leaving with \"#{message}\""}
+    json_error 400, message
+  end
+  
+  # GET module's logs
   get '/admin/records/logs' do
-    method = "GtkApi GET /admin/records/logs: "
+    method = MODULE + "GET /admin/records/logs: "
     logger.debug(method) {"entered"}
     headers 'Content-Type' => 'text/plain; charset=utf8', 'Location' => '/'
     log = settings.record_management.get_log
