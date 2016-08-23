@@ -53,12 +53,42 @@ class RecordManagerService
     end
   end
   
+  def find_service_by_uuid(uuid)
+    method = "GtkApi::RecordManagerService.find_service_by_uuid(#{uuid}): "
+    headers = JSON_HEADERS
+    begin
+      response = RestClient.get(@url+'/services/'+uuid, headers) 
+      @logger.debug(method) {"response=#{response}"}
+      JSON.parse response.body
+    rescue => e
+      @logger.error(method) {"#{e.message} - #{format_error(e.backtrace)}"}
+      nil 
+    end
+  end
+  
   def get_log
     method = "GtkApi::RecordManagerService.get_log: "
     @logger.debug(method) {'entered'}
     full_url = @url+'/admin/logs'
     @logger.debug(method) {'url=' + full_url}
     RestClient.get(full_url)      
+  end
+  
+  def create_service_update_request(params)
+    message = MODULE+'::RecordManagerService.create_service_update_request'
+    # TODO
+    @logger.debug message + "(#{params})"
+    begin
+      @logger.debug message + ": @url = "+@url
+      response = RestClient.post(@url+'/requests', params.to_json, content_type: :json, accept: :json) 
+      @logger.debug message + ": response="+response
+      parsed_response = JSON.parse(response)
+      @logger.debug message + ": parsed_response=#{parsed_response}"
+      parsed_response
+    rescue => e
+      @logger.error message + ": #{e.message} - #{format_error(e.backtrace)}"
+      nil 
+    end      
   end
   
   private

@@ -137,4 +137,33 @@ class GtkSrv < Sinatra::Base
       json_error 400, 'GtkSrv: Not possible to update the request'
     end 
   end  
+
+  # PUTs an update on an existing service instance, given the instance UUID
+  put '/requests/services/:uuid/?' do
+    method = MODULE + "PUT /requests/services/#{params[:uuid]}"
+    logger.debug(method) {"entered"}
+    unless params[:uuid].nil?
+      # find the NSD UUID, from the NSR UUID
+      # grab the NSD from the catalogue
+      # pass it to the SLM
+      # register the answer
+      # update the instance status to updating
+      # 
+      
+      
+      #@request = Request.find params[:uuid]
+    
+      #if @request.update_all(params)
+      #  logger.debug "GtkSrv: returning PUT /requests with updated request=#{@request}"
+      #  halt 200, @request.to_json
+      #else
+      #  logger.debug "GtkSrv: returning PUT /requests with 'GtkSrv: Not possible to update the request'"
+      #  json_error 400, 'GtkSrv: Not possible to update the request'
+      #end 
+    else
+      message = method + 'a valid UUID must be present'
+      logger.debug(method) {"leaving with #{message}"}
+      json_error 400, message
+    end
+  end  
 end
