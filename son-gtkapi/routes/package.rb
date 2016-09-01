@@ -80,13 +80,13 @@ class GtkApi < Sinatra::Base
     
     packages = settings.package_management.find(params)
     if packages
-      if packages.size == 1
-        logger.debug "GtkApi: leaving GET /packages?#{uri.query} with package #{packages[0]['uuid']}"
-        get_one_package( packages[0]['uuid'])
-      else
+      #if packages.size == 1
+      #  logger.debug "GtkApi: leaving GET /packages?#{uri.query} with package #{packages[0]['uuid']}"
+      #  get_one_package( packages[0]['uuid'])
+      #else
         logger.debug "GtkApi: leaving GET /packages?#{uri.query} with #{packages}"
         halt 200, packages
-      end
+        #end
     end
     logger.debug "GtkApi: leaving GET /packages?#{uri.query} with \"No package found with parameters #{uri.query}\""
     json_error 404, "No package found with parameters #{uri.query}"
