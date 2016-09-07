@@ -31,29 +31,29 @@ require 'pp'
 require 'yaml'
 require 'json' 
 
-class MQServer
-  attr_accessor :url
+class UpdateServer
+  attr_accessor :url, :correlation_ids
   
-  CREATE_QUEUE = 'service.instances.instances'
+  QUEUE = 'service.instances.update'
   
   def initialize(url,logger)
     @url = url
     @logger=logger
     @channel = Bunny.new(url,:automatically_recover => false).start.create_channel
     @topic = @channel.topic("son-kernel", :auto_delete => false)
-    @queue   = @channel.queue(CREATE_QUEUE, :auto_delete => true).bind(@topic, :routing_key => CREATE_QUEUE)
+    @queue   = @channel.queue(QUEUE, :auto_delete => true).bind(@topic, :routing_key => QUEUE)
     self.consume
   end
 
   def publish(msg, correlation_id)
-    logmsg= 'MQServer.publish'
+    logmsg= 'UpdateServer.publish'
     @logger.debug(logmsg) {"msg="+msg+", correlation_id="+correlation_id}
-    @topic.publish(msg, :content_type =>'text/yaml', :routing_key => CREATE_QUEUE, :correlation_id => correlation_id, 
+    @topic.publish(msg, :content_type =>'text/yaml', :routing_key => QUEUE, :correlation_id => correlation_id, 
       :reply_to => @queue.name, :app_id => 'son-gkeeper')
   end
   
   def consume
-    logmsg= 'MQServer.consume'
+    logmsg= 'UpdateServer.consume'
     @queue.subscribe do |delivery_info, properties, payload|
       begin
         @logger.debug(logmsg) { "delivery_info: #{delivery_info}"}
@@ -83,7 +83,7 @@ class MQServer
               @logger.error(logmsg) { "request "+properties[:correlation_id]+" not found"}
             end
           else
-            @logger.debug('MQServer.consume') {'status not present'}
+            @logger.debug('UpdateServer.consume') {'status not present'}
           end
         end
       rescue Exception => e

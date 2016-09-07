@@ -53,7 +53,6 @@ class GtkApi < Sinatra::Base
   register Sinatra::CrossOrigin
   register Sinatra::Reloader
   register Sinatra::Logger
-  set :logger_level, :debug # or :fatal, :error, :warn, :info
   
   helpers GtkApiHelper
 
@@ -70,6 +69,7 @@ class GtkApi < Sinatra::Base
   
   # Logging
 	enable :logging
+  set :logger_level, :debug # or :fatal, :error, :warn, :info
   FileUtils.mkdir(File.join(settings.root, 'log')) unless File.exists? File.join(settings.root, 'log')
   logfile = File.open(File.join('log', ENV['RACK_ENV'])+'.log', 'a+')
   logfile.sync = true

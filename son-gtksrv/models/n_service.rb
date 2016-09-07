@@ -46,8 +46,14 @@ class NService
 
   def find_by_uuid(uuid)
     @logger.debug "NService.find_by_uuid(#{uuid})"
-    service = @catalogue.find_by_uuid(uuid)
-    @logger.debug "NService.find_by_uuid: #{service}"
-    service
+    begin
+      service = @catalogue.find_by_uuid(uuid)
+      @logger.debug "NService.find_by_uuid: #{service}"
+      service
+    rescue Exception => e
+      @logger.debug(e.message)
+      @logger.debug(e.backtrace.inspect)
+      halt 500, 'Could not contact the Service Catalogue'
+    end
   end
 end

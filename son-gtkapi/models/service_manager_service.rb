@@ -116,6 +116,22 @@ class ServiceManagerService
     end      
   end
   
+  def create_service_update_request(nsr_uuid, nsd)
+    message = MODULE+'::ServiceManagerService.create_service_update_request'
+    @logger.debug(message) {"service instance=#{nsr_uuid}, nsd=#{nsd}"}
+    begin
+      @logger.debug(message) {"@url = "+@url}
+      response = RestClient.put(@url+'/requests/services/'+nsr_uuid, nsd.to_json, content_type: :json, accept: :json) 
+      @logger.debug(message) {"response="+response}
+      parsed_response = JSON.parse(response)
+      @logger.debug(message) {"parsed_response=#{parsed_response}"}
+      parsed_response
+    rescue => e
+      @logger.error(message) {"#{e.message} - #{format_error(e.backtrace)}"}
+      nil 
+    end      
+  end
+  
   def get_log
     method = "GtkApi::ServiceManagerService.get_log: "
     @logger.debug(method) {'entered'}
