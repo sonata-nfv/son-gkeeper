@@ -70,11 +70,21 @@ class GtkApi < Sinatra::Base
       logger.debug(method) {'entered'}
       json_error 400, method + "Invalid Instance UUID=#{params[:uuid]}" unless valid? params[:uuid]
 
-      record = settings.record_management.find_service_by_uuid(params[:uuid])
-      if record
-        logger.debug(method) {"found #{record}"}
+      # the body of the request is exepected to contain the NSD UUID and the NSD's latest version      
+      body_params = JSON.parse(request.body.read)
+      logger.debug(method) {"body_params=#{body_params}"}
+      unless body_params.key? :nsd_id and body_params.key? :latest_nsd_id
+        message = 'Both :nsd_id and :latest_nsd_id must be present'
+        logger.debug(method) {"Leaving with \"#{message}\""}
+        halt 404, message
+      end
+      
+      # here we have the 
+      descriptor = settings.service_management.find_service_by_uuid(body_params[:latest_nsd_id])
+      if descriptor
+        logger.debug(method) {"found #{descriptor}"}
         # TODO: from here on, a request must be submited to the MANO Framework
-        update_request = settings.record_management.create_service_update_request(params)
+        update_request = settings.record_management.create_service_update_request(params[:uuid], descriptor)
         if update_request
           logger.debug(method) { "PUT /records/services/#{params[:uuid]}: update_request =#{update_request}"}
           halt 201, update_request.to_json
@@ -84,7 +94,7 @@ class GtkApi < Sinatra::Base
           json_error 400, message
         end
       else
-        message = "No record with uuid=#{params[:uuid]} found"
+        message = "No descriptor with uuid=#{params[:latest_nsd_id]} found"
         logger.debug(method) {"leaving with \"#{message}\""}
         halt 404, message
       end

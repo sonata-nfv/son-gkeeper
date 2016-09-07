@@ -32,6 +32,90 @@ class Request < ActiveRecord::Base
     
   # validations a la Activerecord
   validates :service_uuid, presence: true
+  
+  def self.validate_request(service_instance_uuid:, logger:)
+    method = GtkSrv::MODULE + ": Request#validate_request: "
+
+    raise Exception.new(method+'A valid service instance UUID is needed') unless service_instance_uuid
+    raise Exception.new(method+'A valid logger is needed') unless logger
+    logger.debug(method) {"entered with service_instance_uuid=#{service_instance_uuid}, logger=#{logger}"}
+    
+    logger.debug(method) {"finding request by service_instance_uuid #{service_instance_uuid}"}
+    original_request = Request.find_by(service_instance_uuid: service_instance_uuid)
+    logger.debug(method) {"original_request is #{original_request}"}
+    if original_request
+      if original_request['status'] == 'RUNNING'        
+        logger.debug(method) {"original_request status is #{original_request['status']}"}
+        original_request
+      else
+        message = method + 'service instance '+service_instance_uuid + " is not running (is #{original_request['status']})"
+        logger.debug(method) {"leaving with #{message}"}
+        raise Exception.new(message) #json_error 404, message
+      end
+    else
+      message = method + "service instance #{service_instance_uuid} is not registered"
+      logger.debug(method) {"leaving with #{message}"}
+      raise Exception.new(message) #json_error 404, message
+    end 
+  end
+  
+  def self.process_request(nsd:, service_instance_uuid:, update_server:, logger:)
+    method = GtkSrv::MODULE + ": Request.process_request: "
+    logger.debug(method) {"entered"}
+    raise Exception.new(method+'A valid NSD is needed') unless nsd
+    raise Exception.new(method+'A valid service instance UUID is needed') unless service_instance_uuid
+    raise Exception.new(method+'A valid update_server is needed') unless update_server
+    raise Exception.new(method+'A valid logger is needed') unless logger
+
+    nsd_yml = YAML.dump(nsd)
+    logger.debug(method) {"nsd_yml=#{nsd_yml}"}
+
+    update_request = Request.create(service_uuid: nsd['uuid'], request_type: 'UPDATE', service_instance_uuid: service_instance_uuid)
+    # Request(id: uuid, created_at: datetime, updated_at: datetime, service_uuid: uuid, status: string, request_type: string, service_instance_uuid: uuid) 
+    logger.debug(method) {"update_request=#{update_request.inspect}"}
+    
+    if update_request
+      begin
+        # Requests the update
+        smresponse = update_server.publish( nsd_yml.to_s, update_request['id'])
+        logger.debug(method) { "smresponse: #{smresponse.inspect}"}
+        puts method+"smresponse: #{smresponse}"
+        update_response = YAML.load(smresponse)
+        logger.debug(method) { "update_response: #{update_response}"}
+    
+        status = update_response['status']
+        if status
+          logger.debug(method) { "update_request[status] #{update_request['status']} turned into "+status}
+          update_request['status']=status  
+          begin
+            update_request.save
+            logger.debug(method) { "request saved"}
+            json_request = json(update_request, { root: false })
+            logger.info(method) {' returning with request='+json_request}
+            halt 201, json_request
+          rescue Exception => e
+             logger.error e.message
+        	   logger.error e.backtrace.inspect
+          end
+        else
+          message = method + 'status not present'
+          logger.debug(method) {"leaving with #{message}"}
+          json_error 404, message
+        end
+      rescue Exception => e
+        logger.debug(e.message)
+        logger.debug(e.backtrace.inspect)
+        puts e.backtrace.inspect
+        #halt 500, 'Internal server error'
+        {}
+      end
+    else
+      message = method + 'could not save update request for service instance '+service_instance_uuid
+      logger.debug(method) {"leaving with #{message}"}
+      json_error 404, message
+    end
+  end
+
 end
 
 # Establish a connection with a Model (a Table) belong to a database different from default 

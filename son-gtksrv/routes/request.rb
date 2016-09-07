@@ -84,8 +84,6 @@ class GtkSrv < Sinatra::Base
       if service
         service.delete(:status) if service[:status]
         service.delete('status') if service['status']
-        #service.delete(:uuid) if service[:uuid]
-        #service.delete('uuid') if service['uuid']
         
         start_request['NSD']=service
         logger.debug('GtkSrv: POST /requests') { "service=#{service}"}
@@ -138,32 +136,35 @@ class GtkSrv < Sinatra::Base
     end 
   end  
 
-  # PUTs an update on an existing service instance, given the instance UUID
+  # PUTs an update on an existing service instance, given the service instance UUID
   put '/requests/services/:uuid/?' do
-    method = MODULE + "PUT /requests/services/#{params[:uuid]}"
-    logger.debug(method) {"entered"}
-    unless params[:uuid].nil?
-      # find the NSD UUID, from the NSR UUID
-      # grab the NSD from the catalogue
-      # pass it to the SLM
-      # register the answer
-      # update the instance status to updating
-      # 
-      
-      
-      #@request = Request.find params[:uuid]
+    method = MODULE + " PUT /requests/services/#{params[:uuid]}: "
+    logger.debug(method) {"called"}
     
-      #if @request.update_all(params)
-      #  logger.debug "GtkSrv: returning PUT /requests with updated request=#{@request}"
-      #  halt 200, @request.to_json
-      #else
-      #  logger.debug "GtkSrv: returning PUT /requests with 'GtkSrv: Not possible to update the request'"
-      #  json_error 400, 'GtkSrv: Not possible to update the request'
-      #end 
-    else
-      message = method + 'a valid UUID must be present'
-      logger.debug(method) {"leaving with #{message}"}
-      json_error 400, message
+    # We are assuming that:
+    # UUID is not null and is a valid UUID
+
+    # is it a valid service instance uuid?
+    valid = Request.validate_request(service_instance_uuid: params[:uuid], logger: logger)
+    logger.debug(method) {"valid=#{valid}"}
+    
+    if valid
+      nsd_param = JSON.parse(request.body.read, :quirks_mode => true)
+      logger.debug(method) {"with nsd_param=#{nsd_param}"}
+      logger.debug(method) {"nsd_uuid=#{nsd_param['nsd_uuid']}"}
+      nsd = NService.new(settings.services_catalogue, logger).find_by_uuid(nsd_param['nsd_uuid'])
+      logger.debug(method) {"nsd=#{nsd}"}
+      if nsd
+        #nsd.delete(:status) if nsd[:status]
+        nsd.delete('status') if nsd['status']
+        update_response = Request.process_request(nsd: nsd, service_instance_uuid: params[:uuid], update_server: settings.update_server, logger: logger)
+        logger.debug(method) {"update_response=#{update_response}"}
+        update_response
+      else
+        message = method + 'nsd UUID ' + nsd_param['nsd_uuid'] + ' not found'
+        logger.debug(method) {"leaving with #{message}"}
+        json_error 404, message
+      end
     end
-  end  
+  end
 end
