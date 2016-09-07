@@ -51,7 +51,6 @@ class GtkSrv < Sinatra::Base
   register Sinatra::Reloader
   register Sinatra::ActiveRecordExtension
   register Sinatra::Logger
-  set :logger_level, :debug # or :fatal, :error, :warn, :info
   
   helpers GtkSrvHelper
   
@@ -86,9 +85,14 @@ class GtkSrv < Sinatra::Base
   end
   if settings.mqserver_url
     set :mqserver, MQServer.new(settings.mqserver_url, logger)
+    set :update_server, UpdateServer.new(settings.mqserver_url, logger)
   else
     logger.error(MODULE) {'>>>MQServer url not defined, application being terminated!!'}
     Process.kill('TERM', Process.pid)
   end
   logger.info(MODULE) {"started at #{settings.time_at_startup}"}
+  logger.info(MODULE) {"Services Catalogue: #{settings.services_catalogue.url}"}
+  logger.info(MODULE) {"Functions Catalogue: #{settings.functions_catalogue.url}"}
+  logger.info(MODULE) {"MQServer: #{settings.mqserver.url}"}
+  logger.info(MODULE) {"UpdateServer: #{settings.update_server.url}"}
 end

@@ -53,7 +53,26 @@ RSpec.describe GtkSrv do
     it 'accepts updating valid (instantiations) requests'
     it 'rejects updating invalid (instantiations) requests'
   end
+  
+  describe 'PUT /requests/services/:uuid' do
+    it 'rejects requests with no uuid'
+    it 'rejects requests without previously registered instantiation request'
+    it 'rejests requests for service instances that are not RUNNING'
+    it 'rejects requests mentioning a NSD ID that does not exist'
+    it "gets the service's NSD"
+    it 'creates the update request'
+    it 'updates the request status while updating'
+    it 'updates the request status when finished'
+  end
 end
+
+#let(:extended_params) {default_params.merge({version: "0.1"})}
+#it 'should call the Package Management Service model with the passed parameters plus "offset" and "limit"' do
+#  allow(PackageManagerService).to receive(:find).with(hash_including(extended_params)).and_return(simplest_package)
+#  package = PackageManagerService.find(extended_params)
+#  expect(package).to include(:version)
+#end  
+
 
 #it "should be able to be instantiated" do
 #  expect { Mail }.not_to raise_error

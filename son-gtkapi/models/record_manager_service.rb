@@ -74,23 +74,6 @@ class RecordManagerService
     RestClient.get(full_url)      
   end
   
-  def create_service_update_request(params)
-    message = MODULE+'::RecordManagerService.create_service_update_request'
-    # TODO
-    @logger.debug message + "(#{params})"
-    begin
-      @logger.debug message + ": @url = "+@url
-      response = RestClient.post(@url+'/requests', params.to_json, content_type: :json, accept: :json) 
-      @logger.debug message + ": response="+response
-      parsed_response = JSON.parse(response)
-      @logger.debug message + ": parsed_response=#{parsed_response}"
-      parsed_response
-    rescue => e
-      @logger.error message + ": #{e.message} - #{format_error(e.backtrace)}"
-      nil 
-    end      
-  end
-  
   private
   
   def format_error(backtrace)
