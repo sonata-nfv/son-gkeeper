@@ -44,7 +44,7 @@ class Request < ActiveRecord::Base
     original_request = Request.find_by(service_instance_uuid: service_instance_uuid)
     logger.debug(method) {"original_request is #{original_request}"}
     if original_request
-      if original_request['status'] == 'RUNNING'        
+      if original_request['status'] == 'READY'        
         logger.debug(method) {"original_request status is #{original_request['status']}"}
         original_request
       else
