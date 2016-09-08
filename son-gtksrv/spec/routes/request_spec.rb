@@ -57,7 +57,7 @@ RSpec.describe GtkSrv do
   describe 'PUT /requests/services/:uuid' do
     it 'rejects requests with no uuid'
     it 'rejects requests without previously registered instantiation request'
-    it 'rejests requests for service instances that are not RUNNING'
+    it 'rejests requests for service instances that are not READY'
     it 'rejects requests mentioning a NSD ID that does not exist'
     it "gets the service's NSD"
     it 'creates the update request'
