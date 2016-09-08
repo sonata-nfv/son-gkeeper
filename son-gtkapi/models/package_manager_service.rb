@@ -37,14 +37,32 @@ class PackageManagerService
   end
     
   def create(params)
-    @logger.debug "PackageManagerService.create: params=#{params}"
+    log_message = 'PackageManagerService.create'
+    @logger.debug(log_message) {"params=#{params}"}
     tmpfile = params[:package][:tempfile]
     uri = @url+'/packages'
-    @logger.debug "PackageManagerService.create: uri="+uri
-    response = RestClient.post(uri, params)
-    @logger.debug "PackageManagerService.create: response.class=#{response.class}"
-    @logger.debug "PackageManagerService.create: response=#{response}"
-    JSON.parse response
+    @logger.debug(log_message) {"uri="+uri}
+    begin
+      response = RestClient.post(uri, params)
+      @logger.debug(log_message) {"response.class=#{response.class}"}
+      @logger.debug(log_message) {"response=#{response}"}
+      JSON.parse response
+    rescue  => e #RestClient::Conflict
+      @logger.debug(log_message) {e.response}
+      {error: 'Package is duplicated', package: e.response}
+    end
+    #RestClient.get('http://my-rest-service.com/resource'){ |response, request, result, &block|
+    #  case response.code
+    #  when 200
+    #    p "It worked !"
+    #    response
+    #  when 423
+    #    raise SomeCustomExceptionIfYouWant
+    #  else
+    #    response.return!(request, result, &block)
+    #  end
+    #}
+    
   end    
 
   def find_by_uuid(uuid)
