@@ -109,9 +109,10 @@ $services = [
           ]}
         ]
       }],
+    'status'=> 'OK',
     'created_at'=> Time.now.utc.to_s,
     'updated_at'=> Time.now.utc.to_s,
-    'uuid'=> "0f4eb013-28b1-4590-b59d-d3f094e168d8"
+    'uuid'=> "15eb8a1c-ebf4-4d6d-878c-c4a55cfadb7e"
   }
 ]
 
