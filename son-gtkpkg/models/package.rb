@@ -120,7 +120,7 @@ class Package
     end
     @logger.debug('Package.from_file: ') {" before calling duplicate_package?, @@catalogue=#{@@catalogue.inspect}"}
     
-    if duplicate_package? @descriptor
+    unless duplicate_package?(@descriptor).empty?
       dup = {}
       dup['vendor'] = @descriptor['vendor']
       dup['version'] = @descriptor['version']
@@ -189,9 +189,12 @@ class Package
   private
   
   def duplicate_package?(desc)
-    @logger.debug('Package.duplicate_package?') { "verifying duplication of package with desc=#{desc}"}
-    @logger.debug('Package.duplicate_package?') { "@@catalogue=#{@@catalogue.inspect}"}
-    Package.find({vendor: desc['vendor'], version: desc['version'], name: desc['name']}, @logger)
+    method = 'Package.duplicate_package?'
+    @logger.debug(method) { "verifying duplication of package with desc=#{desc}"}
+    @logger.debug(method) { "@@catalogue=#{@@catalogue.inspect}"}
+    package = Package.find({vendor: desc['vendor'], version: desc['version'], name: desc['name']}, @logger)
+    @logger.debug(method) { "returned package is #{package.inspect}"}
+    package
   end
   
   def keyed_hash(hash)
