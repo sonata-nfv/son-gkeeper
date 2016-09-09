@@ -80,11 +80,11 @@ class GtkApi < Sinatra::Base
       end
       
       # here we have the 
-      descriptor = settings.service_management.find_services_by_uuid(body_params[:latest_nsd_id])
-      if descriptor
-        logger.debug(method) {"found #{descriptor}"}
-        # TODO: from here on, a request must be submited to the MANO Framework
-        update_request = settings.service_management.create_service_update_request(params[:uuid], descriptor[0])
+      descriptors = settings.service_management.find_services_by_uuid(body_params[:latest_nsd_id])
+      if descriptors
+        logger.debug(method) {"found #{descriptors}"}
+
+        update_request = settings.service_management.create_service_update_request(params[:uuid], descriptors[0])
         if update_request
           logger.debug(method) { "PUT /records/services/#{params[:uuid]}: update_request =#{update_request}"}
           halt 201, update_request.to_json
