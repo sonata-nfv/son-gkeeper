@@ -76,6 +76,40 @@ class GtkSrv < Sinatra::Base
     end
   end
 
+  # PUTs an update on an existing service instance, given the service instance UUID
+  put '/services/:uuid/?' do
+    method = MODULE + " PUT /services/#{params[:uuid]}"
+    logger.debug(method) {"called"}
+    
+    # We are assuming that:
+    # UUID is not null and is a valid UUID
+
+    # is it a valid service instance uuid?
+    begin
+      valid = Request.validate_request(service_instance_uuid: params[:uuid], logger: logger)
+      logger.debug(method) {"valid=#{valid.inspect}"}
+    
+      if valid
+        nsd = JSON.parse(request.body.read, :quirks_mode => true)
+        logger.debug(method) {"with nsd=#{nsd}"}
+
+        #nsd.delete(:status) if nsd[:status]
+        nsd.delete('status') if nsd['status']
+        update_response = Request.process_request(nsd: nsd, service_instance_uuid: params[:uuid], update_server: settings.update_server, logger: logger)
+        logger.debug(method) {"update_response=#{update_response}"}
+        update_response
+      else
+        error_msg = "Service instance '#{params[:uuid]} not 'READY'"
+        logger.debug(method) {"leaving with '#{error_msg}"}
+        json_error 400, error_msg
+      end
+    rescue Exception=> e
+      error_msg = "Service instance '#{params[:uuid]} not found"
+      logger.debug(method) {"leaving with '#{error_msg}"}
+      json_error 404, error_msg
+    end
+  end
+
   get '/admin/logs' do
     logger.debug "GtkSrv: entered GET /admin/logs"
     File.open('log/'+ENV['RACK_ENV']+'.log', 'r').read

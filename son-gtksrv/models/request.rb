@@ -79,7 +79,7 @@ class Request < ActiveRecord::Base
         # Requests the update
         smresponse = update_server.publish( nsd_yml.to_s, update_request['id'])
         logger.debug(method) { "smresponse: #{smresponse.inspect}"}
-        puts method+"smresponse: #{smresponse}"
+        puts method+"smresponse: #{smresponse.inspect}"
         update_response = YAML.load(smresponse)
         logger.debug(method) { "update_response: #{update_response}"}
     
