@@ -34,7 +34,7 @@ require 'json'
 class MQServer
   attr_accessor :url
   
-  CREATE_QUEUE = 'service.instances.instances'
+  CREATE_QUEUE = 'service.instances.create'
   
   def initialize(url,logger)
     @url = url
