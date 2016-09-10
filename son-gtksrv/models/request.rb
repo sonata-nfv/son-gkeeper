@@ -60,7 +60,7 @@ class Request < ActiveRecord::Base
   end
   
   def self.process_request(nsd:, service_instance_uuid:, update_server:, logger:)
-    method = GtkSrv::MODULE + ": Request.process_request: "
+    method = GtkSrv::MODULE + ": Request.process_request"
     logger.debug(method) {"entered"}
     raise Exception.new(method+'A valid NSD is needed') unless nsd
     raise Exception.new(method+'A valid service instance UUID is needed') unless service_instance_uuid
@@ -79,7 +79,6 @@ class Request < ActiveRecord::Base
         # Requests the update
         smresponse = update_server.publish( nsd_yml.to_s, update_request['id'])
         logger.debug(method) { "smresponse: #{smresponse.inspect}"}
-        puts method+"smresponse: #{smresponse.inspect}"
         update_response = YAML.load(smresponse)
         logger.debug(method) { "update_response: #{update_response}"}
     

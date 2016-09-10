@@ -39,21 +39,23 @@ class UpdateServer
   def initialize(url,logger)
     @url = url
     @logger=logger
-    @channel = Bunny.new(url,:automatically_recover => false).start.create_channel
-    @topic = @channel.topic("son-kernel", :auto_delete => false)
-    @queue   = @channel.queue(QUEUE, :auto_delete => true).bind(@topic, :routing_key => QUEUE)
+    channel = Bunny.new(url,:automatically_recover => false).start.create_channel
+    @topic = channel.topic("son-kernel", :auto_delete => false)
+    @queue   = channel.queue(QUEUE, :auto_delete => true).bind(@topic, :routing_key => QUEUE)
     self.consume
   end
 
   def publish(msg, correlation_id)
     logmsg= 'UpdateServer.publish'
-    @logger.debug(logmsg) {"msg="+msg+", correlation_id="+correlation_id}
+    @logger.debug(logmsg) {" entered, with msg="+msg+" and correlation_id="+correlation_id}
     @topic.publish(msg, :content_type =>'text/yaml', :routing_key => QUEUE, :correlation_id => correlation_id, 
       :reply_to => @queue.name, :app_id => 'son-gkeeper')
+    @logger.debug(logmsg) {"published msg '"+msg+"', with correlation_id="+correlation_id}
   end
   
   def consume
     logmsg= 'UpdateServer.consume'
+    @logger.debug(logmsg) {" entered"}
     @queue.subscribe do |delivery_info, properties, payload|
       begin
         @logger.debug(logmsg) { "delivery_info: #{delivery_info}"}
@@ -76,8 +78,8 @@ class UpdateServer
                 request.save
                 @logger.debug(logmsg) { "request saved"}
               rescue Exception => e
-                @logger.error e.message
-          	    @logger.error e.backtrace.inspect
+                @logger.error(logmsg) {e.message}
+          	    @logger.error(logmsg) {e.backtrace.inspect}
               end
             else
               @logger.error(logmsg) { "request "+properties[:correlation_id]+" not found"}
@@ -86,9 +88,11 @@ class UpdateServer
             @logger.debug('UpdateServer.consume') {'status not present'}
           end
         end
+        @logger.debug(logmsg) {" leaving..."}
       rescue Exception => e
         @logger.error e.message
   	    @logger.error e.backtrace.inspect
+        @logger.debug(logmsg) {" leaving..."}
       end
     end
   end
