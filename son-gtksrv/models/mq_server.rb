@@ -34,26 +34,28 @@ require 'json'
 class MQServer
   attr_accessor :url
   
-  CREATE_QUEUE = 'service.instances.create'
+  QUEUE = 'service.instances.create'
   
   def initialize(url,logger)
     @url = url
     @logger=logger
     @channel = Bunny.new(url,:automatically_recover => false).start.create_channel
     @topic = @channel.topic("son-kernel", :auto_delete => false)
-    @queue   = @channel.queue(CREATE_QUEUE, :auto_delete => true).bind(@topic, :routing_key => CREATE_QUEUE)
+    @queue = @channel.queue(QUEUE, :auto_delete => true).bind(@topic, :routing_key => QUEUE)
     self.consume
   end
 
   def publish(msg, correlation_id)
     logmsg= 'MQServer.publish'
     @logger.debug(logmsg) {"msg="+msg+", correlation_id="+correlation_id}
-    @topic.publish(msg, :content_type =>'text/yaml', :routing_key => CREATE_QUEUE, :correlation_id => correlation_id, 
+    @topic.publish(msg, :content_type =>'text/yaml', :routing_key => QUEUE, :correlation_id => correlation_id, 
       :reply_to => @queue.name, :app_id => 'son-gkeeper')
+    @logger.debug(logmsg) {"published msg '"+msg+"', with correlation_id="+correlation_id}
   end
   
   def consume
     logmsg= 'MQServer.consume'
+    @logger.debug(logmsg) {" entered"}
     @queue.subscribe do |delivery_info, properties, payload|
       begin
         @logger.debug(logmsg) { "delivery_info: #{delivery_info}"}
@@ -86,9 +88,11 @@ class MQServer
             @logger.debug('MQServer.consume') {'status not present'}
           end
         end
+        @logger.debug(logmsg) {" leaving..."}
       rescue Exception => e
         @logger.error e.message
   	    @logger.error e.backtrace.inspect
+        @logger.debug(logmsg) {" leaving..."}
       end
     end
   end
