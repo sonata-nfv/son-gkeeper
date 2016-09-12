@@ -68,12 +68,15 @@ class MQServer
           parsed_payload = YAML.load(payload)
           @logger.debug(logmsg) { "parsed_payload: #{parsed_payload}"}
           status = parsed_payload['status']
+          service_instance_uuid = parsed_payload['nsr']['id']
           if status
             @logger.debug(logmsg) { "status: #{status}"}
             request = Request.find_by(id: properties[:correlation_id])
             if request
-              @logger.debug(logmsg) { "request[status] #{request['status']} turned into "+status}
+              @logger.debug(logmsg) { "request['status'] #{request['status']} turned into "+status}
               request['status']=status  
+              @logger.debug(logmsg) { "request['service_instance_uuid'] turned into "+service_instance_uuid}
+              request['service_instance_uuid'] = service_instance_uuid
               begin
                 request.save
                 @logger.debug(logmsg) { "request saved"}
