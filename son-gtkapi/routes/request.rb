@@ -89,5 +89,13 @@ class GtkApi < Sinatra::Base
     logger.debug "GtkApi: leaving GET /requests/#{params[:uuid]} with 'No requests UUID specified'"
     json_error 400, 'No requests UUID specified'
   end
-  
+
+  # GET module's logs
+  get '/admin/requests/logs' do
+    method = MODULE + "GET /admin/requests/logs"
+    logger.debug(method) {"entered"}
+    headers 'Content-Type' => 'text/plain; charset=utf8', 'Location' => '/'
+    log = settings.service_management.get_log
+    halt 200, log.to_s
+  end
 end
