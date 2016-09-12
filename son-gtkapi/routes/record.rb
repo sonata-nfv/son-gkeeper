@@ -29,6 +29,15 @@ require 'addressable/uri'
 
 class GtkApi < Sinatra::Base
   
+  before do
+	  if request.request_method == 'OPTIONS'
+      response.headers['Access-Control-Allow-Origin'] = '*'
+      response.headers['Access-Control-Allow-Methods'] = 'PUT'      
+      response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Access-Control-Allow-Headers, Authorization, X-Requested-With'
+      halt 200
+	  end
+	end
+  
   # GET many instances
   get '/records/:kind/?' do
     method = MODULE + "GET /records/#{params[:kind]}"
