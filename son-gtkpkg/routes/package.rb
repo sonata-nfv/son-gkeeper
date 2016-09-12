@@ -128,21 +128,8 @@ class GtkPkg < Sinatra::Base
     packages = settings.packages_catalogue.find(params)
     logger.debug "GtkPkg: GET /packages: #{packages}"
     if packages && packages.is_a?(Array)
-      if packages.size == 1
-        logger.debug "GtkPkg: in GET /packages/#{uri.query}, found package #{packages[0]}"
-        logger.debug "GtkPkg: in GET /packages/#{uri.query}, generating package"
-        response = Package.new(catalogue: settings.packages_catalogue, logger: logger, params: {descriptor: packages[0]}).to_file()
-        if response
-          logger.debug "GtkPkg: leaving GET /packages/#{uri.query} with \"Package #{packages[0]['uuid']} found and sent in file \"#{packages[0]['name']}\"\""
-          send_file response #File.join(response, packages[0]['name'])
-        else
-          logger.error "GtkPkg: leaving GET \"/packages/#{params[:uuid]}\", with \"Could not create package file\"."
-          json_error 400, "Could not create package file"
-        end
-      else
-        logger.debug "GtkPkg: leaving GET /packages/#{uri.query} with \"Found #{packages.size} packages\""
-        halt 200, packages.to_json
-      end
+      logger.debug "GtkPkg: leaving GET /packages/#{uri.query} with \"Found #{packages.size} packages\""
+      halt 200, packages.to_json
     else
       logger.info "GtkPkg: leaving GET /packages/#{uri.query} with \"No package with params #{uri.query} was found\""
       json_error 404, "No package with params #{uri.query} was found"
