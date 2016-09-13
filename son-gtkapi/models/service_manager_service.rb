@@ -116,7 +116,7 @@ class ServiceManagerService
     end      
   end
   
-  def create_service_update_request(nsr_uuid, nsd)
+  def create_service_update_request(nsr_uuid:, nsd:)
     message = GtkApi::MODULE+'::ServiceManagerService.create_service_update_request'
     @logger.debug(message) {"service instance=#{nsr_uuid}, nsd=#{nsd}"}
     begin

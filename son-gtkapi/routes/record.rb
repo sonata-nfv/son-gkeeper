@@ -74,7 +74,7 @@ class GtkApi < Sinatra::Base
   
   # PUT service instance
   put '/records/services/:uuid/?' do
-    method = MODULE + "PUT /records/services/#{params[:uuid]}: "
+    method = MODULE + " PUT /records/services/#{params[:uuid]}"
     unless params[:uuid].nil?
       logger.debug(method) {'entered'}
       json_error 400, method + "Invalid Instance UUID=#{params[:uuid]}" unless valid? params[:uuid]
@@ -89,17 +89,17 @@ class GtkApi < Sinatra::Base
       end
       
       # here we have the 
-      descriptors = settings.service_management.find_services_by_uuid(body_params['latest_nsd_id'])
-      if descriptors
-        logger.debug(method) {"found #{descriptors}"}
+      descriptor = settings.service_management.find_services_by_uuid(body_params['latest_nsd_id'])
+      if descriptor
+        logger.debug(method) {"found #{descriptor}"}
 
-        update_request = settings.service_management.create_service_update_request(params[:uuid], descriptors[0])
+        update_request = settings.service_management.create_service_update_request(nsr_uuid: params[:uuid], nsd: descriptor)
         if update_request
-          logger.debug(method) { "PUT /records/services/#{params[:uuid]}: update_request =#{update_request}"}
+          logger.debug(method) { "update_request =#{update_request}"}
           halt 201, update_request.to_json
         else
           message = 'No request was created'
-          logger.debug(method) { "leaving PUT /records/services/#{params[:uuid]} with #{message}"}
+          logger.debug(method) { "leaving with #{message}"}
           json_error 400, message
         end
       else
