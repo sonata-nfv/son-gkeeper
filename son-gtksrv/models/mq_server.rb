@@ -69,7 +69,7 @@ class MQServer
           @logger.debug(logmsg) { "parsed_payload: #{parsed_payload}"}
           status = parsed_payload['status']
           service_instance = parsed_payload['nsr']
-          if service_instance && service_instance.key? 'id'
+          if service_instance && service_instance.key?('id')
             service_instance_uuid = parsed_payload['nsr']['id']
             if status
               @logger.debug(logmsg) { "status: #{status}"}
