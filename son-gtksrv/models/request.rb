@@ -27,6 +27,7 @@
 ## partner consortium (www.sonata-nfv.eu).
 # encoding: utf-8
 require 'sinatra/activerecord'
+require 'yaml'
 
 class Request < ActiveRecord::Base
     
@@ -67,8 +68,11 @@ class Request < ActiveRecord::Base
     raise Exception.new(method+'A valid update_server is needed') unless update_server
     raise Exception.new(method+'A valid logger is needed') unless logger
 
-    nsd_yml = YAML.dump(nsd)
-    logger.debug(method) {"nsd_yml=#{nsd_yml}"}
+    payload = {}
+    payload['NSD'] = nsd
+    payload['Instance_id'] = service_instance_uuid
+    #nsd_yml = YAML.dump(nsd)
+    logger.debug(method) {"payload in yaml:#{payload.to_yaml}"}
 
     update_request = Request.create(service_uuid: nsd['uuid'], request_type: 'UPDATE', service_instance_uuid: service_instance_uuid)
     # Request(id: uuid, created_at: datetime, updated_at: datetime, service_uuid: uuid, status: string, request_type: string, service_instance_uuid: uuid) 
@@ -77,7 +81,7 @@ class Request < ActiveRecord::Base
     if update_request
       begin
         # Requests the update
-        smresponse = update_server.publish( nsd_yml.to_s, update_request['id'])
+        smresponse = update_server.publish( payload.to_yaml, update_request['id'])
         logger.debug(method) { "smresponse: #{smresponse.inspect}"}
         update_response = YAML.load(smresponse)
         logger.debug(method) { "update_response: #{update_response}"}
