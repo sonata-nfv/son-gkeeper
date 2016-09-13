@@ -82,14 +82,14 @@ class GtkApi < Sinatra::Base
       # the body of the request is exepected to contain the NSD UUID and the NSD's latest version      
       body_params = JSON.parse(request.body.read)
       logger.debug(method) {"body_params=#{body_params}"}
-      unless body_params.key?('nsd_id') and body_params.key?('latest_nsd_id')
+      unless body_params.key?('nsd_id') && body_params.key?('latest_nsd_id')
         message = 'Both :nsd_id and :latest_nsd_id must be present'
         logger.debug(method) {"Leaving with \"#{message}\""}
         halt 404, message
       end
       
       # here we have the 
-      descriptors = settings.service_management.find_services_by_uuid(body_params[:latest_nsd_id])
+      descriptors = settings.service_management.find_services_by_uuid(body_params['latest_nsd_id'])
       if descriptors
         logger.debug(method) {"found #{descriptors}"}
 

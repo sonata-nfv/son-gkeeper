@@ -43,7 +43,7 @@ class Request < ActiveRecord::Base
     
     logger.debug(method) {"finding request by service_instance_uuid #{service_instance_uuid}"}
     original_request = Request.find_by(service_instance_uuid: service_instance_uuid)
-    logger.debug(method) {"original_request is #{original_request}"}
+      logger.debug(method) {"original_request is #{original_request.inspect}"}
     if original_request
       if original_request['status'] == 'READY'        
         logger.debug(method) {"original_request status is #{original_request['status']}"}
@@ -61,7 +61,7 @@ class Request < ActiveRecord::Base
   end
   
   def self.process_request(nsd:, service_instance_uuid:, update_server:, logger:)
-    method = GtkSrv::MODULE + ": Request.process_request"
+    method = GtkSrv::MODULE + "Request.process_request"
     logger.debug(method) {"entered"}
     raise Exception.new(method+'A valid NSD is needed') unless nsd
     raise Exception.new(method+'A valid service instance UUID is needed') unless service_instance_uuid
@@ -83,28 +83,35 @@ class Request < ActiveRecord::Base
         # Requests the update
         smresponse = update_server.publish( payload.to_yaml, update_request['id'])
         logger.debug(method) { "smresponse: #{smresponse.inspect}"}
-        update_response = YAML.load(smresponse)
-        logger.debug(method) { "update_response: #{update_response}"}
+        #update_response = YAML.load(smresponse)
+        #logger.debug(method) { "update_response: #{update_response}"}
     
-        status = update_response['status']
-        if status
-          logger.debug(method) { "update_request[status] #{update_request['status']} turned into "+status}
-          update_request['status']=status  
-          begin
-            update_request.save
-            logger.debug(method) { "request saved"}
-            json_request = json(update_request, { root: false })
-            logger.info(method) {' returning with request='+json_request}
-            halt 201, json_request
-          rescue Exception => e
-             logger.error e.message
-        	   logger.error e.backtrace.inspect
-          end
+        #status = update_response['status']
+        #if status
+        #  logger.debug(method) { "update_request[status] #{update_request['status']} turned into "+status}
+        #  update_request['status']=status  
+        #  begin
+        #    update_request.save
+        #    logger.debug(method) { "request saved"}
+        update_request2 = Request.find update_request['id']
+        if update_request2
+          json_request = json(update_request2, { root: false })
+          logger.info(method) {' returning with request='+json_request}
+          halt 201, json_request
         else
-          message = method + 'status not present'
+          message = method + "Couldn't find request with id=#{update_request['id']}"
           logger.debug(method) {"leaving with #{message}"}
           json_error 404, message
         end
+            #rescue Exception => e
+          #   logger.error e.message
+        	#   logger.error e.backtrace.inspect
+          #end
+          #else
+          #message = method + 'status not present'
+          #logger.debug(method) {"leaving with #{message}"}
+          #json_error 404, message
+          #end
       rescue Exception => e
         logger.debug(e.message)
         logger.debug(e.backtrace.inspect)
