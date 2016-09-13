@@ -69,8 +69,8 @@ class Request < ActiveRecord::Base
     raise Exception.new(method+'A valid logger is needed') unless logger
 
     payload = {}
-    payload['nsd'] = nsd
-    payload['instance_id'] = service_instance_uuid
+    payload['NSD'] = nsd
+    payload['Instance_id'] = service_instance_uuid
     #nsd_yml = YAML.dump(nsd)
     logger.debug(method) {"payload in yaml:#{payload.to_yaml}"}
 
