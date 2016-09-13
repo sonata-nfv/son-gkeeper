@@ -68,27 +68,32 @@ class MQServer
           parsed_payload = YAML.load(payload)
           @logger.debug(logmsg) { "parsed_payload: #{parsed_payload}"}
           status = parsed_payload['status']
-          service_instance_uuid = parsed_payload['nsr']['id']
-          if status
-            @logger.debug(logmsg) { "status: #{status}"}
-            request = Request.find_by(id: properties[:correlation_id])
-            if request
-              @logger.debug(logmsg) { "request['status'] #{request['status']} turned into "+status}
-              request['status']=status  
-              @logger.debug(logmsg) { "request['service_instance_uuid'] turned into "+service_instance_uuid}
-              request['service_instance_uuid'] = service_instance_uuid
-              begin
-                request.save
-                @logger.debug(logmsg) { "request saved"}
-              rescue Exception => e
-                @logger.error e.message
-          	    @logger.error e.backtrace.inspect
+          service_instance = parsed_payload['nsr']
+          if service_instance && service_instance.key?('id')
+            service_instance_uuid = parsed_payload['nsr']['id']
+            if status
+              @logger.debug(logmsg) { "status: #{status}"}
+              request = Request.find_by(id: properties[:correlation_id])
+              if request
+                @logger.debug(logmsg) { "request['status'] #{request['status']} turned into "+status}
+                request['status']=status  
+                @logger.debug(logmsg) { "request['service_instance_uuid'] turned into "+service_instance_uuid}
+                request['service_instance_uuid'] = service_instance_uuid
+                begin
+                  request.save
+                  @logger.debug(logmsg) { "request saved"}
+                rescue Exception => e
+                  @logger.error e.message
+          	      @logger.error e.backtrace.inspect
+                end
+              else
+                @logger.error(logmsg) { "request "+properties[:correlation_id]+" not found"}
               end
             else
-              @logger.error(logmsg) { "request "+properties[:correlation_id]+" not found"}
+              @logger.error(logmsg) {'status not present'}
             end
           else
-            @logger.debug('MQServer.consume') {'status not present'}
+            @logger.error(logmsg) {'no service instance id present'}
           end
         end
         @logger.debug(logmsg) {" leaving..."}

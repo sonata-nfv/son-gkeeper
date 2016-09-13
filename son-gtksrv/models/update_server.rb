@@ -48,9 +48,10 @@ class UpdateServer
   def publish(msg, correlation_id)
     logmsg= 'UpdateServer.publish'
     @logger.debug(logmsg) {" entered, with msg="+msg+" and correlation_id="+correlation_id}
-    @topic.publish(msg, :content_type =>'text/yaml', :routing_key => QUEUE, :correlation_id => correlation_id, 
+    response = @topic.publish(msg, :content_type =>'text/yaml', :routing_key => QUEUE, :correlation_id => correlation_id, 
       :reply_to => @queue.name, :app_id => 'son-gkeeper')
-    @logger.debug(logmsg) {"published msg '"+msg+"', with correlation_id="+correlation_id}
+    @logger.debug(logmsg) {"published msg '"+msg+"', with correlation_id="+correlation_id+" and response #{response}"}
+    response
   end
   
   def consume

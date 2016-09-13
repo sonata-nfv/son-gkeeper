@@ -102,7 +102,7 @@ class ServiceManagerService
   end
   
   def create_service_intantiation_request(params)
-    @logger.debug "ServiceManagerService.create_service_intantiation_request(#{params})"
+    @logger.debug "::ServiceManagerService.create_service_intantiation_request(#{params})"
     begin
       @logger.debug "ServiceManagerService.create_service_intantiation_request: @url = "+@url
       response = RestClient.post(@url+'/requests', params.to_json, content_type: :json, accept: :json) 
