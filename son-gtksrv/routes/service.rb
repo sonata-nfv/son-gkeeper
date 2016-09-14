@@ -97,7 +97,13 @@ class GtkSrv < Sinatra::Base
         nsd.delete('status') if nsd['status']
         update_response = Request.process_request(nsd: nsd, service_instance_uuid: params[:uuid], update_server: settings.update_server, logger: logger)
         logger.debug(method) {"update_response=#{update_response}"}
-        update_response
+        if update_response
+          halt 201, update_response.to_json
+        else
+          error_msg = "Update request for service instance '#{params[:uuid]} failled"
+          logger.debug(method) {"leaving with '#{error_msg}"}
+          json_error 400, error_msg
+        end
       else
         error_msg = "Service instance '#{params[:uuid]} not 'READY'"
         logger.debug(method) {"leaving with '#{error_msg}"}
