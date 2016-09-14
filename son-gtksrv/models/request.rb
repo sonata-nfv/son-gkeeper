@@ -86,24 +86,21 @@ class Request < ActiveRecord::Base
         update_request2 = Request.find update_request['id']
 
         if update_request2
-          json_request = update_request2.to_json
-          logger.info(method) {' returning with request='+json_request}
-          halt 201, json_request
+          logger.info(method) {" returning with update_request2=#{update_request2}"}
+          update_request2
         else
-          message = method + "Couldn't find request with id=#{update_request['id']}"
-          logger.debug(method) {"leaving with #{message}"}
-          json_error 404, message
+          logger.debug(method) {"Couldn't find request with id=#{update_request['id']}"}
+          nil
         end
       rescue Exception => e
         logger.debug(e.message)
         logger.debug(e.backtrace.inspect)
         puts e.backtrace.inspect
-        {}
+        nil
       end
     else
-      message = method + 'could not save update request for service instance '+service_instance_uuid
-      logger.debug(method) {"leaving with #{message}"}
-      json_error 404, message
+      logger.debug(method) {'could not save update request for service instance '+service_instance_uuid}
+      nil
     end
   end
 
