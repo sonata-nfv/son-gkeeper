@@ -27,6 +27,7 @@
 ## partner consortium (www.sonata-nfv.eu).
 # encoding: utf-8
 require 'sinatra/activerecord'
+require 'json'
 require 'yaml'
 
 class Request < ActiveRecord::Base
@@ -71,7 +72,6 @@ class Request < ActiveRecord::Base
     payload = {}
     payload['NSD'] = nsd
     payload['Instance_id'] = service_instance_uuid
-    #nsd_yml = YAML.dump(nsd)
     logger.debug(method) {"payload in yaml:#{payload.to_yaml}"}
 
     update_request = Request.create(service_uuid: nsd['uuid'], request_type: 'UPDATE', service_instance_uuid: service_instance_uuid)
@@ -83,19 +83,10 @@ class Request < ActiveRecord::Base
         # Requests the update
         smresponse = update_server.publish( payload.to_yaml, update_request['id'])
         logger.debug(method) { "smresponse: #{smresponse.inspect}"}
-        #update_response = YAML.load(smresponse)
-        #logger.debug(method) { "update_response: #{update_response}"}
-    
-        #status = update_response['status']
-        #if status
-        #  logger.debug(method) { "update_request[status] #{update_request['status']} turned into "+status}
-        #  update_request['status']=status  
-        #  begin
-        #    update_request.save
-        #    logger.debug(method) { "request saved"}
         update_request2 = Request.find update_request['id']
+
         if update_request2
-          json_request = json(update_request2, { root: false })
+          json_request = update_request2.to_json
           logger.info(method) {' returning with request='+json_request}
           halt 201, json_request
         else
@@ -103,20 +94,10 @@ class Request < ActiveRecord::Base
           logger.debug(method) {"leaving with #{message}"}
           json_error 404, message
         end
-            #rescue Exception => e
-          #   logger.error e.message
-        	#   logger.error e.backtrace.inspect
-          #end
-          #else
-          #message = method + 'status not present'
-          #logger.debug(method) {"leaving with #{message}"}
-          #json_error 404, message
-          #end
       rescue Exception => e
         logger.debug(e.message)
         logger.debug(e.backtrace.inspect)
         puts e.backtrace.inspect
-        #halt 500, 'Internal server error'
         {}
       end
     else
