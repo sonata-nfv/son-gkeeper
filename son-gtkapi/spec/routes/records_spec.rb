@@ -1,4 +1,3 @@
-##
 ## Copyright (c) 2015 SONATA-NFV [, ANY ADDITIONAL AFFILIATION]
 ## ALL RIGHTS RESERVED.
 ## 
@@ -24,10 +23,37 @@
 ## the Horizon 2020 and 5G-PPP programmes. The authors would like to 
 ## acknowledge the contributions of their colleagues of the SONATA 
 ## partner consortium (www.sonata-nfv.eu).
-# encoding: utf-8
-require_relative 'catalogue'
-require_relative 'v_function'
-require_relative 'n_service'
-require_relative 'request'
-require_relative 'mq_server'
-require_relative 'update_server'
+require_relative '../spec_helper'
+require 'webmock/rspec'
+require 'json'
+require 'securerandom'
+require 'pp'
+require 'rspec/its'
+
+RSpec.describe GtkApi do
+  describe 'GET /records' do
+    context 'with UUID given' do      
+      before do
+        stub_request(:get, 'localhost:5100/packages').to_return(:status=>200, :body=>response_body.to_json, :headers=>{ 'Content-Type'=>'application/json' })
+        get '/services'
+      end
+    
+      subject { last_response }
+      #its(:status) { is_expected.to eq 200 }
+
+    end
+    context 'without UUID given' do
+    end
+  end
+  
+  describe 'PUT /records/services/:uuid' do
+    context 'with UUID given' do
+      context 'with record found' do
+      end
+      context 'without record found' do
+      end
+    end
+    context 'without UUID given' do
+    end
+  end
+end

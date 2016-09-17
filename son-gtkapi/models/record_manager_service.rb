@@ -53,6 +53,19 @@ class RecordManagerService
     end
   end
   
+  def find_service_by_uuid(uuid)
+    method = "GtkApi::RecordManagerService.find_service_by_uuid(#{uuid}): "
+    headers = JSON_HEADERS
+    begin
+      response = RestClient.get(@url+'/services/'+uuid, headers) 
+      @logger.debug(method) {"response=#{response}"}
+      JSON.parse response.body
+    rescue => e
+      @logger.error(method) {"#{e.message} - #{format_error(e.backtrace)}"}
+      nil 
+    end
+  end
+  
   def get_log
     method = "GtkApi::RecordManagerService.get_log: "
     @logger.debug(method) {'entered'}

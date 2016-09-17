@@ -102,7 +102,7 @@ class ServiceManagerService
   end
   
   def create_service_intantiation_request(params)
-    @logger.debug "ServiceManagerService.create_service_intantiation_request(#{params})"
+    @logger.debug "::ServiceManagerService.create_service_intantiation_request(#{params})"
     begin
       @logger.debug "ServiceManagerService.create_service_intantiation_request: @url = "+@url
       response = RestClient.post(@url+'/requests', params.to_json, content_type: :json, accept: :json) 
@@ -112,6 +112,22 @@ class ServiceManagerService
       parsed_response
     rescue => e
       @logger.error "ServiceManagerService.create_service_intantiation_request: #{e.message} - #{format_error(e.backtrace)}"
+      nil 
+    end      
+  end
+  
+  def create_service_update_request(nsr_uuid:, nsd:)
+    message = GtkApi::MODULE+'::ServiceManagerService.create_service_update_request'
+    @logger.debug(message) {"service instance=#{nsr_uuid}, nsd=#{nsd}"}
+    begin
+      @logger.debug(message) {"@url = "+@url}
+      response = RestClient.put(@url+'/services/'+nsr_uuid, nsd.to_json, content_type: :json, accept: :json) 
+      @logger.debug(message) {"response="+response}
+      parsed_response = JSON.parse(response)
+      @logger.debug(message) {"parsed_response=#{parsed_response}"}
+      parsed_response
+    rescue => e
+      @logger.error(message) {"#{e.message} - #{format_error(e.backtrace)}"}
       nil 
     end      
   end

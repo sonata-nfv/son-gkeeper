@@ -50,23 +50,36 @@ class GtkPkg < Sinatra::Base
   #end
 
   post '/packages/?' do
-    logger.info('GtkPkg.post /packages') {"params = #{params}"}
+    log_message = 'GtkPkg.post /packages: '
+    logger.info(log_message) {"params = #{params}"}
     
     package = Package.new(catalogue: settings.packages_catalogue, logger: logger, params: {io: params[:package][:tempfile][:tempfile]})
     if package 
-      logger.debug('GtkPkg.post /packages') {"package=#{package.inspect}"}
+      logger.debug(log_message) {"package=#{package.inspect}"}
       descriptor = package.from_file()
-      logger.info('GtkPkg.post /packages') {"descriptor is #{descriptor}"}
-      if descriptor && descriptor['uuid']
-        logger.info('GtkPkg.post /packages') {"leaving with package #{descriptor.to_json}"}
-        halt 201, {'Location' => "/packages/#{descriptor['uuid']}"}, descriptor.to_json
+      logger.info(log_message) {"descriptor is #{descriptor}"}
+      if descriptor
+        if descriptor.key?('uuid')
+          logger.info(log_message) {"leaving with package #{descriptor.to_json}"}
+          halt 201, {'Location' => "/packages/#{descriptor['uuid']}"}, descriptor.to_json
+        elsif descriptor.key?('name') && descriptor.key?('vendor') && descriptor.key?('version')
+          error_message = "Version #{descriptor['version']} of package '#{descriptor['name']}' from vendor '#{descriptor['vendor']}' already exists"
+          logger.info(log_message) {"leaving with #{error_message}"}
+          halt 409, descriptor.to_json 
+        else
+          error_message = 'Oops.. something terribly wrong happened here!'
+          logger.error(log_message) {"leaving with #{error_message}"}
+          json_error 400, error_message         
+        end
       else
-        logger.error('GtkPkg.post /packages') {"leaving with 'Error generating package descriptor'"}
-        json_error 400, 'Error generating package descriptor'
+        error_message = 'Error generating package descriptor'
+        logger.error(log_message) {"leaving with #{error_message}"}
+        json_error 400, error_message
       end
     else
-      logger.error('GtkPkg.post /packages') {"leaving with 'No package created'"}
-      json_error 400, 'No package created'
+      error_message = 'No package created'
+      logger.error(log_message) {"leaving with #{error_message}"}
+      json_error 400, error_message
     end
   end
   
@@ -115,21 +128,8 @@ class GtkPkg < Sinatra::Base
     packages = settings.packages_catalogue.find(params)
     logger.debug "GtkPkg: GET /packages: #{packages}"
     if packages && packages.is_a?(Array)
-      if packages.size == 1
-        logger.debug "GtkPkg: in GET /packages/#{uri.query}, found package #{packages[0]}"
-        logger.debug "GtkPkg: in GET /packages/#{uri.query}, generating package"
-        response = Package.new(catalogue: settings.packages_catalogue, logger: logger, params: {descriptor: packages[0]}).to_file()
-        if response
-          logger.debug "GtkPkg: leaving GET /packages/#{uri.query} with \"Package #{packages[0]['uuid']} found and sent in file \"#{packages[0]['name']}\"\""
-          send_file response #File.join(response, packages[0]['name'])
-        else
-          logger.error "GtkPkg: leaving GET \"/packages/#{params[:uuid]}\", with \"Could not create package file\"."
-          json_error 400, "Could not create package file"
-        end
-      else
-        logger.debug "GtkPkg: leaving GET /packages/#{uri.query} with \"Found #{packages.size} packages\""
-        halt 200, packages.to_json
-      end
+      logger.debug "GtkPkg: leaving GET /packages/#{uri.query} with \"Found #{packages.size} packages\""
+      halt 200, packages.to_json
     else
       logger.info "GtkPkg: leaving GET /packages/#{uri.query} with \"No package with params #{uri.query} was found\""
       json_error 404, "No package with params #{uri.query} was found"

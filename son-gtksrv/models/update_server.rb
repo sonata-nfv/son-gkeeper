@@ -31,30 +31,31 @@ require 'pp'
 require 'yaml'
 require 'json' 
 
-class MQServer
-  attr_accessor :url
+class UpdateServer
+  attr_accessor :url, :correlation_ids
   
-  QUEUE = 'service.instances.create'
+  QUEUE = 'service.instances.update'
   
   def initialize(url,logger)
     @url = url
     @logger=logger
-    @channel = Bunny.new(url,:automatically_recover => false).start.create_channel
-    @topic = @channel.topic("son-kernel", :auto_delete => false)
-    @queue = @channel.queue(QUEUE, :auto_delete => true).bind(@topic, :routing_key => QUEUE)
+    channel = Bunny.new(url,:automatically_recover => false).start.create_channel
+    @topic = channel.topic("son-kernel", :auto_delete => false)
+    @queue   = channel.queue(QUEUE, :auto_delete => true).bind(@topic, :routing_key => QUEUE)
     self.consume
   end
 
   def publish(msg, correlation_id)
-    logmsg= 'MQServer.publish'
-    @logger.debug(logmsg) {"msg="+msg+", correlation_id="+correlation_id}
-    @topic.publish(msg, :content_type =>'text/yaml', :routing_key => QUEUE, :correlation_id => correlation_id, 
+    logmsg= 'UpdateServer.publish'
+    @logger.debug(logmsg) {" entered, with msg="+msg+" and correlation_id="+correlation_id}
+    response = @topic.publish(msg, :content_type =>'text/yaml', :routing_key => QUEUE, :correlation_id => correlation_id, 
       :reply_to => @queue.name, :app_id => 'son-gkeeper')
-    @logger.debug(logmsg) {"published msg '"+msg+"', with correlation_id="+correlation_id}
+    @logger.debug(logmsg) {"published msg '"+msg+"', with correlation_id="+correlation_id+" and response #{response.inspect}"}
+    response
   end
   
   def consume
-    logmsg= 'MQServer.consume'
+    logmsg= 'UpdateServer.consume'
     @logger.debug(logmsg) {" entered"}
     @queue.subscribe do |delivery_info, properties, payload|
       begin
@@ -72,28 +73,20 @@ class MQServer
             @logger.debug(logmsg) { "status: #{status}"}
             request = Request.find_by(id: properties[:correlation_id])
             if request
-              @logger.debug(logmsg) { "request['status'] #{request['status']} turned into "+status}
+              @logger.debug(logmsg) { "request[status] #{request['status']} turned into "+status}
               request['status']=status  
-              
-              # if this is a final answer, there'll be an NSR
-              service_instance = parsed_payload['nsr']
-              if service_instance && service_instance.key?('id')
-                service_instance_uuid = parsed_payload['nsr']['id']
-                @logger.debug(logmsg) { "request['service_instance_uuid'] turned into "+service_instance_uuid}
-                request['service_instance_uuid'] = service_instance_uuid
-              end
               begin
                 request.save
                 @logger.debug(logmsg) { "request saved"}
               rescue Exception => e
-                @logger.error e.message
-          	    @logger.error e.backtrace.inspect
+                @logger.error(logmsg) {e.message}
+          	    @logger.error(logmsg) {e.backtrace.inspect}
               end
             else
               @logger.error(logmsg) { "request "+properties[:correlation_id]+" not found"}
             end
           else
-            @logger.error(logmsg) {'status not present'}
+            @logger.debug('UpdateServer.consume') {'status not present'}
           end
         end
         @logger.debug(logmsg) {" leaving..."}

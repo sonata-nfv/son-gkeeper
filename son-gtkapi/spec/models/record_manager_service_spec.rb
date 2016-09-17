@@ -1,4 +1,3 @@
-##
 ## Copyright (c) 2015 SONATA-NFV [, ANY ADDITIONAL AFFILIATION]
 ## ALL RIGHTS RESERVED.
 ## 
@@ -24,10 +23,16 @@
 ## the Horizon 2020 and 5G-PPP programmes. The authors would like to 
 ## acknowledge the contributions of their colleagues of the SONATA 
 ## partner consortium (www.sonata-nfv.eu).
-# encoding: utf-8
-require_relative 'catalogue'
-require_relative 'v_function'
-require_relative 'n_service'
-require_relative 'request'
-require_relative 'mq_server'
-require_relative 'update_server'
+require_relative '../spec_helper'
+
+RSpec.describe RecordManagerService, type: :model do
+  describe '.find_records' do
+    #it 'should GET /catalogues/packages/:uuid from catalogues'
+  end
+  describe '.find_service_by_uuid' do
+    #it 'should GET /catalogues/packages from catalogues'
+  end
+  describe '.get_log' do
+    #it 'should POST /catalogues/packages to catalogues'
+  end
+end

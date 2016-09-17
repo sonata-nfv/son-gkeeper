@@ -57,8 +57,11 @@ class Catalogue
   def find_by_uuid(uuid)
     @logger.debug "Catalogue.find_by_uuid(#{uuid})"
     begin
-      response = RestClient.get(@url+"/#{uuid}", JSON_HEADERS) 
-      JSON.parse response.body
+      _response = RestClient.get(@url+"/#{uuid}", JSON_HEADERS) 
+      @logger.debug "Catalogue.find_by_uuid(#{uuid}): response=#{_response}"
+      parsed_response = JSON.parse _response #.body
+      @logger.debug "Catalogue.find_by_uuid(#{uuid}): parsed_response=#{parsed_response}"
+      parsed_response
     rescue => e
       @logger.error format_error(e.backtrace)
       e.to_json

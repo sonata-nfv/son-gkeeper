@@ -75,7 +75,7 @@ class GtkPkg < Sinatra::Base
    set :services_catalogue, Catalogue.new(GtkPkg.settings.catalogues+'/network-services', logger)
    set :functions_catalogue, Catalogue.new(GtkPkg.settings.catalogues+'/vnfs', logger)
   else
-    puts '    >>>Catalogue url not defined, application being terminated!!'
+    logger.error('GtkPkg') {'    >>>Catalogue url not defined, application being terminated!!'}
     Process.kill('TERM', Process.pid)
   end
   

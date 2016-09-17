@@ -34,16 +34,23 @@ class GtkApi < Sinatra::Base
   
   # POST of packages
   post '/packages/?' do
-    logger.info "GtkApi: entered POST /packages with params = #{params}"
+    log_message = 'GtkApi: POST /packages'
+    logger.info(log_message) {"entered with params=#{params}"}
     
     unless params[:package].nil?
       if params[:package][:tempfile]
         package = settings.package_management.create(params)
+        logger.debug(log_message) {"package=#{package.inspect}"}
         if package
           if package.is_a?(Hash) && (package[:uuid] || package['uuid'])
             logger.info "GtkApi: leaving POST /packages with package: #{package}"
             headers = {'location'=> "#{settings.package_management.url}/packages/#{package[:uuid]}", 'Content-Type'=> 'application/json'}
             halt 201, headers, package.to_json
+          elsif package.is_a?(Hash) && package.key?(:package)
+            #(package[:vendor] || package['vendor']) && (package[:version] || package['version']) && (package[:name] || package['name'])
+            logger.info "GtkApi: leaving POST /packages with duplicated package: #{package}"
+            headers = {'Content-Type'=> 'application/json'}
+            halt 409, headers, package[:package].to_json
           else
             json_error 400, 'No UUID given to package'
           end
@@ -80,13 +87,13 @@ class GtkApi < Sinatra::Base
     
     packages = settings.package_management.find(params)
     if packages
-      if packages.size == 1
-        logger.debug "GtkApi: leaving GET /packages?#{uri.query} with package #{packages[0]['uuid']}"
-        get_one_package( packages[0]['uuid'])
-      else
+      #if packages.size == 1
+      #  logger.debug "GtkApi: leaving GET /packages?#{uri.query} with package #{packages[0]['uuid']}"
+      #  get_one_package( packages[0]['uuid'])
+      #else
         logger.debug "GtkApi: leaving GET /packages?#{uri.query} with #{packages}"
         halt 200, packages
-      end
+        #end
     end
     logger.debug "GtkApi: leaving GET /packages?#{uri.query} with \"No package found with parameters #{uri.query}\""
     json_error 404, "No package found with parameters #{uri.query}"
