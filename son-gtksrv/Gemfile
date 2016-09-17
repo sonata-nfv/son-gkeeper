@@ -1,6 +1,7 @@
 source 'https://rubygems.org'
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 gem 'rake'
 gem 'sinatra', '~> 1.4.3', require: 'sinatra/base'
 gem 'sinatra-contrib', '~> 1.4.1', require: false
@@ -22,6 +23,8 @@ gem 'sinatra-activerecord', '2.0.10'
 gem 'sinatra-logger', '0.1.1'
 gem 'sinatra-active-model-serializers', '0.3.0'
 =======
+=======
+>>>>>>> upstream/master
 gem 'rake', '11.2.2'
 gem 'sinatra', '1.4.7', require: 'sinatra/base'
 gem 'sinatra-contrib', '1.4.7', require: false
@@ -42,6 +45,9 @@ gem 'activerecord', '4.2.5.1'
 gem 'sinatra-activerecord', '2.0.4'
 gem 'sinatra-logger', '0.1.1'
 gem 'sinatra-active-model-serializers', '0.2.2'
+<<<<<<< HEAD
+>>>>>>> upstream/master
+=======
 >>>>>>> upstream/master
 
 group :test do
@@ -54,4 +60,8 @@ end
 
 group :test, :development do
   gem 'capybara', '2.7.1'
+<<<<<<< HEAD
 end
+=======
+end
+>>>>>>> upstream/master

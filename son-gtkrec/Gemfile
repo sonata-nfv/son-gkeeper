@@ -1,6 +1,7 @@
 source 'https://rubygems.org'
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 gem 'rake'
 gem 'sinatra', '~> 1.4.3', require: 'sinatra/base'
 gem 'sinatra-contrib', '~> 1.4.1', require: false
@@ -17,6 +18,8 @@ gem 'bunny', '>= 2.3.0'
 gem 'rubocop'
 gem 'rubocop-checkstyle_formatter', require: false
 =======
+=======
+>>>>>>> upstream/master
 gem 'rake', '11.2.2'
 gem 'sinatra', '1.4.7', require: 'sinatra/base'
 gem 'sinatra-contrib', '1.4.7', require: false
@@ -32,6 +35,9 @@ gem 'addressable', '2.4.0'
 gem 'bunny', '2.5.1'
 gem 'rubocop', '0.42.0'
 gem 'rubocop-checkstyle_formatter', '0.3.0', require: false
+<<<<<<< HEAD
+>>>>>>> upstream/master
+=======
 >>>>>>> upstream/master
 gem 'sinatra-logger', '0.1.1'
 
