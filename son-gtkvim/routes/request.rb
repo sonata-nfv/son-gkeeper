@@ -74,7 +74,6 @@ class GtkVim < Sinatra::Base
   end
   
   # Creates a new VIM
-  
   post '/vim/?' do
     original_body = request.body.read
     logger.info "GtkVim: entered POST /vim with original_body=#{original_body}"
@@ -102,6 +101,4 @@ class GtkVim < Sinatra::Base
       halt 500, 'Internal server error'
     end
   end
-
- 
 end

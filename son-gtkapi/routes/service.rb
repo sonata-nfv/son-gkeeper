@@ -45,7 +45,7 @@ class GtkApi < Sinatra::Base
       halt 200, services.to_json if services
     else
       logger.debug "GtkApi: leaving GET /services?#{uri.query} with \"No services with #{uri.query} were found\""
-      halt 404, "No services with #{uri.query} were found"
+      halt 404, "No services with params=#{params} were found"
     end
   end
   
