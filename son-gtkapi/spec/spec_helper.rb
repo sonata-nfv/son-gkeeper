@@ -27,6 +27,9 @@
 require 'rack/test'
 require 'rspec'
 require 'webmock/rspec'
+require 'json'
+require 'securerandom'
+require 'pp'
 
 ENV['RACK_ENV'] = 'test'
 
