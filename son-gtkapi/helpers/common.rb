@@ -29,7 +29,7 @@ module GtkApiHelper
   end  
 
   def json_error(code, message)
-    msg = {'error' => message}
+    msg = {'error' => { 'code'=>code, 'message'=>message}}
     logger.error msg.to_s
     halt code, {'Content-type'=>'application/json'}, msg.to_json
   end

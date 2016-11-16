@@ -36,7 +36,7 @@ class ServiceManagerService
     @logger.debug(CLASS + "#new"){"url=#{@url}, logger=#{@logger}"}
   end
     
-  def find_services_by_uuid(uuid)
+  def find_service_by_uuid(uuid)
     headers = JSON_HEADERS
     #headers[:params] = uuid
     begin
@@ -44,7 +44,7 @@ class ServiceManagerService
       response = getCurb(@url+"/services/#{uuid}", headers)
       JSON.parse response.body
     rescue => e
-      @logger.error "ServiceManagerService.find_services_by_uuid: e=#{format_error(e.backtrace)}"
+      @logger.error "ServiceManagerService.find_service_by_uuid: e=#{format_error(e.backtrace)}"
       nil 
     end
   end

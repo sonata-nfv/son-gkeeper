@@ -89,7 +89,7 @@ class GtkApi < Sinatra::Base
       end
       
       # here we have the 
-      descriptor = settings.service_management.find_services_by_uuid(body_params['latest_nsd_id'])
+      descriptor = settings.service_management.find_service_by_uuid(body_params['latest_nsd_id'])
       if descriptor
         logger.debug(method) {"found #{descriptor}"}
 

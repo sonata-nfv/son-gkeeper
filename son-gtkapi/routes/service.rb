@@ -42,10 +42,10 @@ class GtkApi < Sinatra::Base
     services = settings.service_management.find_services(params)
     if services
       logger.debug "GtkApi: leaving GET /services?#{uri.query} with #{services}"
-      halt 200, services.to_json if services
+      halt 200, services.to_json
     else
       logger.debug "GtkApi: leaving GET /services?#{uri.query} with \"No services with #{uri.query} were found\""
-      halt 404, "No services with params=#{params} were found"
+      json_error 404, "No services with params=#{params} were found"
     end
   end
   
@@ -54,13 +54,13 @@ class GtkApi < Sinatra::Base
     logger.debug "Settings Srv. Mgmt. = #{settings.service_management.class}"
     logger.debug "GtkApi: entered GET /services/#{params[:uuid]}"
     
-    service = settings.service_management.find_services_by_uuid(params[:uuid])
+    service = settings.service_management.find_service_by_uuid(params[:uuid])
     if service
       logger.debug "GtkApi: leaving GET /services/#{params[:uuid]} with #{service}"
-      halt 200, service.to_json if service
+      halt 200, service.to_json
     else
-      logger.debug "GtkApi: leaving GET /services/#{params[:uuid]} with \"Service #{params[:uuid]} no found\""
-      halt 404, "Service #{params[:uuid]} no found"
+      logger.debug "GtkApi: leaving GET /services/#{params[:uuid]} with \"Service #{params[:uuid]} not found\""
+      json_error 404, "Service #{params[:uuid]} not found"
     end
   end
   
