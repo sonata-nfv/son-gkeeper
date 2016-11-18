@@ -89,5 +89,5 @@ class GtkApi < Sinatra::Base
     c.continue_on_exists_proc = true
   end
   MODULE = 'GtkApi'
-  logger.info MODULE + "started at #{settings.time_at_startup}"
+  logger.info(MODULE) {"Started at #{settings.time_at_startup}"}
 end

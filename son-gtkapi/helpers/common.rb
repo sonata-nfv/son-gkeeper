@@ -29,7 +29,7 @@ module GtkApiHelper
   end  
 
   def json_error(code, message)
-    msg = {'error' => message}
+    msg = {'error' => { 'code'=>code, 'message'=>message}}
     logger.error msg.to_s
     halt code, {'Content-type'=>'application/json'}, msg.to_json
   end
@@ -42,5 +42,9 @@ module GtkApiHelper
   def format_error(backtrace)
     first_line = backtrace[0].split(":")
     "In "+first_line[0].split("/").last+", "+first_line.last+": "+first_line[1]
+  end
+  
+  def keyed_hash(hash)
+    Hash[hash.map{|(k,v)| [k.to_sym,v]}]
   end
 end
