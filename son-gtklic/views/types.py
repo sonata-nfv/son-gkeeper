@@ -1,0 +1,42 @@
+
+import sys
+import os
+from flask_restful import reqparse, abort, Api, Resource
+from flask import request
+from flask import jsonify
+
+sys.path.insert(1, os.path.join(sys.path[0], '..'))
+
+from models import Type
+from db import db_session
+
+
+class TypesList(Resource):
+
+    def get(self):
+        type = Type.query.all()
+
+        return jsonify({"types": [o.serialize for o in type]})
+
+
+    def post(self):
+        new_type = Type(request.form['type'], request.form['duration'])
+        db_session.add(new_type)
+        db_session.commit()
+
+        return jsonify(new_type.serialize)
+
+
+class Types(Resource):
+
+    def delete(self, typeID):
+        type = Type.query.filter_by(type_uuid=typeID).first()
+
+        if type is None:
+            return "License Type doesn't exist", 404
+
+        type.active = False
+        db_session.commit()
+
+        return jsonify(type.serialize)
+

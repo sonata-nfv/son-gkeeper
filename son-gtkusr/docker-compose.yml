@@ -1,0 +1,19 @@
+version: '2'
+services:
+  db:
+    build: postgre/.
+    ports:
+      - "5432:5432"
+    expose:
+      - "5432"
+  web:
+    build: .
+
+    ports:
+      - "5000:5000"
+
+    expose:
+      - "5000"
+
+    depends_on:
+      - db
