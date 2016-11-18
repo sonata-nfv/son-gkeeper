@@ -1,0 +1,8 @@
+Flask
+uuid
+flask_SQLAlchemy
+flask_restful
+flask_script
+flask_migrate
+psycopg2
+xmlrunner
