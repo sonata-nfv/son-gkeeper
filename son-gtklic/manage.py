@@ -1,3 +1,3 @@
-from licenseManager import manager
+from app import manager
 
 manager.run()

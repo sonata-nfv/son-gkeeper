@@ -11,8 +11,6 @@ from flask_restful import Api
 from flask_script import Manager, Server, prompt_bool
 from flask_migrate import Migrate, MigrateCommand
 
-sys.path.insert(1, os.path.join(sys.path[0], '..'))
-
 app = Flask(__name__)
 
 app.config.from_pyfile('settings.py')
@@ -38,10 +36,9 @@ def build_response(status_code, description="", error="", data=""):
     return resp
 
 
-import licenseManager.models
-from licenseManager.views.licenses import *
-from licenseManager.views.services import *
-from licenseManager.views.types import *
+from routes.licenses import *
+from routes.services import *
+from routes.types import *
 
 api = Api(app)
 

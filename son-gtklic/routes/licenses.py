@@ -6,8 +6,8 @@ from datetime import datetime, timedelta
 from flask_restful import Resource
 from flask import request
 
-from licenseManager.models import License, Type, Service
-from licenseManager import db, build_response
+from models import License, Type, Service
+from app import db, build_response
 
 class LicensesList(Resource):
 

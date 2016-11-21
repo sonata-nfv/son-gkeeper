@@ -1,9 +1,11 @@
 
+import sys
+import os
 from flask_restful import Resource
 from flask import request
 
-from licenseManager import db, build_response
-from licenseManager.models import License, Type, Service
+from app import db, build_response
+from models import License, Type, Service
 
 
 class TypesList(Resource):

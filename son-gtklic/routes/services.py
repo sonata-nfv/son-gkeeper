@@ -6,8 +6,8 @@ from flask_restful import reqparse, abort, Api, Resource
 from flask import request, make_response
 from flask import jsonify
 
-from licenseManager.models import License, Type, Service
-from licenseManager import db, build_response
+from models import License, Type, Service
+from app import db, build_response
 
 
 class Services(Resource):

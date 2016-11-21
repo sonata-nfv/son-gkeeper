@@ -6,9 +6,7 @@ import xmlrunner
 import uuid
 from datetime import datetime, timedelta
 
-sys.path.insert(1, os.path.join(sys.path[0], '..'))
-
-from licenseManager import app, db
+from app import app, db
 
 class TestCase(unittest.TestCase):
 

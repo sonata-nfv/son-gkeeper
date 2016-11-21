@@ -25,7 +25,7 @@ ENV DATABASE_PORT 5432
 ENV PORT 5000
 
 # Run Tests
-RUN ["python", "licenseManager/tests.py"]
+RUN ["python", "tests.py"]
 
 # Migrate Database
 # Always return 0 only for the case the migrations repo is not created

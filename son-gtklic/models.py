@@ -1,5 +1,5 @@
 
-from licenseManager import db
+from app import db
 import uuid
 import datetime
 
