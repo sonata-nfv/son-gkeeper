@@ -1,18 +1,30 @@
 ## SONATA - Gatekeeper
 ##
-## Copyright 2015-2017 Portugal Telecom Inovacao/Altice Labs
-##
+## Copyright (c) 2015 SONATA-NFV [, ANY ADDITIONAL AFFILIATION]
+## ALL RIGHTS RESERVED.
+## 
 ## Licensed under the Apache License, Version 2.0 (the "License");
 ## you may not use this file except in compliance with the License.
 ## You may obtain a copy of the License at
-##
-##   http://www.apache.org/licenses/LICENSE-2.0
-##
+## 
+##     http://www.apache.org/licenses/LICENSE-2.0
+## 
 ## Unless required by applicable law or agreed to in writing, software
 ## distributed under the License is distributed on an "AS IS" BASIS,
 ## WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 ## See the License for the specific language governing permissions and
 ## limitations under the License.
+## 
+## Neither the name of the SONATA-NFV [, ANY ADDITIONAL AFFILIATION]
+## nor the names of its contributors may be used to endorse or promote 
+## products derived from this software without specific prior written 
+## permission.
+## 
+## This work has been performed in the framework of the SONATA project,
+## funded by the European Commission under Grant number 671517 through 
+## the Horizon 2020 and 5G-PPP programmes. The authors would like to 
+## acknowledge the contributions of their colleagues of the SONATA 
+## partner consortium (www.sonata-nfv.eu).
 # encoding: utf-8
 require 'tempfile'
 require 'yaml'
@@ -29,12 +41,24 @@ class Package
   
   attr_accessor :descriptor
   
-  def initialize(catalogue: nil, logger: nil, params: nil)
+  class NoCatalogueProvided < Exception; end
+  class NoLoggerProvided < Exception; end
+  class NoParamsProvided < Exception; end
+  
+  def initialize(catalogue:, logger:, params:)
+    method = "GtkPkg: Package.initialize: "
+    logger.debug(method) {"entered"}
+    raise NoCatalogueProvided.new(method + 'no Catalogue has been provided') unless catalogue
+    raise NoLoggerProvided.new(method + 'no Logger has been provided') unless logger
+    raise NoParamsProvided.new(method + 'no parameters has been provided') unless params
+
     @logger = logger
     @service = {}
     @functions = []
-    @catalogue = catalogue
-    @url = @catalogue.url
+    @@catalogue = catalogue
+    @logger.debug(method) {"@@catalogue=#{@@catalogue.inspect}"}
+    
+    @url = @@catalogue.url
     if params[:descriptor]
      @descriptor = params[:descriptor]
       @input_folder = File.join('tmp', SecureRandom.hex)
@@ -81,6 +105,8 @@ class Package
     files = unzip_it @package_file
     #@service = {}
     @functions = []
+    
+    # first treat the META-INF
     files.each do |file|
       splited = file.split('/')
       file_name = splited[-1]
@@ -89,7 +115,31 @@ class Package
       if path =~ /META-INF/
         @descriptor = YAML.load_file(file) 
         @logger.debug('Package.from_file') { "@descriptor=#{@descriptor}"}
+        break
       end
+    end
+    @logger.debug('Package.from_file: ') {" before calling duplicate_package?, @@catalogue=#{@@catalogue.inspect}"}
+    
+    unless duplicate_package?(@descriptor).empty?
+      dup = {}
+      dup['vendor'] = @descriptor['vendor']
+      dup['version'] = @descriptor['version']
+      dup['name'] = @descriptor['name']
+      return dup
+    end
+        
+    # and now Services and Functions
+    files.each do |file|
+      splited = file.split('/')
+      file_name = splited[-1]
+      path = File.join(splited.first splited.size-1)
+      @logger.debug('Package.from_file') { "path=#{path}, file_name = #{file_name}"}
+      
+      # this mved to the above cycle
+      #if path =~ /META-INF/
+      #  @descriptor = YAML.load_file(file) 
+      #  @logger.debug('Package.from_file') { "@descriptor=#{@descriptor}"}
+      #end
       if path =~ /service_descriptors/
         @service = NService.new(GtkPkg.settings.services_catalogue, @logger, nil)
         @logger.debug('Package.from_file') { "service=#{@service}"}
@@ -123,19 +173,29 @@ class Package
 
   def self.find_by_uuid(uuid, logger)
     logger.debug "Package#find_by_uuid: #{uuid}"
-    package = @catalogue.find_by_uuid(uuid)
+    package = @@catalogue.find_by_uuid(uuid)
     logger.debug "Package#find_by_uuid: #{package}"
     package
   end
   
   def self.find(params, logger)
     logger.debug "Package#find: #{params}"
-    packages = @catalogue.find(params)
+    logger.debug "Package#find: @@catalogue=#{@@catalogue.inspect}"
+    packages = @@catalogue.find(params)
     logger.debug "Package#find: #{packages}"
     packages
   end
 
   private
+  
+  def duplicate_package?(desc)
+    method = 'Package.duplicate_package?'
+    @logger.debug(method) { "verifying duplication of package with desc=#{desc}"}
+    @logger.debug(method) { "@@catalogue=#{@@catalogue.inspect}"}
+    package = Package.find({vendor: desc['vendor'], version: desc['version'], name: desc['name']}, @logger)
+    @logger.debug(method) { "returned package is #{package.inspect}"}
+    package
+  end
   
   def keyed_hash(hash)
     @logger.debug "Package.keyed_hash hash=#{hash}"
@@ -232,7 +292,7 @@ class Package
   end
   
   def duplicated_package?(descriptor)
-    @catalogue.find({'vendor'=>descriptor['vendor'], 'name'=>descriptor['name'], 'version'=>descriptor['version']})
+    @@catalogue.find({'vendor'=>descriptor['vendor'], 'name'=>descriptor['name'], 'version'=>descriptor['version']})
   end
 
   def store_zip()
@@ -248,7 +308,7 @@ class Package
   
   def store()
     @logger.debug('Package.store') {"descriptor "+@descriptor.to_s}
-    saved_descriptor = @catalogue.create(@descriptor)
+    saved_descriptor = @@catalogue.create(@descriptor)
     if saved_descriptor && saved_descriptor['uuid']
       @logger.debug('Package.store') {"saved_descriptor is "+saved_descriptor.to_s}
       saved_descriptor

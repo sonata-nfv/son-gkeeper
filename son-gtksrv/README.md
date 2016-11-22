@@ -1,27 +1,52 @@
 # [SONATA](http://www.sonata-nfv.eu)'s Gatekeeper Service Management micro-service
 [![Build Status](http://jenkins.sonata-nfv.eu/buildStatus/icon?job=son-gkeeper)](http://jenkins.sonata-nfv.eu/job/son-gkeeper)
 
-# Tests
+This is the folder of the **Services Management** micro-service. This micro-service is used by the [`Gatekeeper API`](https://github.com/sonata-nfv/son-gkeeper/son-gtkapi).
 
-## Obtain a list of available services
-The full list of services registered in the Catalogues can be obrained with
+## Configuration
+The configuration of the Gatekeeper's Services Management micro-service is done mostly by defining `ENV` variables in the [`Dockerfile`](https://github.com/sonata-nfv/son-gkeeper/blob/master/son-gtksrv/Dockerfile). These variables are:
 
-```curl -vi http://sp.int.sonata-nfv.eu:32001/services```
+* `PORT`: the port the micro-service is to provide it's services, currently `5300`;
+* `CATALOGUE_URL`: the URL of the catalogues service, currently `http://catalogues:4002/catalogues`;
+* `POSTGRES_PASSWORD` : the postgres password, currently Dockerfile uses `sonata` as default;
+* `POSTGRES_USER` : the postgres user, currently Dockerfile uses `sonatatest` as default;
+* `DATABASE_HOST` : the postgres host, should be the IP address of postgres database, currently `postgres`;
+* `DATABASE_PORT` : the postgres port, is the default postgres tcp port, currently `5432`;
+* `MQSERVER` : the AMQP uri, currently `amqp://guest:guest@broker:5672`;
 
-**Note:** For this version, no user authentication/authorization is being done. In the future, with authentication/authorization mechanisms in place, this list will be adequately filtered.
+Future work includes evolving the way we store these environment variables, as well as avoiding at least some of the repetition between this information and the one provided in the [`docker-compose.yml`](https://github.com/sonata-nfv/son-gkeeper/blob/master/docker-compose.yml).
 
-## Obtain a list of services with specific attribute values
-To obtain only the list of services that have specific values for some of the attributes (e.g., `status=Active`), you can do this:
+## Usage
+To use this application, we write
+```sh
+$ foreman start
+```
 
-```curl -vi http://sp.int.sonata-nfv.eu:32001/services?status=Active```
+[`Foreman`](https://github.com/ddollar/foreman) is a `ruby gem` for managing applications based on a [`Procfile`](https://github.com/sonata-nfv/son-gkeeper/blob/master/son-gtksrv/Procfile).
 
-## Obtain specific attributes on a list of services
-To obtain only specific attributes (e.g., only `uuid`, `vendor`, `name` and `version`), you can do this:
+### Implemented API
+The implemented API of the Gatekeeper is the following:
 
-```curl -vi http://sp.int.sonata-nfv.eu:32001/services?fields=uuid,vendor,name,version```
+* `/services`:
+    * `GET`: provides a list of services currently registered in the Catalogues;
+    	* `/services?status=active`: provides the services with the status active;
+    	* `/services?fields=uuid,name`: provides the services data with the given `uuid` and `name`;
+* `/requests`:
+    * `GET`: retrieve a list of requests currently registered in the system;
+    	* `/requests?status=ready`: provides the requests with the status `ready`;
+    	* `/services?fields=status,updated_at`: provides the requests data with the given `status` and `updated_at`;
+    * `POST`: Submits a new service instantiation request to the Gatekeeper, providing the `service_uuid`
+ * `/admin/logs`:
+ 	*  `GET`: Retrieve the currently available log file
 
-**Note:** We are assuming there aren't any attributes of the entity called `fields`.
 
-## Check directly in the Catalogue
+**Note 1:** `PUT`and `DELETE`operations are already supported by some of the micro-services, and will be described in the next version(s);
 
-```curl -vi -H "Content-Type: application/json" http://sp.int.sonata-nfv.eu:4002/catalogues/network-services```
+**Note 2:** all `GET`operations support pagination, though this still needs some work. This pagination can be done by using the `offset` and `limit` parameters, like in:
+```sh
+$ curl <resource_url>?offset=0,limit=10
+```
+This command will result in a list of `10`values (the `limit`) of the first page (`offset` zero). These are the default values used for those parameters.
+
+## Tests
+At the module level, we only do **automated unit tests**, using the `RSpec` framework (see the `./spec/`folder). For the remaining tests please see the repositorie's [`README`](https://github.com/sonata-nfv/son-gkeeper/blob/master/README.md) file.

@@ -1,18 +1,30 @@
 ## SONATA - Gatekeeper
 ##
-## Copyright 2015-2017 Portugal Telecom Inovacao/Altice Labs
-##
+## Copyright (c) 2015 SONATA-NFV [, ANY ADDITIONAL AFFILIATION]
+## ALL RIGHTS RESERVED.
+## 
 ## Licensed under the Apache License, Version 2.0 (the "License");
 ## you may not use this file except in compliance with the License.
 ## You may obtain a copy of the License at
-##
-##   http://www.apache.org/licenses/LICENSE-2.0
-##
+## 
+##     http://www.apache.org/licenses/LICENSE-2.0
+## 
 ## Unless required by applicable law or agreed to in writing, software
 ## distributed under the License is distributed on an "AS IS" BASIS,
 ## WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 ## See the License for the specific language governing permissions and
 ## limitations under the License.
+## 
+## Neither the name of the SONATA-NFV [, ANY ADDITIONAL AFFILIATION]
+## nor the names of its contributors may be used to endorse or promote 
+## products derived from this software without specific prior written 
+## permission.
+## 
+## This work has been performed in the framework of the SONATA project,
+## funded by the European Commission under Grant number 671517 through 
+## the Horizon 2020 and 5G-PPP programmes. The authors would like to 
+## acknowledge the contributions of their colleagues of the SONATA 
+## partner consortium (www.sonata-nfv.eu).
 # encoding: utf-8
 require 'json' 
 require 'pp'
@@ -38,23 +50,36 @@ class GtkPkg < Sinatra::Base
   #end
 
   post '/packages/?' do
-    logger.info('GtkPkg.post /packages') {"params = #{params}"}
+    log_message = 'GtkPkg.post /packages: '
+    logger.info(log_message) {"params = #{params}"}
     
     package = Package.new(catalogue: settings.packages_catalogue, logger: logger, params: {io: params[:package][:tempfile][:tempfile]})
     if package 
-      logger.debug('GtkPkg.post /packages') {"package=#{package.inspect}"}
+      logger.debug(log_message) {"package=#{package.inspect}"}
       descriptor = package.from_file()
-      logger.info('GtkPkg.post /packages') {"descriptor is #{descriptor}"}
-      if descriptor && descriptor['uuid']
-        logger.info('GtkPkg.post /packages') {"leaving with package #{descriptor.to_json}"}
-        halt 201, {'Location' => "/packages/#{descriptor['uuid']}"}, descriptor.to_json
+      logger.info(log_message) {"descriptor is #{descriptor}"}
+      if descriptor
+        if descriptor.key?('uuid')
+          logger.info(log_message) {"leaving with package #{descriptor.to_json}"}
+          halt 201, {'Location' => "/packages/#{descriptor['uuid']}"}, descriptor.to_json
+        elsif descriptor.key?('name') && descriptor.key?('vendor') && descriptor.key?('version')
+          error_message = "Version #{descriptor['version']} of package '#{descriptor['name']}' from vendor '#{descriptor['vendor']}' already exists"
+          logger.info(log_message) {"leaving with #{error_message}"}
+          halt 409, descriptor.to_json 
+        else
+          error_message = 'Oops.. something terribly wrong happened here!'
+          logger.error(log_message) {"leaving with #{error_message}"}
+          json_error 400, error_message         
+        end
       else
-        logger.error('GtkPkg.post /packages') {"leaving with 'Error generating package descriptor'"}
-        json_error 400, 'Error generating package descriptor'
+        error_message = 'Error generating package descriptor'
+        logger.error(log_message) {"leaving with #{error_message}"}
+        json_error 400, error_message
       end
     else
-      logger.error('GtkPkg.post /packages') {"leaving with 'No package created'"}
-      json_error 400, 'No package created'
+      error_message = 'No package created'
+      logger.error(log_message) {"leaving with #{error_message}"}
+      json_error 400, error_message
     end
   end
   
@@ -103,21 +128,8 @@ class GtkPkg < Sinatra::Base
     packages = settings.packages_catalogue.find(params)
     logger.debug "GtkPkg: GET /packages: #{packages}"
     if packages && packages.is_a?(Array)
-      if packages.size == 1
-        logger.debug "GtkPkg: in GET /packages/#{uri.query}, found package #{packages[0]}"
-        logger.debug "GtkPkg: in GET /packages/#{uri.query}, generating package"
-        response = Package.new(catalogue: settings.packages_catalogue, logger: logger, params: {descriptor: packages[0]}).to_file()
-        if response
-          logger.debug "GtkPkg: leaving GET /packages/#{uri.query} with \"Package #{packages[0]['uuid']} found and sent in file \"#{packages[0]['name']}\"\""
-          send_file response #File.join(response, packages[0]['name'])
-        else
-          logger.error "GtkPkg: leaving GET \"/packages/#{params[:uuid]}\", with \"Could not create package file\"."
-          json_error 400, "Could not create package file"
-        end
-      else
-        logger.debug "GtkPkg: leaving GET /packages/#{uri.query} with \"Found #{packages.size} packages\""
-        halt 200, packages.to_json
-      end
+      logger.debug "GtkPkg: leaving GET /packages/#{uri.query} with \"Found #{packages.size} packages\""
+      halt 200, packages.to_json
     else
       logger.info "GtkPkg: leaving GET /packages/#{uri.query} with \"No package with params #{uri.query} was found\""
       json_error 404, "No package with params #{uri.query} was found"

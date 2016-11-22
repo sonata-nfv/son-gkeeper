@@ -1,25 +1,46 @@
 ##
-## Copyright 2015-2017 Portugal Telecom Inovacao/Altice Labs
-##
+## Copyright (c) 2015 SONATA-NFV [, ANY ADDITIONAL AFFILIATION]
+## ALL RIGHTS RESERVED.
+## 
 ## Licensed under the Apache License, Version 2.0 (the "License");
 ## you may not use this file except in compliance with the License.
 ## You may obtain a copy of the License at
-##
-##   http://www.apache.org/licenses/LICENSE-2.0
-##
+## 
+##     http://www.apache.org/licenses/LICENSE-2.0
+## 
 ## Unless required by applicable law or agreed to in writing, software
 ## distributed under the License is distributed on an "AS IS" BASIS,
 ## WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 ## See the License for the specific language governing permissions and
 ## limitations under the License.
+## 
+## Neither the name of the SONATA-NFV [, ANY ADDITIONAL AFFILIATION]
+## nor the names of its contributors may be used to endorse or promote 
+## products derived from this software without specific prior written 
+## permission.
+## 
+## This work has been performed in the framework of the SONATA project,
+## funded by the European Commission under Grant number 671517 through 
+## the Horizon 2020 and 5G-PPP programmes. The authors would like to 
+## acknowledge the contributions of their colleagues of the SONATA 
+## partner consortium (www.sonata-nfv.eu).
 # encoding: utf-8
 require 'addressable/uri'
 
 class GtkApi < Sinatra::Base
   
+  before do
+    if request.request_method == 'OPTIONS'
+      response.headers['Access-Control-Allow-Origin'] = '*'
+      response.headers['Access-Control-Allow-Methods'] = 'POST,PUT'      
+      response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Access-Control-Allow-Headers, Authorization, X-Requested-With'
+      halt 200
+    end
+	end
+  
   # GET many instances
   get '/records/:kind/?' do
-    method = "GtkApi GET /records/#{params[:kind]}"
+    method = MODULE + "GET /records/#{params[:kind]}"
     params.delete('splat')
     params.delete('captures')
     uri = Addressable::URI.new
@@ -41,17 +62,60 @@ class GtkApi < Sinatra::Base
   
   # GET a specific instance
   get '/records/:kind/:uuid/?' do
-    method = "GtkApi GET /records/#{params[:kind]}/#{params[:uuid]}: "
+    method = MODULE + "GET /records/#{params[:kind]}/#{params[:uuid]}: "
     unless params[:uuid].nil?
       logger.debug(method) {'entered'}
       json_error 400, 'Invalid Instance UUID' unless valid? params[:uuid]
     end
     logger.debug(method) {"leaving with \"No instance UUID specified\""}
+    # TODO!!
     json_error 400, 'No instance UUID specified'
   end
   
+  # PUT service instance
+  put '/records/services/:uuid/?' do
+    method = MODULE + " PUT /records/services/#{params[:uuid]}"
+    unless params[:uuid].nil?
+      logger.debug(method) {'entered'}
+      json_error 400, method + "Invalid Instance UUID=#{params[:uuid]}" unless valid? params[:uuid]
+
+      # the body of the request is exepected to contain the NSD UUID and the NSD's latest version      
+      body_params = JSON.parse(request.body.read)
+      logger.debug(method) {"body_params=#{body_params}"}
+      unless body_params.key?('nsd_id') && body_params.key?('latest_nsd_id')
+        message = 'Both :nsd_id and :latest_nsd_id must be present'
+        logger.debug(method) {"Leaving with \"#{message}\""}
+        halt 404, message
+      end
+      
+      # here we have the 
+      descriptor = settings.service_management.find_service_by_uuid(body_params['latest_nsd_id'])
+      if descriptor
+        logger.debug(method) {"found #{descriptor}"}
+
+        update_request = settings.service_management.create_service_update_request(nsr_uuid: params[:uuid], nsd: descriptor)
+        if update_request
+          logger.debug(method) { "update_request =#{update_request}"}
+          halt 201, update_request.to_json
+        else
+          message = 'No request was created'
+          logger.debug(method) { "leaving with #{message}"}
+          json_error 400, message
+        end
+      else
+        message = "No descriptor with uuid=#{params[:latest_nsd_id]} found"
+        logger.debug(method) {"leaving with \"#{message}\""}
+        halt 404, message
+      end
+    end
+    message = 'No instance UUID specified'
+    logger.debug(method) {"leaving with \"#{message}\""}
+    json_error 400, message
+  end
+  
+  # GET module's logs
   get '/admin/records/logs' do
-    method = "GtkApi GET /admin/records/logs: "
+    method = MODULE + "GET /admin/records/logs: "
     logger.debug(method) {"entered"}
     headers 'Content-Type' => 'text/plain; charset=utf8', 'Location' => '/'
     log = settings.record_management.get_log

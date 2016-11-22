@@ -41,8 +41,6 @@ services:
     environment:
      - RACK_ENV=integration
      - CATALOGUES_URL=http://sp.int.sonata-nfv.eu:4002/catalogues
-    extra_hosts:
-      - "jenkins.sonata-nfv.eu:192.168.60.5"
     logging:
       driver: gelf
       options:
@@ -66,8 +64,6 @@ services:
      - CATALOGUES_URL=http://sp.int.sonata-nfv.eu:4002/catalogues
     depends_on:
      - postgres
-    extra_hosts:
-      - "jenkins.sonata-nfv.eu:192.168.60.5"
     logging:
       driver: gelf
       options:
@@ -105,8 +101,6 @@ services:
     environment:
      - RACK_ENV=integration
      - REPOSITORIES_URL=http://sp.int.sonata-nfv.eu:4002/records
-    extra_hosts:
-      - "jenkins.sonata-nfv.eu:192.168.60.5"
     logging:
       driver: gelf
       options:

@@ -1,34 +1,34 @@
 source 'https://rubygems.org'
 
-gem 'rake'
-gem 'sinatra', '~> 1.4.3', require: 'sinatra/base'
-gem 'sinatra-contrib', '~> 1.4.1', require: false
-gem 'pry'
-gem 'puma'
-gem 'rest-client'
-gem 'rack-parser', require: 'rack/parser'
-gem 'sinatra-cross_origin'
-gem 'ci_reporter_rspec'
-gem 'rubyzip', '>= 1.0.0'
-gem 'foreman'
-gem 'addressable'
-gem 'bunny', '>= 2.3.0'
-gem 'rubocop'
-gem 'rubocop-checkstyle_formatter', require: false
-gem 'pg'
-gem 'activerecord'
-gem 'sinatra-activerecord'
-gem 'sinatra-logger'
-gem 'sinatra-active-model-serializers', '0.2.0'
+gem 'rake', '11.2.2'
+gem 'sinatra', '1.4.7', require: 'sinatra/base'
+gem 'sinatra-contrib', '1.4.7', require: false
+gem 'pry', '0.10.4'
+gem 'puma', '3.6.0'
+gem 'rest-client', '2.0.0'
+gem 'rack-parser', '0.7.0', require: 'rack/parser'
+gem 'sinatra-cross_origin', '0.3.2'
+gem 'ci_reporter_rspec', '1.0.0'
+gem 'rubyzip', '1.2.0'
+gem 'foreman', '0.82.0'
+gem 'addressable', '2.4.0'
+gem 'bunny', '2.5.1'
+gem 'rubocop', '0.42.0'
+gem 'rubocop-checkstyle_formatter', '0.2.0', require: false
+gem 'pg', '0.18.4'
+gem 'activerecord', '4.2.5.1'
+gem 'sinatra-activerecord', '2.0.4'
+gem 'sinatra-logger', '0.1.1'
+gem 'sinatra-active-model-serializers', '0.2.2'
 
 group :test do
-  gem 'webmock'
-  gem 'rspec'
-  gem 'rspec-mocks'
+  gem 'webmock', '2.1.0'
+  gem 'rspec', '3.5.0'
+  gem 'rspec-mocks', '3.5.0'
   gem 'rack-test', require: 'rack/test'
-  gem 'rspec-its'
+  gem 'rspec-its', '1.2.0'
 end
 
 group :test, :development do
-  gem 'capybara'
+  gem 'capybara', '2.7.1'
 end

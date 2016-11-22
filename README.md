@@ -17,7 +17,7 @@ This NBI provides systems like the [son-push](http://github.com/sonata-nfv/son-p
 ## Development
 This section details what is needed for developing the Gatekeeper.
 
-This repository is organized by **micro-service**.
+This repository is organized by **micro-service** (one folder to one micro-service).
 
 Micro-services currently implemented are the following:
 
@@ -28,13 +28,19 @@ Micro-services currently implemented are the following:
 1. [`son-gtkvim`](https://github.com/sonata-nfv/son-gkeeper/tree/master/son-gtkvim): where all Vims features are implemented;
 1. [`son-gtkrec`](https://github.com/sonata-nfv/son-gkeeper/tree/master/son-gtkrec): where all Records§ features are implemented;
 
+All these micro-services have been implemented using [`ruby`](https://github.com/ruby/ruby/tree/ruby_2_2) programming language and the [`sinatra`](https://github.com/sinatra/sinatra) framework. This is not mandatory, as long as the micro-service to be implemented provides a REST API.
+
 The remaining micro-services ([`son-gtkusr`](https://github.com/sonata-nfv/son-gkeeper/tree/master/son-gtkusr), [`son-gtklic`](https://github.com/sonata-nfv/son-gkeeper/tree/master/son-gtklic) and [`son-gtkkpi`](https://github.com/sonata-nfv/son-gkeeper/tree/master/son-gtkkpi), and eventually others), will be implemented in the course of the project.
 
 ### Building
-Describe briefly how to build the software.
+'Building' the Gatekkeper, given the approach mentioned above, is more like 'composing' it from the available micro-services. So:
+
+* each micro-service is provided in its own container (we're using [`docker`](https://github.com/docker/docker));
+* the `Dockerfile` in each folder specifies the environment the container needs to work;
+* the `docker-compose.yml` file in the root of this repository provides the linking of all the micro-services.
 
 ### Dependencies
-Name all the dependencies needed by the software, including version, license (!), and a link. For example
+The libraries the Gatekeep depends on are the following:
 
 * [`activerecord`](https://github.com/rails/rails/tree/master/activerecord) >=5.0.0 (MIT)
 * [`addressable`](https://github.com/sporkmonger/addressable) >=2.4.0 (Apache 2.0)
@@ -56,7 +62,8 @@ Name all the dependencies needed by the software, including version, license (!)
 * [`rspec-mocks`](https://github.com/rspec/rspec-mocks) >=3.5.0 (MIT)
 * [`rspec-support`](https://github.com/rspec/rspec-support) >=3.5.0 (MIT)
 * [`rubocop`](https://github.com/bbatsov/rubocop) >=0.41.2 (MIT)
-* [`rubocop-checkstyle_formatter`](https://github.com/eitoball/rubocop-checkstyle_formatter) >=0.2.0 MIT()
+* [`rubocop-checkstyle_formatter`](https://github.com/eitoball/rubocop-checkstyle_formatter) >=0.2.0 (MIT)
+* [`ruby`](https://github.com/ruby/ruby/tree/ruby_2_2) >=2.2.0 (MIT)
 * [`rubyzip`](https://github.com/rubyzip/rubyzip) >=1.2.0 (BSD-2-CLAUSE)
 * [`sinatra`](https://github.com/sinatra/sinatra) >=1.4.7 (MIT)
 * [`sinatra-active-model-serializers`](https://github.com/SauloSilva/sinatra-active-model-serializers) 0.2.0 (MIT)
@@ -65,6 +72,8 @@ Name all the dependencies needed by the software, including version, license (!)
 * [`sinatra-cross_origin`](https://github.com/britg/sinatra-cross_origin) >=0.3.2 (MIT)
 * [`sinatra-logger`](https://github.com/kematzy/sinatra-logger) >=0.1.1 (MIT)
 * [`webmock`](https://github.com/bblimke/webmock) >=2.1.0 (MIT)
+
+For the micro-services implemented in [ruby](http://www.ruby-lang.org) these dependencies can be checked in each folder's `Gemfile`.
 
 ### Contributing
 Contributing to the Gatekeeper is really easy. You must:
@@ -81,19 +90,25 @@ Installing the Gatekeeper is really easy. You'll need:
 1. in each one of the subfolders, just run:
   1. `bundle install`
   1. please follow each specific folder's instructions on which environment variables to set
-1. ...
+  1. `foreman start`
 
-The installation of this component can be done using the [son-install](https://github.com/sonata-nfv/son-install) script.
+## Tests
+We do three kinds of automated tests:
+
+* Unit tests, which are done with the `RSpec` framework (see the `./spec/`folder);
+* Integration tests, which are done with a set of `shell` scripts and the `curl` command (see the [`son-tests`](https://github.com/sonata-nfv/son-tests));
+* White-box tests, which are done by using the [`ci_reporter`](https://github.com/ci-reporter/ci_reporter) `gem`, generating `XML` reports by executing the command
+
+```sh
+$ bundle exec rake ci:all
+```
+everytime a *pull request* is done.
 
 ## Usage
-(if applicable) Describe briefly how to use the software.
+Please refer to the [`son-gtkapi`](https://github.com/sonata-nfv/son-gkeeper/tree/master/son-gtkapi) repository and each one of the other folders in this repository for examples of usage of each one of the already developed micro-services.
 
 ## License
-
-#### Useful Links
-
-* Any useful link and brief description. For example:
-* http://www.google/ Don't be evil.
+The license of the SONATA Gatekeeper is Apache 2.0 (please see the [license](https://github.com/sonata-nfv/son-editorgkeeper/blob/master/LICENSE) file).
 
 ---
 #### Lead Developers
@@ -101,9 +116,8 @@ The installation of this component can be done using the [son-install](https://g
 The following lead developers are responsible for this repository and have admin rights. They can, for example, merge pull requests.
 
 * José Bonnet ([jbonnet](https://github.com/jbonnet))
-* Name of lead developer (GitHub-username)
+* Felipe Vicens ([felipevicens](https://github.com/felipevicens))
 
-#### Feedback-Chanel
+#### Feedback-Chanels
 
-* Mailing list
-* [GitHub issues](https://github.com/sonata-nfv/son-gkeeper/issues)
+Please use the [GitHub issues](https://github.com/sonata-nfv/son-gkeeper/issues) and the SONATA development mailing list `sonata-dev@lists.atosresearch.eu` for feedback.
