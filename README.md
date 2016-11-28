@@ -121,3 +121,4 @@ The following lead developers are responsible for this repository and have admin
 #### Feedback-Chanels
 
 Please use the [GitHub issues](https://github.com/sonata-nfv/son-gkeeper/issues) and the SONATA development mailing list `sonata-dev@lists.atosresearch.eu` for feedback.
+
