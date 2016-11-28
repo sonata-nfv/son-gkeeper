@@ -28,53 +28,59 @@
 class ServiceManagerService
   
   JSON_HEADERS = { 'Accept'=> 'application/json', 'Content-Type'=>'application/json'}
-  CLASS = 'ServiceManagerService'
+  CLASS = self.name #'ServiceManagerService'
   
   def initialize(url, logger)
     @url = url
     @logger = logger
+    @logger.debug(CLASS + "#new"){"url=#{@url}, logger=#{@logger}"}
   end
     
-  def find_services_by_uuid(uuid)
+  def find_service_by_uuid(uuid)
     headers = JSON_HEADERS
     #headers[:params] = uuid
     begin
-      response = RestClient.get( @url+"/services/#{uuid}", headers)
+      #response = RestClient.get( @url+"/services/#{uuid}", headers)
+      response = getCurb(@url+"/services/#{uuid}", headers)
       JSON.parse response.body
     rescue => e
-      @logger.error "ServiceManagerService.find_services_by_uuid: e=#{format_error(e.backtrace)}"
+      @logger.error "ServiceManagerService.find_service_by_uuid: e=#{format_error(e.backtrace)}"
       nil 
     end
   end
   
   def find_services(params)
     headers = JSON_HEADERS
+    method = GtkApi::MODULE + "::" + CLASS + ".find_services(#{params})"
+    
     headers[:params] = params unless params.empty?
-    @logger.debug "ServiceManagerService.find_services(#{params}): headers=#{headers}"
+    @logger.debug(method) {"headers=#{headers}"}
     begin
-      response = RestClient.get(@url+'/services', headers) 
-      @logger.debug "ServiceManagerService.find_services(#{params}): response=#{response}"
+      #response = RestClient.get(@url+'/services', headers) 
+      response = getCurb(@url+'/services', headers) 
+      @logger.debug(method) {"Leaving with response=#{response}"}
       JSON.parse response.body
     rescue => e
-      @logger.error "ServiceManagerService.find_services: #{e.message} - #{format_error(e.backtrace)}"
+      @logger.error(method) {"#{e.message} - #{format_error(e.backtrace)}"}
       nil 
     end
   end
 
-  def find_records(params)
-    method = "GtkApi: ServiceManagerService.find_records(#{params})"
-    headers = JSON_HEADERS
-    headers[:params] = params unless params.empty?
-    @logger.debug(method) {"headers=#{headers}"}
-    begin
-      response = RestClient.get(@url+'/services', headers) 
-      @logger.debug "ServiceManagerService.find_services(#{params}): response=#{response}"
-      JSON.parse response.body
-    rescue => e
-      @logger.error "ServiceManagerService.find_services: #{e.message} - #{format_error(e.backtrace)}"
-      nil 
-    end
-  end
+  #def find_records(params)
+  #  method = MODULE + "::" + CLASS + ".find_records(#{params})"
+  #  headers = JSON_HEADERS
+  #  headers[:params] = params unless params.empty?
+  #  @logger.debug(method) {"headers=#{headers}"}
+  #  begin
+      #response = RestClient.get(@url+'/services', headers) 
+  #    response = getCurb(@url+'/services', headers) 
+  #    @logger.debug(method) {": response=#{response}"}
+  #    JSON.parse response.body
+  #  rescue => e
+  #    @logger.error(method) {": #{e.message} - #{format_error(e.backtrace)}"}
+  #    nil 
+  #  end
+  #end
 
   def find_requests(params)
     headers = JSON_HEADERS
@@ -102,22 +108,24 @@ class ServiceManagerService
   end
   
   def create_service_intantiation_request(params)
-    @logger.debug "::ServiceManagerService.create_service_intantiation_request(#{params})"
+    message = GtkApi::MODULE+'::'+CLASS+'.create_service_intantiation_request'
+    @logger.debug(method) {"(#{params})"}
     begin
-      @logger.debug "ServiceManagerService.create_service_intantiation_request: @url = "+@url
-      response = RestClient.post(@url+'/requests', params.to_json, content_type: :json, accept: :json) 
-      @logger.debug "ServiceManagerService.create_service_intantiation_request: response="+response
+      @logger.debug(method) {"@url = "+@url}
+      #response = RestClient.post(@url+'/requests', params.to_json, content_type: :json, accept: :json) 
+      response = postCurb(@url+'/requests', params) 
+      @logger.debug(method) {"response="+response}
       parsed_response = JSON.parse(response)
-      @logger.debug "ServiceManagerService.create_service_intantiation_request: parsed_response=#{parsed_response}"
+      @logger.debug(method) {"parsed_response=#{parsed_response}"}
       parsed_response
     rescue => e
-      @logger.error "ServiceManagerService.create_service_intantiation_request: #{e.message} - #{format_error(e.backtrace)}"
+      @logger.error(method) {"#{e.message} - #{format_error(e.backtrace)}"}
       nil 
     end      
   end
   
   def create_service_update_request(nsr_uuid:, nsd:)
-    message = GtkApi::MODULE+'::ServiceManagerService.create_service_update_request'
+    message = GtkApi::MODULE+'::'+CLASS+'.create_service_update_request'
     @logger.debug(message) {"service instance=#{nsr_uuid}, nsd=#{nsd}"}
     begin
       @logger.debug(message) {"@url = "+@url}
@@ -142,6 +150,19 @@ class ServiceManagerService
   
   private
   
+  def getCurb(url, headers={})
+    Curl.get(url) do |req|
+      req.headers = headers
+    end
+  end
+  
+  def postCurb(url, body)
+    Curl.post(url, body) do |req|
+      req.headers['Content-type'] = 'application/json'
+      req.headers['Accept'] = 'application/json'
+    end
+  end
+
   def format_error(backtrace)
     first_line = backtrace[0].split(":")
     "In "+first_line[0].split("/").last+", "+first_line.last+": "+first_line[1]

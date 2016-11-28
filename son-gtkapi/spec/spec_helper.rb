@@ -26,7 +26,20 @@
 # spec/spec_helper.rb
 require 'rack/test'
 require 'rspec'
+require 'webmock/rspec'
+require 'json'
+require 'securerandom'
+require 'pp'
 
 ENV['RACK_ENV'] = 'test'
 
 require File.dirname(__FILE__) + '/../gtk_api.rb'
+
+RSpec.configure do |conf|
+  conf.include Rack::Test::Methods
+  conf.mock_with :rspec do |configuration|
+    #configuration.syntax = [:expect, :should]
+    #configuration.syntax = :should
+    configuration.syntax = :expect
+  end
+end

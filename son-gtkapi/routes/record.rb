@@ -30,12 +30,12 @@ require 'addressable/uri'
 class GtkApi < Sinatra::Base
   
   before do
-	  if request.request_method == 'OPTIONS'
+    if request.request_method == 'OPTIONS'
       response.headers['Access-Control-Allow-Origin'] = '*'
-      response.headers['Access-Control-Allow-Methods'] = 'PUT'      
+      response.headers['Access-Control-Allow-Methods'] = 'POST,PUT'      
       response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Access-Control-Allow-Headers, Authorization, X-Requested-With'
       halt 200
-	  end
+    end
 	end
   
   # GET many instances
@@ -89,7 +89,7 @@ class GtkApi < Sinatra::Base
       end
       
       # here we have the 
-      descriptor = settings.service_management.find_services_by_uuid(body_params['latest_nsd_id'])
+      descriptor = settings.service_management.find_service_by_uuid(body_params['latest_nsd_id'])
       if descriptor
         logger.debug(method) {"found #{descriptor}"}
 
