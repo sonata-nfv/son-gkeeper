@@ -28,17 +28,17 @@
 class ServiceManagerService
   
   JSON_HEADERS = { 'Accept'=> 'application/json', 'Content-Type'=>'application/json'}
-  CLASS = self.name
+  LOG_MESSAGE = 'GtkApi::' + self.name
   
   def initialize(url, logger)
-    method = GtkApi::MODULE + "::" + CLASS + ".new(url=#{url}, logger=#{logger})"
+    method = LOG_MESSAGE + ".new(url=#{url}, logger=#{logger})"
     @url = url
     @logger = logger
     @logger.debug(method){'entered'}
   end
     
   def find_service_by_uuid(uuid)
-    method = GtkApi::MODULE + "::" + CLASS + ".find_service_by_uuid(#{uuid})"
+    method = LOG_MESSAGE + ".find_service_by_uuid(#{uuid})"
     @logger.debug(method) {'entered'}
     headers = JSON_HEADERS
     begin
@@ -52,7 +52,7 @@ class ServiceManagerService
   end
   
   def find_services(params)
-    method = GtkApi::MODULE + "::" + CLASS + ".find_services(#{params})"
+    method = LOG_MESSAGE + ".find_services(#{params})"
     @logger.debug(method) {'entered'}
     headers = JSON_HEADERS
     headers[:params] = params unless params.empty?
@@ -69,7 +69,7 @@ class ServiceManagerService
   end
 
   def find_requests(params)
-    method = GtkApi::MODULE + "::" + CLASS + ".find_requests(#{params})"
+    method = LOG_MESSAGE + ".find_requests(#{params})"
     @logger.debug(method) {'entered'}
     headers = JSON_HEADERS
     headers[:params] = params unless params.empty?
@@ -84,7 +84,7 @@ class ServiceManagerService
   end
   
   def find_requests_by_uuid(uuid)
-    method = GtkApi::MODULE + "::" + CLASS + ".find_requests_by_uuid(#{uuid})"
+    method = LOG_MESSAGE + ".find_requests_by_uuid(#{uuid})"
     @logger.debug(method) {'entered'}
     headers = JSON_HEADERS
     headers[:params] = uuid
@@ -99,7 +99,7 @@ class ServiceManagerService
   end
   
   def create_service_intantiation_request(params)
-    method = GtkApi::MODULE + "::" + CLASS + ".create_service_intantiation_request(#{params})"
+    method = LOG_MESSAGE + ".create_service_intantiation_request(#{params})"
     @logger.debug(method) {'entered'}
 
     begin
@@ -117,7 +117,7 @@ class ServiceManagerService
   end
   
   def create_service_update_request(nsr_uuid:, nsd:)
-    message = GtkApi::MODULE+'::'+CLASS+'.create_service_update_request'
+    message = LOG_MESSAGE+'.create_service_update_request'
     @logger.debug(message) {'entered'}
     @logger.debug(message) {"service instance=#{nsr_uuid}, nsd=#{nsd}"}
     begin
@@ -134,7 +134,7 @@ class ServiceManagerService
   end
   
   def get_log
-    method = GtkApi::MODULE+'::'+CLASS+'get_log()'
+    method = LOG_MESSAGE+'get_log()'
     @logger.debug(method) {'entered'}
     full_url = @url+'/admin/logs'
     @logger.debug(method) {'url=' + full_url}

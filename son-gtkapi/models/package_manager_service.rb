@@ -31,17 +31,17 @@ class PackageManagerService
   
   attr_reader :url, :logger
   
-  CLASS = self.name
+  LOG_MESSAGE = 'GtkApi::' + self.name
   
   def initialize(url, logger)
-    method = GtkApi::MODULE + "::" + CLASS + ".new(url=#{url}, logger=#{logger})"
+    method = LOG_MESSAGE + ".new(url=#{url}, logger=#{logger})"
     @url = url
     @logger = logger
     @logger.debug(method) {'entered'}
   end
     
   def create(params)
-    method = GtkApi::MODULE + "::" + CLASS + ".create(#{params})"
+    method = LOG_MESSAGE + ".create(#{params})"
     @logger.debug(method) {'entered'}
 
     @logger.debug(method) {"params=#{params}"}
@@ -60,7 +60,7 @@ class PackageManagerService
   end    
 
   def find_by_uuid(uuid)
-    method = GtkApi::MODULE + "::" + CLASS + ".find_by_uuid(#{uuid})"
+    method = LOG_MESSAGE + ".find_by_uuid(#{uuid})"
     @logger.debug(method) {'entered'}
     headers = { 'Accept'=> '*/*', 'Content-Type'=>'application/json'}
     headers[:params] = uuid
@@ -84,7 +84,7 @@ class PackageManagerService
   end
   
   def find(params)
-    method = GtkApi::MODULE + "::" + CLASS + ".find(#{params})"
+    method = LOG_MESSAGE + ".find(#{params})"
     @logger.debug(method) {'entered'}
     headers = { 'Accept'=> 'application/json', 'Content-Type'=>'application/json'}
     headers[:params] = params
@@ -98,7 +98,7 @@ class PackageManagerService
   end
   
   def get_log
-    method = GtkApi::MODULE + "::" + CLASS + ".get_log()"
+    method = LOG_MESSAGE + ".get_log()"
     @logger.debug(method) {'entered'}
     full_url = @url+'/admin/logs'
     @logger.debug(method) {'url=' + full_url}

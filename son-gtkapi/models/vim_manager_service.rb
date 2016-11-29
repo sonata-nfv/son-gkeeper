@@ -28,17 +28,17 @@
 class VimManagerService
   
   JSON_HEADERS = { 'Accept'=> 'application/json', 'Content-Type'=>'application/json'}
-  CLASS = self.name
+  LOG_MESSAGE = 'GtkApi::' + self.name
   
   def initialize(url, logger)
-    method = GtkApi::MODULE + "::" + CLASS + ".new(url=#{url}, logger=#{logger})"
+    method = LOG_MESSAGE + ".new(url=#{url}, logger=#{logger})"
     @url = url
     @logger = logger
     @logger.debug(method) {'entered'}
   end
     
   def find_vims(params)
-    method = GtkApi::MODULE + "::" + CLASS + ".find_vims(#{params})"
+    method = LOG_MESSAGE + ".find_vims(#{params})"
     @logger.debug(method) {"entered"}
     
     headers = JSON_HEADERS
@@ -54,7 +54,7 @@ class VimManagerService
   end
   
   def create_vim(params)
-    method = GtkApi::MODULE + "::" + CLASS + ".create_vim(#{params})"
+    method = LOG_MESSAGE + ".create_vim(#{params})"
     @logger.debug(method) {"entered"}
     
     begin
@@ -71,7 +71,7 @@ class VimManagerService
   end
   
   def find_vim_request_by_uuid(uuid)
-    method = GtkApi::MODULE + '::' + CLASS + ".find_vim_request_by_uuid(#{uuid})"
+    method = LOG_MESSAGE + ".find_vim_request_by_uuid(#{uuid})"
     @logger.debug(method) {'entered'}
     headers = JSON_HEADERS
     headers[:params] = uuid
@@ -85,7 +85,7 @@ class VimManagerService
   end
   
   def get_log
-    method = GtkApi::MODULE + "::" + CLASS + ".get_log()"
+    method = LOG_MESSAGE + ".get_log()"
     @logger.debug(method) {'entered'}
     full_url = @url+'/admin/logs'
     @logger.debug(method) {'url=' + full_url}

@@ -28,17 +28,17 @@
 class RecordManagerService
   
   JSON_HEADERS = { 'Accept'=> 'application/json', 'Content-Type'=>'application/json'}
-  CLASS = self.name
+  LOG_MESSAGE = 'GtkApi::' + self.name
   
   def initialize(url, logger)
-    method = GtkApi::MODULE + "::" + CLASS + ".new(url=#{url}, logger=#{logger})"
+    method = LOG_MESSAGE + ".new(url=#{url}, logger=#{logger})"
     @url = url
     @logger = logger
     @logger.debug(method) {'entered'}
   end
     
   def find_records(params)
-    method = GtkApi::MODULE + "::" + CLASS + ".find_records(#{params})"
+    method = LOG_MESSAGE + ".find_records(#{params})"
     @logger.debug(method) {'entered'}
     headers = JSON_HEADERS
     kind = params['kind']
@@ -57,7 +57,7 @@ class RecordManagerService
   end
   
   def find_service_by_uuid(uuid)
-    method = GtkApi::MODULE + "::" + CLASS + ".find_service_by_uuid(#{uuid})"
+    method = LOG_MESSAGE + ".find_service_by_uuid(#{uuid})"
     @logger.debug(method) {'entered'}
     headers = JSON_HEADERS
     begin
@@ -71,7 +71,7 @@ class RecordManagerService
   end
   
   def get_log
-    method = GtkApi::MODULE + "::" + CLASS + ".get_log()"
+    method = LOG_MESSAGE + ".get_log()"
     @logger.debug(method) {'entered'}
     full_url = @url+'/admin/logs'
     @logger.debug(method) {'url=' + full_url}
