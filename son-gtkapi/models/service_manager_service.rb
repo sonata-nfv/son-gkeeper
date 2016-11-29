@@ -28,31 +28,33 @@
 class ServiceManagerService
   
   JSON_HEADERS = { 'Accept'=> 'application/json', 'Content-Type'=>'application/json'}
-  CLASS = self.name #'ServiceManagerService'
+  CLASS = self.name
   
   def initialize(url, logger)
+    method = GtkApi::MODULE + "::" + CLASS + ".new(url=#{url}, logger=#{logger})"
     @url = url
     @logger = logger
-    @logger.debug(CLASS + "#new"){"url=#{@url}, logger=#{@logger}"}
+    @logger.debug(method){'entered'}
   end
     
   def find_service_by_uuid(uuid)
+    method = GtkApi::MODULE + "::" + CLASS + ".find_service_by_uuid(#{uuid})"
+    @logger.debug(method) {'entered'}
     headers = JSON_HEADERS
-    #headers[:params] = uuid
     begin
       #response = RestClient.get( @url+"/services/#{uuid}", headers)
       response = getCurb(@url+"/services/#{uuid}", headers)
       JSON.parse response.body
     rescue => e
-      @logger.error "ServiceManagerService.find_service_by_uuid: e=#{format_error(e.backtrace)}"
+      @logger.error(method) {"e=#{format_error(e.backtrace)}"}
       nil 
     end
   end
   
   def find_services(params)
-    headers = JSON_HEADERS
     method = GtkApi::MODULE + "::" + CLASS + ".find_services(#{params})"
-    
+    @logger.debug(method) {'entered'}
+    headers = JSON_HEADERS
     headers[:params] = params unless params.empty?
     @logger.debug(method) {"headers=#{headers}"}
     begin
@@ -66,50 +68,40 @@ class ServiceManagerService
     end
   end
 
-  #def find_records(params)
-  #  method = MODULE + "::" + CLASS + ".find_records(#{params})"
-  #  headers = JSON_HEADERS
-  #  headers[:params] = params unless params.empty?
-  #  @logger.debug(method) {"headers=#{headers}"}
-  #  begin
-      #response = RestClient.get(@url+'/services', headers) 
-  #    response = getCurb(@url+'/services', headers) 
-  #    @logger.debug(method) {": response=#{response}"}
-  #    JSON.parse response.body
-  #  rescue => e
-  #    @logger.error(method) {": #{e.message} - #{format_error(e.backtrace)}"}
-  #    nil 
-  #  end
-  #end
-
   def find_requests(params)
+    method = GtkApi::MODULE + "::" + CLASS + ".find_requests(#{params})"
+    @logger.debug(method) {'entered'}
     headers = JSON_HEADERS
     headers[:params] = params unless params.empty?
-    @logger.debug "ServiceManagerService#find_requests(#{params}): headers=#{headers}"
+    @logger.debug(method) {"headers=#{headers}"}
     begin
       response = RestClient.get(@url+'/requests', headers) 
       JSON.parse response.body
     rescue => e
-      @logger.error "ServiceManagerService#find_requests: #{e.message} - #{format_error(e.backtrace)}"
+      @logger.error(method) {"#{e.message} - #{format_error(e.backtrace)}"}
       nil 
     end
   end
   
   def find_requests_by_uuid(uuid)
+    method = GtkApi::MODULE + "::" + CLASS + ".find_requests_by_uuid(#{uuid})"
+    @logger.debug(method) {'entered'}
     headers = JSON_HEADERS
     headers[:params] = uuid
     begin
       response = RestClient.get( @url+"/requests/#{uuid}", headers)
+      @logger.debug(method) {"response=#{response}"}
       JSON.parse response.body
     rescue => e
-      @logger.error "ServiceManagerService#find_requests_by_uuid: #{e.message} - #{format_error(e.backtrace)}"
+      @logger.error(method) {"#{e.message} - #{format_error(e.backtrace)}"}
       nil 
     end
   end
   
   def create_service_intantiation_request(params)
-    message = GtkApi::MODULE+'::'+CLASS+'.create_service_intantiation_request'
-    @logger.debug(method) {"(#{params})"}
+    method = GtkApi::MODULE + "::" + CLASS + ".create_service_intantiation_request(#{params})"
+    @logger.debug(method) {'entered'}
+
     begin
       @logger.debug(method) {"@url = "+@url}
       #response = RestClient.post(@url+'/requests', params.to_json, content_type: :json, accept: :json) 
@@ -126,6 +118,7 @@ class ServiceManagerService
   
   def create_service_update_request(nsr_uuid:, nsd:)
     message = GtkApi::MODULE+'::'+CLASS+'.create_service_update_request'
+    @logger.debug(message) {'entered'}
     @logger.debug(message) {"service instance=#{nsr_uuid}, nsd=#{nsd}"}
     begin
       @logger.debug(message) {"@url = "+@url}
@@ -141,7 +134,7 @@ class ServiceManagerService
   end
   
   def get_log
-    method = "GtkApi::ServiceManagerService.get_log: "
+    method = GtkApi::MODULE+'::'+CLASS+'get_log()'
     @logger.debug(method) {'entered'}
     full_url = @url+'/admin/logs'
     @logger.debug(method) {'url=' + full_url}

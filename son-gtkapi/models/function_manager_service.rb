@@ -27,44 +27,55 @@
 # encoding: utf-8
 class FunctionManagerService
     
-    # We're not yet using this: it allows for multiple implementations, such as Fakes (for testing)
-    attr_reader :url, :logger
-    
-    def initialize(url, logger)
-      @url = url
-      @logger = logger
-    end
+  # We're not yet using this: it allows for multiple implementations, such as Fakes (for testing)
+  attr_reader :url, :logger
   
-    def find_functions_by_uuid(uuid)
-      headers = { 'Accept'=> 'application/json', 'Content-Type'=>'application/json'}
-      headers[:params] = uuid
-      begin
-        response = RestClient.get( @url + "/functions/#{uuid}", headers)
-      rescue => e
-        @logger.error "FunctionManagerService#find_functions_by_uuid: e=#{e.backtrace}"
-        nil 
-      end
+  JSON_HEADERS = { 'Accept'=> 'application/json', 'Content-Type'=>'application/json'}
+  CLASS = self.name
+  
+  def initialize(url, logger)
+    method = GtkApi::MODULE + "::" + CLASS + ".new(url=#{url}, logger=#{logger})"
+    @url = url
+    @logger = logger
+    @logger.debug(method) {'entered'}
+  end
+
+  def find_functions_by_uuid(uuid)
+    method = GtkApi::MODULE + "::" + CLASS + ".find_functions_by_uuid(#{uuid})"
+    @logger.debug(method) {'entered'}
+    headers = JSON_HEADERS
+    headers[:params] = uuid
+    begin
+      response = RestClient.get( @url + "/functions/#{uuid}", headers)
+      # Shouldn't we parse before returning?
+      #JSON.parse response.body
+    rescue => e
+      @logger.error(method) {"e=#{e.backtrace}"}
+      nil 
     end
-    
-    def find_functions(params)
-      headers = { 'Accept'=> 'application/json', 'Content-Type'=>'application/json'}
-      headers[:params] = params unless params.empty?
-      @logger.debug "FunctionManagerService#find_functions(#{params}): headers=#{headers}"
-      begin
-        response = RestClient.get(@url + '/functions', headers) 
-        @logger.debug "FunctionManagerService#find_functions(#{params}): response=#{response}"
-        JSON.parse response.body
-      rescue => e
-        @logger.error "FunctionManagerService#find_functions: e=#{e.backtrace}"
-        nil 
-      end
+  end
+  
+  def find_functions(params)
+    method = GtkApi::MODULE + "::" + CLASS + ".find_functions(#{params})"
+    @logger.debug(method) {'entered'}
+    headers = JSON_HEADERS
+    headers[:params] = params unless params.empty?
+    @logger.debug(method) {"headers=#{headers}"}
+    begin
+      response = RestClient.get(@url + '/functions', headers) 
+      @logger.debug(method) {"response=#{response}"}
+      JSON.parse response.body
+    rescue => e
+      @logger.error(method) {"e=#{e.backtrace}"}
+      nil 
     end
-    
-    def get_log
-      method = "GtkApi::FunctionManagerService.get_log: "
-      @logger.debug(method) {'entered'}
-      full_url = @url+'/admin/logs'
-      @logger.debug(method) {'url=' + full_url}
-      RestClient.get(full_url)      
-    end
+  end
+  
+  def get_log
+    method = GtkApi::MODULE + "::" + CLASS + ".get_log()"
+    @logger.debug(method) {'entered'}
+    full_url = @url+'/admin/logs'
+    @logger.debug(method) {'url=' + full_url}
+    RestClient.get(full_url)      
+  end
 end

@@ -28,41 +28,51 @@
 class VimManagerService
   
   JSON_HEADERS = { 'Accept'=> 'application/json', 'Content-Type'=>'application/json'}
+  CLASS = self.name
   
   def initialize(url, logger)
+    method = GtkApi::MODULE + "::" + CLASS + ".new(url=#{url}, logger=#{logger})"
     @url = url
     @logger = logger
+    @logger.debug(method) {'entered'}
   end
     
   def find_vims(params)
+    method = GtkApi::MODULE + "::" + CLASS + ".find_vims(#{params})"
+    @logger.debug(method) {"entered"}
+    
     headers = JSON_HEADERS
     headers[:params] = params unless params.empty?
     begin
       response = RestClient.get( @url+"/vim", headers)
-      @logger.debug "VimManagerService.find_vims(#{params}): response=#{response}"
+      @logger.debug(method) {"response=#{response}"}
       JSON.parse response.body
     rescue => e
-      @logger.error "VimManagerService.find_vims: e=#{format_error(e.backtrace)}"
+      @logger.error(method) {"e=#{format_error(e.backtrace)}"}
       nil 
     end
   end
   
   def create_vim(params)
-    @logger.debug "VimManagerService.create_service_intantiation_request(#{params})"
+    method = GtkApi::MODULE + "::" + CLASS + ".create_vim(#{params})"
+    @logger.debug(method) {"entered"}
+    
     begin
-      @logger.debug "VimManagerService.create_service_intantiation_request: @url = "+@url
+      @logger.debug(method) {"@url = "+@url}
       response = RestClient.post(@url+'/vim', params.to_json, content_type: :json, accept: :json) 
-      @logger.debug "VimManagerService.create_service_intantiation_request: response="+response
+      @logger.debug(method) {"response="+response}
       parsed_response = JSON.parse(response)
-      @logger.debug "VimManagerService.create_service_intantiation_request: parsed_response=#{parsed_response}"
+      @logger.debug(method) {"parsed_response=#{parsed_response}"}
       parsed_response
     rescue => e
-      @logger.error "VimManagerService.create_service_intantiation_request: #{e.message} - #{format_error(e.backtrace)}"
+      @logger.error(method) {"#{e.message} - #{format_error(e.backtrace)}"}
       nil 
     end      
   end
   
   def find_vim_request_by_uuid(uuid)
+    method = GtkApi::MODULE + '::' + CLASS + ".find_vim_request_by_uuid(#{uuid})"
+    @logger.debug(method) {'entered'}
     headers = JSON_HEADERS
     headers[:params] = uuid
     begin
@@ -75,7 +85,7 @@ class VimManagerService
   end
   
   def get_log
-    method = "GtkApi::VimManagerService.get_log: "
+    method = GtkApi::MODULE + "::" + CLASS + ".get_log()"
     @logger.debug(method) {'entered'}
     full_url = @url+'/admin/logs'
     @logger.debug(method) {'url=' + full_url}
@@ -88,5 +98,4 @@ class VimManagerService
     first_line = backtrace[0].split(":")
     "In "+first_line[0].split("/").last+", "+first_line.last+": "+first_line[1]
   end
-  
 end
