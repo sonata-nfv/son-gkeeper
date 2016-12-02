@@ -75,7 +75,8 @@ class ServiceManagerService
     headers[:params] = params unless params.empty?
     @logger.debug(method) {"headers=#{headers}"}
     begin
-      response = RestClient.get(@url+'/requests', headers) 
+      #response = RestClient.get(@url+'/requests', headers) 
+      response = getCurb(@url+'/requests', headers) 
       JSON.parse response.body
     rescue => e
       @logger.error(method) {"#{e.message} - #{format_error(e.backtrace)}"}
@@ -89,7 +90,8 @@ class ServiceManagerService
     headers = JSON_HEADERS
     headers[:params] = uuid
     begin
-      response = RestClient.get( @url+"/requests/#{uuid}", headers)
+      #response = RestClient.get( @url+"/requests/#{uuid}", headers)
+      response = getCurb(@url+'/requests/'+uuid, headers) 
       @logger.debug(method) {"response=#{response}"}
       JSON.parse response.body
     rescue => e
@@ -105,7 +107,7 @@ class ServiceManagerService
     begin
       @logger.debug(method) {"@url = "+@url}
       #response = RestClient.post(@url+'/requests', params.to_json, content_type: :json, accept: :json) 
-      response = postCurb(@url+'/requests', params) 
+      response = postCurb(@url+'/requests', params.to_json) ## TODO: check if this tests ok!! 
       @logger.debug(method) {"response="+response}
       parsed_response = JSON.parse(response)
       @logger.debug(method) {"parsed_response=#{parsed_response}"}
@@ -122,7 +124,8 @@ class ServiceManagerService
     @logger.debug(message) {"service instance=#{nsr_uuid}, nsd=#{nsd}"}
     begin
       @logger.debug(message) {"@url = "+@url}
-      response = RestClient.put(@url+'/services/'+nsr_uuid, nsd.to_json, content_type: :json, accept: :json) 
+      #response = RestClient.put(@url+'/services/'+nsr_uuid, nsd.to_json, content_type: :json, accept: :json) 
+      response = postCurb(@url+'/services/'+nsr_uuid, nsd.to_json) 
       @logger.debug(message) {"response="+response}
       parsed_response = JSON.parse(response)
       @logger.debug(message) {"parsed_response=#{parsed_response}"}
@@ -138,7 +141,7 @@ class ServiceManagerService
     @logger.debug(method) {'entered'}
     full_url = @url+'/admin/logs'
     @logger.debug(method) {'url=' + full_url}
-    RestClient.get(full_url)      
+    getCurb(full_url)      
   end
   
   private

@@ -47,7 +47,8 @@ class RecordManagerService
     @logger.debug(method) {"headers=#{headers}"}
     begin
       @logger.debug(method) {"getting #{kind} from #{@url}"}
-      response = RestClient.get(@url+'/'+kind, headers) 
+      #response = RestClient.get(@url+'/'+kind, headers) 
+      response = getCurb(@url+'/'+kind, headers) 
       @logger.debug(method) {"response=#{response}"}
       JSON.parse response.body
     rescue => e
@@ -61,7 +62,8 @@ class RecordManagerService
     @logger.debug(method) {'entered'}
     headers = JSON_HEADERS
     begin
-      response = RestClient.get(@url+'/services/'+uuid, headers) 
+      #response = RestClient.get(@url+'/services/'+uuid, headers) 
+      response = getCurb(@url+'/services/'+uuid, headers) 
       @logger.debug(method) {"response=#{response}"}
       JSON.parse response.body
     rescue => e
@@ -75,11 +77,18 @@ class RecordManagerService
     @logger.debug(method) {'entered'}
     full_url = @url+'/admin/logs'
     @logger.debug(method) {'url=' + full_url}
-    RestClient.get(full_url)      
+    #RestClient.get(full_url)
+    getCurb(full_url)   
   end
   
   private
   
+  def getCurb(url, headers={})
+    Curl.get(url) do |req|
+      req.headers = headers
+    end
+  end
+
   def format_error(backtrace)
     first_line = backtrace[0].split(":")
     "In "+first_line[0].split("/").last+", "+first_line.last+": "+first_line[1]

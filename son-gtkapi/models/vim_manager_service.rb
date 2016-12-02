@@ -44,7 +44,8 @@ class VimManagerService
     headers = JSON_HEADERS
     headers[:params] = params unless params.empty?
     begin
-      response = RestClient.get( @url+"/vim", headers)
+      #response = RestClient.get( @url+"/vim", headers)
+      response = getCurb(@url+'/vim', headers) 
       @logger.debug(method) {"response=#{response}"}
       JSON.parse response.body
     rescue => e
@@ -59,7 +60,8 @@ class VimManagerService
     
     begin
       @logger.debug(method) {"@url = "+@url}
-      response = RestClient.post(@url+'/vim', params.to_json, content_type: :json, accept: :json) 
+      #response = RestClient.post(@url+'/vim', params.to_json, content_type: :json, accept: :json) 
+      response = postCurb(@url+'/vim', params.to_json) 
       @logger.debug(method) {"response="+response}
       parsed_response = JSON.parse(response)
       @logger.debug(method) {"parsed_response=#{parsed_response}"}
@@ -76,10 +78,11 @@ class VimManagerService
     headers = JSON_HEADERS
     headers[:params] = uuid
     begin
-      response = RestClient.get( @url+"/vim_request/#{uuid}", headers)
+      #response = RestClient.get( @url+"/vim_request/#{uuid}", headers)
+      response = getCurb(@url+'/vim_request/'+uuid, headers) 
       JSON.parse response.body
     rescue => e
-      @logger.error "VimManagerService#find_requests_by_uuid: #{e.message} - #{format_error(e.backtrace)}"
+      @logger.error(method) {"#{e.message} - #{format_error(e.backtrace)}"}
       nil 
     end
   end
@@ -89,10 +92,24 @@ class VimManagerService
     @logger.debug(method) {'entered'}
     full_url = @url+'/admin/logs'
     @logger.debug(method) {'url=' + full_url}
-    RestClient.get(full_url)      
+    #RestClient.get(full_url)
+    getCurb(full_url)
   end
   
   private
+  
+  def getCurb(url, headers={})
+    Curl.get(url) do |req|
+      req.headers = headers
+    end
+  end
+  
+  def postCurb(url, body)
+    Curl.post(url, body) do |req|
+      req.headers['Content-type'] = 'application/json'
+      req.headers['Accept'] = 'application/json'
+    end
+  end
   
   def format_error(backtrace)
     first_line = backtrace[0].split(":")

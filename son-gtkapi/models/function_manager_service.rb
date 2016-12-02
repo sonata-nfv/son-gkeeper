@@ -46,7 +46,7 @@ class FunctionManagerService
     headers = JSON_HEADERS
     headers[:params] = uuid
     begin
-      response = RestClient.get( @url + "/functions/#{uuid}", headers)
+      response = getCurb( @url + "/functions/#{uuid}", headers)
       # Shouldn't we parse before returning?
       #JSON.parse response.body
     rescue => e
@@ -62,7 +62,7 @@ class FunctionManagerService
     headers[:params] = params unless params.empty?
     @logger.debug(method) {"headers=#{headers}"}
     begin
-      response = RestClient.get(@url + '/functions', headers) 
+      response = getCurb(@url + '/functions', headers) 
       @logger.debug(method) {"response=#{response}"}
       JSON.parse response.body
     rescue => e
@@ -76,6 +76,21 @@ class FunctionManagerService
     @logger.debug(method) {'entered'}
     full_url = @url+'/admin/logs'
     @logger.debug(method) {'url=' + full_url}
-    RestClient.get(full_url)      
+    getCurb(full_url)      
+  end
+  
+  private
+  
+  def getCurb(url, headers={})
+    Curl.get(url) do |req|
+      req.headers = headers
+    end
+  end
+  
+  def postCurb(url, body)
+    Curl.post(url, body) do |req|
+      req.headers['Content-type'] = 'application/json'
+      req.headers['Accept'] = 'application/json'
+    end
   end
 end
