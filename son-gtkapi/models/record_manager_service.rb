@@ -28,15 +28,18 @@
 class RecordManagerService
   
   JSON_HEADERS = { 'Accept'=> 'application/json', 'Content-Type'=>'application/json'}
-  CLASS = 'GtkApi::RecordManagerService'
+  LOG_MESSAGE = 'GtkApi::' + self.name
   
   def initialize(url, logger)
+    method = LOG_MESSAGE + ".new(url=#{url}, logger=#{logger})"
     @url = url
     @logger = logger
+    @logger.debug(method) {'entered'}
   end
     
   def find_records(params)
-    method = "GtkApi::RecordManagerService.find_records(#{params}): "
+    method = LOG_MESSAGE + ".find_records(#{params})"
+    @logger.debug(method) {'entered'}
     headers = JSON_HEADERS
     kind = params['kind']
     params.delete('kind')
@@ -44,7 +47,8 @@ class RecordManagerService
     @logger.debug(method) {"headers=#{headers}"}
     begin
       @logger.debug(method) {"getting #{kind} from #{@url}"}
-      response = RestClient.get(@url+'/'+kind, headers) 
+      #response = RestClient.get(@url+'/'+kind, headers) 
+      response = getCurb(@url+'/'+kind, headers) 
       @logger.debug(method) {"response=#{response}"}
       JSON.parse response.body
     rescue => e
@@ -54,10 +58,12 @@ class RecordManagerService
   end
   
   def find_service_by_uuid(uuid)
-    method = "GtkApi::RecordManagerService.find_service_by_uuid(#{uuid}): "
+    method = LOG_MESSAGE + ".find_service_by_uuid(#{uuid})"
+    @logger.debug(method) {'entered'}
     headers = JSON_HEADERS
     begin
-      response = RestClient.get(@url+'/services/'+uuid, headers) 
+      #response = RestClient.get(@url+'/services/'+uuid, headers) 
+      response = getCurb(@url+'/services/'+uuid, headers) 
       @logger.debug(method) {"response=#{response}"}
       JSON.parse response.body
     rescue => e
@@ -67,15 +73,22 @@ class RecordManagerService
   end
   
   def get_log
-    method = "GtkApi::RecordManagerService.get_log: "
+    method = LOG_MESSAGE + ".get_log()"
     @logger.debug(method) {'entered'}
     full_url = @url+'/admin/logs'
     @logger.debug(method) {'url=' + full_url}
-    RestClient.get(full_url)      
+    #RestClient.get(full_url)
+    getCurb(full_url)   
   end
   
   private
   
+  def getCurb(url, headers={})
+    Curl.get(url) do |req|
+      req.headers = headers
+    end
+  end
+
   def format_error(backtrace)
     first_line = backtrace[0].split(":")
     "In "+first_line[0].split("/").last+", "+first_line.last+": "+first_line[1]
