@@ -38,7 +38,8 @@ class ManagerService
   end
   
   def get_log(log_url)
-    method = 'GtkApi::' + self.name + ".get_log()"
+    method = 'GtkApi::' + CLASS_NAME + ".get_log()"
+        
     @logger.debug(method) {'entered'}
     full_url = @url+log_url
     @logger.debug(method) {'url=' + full_url}
