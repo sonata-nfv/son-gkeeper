@@ -25,15 +25,16 @@
 ## acknowledge the contributions of their colleagues of the SONATA 
 ## partner consortium (www.sonata-nfv.eu).
 # encoding: utf-8
-class RecordManagerService
+class RecordManagerService < ManagerService
   
   JSON_HEADERS = { 'Accept'=> 'application/json', 'Content-Type'=>'application/json'}
   LOG_MESSAGE = 'GtkApi::' + self.name
   
   def initialize(url, logger)
     method = LOG_MESSAGE + ".new(url=#{url}, logger=#{logger})"
-    @url = url
-    @logger = logger
+    #@url = url
+    #@logger = logger
+    super
     @logger.debug(method) {'entered'}
   end
     
@@ -70,27 +71,5 @@ class RecordManagerService
       @logger.error(method) {"#{e.message} - #{format_error(e.backtrace)}"}
       nil 
     end
-  end
-  
-  def get_log
-    method = LOG_MESSAGE + ".get_log()"
-    @logger.debug(method) {'entered'}
-    full_url = @url+'/admin/logs'
-    @logger.debug(method) {'url=' + full_url}
-    #RestClient.get(full_url)
-    getCurb(full_url)   
-  end
-  
-  private
-  
-  def getCurb(url, headers={})
-    Curl.get(url) do |req|
-      req.headers = headers
-    end
-  end
-
-  def format_error(backtrace)
-    first_line = backtrace[0].split(":")
-    "In "+first_line[0].split("/").last+", "+first_line.last+": "+first_line[1]
   end
 end

@@ -25,50 +25,41 @@
 ## acknowledge the contributions of their colleagues of the SONATA 
 ## partner consortium (www.sonata-nfv.eu).
 # encoding: utf-8
-class FunctionManagerService < ManagerService
-    
-  # We're not yet using this: it allows for multiple implementations, such as Fakes (for testing)
-  attr_reader :url, :logger
+class ManagerService
   
-  JSON_HEADERS = { 'Accept'=> 'application/json', 'Content-Type'=>'application/json'}
-  LOG_MESSAGE = 'GtkApi::' + self.name
+  #JSON_HEADERS = { 'Accept'=> 'application/json', 'Content-Type'=>'application/json'}
+  #LOG_MESSAGE = 'GtkApi::' + self.name
   
   def initialize(url, logger)
-    method = LOG_MESSAGE + ".new(url=#{url}, logger=#{logger})"
-    #@url = url
-    #@logger = logger
-    super
+    method = 'GtkApi::' + self.name + ".new(url=#{url}, logger=#{logger})"
+    @url = url
+    @logger = logger
     @logger.debug(method) {'entered'}
   end
-
-  def find_functions_by_uuid(uuid)
-    method = LOG_MESSAGE + ".find_functions_by_uuid(#{uuid})"
+  
+  def get_log(log_url)
+    method = 'GtkApi::' + self.name + ".get_log()"
     @logger.debug(method) {'entered'}
-    headers = JSON_HEADERS
-    headers[:params] = uuid
-    begin
-      response = getCurb( @url + "/functions/#{uuid}", headers)
-      # Shouldn't we parse before returning?
-      #JSON.parse response.body
-    rescue => e
-      @logger.error(method) {"e=#{e.backtrace}"}
-      nil 
+    full_url = @url+log_url
+    @logger.debug(method) {'url=' + full_url}
+    getCurb(full_url)      
+  end
+  
+  def getCurb(url, headers={})
+    Curl.get(url) do |req|
+      req.headers = headers
     end
   end
   
-  def find_functions(params)
-    method = LOG_MESSAGE + ".find_functions(#{params})"
-    @logger.debug(method) {'entered'}
-    headers = JSON_HEADERS
-    headers[:params] = params unless params.empty?
-    @logger.debug(method) {"headers=#{headers}"}
-    begin
-      response = getCurb(@url + '/functions', headers) 
-      @logger.debug(method) {"response=#{response}"}
-      JSON.parse response.body
-    rescue => e
-      @logger.error(method) {"e=#{e.backtrace}"}
-      nil 
+  def postCurb(url, body)
+    Curl.post(url, body) do |req|
+      req.headers['Content-type'] = 'application/json'
+      req.headers['Accept'] = 'application/json'
     end
+  end
+  
+  def format_error(backtrace)
+    first_line = backtrace[0].split(":")
+    "In "+first_line[0].split("/").last+", "+first_line.last+": "+first_line[1]
   end
 end
