@@ -138,12 +138,4 @@ class ServiceManagerService < ManagerService
       nil 
     end      
   end
-  
-  def get_log
-    method = LOG_MESSAGE+'get_log()'
-    @logger.debug(method) {'entered'}
-    full_url = @url+'/admin/logs'
-    @logger.debug(method) {'url=' + full_url}
-    getCurb(full_url)      
-  end
 end

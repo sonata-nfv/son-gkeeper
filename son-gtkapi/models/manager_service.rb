@@ -43,7 +43,7 @@ class ManagerService
     @logger.debug(method) {'entered'}
     full_url = @url+log_url
     @logger.debug(method) {'url=' + full_url}
-    getCurb(full_url)      
+    getCurb(full_url).body    
   end
   
   def getCurb(url, headers={})

@@ -70,11 +70,4 @@ class LicenceManagerService < ManagerService
       nil 
     end
   end
-  
-  def get_log
-    method = LOG_MESSAGE + ".get_log()"
-    @logger.debug(method) {'entered'}
-    super.get_log('/admin/logs')
-  end
-  
 end
