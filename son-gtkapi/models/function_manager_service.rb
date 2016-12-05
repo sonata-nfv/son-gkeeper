@@ -50,8 +50,17 @@ class FunctionManagerService < ManagerService
     headers[:params] = uuid
     begin
       response = getCurb( @url + "/functions/#{uuid}", headers)
-      # Shouldn't we parse before returning?
-      #JSON.parse response.body
+      case response.status
+        when 200
+          @logger.debug(method) {'found function ' + response.body}
+          JSON.parse response.body
+        when 404
+          @logger.error(method) {"Function with UUID=#{uuid} was not found"}
+          nil
+        else
+          @logger.error(method) {"Strange error while looking for function with UUID=#{uuid}"}
+          nil
+      end
     rescue => e
       @logger.error(method) {"e=#{e.backtrace}"}
       nil 
@@ -67,7 +76,17 @@ class FunctionManagerService < ManagerService
     begin
       response = getCurb(@url + '/functions', headers) 
       @logger.debug(method) {"response=#{response}"}
-      JSON.parse response.body
+      case response.status
+        when 200
+          @logger.debug(method) {'found function(s) ' + response.body}
+          JSON.parse response.body
+        when 404
+          @logger.error(method) {"Function with params=#{params} were not found"}
+          []
+        else
+          @logger.error(method) {"Strange error while looking for function with params=#{params}"}
+          nil
+      end
     rescue => e
       @logger.error(method) {"e=#{e.backtrace}"}
       nil 
