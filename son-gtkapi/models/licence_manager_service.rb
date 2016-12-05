@@ -27,7 +27,7 @@
 # encoding: utf-8
 require './manager_service'
 
-class RecordManagerService < ManagerService
+class LicenceManagerService < ManagerService
   
   JSON_HEADERS = { 'Accept'=> 'application/json', 'Content-Type'=>'application/json'}
   LOG_MESSAGE = 'GtkApi::' + self.name
@@ -39,39 +39,42 @@ class RecordManagerService < ManagerService
     super
     @logger.debug(method) {'entered'}
   end
-    
-  def find_records(params)
-    method = LOG_MESSAGE + ".find_records(#{params})"
+
+  def find_functions_by_uuid(uuid)
+    method = LOG_MESSAGE + ".find_functions_by_uuid(#{uuid})"
     @logger.debug(method) {'entered'}
     headers = JSON_HEADERS
-    kind = params['kind']
-    params.delete('kind')
-    headers[:params] = params unless params.empty?
-    @logger.debug(method) {"headers=#{headers}"}
+    headers[:params] = uuid
     begin
-      @logger.debug(method) {"getting #{kind} from #{@url}"}
-      #response = RestClient.get(@url+'/'+kind, headers) 
-      response = getCurb(@url+'/'+kind, headers) 
-      @logger.debug(method) {"response=#{response}"}
-      JSON.parse response.body
+      response = getCurb( @url + "/functions/#{uuid}", headers)
+      # Shouldn't we parse before returning?
+      #JSON.parse response.body
     rescue => e
-      @logger.error(method) {"#{e.message} - #{format_error(e.backtrace)}"}
+      @logger.error(method) {"e=#{e.backtrace}"}
       nil 
     end
   end
   
-  def find_service_by_uuid(uuid)
-    method = LOG_MESSAGE + ".find_service_by_uuid(#{uuid})"
+  def find_functions(params)
+    method = LOG_MESSAGE + ".find_functions(#{params})"
     @logger.debug(method) {'entered'}
     headers = JSON_HEADERS
+    headers[:params] = params unless params.empty?
+    @logger.debug(method) {"headers=#{headers}"}
     begin
-      #response = RestClient.get(@url+'/services/'+uuid, headers) 
-      response = getCurb(@url+'/services/'+uuid, headers) 
+      response = getCurb(@url + '/functions', headers) 
       @logger.debug(method) {"response=#{response}"}
       JSON.parse response.body
     rescue => e
-      @logger.error(method) {"#{e.message} - #{format_error(e.backtrace)}"}
+      @logger.error(method) {"e=#{e.backtrace}"}
       nil 
     end
   end
+  
+  def get_log
+    method = LOG_MESSAGE + ".get_log()"
+    @logger.debug(method) {'entered'}
+    super.get_log('/admin/logs')
+  end
+  
 end

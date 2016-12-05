@@ -25,6 +25,8 @@
 ## acknowledge the contributions of their colleagues of the SONATA 
 ## partner consortium (www.sonata-nfv.eu).
 # encoding: utf-8
+require './manager_service'
+
 class FunctionManagerService < ManagerService
     
   # We're not yet using this: it allows for multiple implementations, such as Fakes (for testing)

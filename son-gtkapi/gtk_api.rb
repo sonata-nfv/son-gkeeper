@@ -41,7 +41,6 @@ require 'sinatra/namespace'
 require 'bundler'
 Bundler.require :default, ENV['RACK_ENV'].to_sym
 
-require 'models/manager_service'
 ['helpers', 'routes', 'models'].each do |dir|
   Dir[File.join(File.dirname(__FILE__), dir, '**', '*.rb')].each do |file|
     puts "Requiring file #{file}"

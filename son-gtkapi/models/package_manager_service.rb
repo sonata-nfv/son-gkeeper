@@ -26,6 +26,7 @@
 ## partner consortium (www.sonata-nfv.eu).
 # encoding: utf-8
 require 'tempfile'
+require './manager_service'
 
 class PackageManagerService
   
