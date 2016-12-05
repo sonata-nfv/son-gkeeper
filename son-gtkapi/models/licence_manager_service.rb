@@ -25,7 +25,7 @@
 ## acknowledge the contributions of their colleagues of the SONATA 
 ## partner consortium (www.sonata-nfv.eu).
 # encoding: utf-8
-require './manager_service'
+require './models/manager_service.rb'
 
 class LicenceManagerService < ManagerService
   
