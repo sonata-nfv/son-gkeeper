@@ -29,10 +29,10 @@ require 'addressable/uri'
 
 class GtkApi < Sinatra::Base
   
-  namespace '/api/v2' do
+  #namespace '/api/v2' do
     
     # GET licence types
-    get '/licence-types/?' do
+    get '/api/v2/licence-types/?' do
       log_message = 'GtkApi GET /licence-types'
       
       uri = Addressable::URI.new
@@ -54,7 +54,7 @@ class GtkApi < Sinatra::Base
     end
 
     # GET many licences
-    get '/licences/?' do
+    get '/api/v2/licences/?' do
       log_message = 'GtkApi GET /services'
     
       uri = Addressable::URI.new
@@ -77,7 +77,7 @@ class GtkApi < Sinatra::Base
     end
   
     # GET a specific licence
-    get '/licences/:uuid' do
+    get '/api/v2/licences/:uuid' do
       log_message = MODULE+' GET /services/:uuid'
       logger.debug(log_message) {"Settings Srv. Mgmt. = #{settings.service_management.class}"}
       logger.debug(log_message) {"entered with #{params[:uuid]}"}
@@ -98,11 +98,11 @@ class GtkApi < Sinatra::Base
       end
     end
   
-    get '/admin/licences/logs' do
+    get '/api/v2/admin/licences/logs' do
       logger.debug "GtkApi: entered GET /admin/licences/logs"
       headers 'Content-Type' => 'text/plain; charset=utf8', 'Location' => '/'
       log = settings.licence_management.get_log('/log/'+ENV['RACK_ENV']+'.log')
       halt 200, log #.to_s
     end
-  end
+    #end
 end
