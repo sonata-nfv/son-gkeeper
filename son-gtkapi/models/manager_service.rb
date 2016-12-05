@@ -28,10 +28,10 @@
 class ManagerService
   
   #JSON_HEADERS = { 'Accept'=> 'application/json', 'Content-Type'=>'application/json'}
-  #LOG_MESSAGE = 'GtkApi::' + self.name
+  CLASS_NAME = self.name
   
   def initialize(url, logger)
-    method = 'GtkApi::' + self.name + ".new(url=#{url}, logger=#{logger})"
+    method = 'GtkApi::' + CLASS_NAME + ".new(url=#{url}, logger=#{logger})"
     @url = url
     @logger = logger
     @logger.debug(method) {'entered'}
