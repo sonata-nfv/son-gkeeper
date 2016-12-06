@@ -225,7 +225,7 @@ RSpec.describe GtkApi, type: :controller do
         end
         it 'should call the Service Management Service' do
           expect(a_request(:get, GtkApi::settings.srvmgmt+'/services?limit=1&offset=1')
-            .with(headers: {'Accept'=>'application/json', 'Content-Type'=>'application/json'))
+            .with(headers: {'Accept'=>'application/json', 'Content-Type'=>'application/json'})
             .to have_been_made
         end
         
