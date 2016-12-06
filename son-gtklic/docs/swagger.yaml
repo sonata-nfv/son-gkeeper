@@ -26,7 +26,7 @@ paths:
           description: The user uuid
           required: false
           type: string
-          in: header
+          in: query
       tags:
         - Licenses
       responses:
@@ -258,9 +258,9 @@ paths:
       tags:
         - Services
       parameters:
-      - name: status
-        description: Status of service. Options are all, active, inactive. Default is all.
-        required: true
+      - name: state
+        description: State of the service. Options are all, active, inactive. Default is all.
+        required: false
         type: string
         in: query
       responses:
@@ -283,17 +283,22 @@ paths:
           required: true
           type: string
           in: formData
-        - name: startingDate
+        - name: starting_date
           description: Service starting date.
           required: false
           type: string
           format: date
           in: formData
-        - name: expiringDate
+        - name: expiring_date
           description: Service starting date.
           required: true
           type: string
           format: date
+          in: formData
+        - name: external_service_uuid
+          description: Uuid of the service outside of the license manager.
+          required: true
+          type: string
           in: formData
       tags:
         - Services
@@ -380,9 +385,9 @@ paths:
       tags:
         - Types
       parameters:
-      - name: status
-        description: Status of license type. Options are all, active, inactive. Default is all.
-        required: true
+      - name: state
+        description: State of the license type. Options are all, active, inactive. Default is all.
+        required: false
         type: string
         in: query
       responses:
@@ -422,13 +427,13 @@ paths:
         default:
           description: Unexpected error
          
-  /types/{licenseID}:
+  /types/{typeID}:
     get:
       summary: Get a license type
       description: |
         This types endpoint method return the license type info.
       parameters:
-        - name: licenseID
+        - name: typeID
           description: the license type uuid
           required: true
           type: string
@@ -450,7 +455,7 @@ paths:
       description: |
         This types endpoint method makes a license type unavailable to be purchased in the future.
       parameters:
-        - name: licenseID
+        - name: typeID
           description: the license type uuid
           required: true
           type: string

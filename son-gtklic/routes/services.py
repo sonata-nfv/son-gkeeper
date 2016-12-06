@@ -45,7 +45,16 @@ class Services(Resource):
 class ServicesList(Resource):
 
     def get(self):
-        service = Service.query.all()
+        state = 'all'
+        if 'state' in request.args:
+            state = request.args.get('state')
+
+        if state == 'all':
+            service = Service.query.all()
+        elif state == 'active':
+            service = Service.query.filter_by(active=True).all()
+        elif state == 'inactive':
+            service = Service.query.filter_by(active=False).all()
         return build_response(status_code=200, data={"services": [o.serialize for o in service]}, description="Service list successfully retrieved")
 
     def post(self):
