@@ -1,4 +1,4 @@
-source 'https://rubygems.org'
+source 'http://rubygems.org'
 
 gem 'rake', '11.2.2'
 gem 'sinatra', '1.4.7', require: 'sinatra/base'
