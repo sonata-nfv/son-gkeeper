@@ -46,7 +46,7 @@ class LicenceManagerService < ManagerService
     headers = JSON_HEADERS
     headers[:params] = uuid
     begin
-      response = getCurb( @url + "/functions/#{uuid}", headers)
+      response = getCurb(url: @url + "/functions/#{uuid}", headers: headers)
       # Shouldn't we parse before returning?
       #JSON.parse response.body
     rescue => e
@@ -62,7 +62,7 @@ class LicenceManagerService < ManagerService
     headers[:params] = params unless params.empty?
     @logger.debug(method) {"headers=#{headers}"}
     begin
-      response = getCurb(@url + '/functions', headers) 
+      response = getCurb(urb: @url + '/functions', headers: headers) 
       @logger.debug(method) {"response=#{response}"}
       JSON.parse response.body
     rescue => e

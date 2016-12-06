@@ -37,8 +37,6 @@ class FunctionManagerService < ManagerService
   
   def initialize(url, logger)
     method = LOG_MESSAGE + ".new(url=#{url}, logger=#{logger})"
-    #@url = url
-    #@logger = logger
     super
     @logger.debug(method) {'entered'}
   end
@@ -46,10 +44,9 @@ class FunctionManagerService < ManagerService
   def find_functions_by_uuid(uuid)
     method = LOG_MESSAGE + ".find_functions_by_uuid(#{uuid})"
     @logger.debug(method) {'entered'}
-    headers = JSON_HEADERS
-    headers[:params] = uuid
     begin
-      response = getCurb( @url + "/functions/#{uuid}", headers)
+      response = getCurb( url: @url + '/functions/'+uuid, headers: JSON_HEADERS)
+      @logger.debug(method) {"response=#{response.inspect}"}
       case response.status
         when 200
           @logger.debug(method) {'found function ' + response.body}
@@ -58,7 +55,7 @@ class FunctionManagerService < ManagerService
           @logger.error(method) {"Function with UUID=#{uuid} was not found"}
           nil
         else
-          @logger.error(method) {"Strange error while looking for function with UUID=#{uuid}"}
+          @logger.error(method) {"Strange error (#{response.status}) while looking for function with UUID=#{uuid}"}
           nil
       end
     rescue => e
@@ -70,12 +67,9 @@ class FunctionManagerService < ManagerService
   def find_functions(params)
     method = LOG_MESSAGE + ".find_functions(#{params})"
     @logger.debug(method) {'entered'}
-    headers = JSON_HEADERS
-    headers[:params] = params unless params.empty?
-    @logger.debug(method) {"headers=#{headers}"}
     begin
-      response = getCurb(@url + '/functions', headers) 
-      @logger.debug(method) {"response=#{response}"}
+      response = getCurb(url: @url + '/functions', params: params, headers: JSON_HEADERS) 
+      @logger.debug(method) {"response=#{response.inspect}"}
       case response.status
         when 200
           @logger.debug(method) {'found function(s) ' + response.body}
@@ -84,7 +78,7 @@ class FunctionManagerService < ManagerService
           @logger.error(method) {"Function with params=#{params} were not found"}
           []
         else
-          @logger.error(method) {"Strange error while looking for function with params=#{params}"}
+          @logger.error(method) {"Strange error (#{response.status}) while looking for function with params=#{params}"}
           nil
       end
     rescue => e

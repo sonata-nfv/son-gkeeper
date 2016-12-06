@@ -46,8 +46,8 @@ class ManagerService
     getCurb(full_url).body    
   end
   
-  def getCurb(url, headers={})
-    Curl.get(url) do |req|
+  def getCurb(url:, params: {}, headers: {})
+    Curl.get(params.empty? ? url : url + '?' + Curl::postalize(params)) do |req|
       req.headers = headers
     end
   end

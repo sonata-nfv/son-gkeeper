@@ -43,16 +43,13 @@ class RecordManagerService < ManagerService
   def find_records(params)
     method = LOG_MESSAGE + ".find_records(#{params})"
     @logger.debug(method) {'entered'}
-    headers = JSON_HEADERS
     kind = params['kind']
     params.delete('kind')
-    headers[:params] = params unless params.empty?
-    @logger.debug(method) {"headers=#{headers}"}
+
     begin
-      @logger.debug(method) {"getting #{kind} from #{@url}"}
-      #response = RestClient.get(@url+'/'+kind, headers) 
-      response = getCurb(@url+'/'+kind, headers) 
-      @logger.debug(method) {"response=#{response}"}
+      @logger.debug(method) {'getting '+kind+' from '+@url}
+      response = getCurb(url: @url + '/' + kind, params: params, headers: JSON_HEADERS) 
+      @logger.debug(method) {'response=' + response.body}
       JSON.parse response.body
     rescue => e
       @logger.error(method) {"#{e.message} - #{format_error(e.backtrace)}"}
@@ -63,11 +60,9 @@ class RecordManagerService < ManagerService
   def find_service_by_uuid(uuid)
     method = LOG_MESSAGE + ".find_service_by_uuid(#{uuid})"
     @logger.debug(method) {'entered'}
-    headers = JSON_HEADERS
     begin
-      #response = RestClient.get(@url+'/services/'+uuid, headers) 
-      response = getCurb(@url+'/services/'+uuid, headers) 
-      @logger.debug(method) {"response=#{response}"}
+      response = getCurb(url: @url+'/services/'+uuid, headers: JSON_HEADERS) 
+      @logger.debug(method) {'response='+response.body}
       JSON.parse response.body
     rescue => e
       @logger.error(method) {"#{e.message} - #{format_error(e.backtrace)}"}
