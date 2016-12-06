@@ -192,14 +192,14 @@ RSpec.describe GtkApi, type: :controller do
       
       context 'and limit param given (offset becomes DEFAULT_OFFSET)' do
         before(:example) do
-          stub_request(:get, GtkApi::settings.srvmgmt+'/services?limit=10&offset='+GtkApi::DEFAULT_OFFSET.to_s)
+          stub_request(:get, GtkApi::settings.srvmgmt+'/services?limit=1&offset='+GtkApi::DEFAULT_OFFSET.to_s)
             .with(headers: {'Accept'=>'application/json', 'Content-Type'=>'application/json'})
             .to_return(:body => services[0].to_json)
           get '/services?limit=1'
         end
         it 'should call the Service Management Service' do
-          expect(a_request(:get, GtkApi::settings.srvmgmt+'/services?limit=10&offset='+GtkApi::DEFAULT_OFFSET.to_s)
-            .with(headers: {'Accept'=>'application/json', 'Content-Type'=>'application/json'})
+          expect(a_request(:get, GtkApi::settings.srvmgmt+'/services?limit=1&offset='+GtkApi::DEFAULT_OFFSET.to_s)
+            .with(headers: {'Accept'=>'application/json', 'Content-Type'=>'application/json'}))
             .to have_been_made
         end
         
@@ -213,7 +213,7 @@ RSpec.describe GtkApi, type: :controller do
         end
       end
       
-      # only to be tested if more than DEFAULT_LINIT services could be mocked
+      # only to be tested if more than DEFAULT_LIMIT services could be mocked
       context 'and offset param given (limit becomes DEFAULT_LIMIT)'
         
       context 'and limit and offset param given' do
@@ -225,7 +225,7 @@ RSpec.describe GtkApi, type: :controller do
         end
         it 'should call the Service Management Service' do
           expect(a_request(:get, GtkApi::settings.srvmgmt+'/services?limit=1&offset=1')
-            .with(headers: {'Accept'=>'application/json', 'Content-Type'=>'application/json'})
+            .with(headers: {'Accept'=>'application/json', 'Content-Type'=>'application/json'}))
             .to have_been_made
         end
         
