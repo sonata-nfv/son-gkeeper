@@ -40,7 +40,8 @@ class ManagerService
   def get_log
     method = 'GtkApi::' + CLASS_NAME + ".get_log()"
     @logger.debug(method) {'entered'}
-    response=getCurb(@url+'/admin/logs')
+
+    response=getCurb(url: @url+'/admin/logs', headers: {'Content-Type' => 'text/plain; charset=utf8', 'Location' => '/'})
     @logger.debug(method) {'status=' + response.response_code.to_str}
     case response.response_code
       when 200
