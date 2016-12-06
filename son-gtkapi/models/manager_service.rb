@@ -42,12 +42,12 @@ class ManagerService
     @logger.debug(method) {'entered'}
 
     response=getCurb(url: @url+'/admin/logs', headers: {'Content-Type' => 'text/plain; charset=utf8', 'Location' => '/'})
-    @logger.debug(method) {'status=' + response.response_code.to_str}
+    @logger.debug(method) {'status=' + response.response_code.to_s}
     case response.response_code
       when 200
         response.body
       else
-        @logger.error(method) {'status=' + response.response_code.to_str}
+        @logger.error(method) {'status=' + response.response_code.to_s}
         nil
       end
   end
