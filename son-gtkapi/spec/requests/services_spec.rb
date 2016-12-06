@@ -174,7 +174,7 @@ RSpec.describe GtkApi, type: :controller do
           get '/services'
         end
         it 'should call the Service Management Service' do
-          expect(a_request(:get, GtkApi::settings.srvmgmt+'/services')).to have_been_made
+          expect(a_request(:get, GtkApi::settings.srvmgmt+'/services?limit=10&offset=0')).to have_been_made
         end
         
         it 'shoud return success (200)' do
