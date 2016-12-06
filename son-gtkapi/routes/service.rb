@@ -75,9 +75,11 @@ class GtkApi < Sinatra::Base
   end
   
   get '/admin/services/logs' do
-    logger.debug "GtkApi: entered GET /admin/services/logs"
+    log_message = 'GtkApi: GET /admin/services/logs'
+    logger.debug(log_message) {'entered'}
     headers 'Content-Type' => 'text/plain; charset=utf8', 'Location' => '/'
     log = settings.service_management.get_log
+    logger.debug(log_message) {'leaving with log='+log}
     halt 200, log #.to_s
   end
 end
