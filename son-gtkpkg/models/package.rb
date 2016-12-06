@@ -60,7 +60,7 @@ class Package
     
     @url = @@catalogue.url
     if params[:descriptor]
-      @descriptor = params[:descriptor]
+     @descriptor = params[:descriptor]
       @input_folder = File.join('tmp', SecureRandom.hex)
       FileUtils.mkdir_p @input_folder unless File.exists? @input_folder
       @output_folder = File.join( 'public', 'packages', @descriptor['uuid'])
@@ -69,7 +69,7 @@ class Package
       @package_file = params[:io]
     else
       @logger.error 'Package.initialize: either @descriptor or @io must be given'
-    end 
+    end
   end
     
   # Builds a package file from its descriptors, and returns a handle to it
@@ -185,7 +185,7 @@ class Package
     logger.debug "Package#find: #{packages}"
     packages
   end
-  
+
   private
   
   def duplicate_package?(desc)
@@ -293,6 +293,17 @@ class Package
   
   def duplicated_package?(descriptor)
     @@catalogue.find({'vendor'=>descriptor['vendor'], 'name'=>descriptor['name'], 'version'=>descriptor['version']})
+  end
+
+  def store_zip()
+    saved_zip = @catalogue.create_zip(@package_file)
+    if saved_zip && saved_zip['uuid']
+      @logger.debug('Package.store') {"saved_zip is "+saved_zip.to_s}
+      saved_zip
+    else
+      @logger.debug('Package.store') {'failled to store zip with no response'}
+      nil
+    end
   end
   
   def store()
