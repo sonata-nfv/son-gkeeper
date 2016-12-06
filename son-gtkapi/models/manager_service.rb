@@ -25,48 +25,48 @@
 ## acknowledge the contributions of their colleagues of the SONATA 
 ## partner consortium (www.sonata-nfv.eu).
 # encoding: utf-8
-require './models/manager_service.rb'
-
-class RecordManagerService < ManagerService
+class ManagerService
   
-  JSON_HEADERS = { 'Accept'=> 'application/json', 'Content-Type'=>'application/json'}
-  LOG_MESSAGE = 'GtkApi::' + self.name
+  #JSON_HEADERS = { 'Accept'=> 'application/json', 'Content-Type'=>'application/json'}
+  CLASS_NAME = self.name
   
   def initialize(url, logger)
-    method = LOG_MESSAGE + ".new(url=#{url}, logger=#{logger})"
-    #@url = url
-    #@logger = logger
-    super
+    method = 'GtkApi::' + CLASS_NAME + ".new(url=#{url}, logger=#{logger})"
+    @url = url
+    @logger = logger
     @logger.debug(method) {'entered'}
   end
-    
-  def find_records(params)
-    method = LOG_MESSAGE + ".find_records(#{params})"
+  
+  def get_log
+    method = 'GtkApi::' + CLASS_NAME + ".get_log()"
     @logger.debug(method) {'entered'}
-    kind = params['kind']
-    params.delete('kind')
 
-    begin
-      @logger.debug(method) {'getting '+kind+' from '+@url}
-      response = getCurb(url: @url + '/' + kind, params: params, headers: JSON_HEADERS) 
-      @logger.debug(method) {'response=' + response.body}
-      JSON.parse response.body
-    rescue => e
-      @logger.error(method) {"#{e.message} - #{format_error(e.backtrace)}"}
-      nil 
+    response=getCurb(url: @url+'/admin/logs', headers: {'Content-Type' => 'text/plain; charset=utf8', 'Location' => '/'})
+    @logger.debug(method) {'status=' + response.response_code.to_s}
+    case response.response_code
+      when 200
+        response.body
+      else
+        @logger.error(method) {'status=' + response.response_code.to_s}
+        nil
+      end
+  end
+  
+  def getCurb(url:, params: {}, headers: {})
+    Curl.get(params.empty? ? url : url + '?' + Curl::postalize(params)) do |req|
+      req.headers = headers
     end
   end
   
-  def find_service_by_uuid(uuid)
-    method = LOG_MESSAGE + ".find_service_by_uuid(#{uuid})"
-    @logger.debug(method) {'entered'}
-    begin
-      response = getCurb(url: @url+'/services/'+uuid, headers: JSON_HEADERS) 
-      @logger.debug(method) {'response='+response.body}
-      JSON.parse response.body
-    rescue => e
-      @logger.error(method) {"#{e.message} - #{format_error(e.backtrace)}"}
-      nil 
+  def postCurb(url, body)
+    Curl.post(url, body) do |req|
+      req.headers['Content-type'] = 'application/json'
+      req.headers['Accept'] = 'application/json'
     end
+  end
+  
+  def format_error(backtrace)
+    first_line = backtrace[0].split(":")
+    "In "+first_line[0].split("/").last+", "+first_line.last+": "+first_line[1]
   end
 end

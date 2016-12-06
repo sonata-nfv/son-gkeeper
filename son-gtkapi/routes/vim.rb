@@ -90,4 +90,10 @@ class GtkApi < Sinatra::Base
     json_error 400, 'No vim_request UUID specified'
   end
   
+  get '/admin/vims/logs' do
+    logger.debug "GtkApi: entered GET /admin/vims/logs"
+    headers 'Content-Type' => 'text/plain; charset=utf8', 'Location' => '/'
+    log = settings.vim_management.get_log
+    halt 200, log #.to_s
+  end
 end

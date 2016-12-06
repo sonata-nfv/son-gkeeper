@@ -26,8 +26,9 @@
 ## partner consortium (www.sonata-nfv.eu).
 # encoding: utf-8
 require 'tempfile'
+require './models/manager_service.rb'
 
-class PackageManagerService
+class PackageManagerService < ManagerService
   
   attr_reader :url, :logger
   
@@ -97,11 +98,11 @@ class PackageManagerService
     end
   end
   
-  def get_log
-    method = LOG_MESSAGE + ".get_log()"
-    @logger.debug(method) {'entered'}
-    full_url = @url+'/admin/logs'
-    @logger.debug(method) {'url=' + full_url}
-    RestClient.get(full_url)      
-  end
+  #def get_log
+  #  method = LOG_MESSAGE + ".get_log()"
+  #  @logger.debug(method) {'entered'}
+  #  full_url = @url+'/admin/logs'
+  #  @logger.debug(method) {'url=' + full_url}
+  #  RestClient.get(full_url)      
+  #end
 end

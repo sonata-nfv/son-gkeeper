@@ -25,7 +25,9 @@
 ## acknowledge the contributions of their colleagues of the SONATA 
 ## partner consortium (www.sonata-nfv.eu).
 # encoding: utf-8
-class FunctionManagerService
+require './models/manager_service.rb'
+
+class FunctionManagerService < ManagerService
     
   # We're not yet using this: it allows for multiple implementations, such as Fakes (for testing)
   attr_reader :url, :logger
@@ -35,20 +37,27 @@ class FunctionManagerService
   
   def initialize(url, logger)
     method = LOG_MESSAGE + ".new(url=#{url}, logger=#{logger})"
-    @url = url
-    @logger = logger
+    super
     @logger.debug(method) {'entered'}
   end
 
   def find_functions_by_uuid(uuid)
     method = LOG_MESSAGE + ".find_functions_by_uuid(#{uuid})"
     @logger.debug(method) {'entered'}
-    headers = JSON_HEADERS
-    headers[:params] = uuid
     begin
-      response = getCurb( @url + "/functions/#{uuid}", headers)
-      # Shouldn't we parse before returning?
-      #JSON.parse response.body
+      response = getCurb( url: @url + '/functions/'+uuid, headers: JSON_HEADERS)
+      @logger.debug(method) {'response='+response.body}
+      case response.response_code
+        when 200
+          @logger.debug(method) {'found function(s) ' + response.body}
+          JSON.parse response.body
+        when 404
+          @logger.error(method) {"Function with UUID=#{uuid} was not found"}
+          nil
+        else
+          @logger.error(method) {"Strange error (#{response.response_code}) while looking for function with UUID=#{uuid}"}
+          nil
+      end
     rescue => e
       @logger.error(method) {"e=#{e.backtrace}"}
       nil 
@@ -58,39 +67,23 @@ class FunctionManagerService
   def find_functions(params)
     method = LOG_MESSAGE + ".find_functions(#{params})"
     @logger.debug(method) {'entered'}
-    headers = JSON_HEADERS
-    headers[:params] = params unless params.empty?
-    @logger.debug(method) {"headers=#{headers}"}
     begin
-      response = getCurb(@url + '/functions', headers) 
-      @logger.debug(method) {"response=#{response}"}
-      JSON.parse response.body
+      response = getCurb(url: @url + '/functions', params: params, headers: JSON_HEADERS) 
+      @logger.debug(method) {'response='+response.body}
+      case response.response_code
+        when 200
+          @logger.debug(method) {'found function(s) ' + response.body}
+          JSON.parse response.body
+        when 404
+          @logger.error(method) {"Function with params=#{params} were not found"}
+          []
+        else
+          @logger.error(method) {"Strange error (#{response.response_code}) while looking for function with params=#{params}"}
+          nil
+      end
     rescue => e
       @logger.error(method) {"e=#{e.backtrace}"}
       nil 
-    end
-  end
-  
-  def get_log
-    method = LOG_MESSAGE + ".get_log()"
-    @logger.debug(method) {'entered'}
-    full_url = @url+'/admin/logs'
-    @logger.debug(method) {'url=' + full_url}
-    getCurb(full_url)      
-  end
-  
-  private
-  
-  def getCurb(url, headers={})
-    Curl.get(url) do |req|
-      req.headers = headers
-    end
-  end
-  
-  def postCurb(url, body)
-    Curl.post(url, body) do |req|
-      req.headers['Content-type'] = 'application/json'
-      req.headers['Accept'] = 'application/json'
     end
   end
 end

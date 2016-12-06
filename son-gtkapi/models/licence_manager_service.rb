@@ -27,7 +27,7 @@
 # encoding: utf-8
 require './models/manager_service.rb'
 
-class RecordManagerService < ManagerService
+class LicenceManagerService < ManagerService
   
   JSON_HEADERS = { 'Accept'=> 'application/json', 'Content-Type'=>'application/json'}
   LOG_MESSAGE = 'GtkApi::' + self.name
@@ -39,33 +39,35 @@ class RecordManagerService < ManagerService
     super
     @logger.debug(method) {'entered'}
   end
-    
-  def find_records(params)
-    method = LOG_MESSAGE + ".find_records(#{params})"
-    @logger.debug(method) {'entered'}
-    kind = params['kind']
-    params.delete('kind')
 
+  # TODO
+  def find_functions_by_uuid(uuid)
+    method = LOG_MESSAGE + ".find_functions_by_uuid(#{uuid})"
+    @logger.debug(method) {'entered'}
+    headers = JSON_HEADERS
+    headers[:params] = uuid
     begin
-      @logger.debug(method) {'getting '+kind+' from '+@url}
-      response = getCurb(url: @url + '/' + kind, params: params, headers: JSON_HEADERS) 
-      @logger.debug(method) {'response=' + response.body}
-      JSON.parse response.body
+      response = getCurb(url: @url + "/functions/#{uuid}", headers: headers)
+      # Shouldn't we parse before returning?
+      #JSON.parse response.body
     rescue => e
-      @logger.error(method) {"#{e.message} - #{format_error(e.backtrace)}"}
+      @logger.error(method) {"e=#{e.backtrace}"}
       nil 
     end
   end
   
-  def find_service_by_uuid(uuid)
-    method = LOG_MESSAGE + ".find_service_by_uuid(#{uuid})"
+  def find_functions(params)
+    method = LOG_MESSAGE + ".find_functions(#{params})"
     @logger.debug(method) {'entered'}
+    headers = JSON_HEADERS
+    headers[:params] = params unless params.empty?
+    @logger.debug(method) {"headers=#{headers}"}
     begin
-      response = getCurb(url: @url+'/services/'+uuid, headers: JSON_HEADERS) 
-      @logger.debug(method) {'response='+response.body}
+      response = getCurb(urb: @url + '/functions', headers: headers) 
+      @logger.debug(method) {"response=#{response}"}
       JSON.parse response.body
     rescue => e
-      @logger.error(method) {"#{e.message} - #{format_error(e.backtrace)}"}
+      @logger.error(method) {"e=#{e.backtrace}"}
       nil 
     end
   end
