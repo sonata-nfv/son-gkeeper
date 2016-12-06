@@ -118,7 +118,7 @@ class GtkApi < Sinatra::Base
     method = MODULE + "GET /admin/records/logs: "
     logger.debug(method) {"entered"}
     headers 'Content-Type' => 'text/plain; charset=utf8', 'Location' => '/'
-    log = settings.record_management.get_log('/log/'+ENV['RACK_ENV']+'.log')
+    log = settings.record_management.get_log
     halt 200, log #.to_s
   end
 end

@@ -46,16 +46,16 @@ class FunctionManagerService < ManagerService
     @logger.debug(method) {'entered'}
     begin
       response = getCurb( url: @url + '/functions/'+uuid, headers: JSON_HEADERS)
-      @logger.debug(method) {"response=#{response.inspect}"}
-      case response.status
+      @logger.debug(method) {'response='+response.body}
+      case response.response_code
         when 200
-          @logger.debug(method) {'found function ' + response.body}
+          @logger.debug(method) {'found function(s) ' + response.body}
           JSON.parse response.body
         when 404
           @logger.error(method) {"Function with UUID=#{uuid} was not found"}
           nil
         else
-          @logger.error(method) {"Strange error (#{response.status}) while looking for function with UUID=#{uuid}"}
+          @logger.error(method) {"Strange error (#{response.response_code}) while looking for function with UUID=#{uuid}"}
           nil
       end
     rescue => e
@@ -69,8 +69,8 @@ class FunctionManagerService < ManagerService
     @logger.debug(method) {'entered'}
     begin
       response = getCurb(url: @url + '/functions', params: params, headers: JSON_HEADERS) 
-      @logger.debug(method) {"response=#{response.inspect}"}
-      case response.status
+      @logger.debug(method) {'response='+response.body}
+      case response.response_code
         when 200
           @logger.debug(method) {'found function(s) ' + response.body}
           JSON.parse response.body
@@ -78,7 +78,7 @@ class FunctionManagerService < ManagerService
           @logger.error(method) {"Function with params=#{params} were not found"}
           []
         else
-          @logger.error(method) {"Strange error (#{response.status}) while looking for function with params=#{params}"}
+          @logger.error(method) {"Strange error (#{response.response_code}) while looking for function with params=#{params}"}
           nil
       end
     rescue => e

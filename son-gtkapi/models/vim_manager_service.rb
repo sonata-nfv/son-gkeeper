@@ -42,13 +42,10 @@ class VimManagerService < ManagerService
     
   def find_vims(params)
     method = LOG_MESSAGE + ".find_vims(#{params})"
-    @logger.debug(method) {"entered"}
-    url_params = Curl::postalize(params)
-    url = @url + '/vim' + (url_params.empty? ? '' : '?' + url_params)
-    
+    @logger.debug(method) {'entered'}    
     begin
-      response = getCurb(url, JSON_HEADERS) 
-      @logger.debug(method) {"response=#{response}"}
+      response = getCurb(url:url, headers:JSON_HEADERS) 
+      @logger.debug(method) {'response='+response.body}
       JSON.parse response.body
     rescue => e
       @logger.error(method) {"e=#{format_error(e.backtrace)}"}
@@ -77,9 +74,8 @@ class VimManagerService < ManagerService
   def find_vim_request_by_uuid(uuid)
     method = LOG_MESSAGE + ".find_vim_request_by_uuid(#{uuid})"
     @logger.debug(method) {'entered'}
-    headers = JSON_HEADERS
     begin
-      response = getCurb(@url+'/vim_request/'+uuid, headers) 
+      response = getCurb(url:@url+'/vim_request/'+uuid, headers: JSON_HEADERS) 
       JSON.parse response.body
     rescue => e
       @logger.error(method) {"#{e.message} - #{format_error(e.backtrace)}"}

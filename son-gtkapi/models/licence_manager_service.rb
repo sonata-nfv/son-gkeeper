@@ -40,6 +40,7 @@ class LicenceManagerService < ManagerService
     @logger.debug(method) {'entered'}
   end
 
+  # TODO
   def find_functions_by_uuid(uuid)
     method = LOG_MESSAGE + ".find_functions_by_uuid(#{uuid})"
     @logger.debug(method) {'entered'}

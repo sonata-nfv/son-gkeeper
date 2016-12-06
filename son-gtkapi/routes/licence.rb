@@ -101,7 +101,7 @@ class GtkApi < Sinatra::Base
     get '/api/v2/admin/licences/logs' do
       logger.debug "GtkApi: entered GET /admin/licences/logs"
       headers 'Content-Type' => 'text/plain; charset=utf8', 'Location' => '/'
-      log = settings.licence_management.get_log('/log/'+ENV['RACK_ENV']+'.log')
+      log = settings.licence_management.get_log
       halt 200, log #.to_s
     end
     #end
