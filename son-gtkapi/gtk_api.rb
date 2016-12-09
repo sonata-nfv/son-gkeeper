@@ -43,7 +43,6 @@ Bundler.require :default, ENV['RACK_ENV'].to_sym
 
 ['helpers', 'routes', 'models'].each do |dir|
   Dir[File.join(File.dirname(__FILE__), dir, '**', '*.rb')].each do |file|
-    puts "Requiring file #{file}"
     require file
   end
 end
