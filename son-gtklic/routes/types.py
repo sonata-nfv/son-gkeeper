@@ -5,7 +5,7 @@ from flask_restful import Resource
 from flask import request
 
 from app import db, build_response
-from models import License, Type, Service
+from models import License, Type
 
 
 class TypesList(Resource):

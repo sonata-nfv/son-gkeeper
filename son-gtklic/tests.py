@@ -13,7 +13,7 @@ class TestCase(unittest.TestCase):
     def setUp(self):
         app.config['TESTING'] = True
         # Uncomment and change to use a different database for testing
-        #app.config['SQLALCHEMY_DATABASE_URI'] = "postgresql://es:es-test@192.168.0.201:5432/usermanagement"
+        #app.config['SQLALCHEMY_DATABASE_URI'] = "postgresql://user:password@db_ip:5432/db_name"
         self.app = app.test_client()
         db.create_all()
 
@@ -80,133 +80,12 @@ class TestCase(unittest.TestCase):
         self.assertEqual(resp_json["data"]["type_uuid"], type_uuid)
         self.assertFalse(resp_json["data"]["active"])
 
-    def test_add_active_service(self):
-        # Test adding a active service
-        startingDate = datetime.now()
-        expiringDate = startingDate + timedelta(days=60)
-        external_service_uuid = uuid.uuid4()
-        response = self.app.post("/api/v1/services/", data=dict(description="Test",
-                                                        expiring_date= expiringDate.strftime('%d-%m-%Y %H:%M'),
-                                                        starting_date=startingDate.strftime('%d-%m-%Y %H:%M'),
-                                                        external_service_uuid=external_service_uuid))
-        self.assertEqual(response.status_code, 200)
-        resp_json = json.loads(response.data)
-
-        service_uuid = resp_json["data"]["service_uuid"]
-        service_starting_date = resp_json["data"]["starting_date"]
-        service_expiring_date = resp_json["data"]["expiring_date"]
-        service_external_service_uuid = resp_json["data"]["external_service_uuid"]
-        desc = resp_json["data"]["description"]
-        active = resp_json["data"]["active"]
-
-        self.assertEqual(service_starting_date, startingDate.strftime('%d-%m-%Y %H:%M'))
-        self.assertEqual(service_expiring_date, expiringDate.strftime('%d-%m-%Y %H:%M'))
-        self.assertEqual(desc, "Test")
-        self.assertEqual(str(external_service_uuid), service_external_service_uuid)
-        self.assertTrue(active)
-
-    def test_add_inactive_service(self):
-        # Test adding a inactive service
-        startingDate = datetime.now()
-        expiringDate = startingDate + timedelta(days=60)
-        external_service_uuid = uuid.uuid4()
-        response = self.app.post("/api/v1/services/", data=dict(description="Test",
-                                                        expiring_date= expiringDate.strftime('%d-%m-%Y %H:%M'),
-                                                        starting_date=startingDate.strftime('%d-%m-%Y %H:%M'),
-                                                        external_service_uuid=external_service_uuid,
-                                                        active=False))
-        self.assertEqual(response.status_code, 200)
-        resp_json = json.loads(response.data)
-
-        service_uuid = resp_json["data"]["service_uuid"]
-        service_starting_date = resp_json["data"]["starting_date"]
-        service_expiring_date = resp_json["data"]["expiring_date"]
-        service_external_service_uuid = resp_json["data"]["external_service_uuid"]
-        desc = resp_json["data"]["description"]
-        active = resp_json["data"]["active"]
-
-        self.assertEqual(service_starting_date, startingDate.strftime('%d-%m-%Y %H:%M'))
-        self.assertEqual(service_expiring_date, expiringDate.strftime('%d-%m-%Y %H:%M'))
-        self.assertEqual(desc, "Test")
-        self.assertEqual(str(external_service_uuid), service_external_service_uuid)
-        self.assertFalse(active)
-
-    def test_get_service(self):
-        # Test getting a list of services
-
-        # First adding a service
-        startingDate = datetime.now()
-        expiringDate = startingDate + timedelta(days=60)
-        external_service_uuid = uuid.uuid4()
-        response = self.app.post("/api/v1/services/", data=dict(description="Test",
-                                                        expiring_date= expiringDate.strftime('%d-%m-%Y %H:%M'),
-                                                        starting_date=startingDate.strftime('%d-%m-%Y %H:%M'),
-                                                        external_service_uuid=external_service_uuid))
-        self.assertEqual(response.status_code, 200)
-        resp_json = json.loads(response.data)
-
-        service_uuid = resp_json["data"]["service_uuid"]
-
-        # Getting the Service list
-        response = self.app.get("/api/v1/services/")
-        self.assertEqual(response.status_code, 200)
-        resp_json = json.loads(response.data)
-
-        service_list = []
-        for i in resp_json["data"]["services"]:
-            service_list.append(i["service_uuid"])
-
-        self.assertTrue(service_uuid in service_list)
-
-        # Getting the Service by uuid
-        response = self.app.get("/api/v1/services/%s/"%service_uuid)
-        self.assertEqual(response.status_code, 200)
-        resp_json = json.loads(response.data)
-        self.assertEqual(resp_json["data"]['service_uuid'], service_uuid)
-
-    def test_delete_service(self):
-        # Test deleting a service
-
-        # First adding a service
-        startingDate = datetime.now()
-        expiringDate = startingDate + timedelta(days=60)
-        external_service_uuid = uuid.uuid4()
-        response = self.app.post("/api/v1/services/", data=dict(description="Test",
-                                                        expiring_date= expiringDate.strftime('%d-%m-%Y %H:%M'),
-                                                        starting_date=startingDate.strftime('%d-%m-%Y %H:%M'),
-                                                        external_service_uuid=external_service_uuid))
-        self.assertEqual(response.status_code, 200)
-        resp_json = json.loads(response.data)
-
-        service_uuid = resp_json["data"]["service_uuid"]
-
-        # Deleting the service
-        response = self.app.delete("/api/v1/services/%s/"%service_uuid)
-        self.assertEqual(response.status_code, 200)
-        resp_json = json.loads(response.data)
-
-        self.assertEqual(resp_json["data"]['service_uuid'], service_uuid)
-        self.assertFalse(resp_json["data"]["active"])
-
-        # Deleting already deleted service
-        response = self.app.delete("/api/v1/services/%s/"%service_uuid)
-        self.assertEqual(response.status_code, 304)
-
     def test_add_license(self):
         # Test adding a license
 
-        # Adding service
+        service_uuid = uuid.uuid4()
+        user_uuid = uuid.uuid4()
         startingDate = datetime.now()
-        expiringDate = startingDate + timedelta(days=60)
-        external_service_uuid = uuid.uuid4()
-        response = self.app.post("/api/v1/services/", data=dict(description="Test",
-                                                        expiring_date= expiringDate.strftime('%d-%m-%Y %H:%M'),
-                                                        starting_date=startingDate.strftime('%d-%m-%Y %H:%M'),
-                                                        external_service_uuid=external_service_uuid))
-        self.assertEqual(response.status_code, 200)
-        resp_json = json.loads(response.data)
-
-        service_uuid = resp_json["data"]["service_uuid"]
 
         # Adding License Type
         response = self.app.post("/api/v1/types/", data=dict(description="TEST_GET", duration=30))
@@ -219,7 +98,7 @@ class TestCase(unittest.TestCase):
         expiringDate = startingDate + timedelta(days=30)
         response = self.app.post("/api/v1/licenses/", data=dict(type_uuid=type_uuid,
                                                         service_uuid=service_uuid,
-                                                        user_uuid="aaa-aaa-aaaa-aaa",
+                                                        user_uuid=user_uuid,
                                                         description="Test",
                                                         startingDate=startingDate.strftime('%d-%m-%Y %H:%M'),
                                                         active=True))
@@ -235,19 +114,22 @@ class TestCase(unittest.TestCase):
         self.assertEqual(desc, "Test")
         self.assertFalse(suspended)
 
-        # Testing adding a license that the same user already has for that service of that type
+        # Testing adding a license that the same user already has for a service of that type
         response = self.app.post("/api/v1/licenses/", data=dict(type_uuid=type_uuid,
                                                         service_uuid=service_uuid,
-                                                        user_uuid="aaa-aaa-aaaa-aaa",
+                                                        user_uuid=user_uuid,
                                                         description="Test",
                                                         startingDate=startingDate.strftime('%d-%m-%Y %H:%M'),
                                                         active=True))
         self.assertEqual(response.status_code, 304)
 
+        # New user for Testing
+        user_uuid = uuid.uuid4()
+
         # Adding initially suspended license
         response = self.app.post("/api/v1/licenses/", data=dict(type_uuid=type_uuid,
                                                         service_uuid=service_uuid,
-                                                        user_uuid="bbb-aaa-aaaa-aaa",
+                                                        user_uuid=user_uuid,
                                                         description="Test",
                                                         startingDate=startingDate.strftime('%d-%m-%Y %H:%M'),
                                                         active=False))
@@ -266,18 +148,9 @@ class TestCase(unittest.TestCase):
     def test_get_license(self):
         # Test getting a license
 
-        # Adding service
+        service_uuid = uuid.uuid4()
+        user_uuid = uuid.uuid4()
         startingDate = datetime.now()
-        expiringDate = startingDate + timedelta(days=60)
-        external_service_uuid = uuid.uuid4()
-        response = self.app.post("/api/v1/services/", data=dict(description="Test",
-                                                        expiring_date= expiringDate.strftime('%d-%m-%Y %H:%M'),
-                                                        starting_date=startingDate.strftime('%d-%m-%Y %H:%M'),
-                                                        external_service_uuid=external_service_uuid))
-        self.assertEqual(response.status_code, 200)
-        resp_json = json.loads(response.data)
-
-        service_uuid = resp_json["data"]["service_uuid"]
 
         # Adding License Type
         response = self.app.post("/api/v1/types/", data=dict(description="TEST_GET", duration=30))
@@ -290,7 +163,7 @@ class TestCase(unittest.TestCase):
         expiringDate = startingDate + timedelta(days=30)
         response = self.app.post("/api/v1/licenses/", data=dict(type_uuid=type_uuid,
                                                         service_uuid=service_uuid,
-                                                        user_uuid="aaa-aaa-aaaa-aaa",
+                                                        user_uuid=user_uuid,
                                                         description="Test",
                                                         startingDate=startingDate.strftime('%d-%m-%Y %H:%M'),
                                                         active=True))
@@ -324,18 +197,9 @@ class TestCase(unittest.TestCase):
     def test_renew_license(self):
         # Test renewing a license
 
-        # Adding service
+        service_uuid = uuid.uuid4()
+        user_uuid = uuid.uuid4()
         startingDate = datetime.now()
-        expiringDate = startingDate + timedelta(days=60)
-        external_service_uuid = uuid.uuid4()
-        response = self.app.post("/api/v1/services/", data=dict(description="Test",
-                                                        expiring_date= expiringDate.strftime('%d-%m-%Y %H:%M'),
-                                                        starting_date=startingDate.strftime('%d-%m-%Y %H:%M'),
-                                                        external_service_uuid=external_service_uuid))
-        self.assertEqual(response.status_code, 200)
-        resp_json = json.loads(response.data)
-
-        service_uuid = resp_json["data"]["service_uuid"]
 
         # Adding License Type
         response = self.app.post("/api/v1/types/", data=dict(description="TEST_GET", duration=30))
@@ -348,7 +212,7 @@ class TestCase(unittest.TestCase):
         expiringDate = startingDate + timedelta(days=30)
         response = self.app.post("/api/v1/licenses/", data=dict(type_uuid=type_uuid,
                                                         service_uuid=service_uuid,
-                                                        user_uuid="aaa-aaa-aaaa-aaa",
+                                                        user_uuid=user_uuid,
                                                         description="Test",
                                                         startingDate=startingDate.strftime('%d-%m-%Y %H:%M'),
                                                         active=True))
@@ -363,7 +227,7 @@ class TestCase(unittest.TestCase):
         expiringDate = expiringDate + timedelta(days=30)
         response = self.app.post("/api/v1/licenses/%s/"%license_uuid, data=dict(
                                                                         type_uuid=type_uuid,
-                                                                        user_uuid="aaa-aaa-aaaa-aaa"))
+                                                                        user_uuid=user_uuid))
 
         self.assertEqual(response.status_code, 200)
         resp_json = json.loads(response.data)
@@ -376,18 +240,9 @@ class TestCase(unittest.TestCase):
     def test_suspend_license(self):
         # Test suspending a license
 
-        # Adding service
+        service_uuid = uuid.uuid4()
+        user_uuid = uuid.uuid4()
         startingDate = datetime.now()
-        expiringDate = startingDate + timedelta(days=60)
-        external_service_uuid = uuid.uuid4()
-        response = self.app.post("/api/v1/services/", data=dict(description="Test",
-                                                        expiring_date= expiringDate.strftime('%d-%m-%Y %H:%M'),
-                                                        starting_date=startingDate.strftime('%d-%m-%Y %H:%M'),
-                                                        external_service_uuid=external_service_uuid))
-        self.assertEqual(response.status_code, 200)
-        resp_json = json.loads(response.data)
-
-        service_uuid = resp_json["data"]["service_uuid"]
 
         # Adding License Type
         response = self.app.post("/api/v1/types/", data=dict(description="TEST_GET", duration=30))
@@ -400,7 +255,7 @@ class TestCase(unittest.TestCase):
         expiringDate = startingDate + timedelta(days=30)
         response = self.app.post("/api/v1/licenses/", data=dict(type_uuid=type_uuid,
                                                         service_uuid=service_uuid,
-                                                        user_uuid="aaa-aaa-aaaa-aaa",
+                                                        user_uuid=user_uuid,
                                                         description="Test",
                                                         startingDate=startingDate.strftime('%d-%m-%Y %H:%M'),
                                                         active=True))
@@ -420,18 +275,9 @@ class TestCase(unittest.TestCase):
     def test_cancel_license(self):
         # Test canceling a license
 
-        # Adding service
+        service_uuid = uuid.uuid4()
+        user_uuid = uuid.uuid4()
         startingDate = datetime.now()
-        expiringDate = startingDate + timedelta(days=60)
-        external_service_uuid = uuid.uuid4()
-        response = self.app.post("/api/v1/services/", data=dict(description="Test",
-                                                        expiring_date= expiringDate.strftime('%d-%m-%Y %H:%M'),
-                                                        starting_date=startingDate.strftime('%d-%m-%Y %H:%M'),
-                                                        external_service_uuid=external_service_uuid))
-        self.assertEqual(response.status_code, 200)
-        resp_json = json.loads(response.data)
-
-        service_uuid = resp_json["data"]["service_uuid"]
 
         # Adding License Type
         response = self.app.post("/api/v1/types/", data=dict(description="TEST_GET", duration=30))
@@ -444,7 +290,7 @@ class TestCase(unittest.TestCase):
         expiringDate = startingDate + timedelta(days=30)
         response = self.app.post("/api/v1/licenses/", data=dict(type_uuid=type_uuid,
                                                         service_uuid=service_uuid,
-                                                        user_uuid="aaa-aaa-aaaa-aaa",
+                                                        user_uuid=user_uuid,
                                                         description="Test",
                                                         startingDate=startingDate.strftime('%d-%m-%Y %H:%M'),
                                                         active=True))
