@@ -1,5 +1,4 @@
-# this is an example of the Uber API
-# as a demonstration of an API spec in YAML
+
 swagger: '2.0'
 info:
   title: Sonata's License Manager
@@ -38,7 +37,7 @@ paths:
               $ref: '#/definitions/License'
         default:
           description: Unexpected error
-          
+
     post:
       summary: Buy a license.
       description: |
@@ -86,24 +85,18 @@ paths:
           description: License for that user to that service of this type already exists
         400:
           description: |
-            One of the following errors: 
+            One of the following errors:
               - Missing user_uuid, service_uuid or type_uuid paramenters
               - License type required exists but is not active
-              - Service required exists but is not active
               - Active parameter was not a boolean
-        403:
-          description: |
-            One of the following errors:
-              - License expiring date is longer than the service availability
         404:
           description: |
-            One of the following errors: 
+            One of the following errors:
               - License type required does not exist
-              - Service required does not exist
         default:
           description: Unexpected error
-            
-  /licenses/{licenseID}:   
+
+  /licenses/{licenseID}:
     post:
       summary: Renew a license for a service
       description: |
@@ -133,24 +126,23 @@ paths:
             $ref: '#/definitions/License'
         400:
           description: |
-            One of the following errors: 
+            One of the following errors:
               - user_uuid was not provided
               - user_uuid provided is not the one that owns the license
-              - Service no longer available for the license period
               - Arguments provided were invalid
         404:
           description: |
-            One of the following errors: 
+            One of the following errors:
               - License ID provided does not exist
               - License type provided to change does not exist
         default:
           description: Unexpected error
-          
+
     head:
       summary: Checks if a license is valid
       description: |
         This licenses endpoint method is used to check if a license is valid
-        
+
       parameters:
         - name: licenseID
           description: The licenseID that the user wants to check
@@ -168,12 +160,12 @@ paths:
           description: License does not exist
         default:
           description: Unexpected error
-          
+
     get:
       summary: Checks if a license is valid
       description: |
         This licenses endpoint method is used to check if a license is valid. Additional info is provided in this endpoint.
-        
+
       parameters:
         - name: licenseID
           description: The licenseID that the user wants to check
@@ -193,12 +185,12 @@ paths:
           description: License does not exist
         default:
           description: Unexpected error
-          
+
     delete:
       summary: Cancels a license
       description: |
         This licenses endpoint method is used to cancel an active license.
-        
+
       parameters:
         - name: licenseID
           description: The licenseID that the user wants to cancel
@@ -225,7 +217,7 @@ paths:
       summary: Suspend a license
       description: |
         This licenses endpoint method is used to suspend an active license.
-        
+
       parameters:
         - name: licenseID
           description: The licenseID that the user wants to suspend
@@ -248,135 +240,7 @@ paths:
           description: License does not exist
         default:
           description: Unexpected error
-  
-  
-  /services:
-    get:
-      summary: Get services
-      description: |
-        This types endpoint method returns a list with services in SONATA
-      tags:
-        - Services
-      parameters:
-      - name: state
-        description: State of the service. Options are all, active, inactive. Default is all.
-        required: false
-        type: string
-        in: query
-      responses:
-        200:
-          description: A json array with all of the services.
-          schema:
-            type: array
-            items:
-              $ref: '#/definitions/Service'
-        default:
-          description: Unexpected error
-  
-    post:
-      summary: Create new service
-      description: |
-        This types endpoint method creates a new service.
-      parameters:
-        - name: description
-          description: Service Description.
-          required: true
-          type: string
-          in: formData
-        - name: starting_date
-          description: Service starting date.
-          required: false
-          type: string
-          format: date
-          in: formData
-        - name: expiring_date
-          description: Service starting date.
-          required: true
-          type: string
-          format: date
-          in: formData
-        - name: external_service_uuid
-          description: Uuid of the service outside of the license manager.
-          required: true
-          type: string
-          in: formData
-      tags:
-        - Services
-      responses:
-        200:
-          description: Service type was sucessfully created.
-          schema:
-            $ref: '#/definitions/Service'
-        400:
-          description: Missing fields.
-        default:
-          description: Unexpected error
-         
-  /services/{serviceID}:
-    get:
-      summary: Get a service
-      description: |
-        This service endpoint method returns the service with info.
-      parameters:
-        - name: serviceID
-          description: the service uuid
-          required: true
-          type: string
-          in: path
-      tags:
-        - Services
-      responses:
-        200:
-          description: Service was sucessfully retrieved.
-          schema:
-            $ref: '#/definitions/Service'
-        404:
-          description: Service doesn't exist.
-        default:
-          description: Unexpected error
-    put:
-      summary: Renew a service expirationDate
-      description: |
-        This service endpoint method is used to renew a service expiringDate.
-      parameters:
-        - name: serviceID
-          description: the service uuid
-          required: true
-          type: string
-          in: path
-      tags:
-        - Services
-      responses:
-        200:
-          description: Service was sucessfully renewed.
-          schema:
-            $ref: '#/definitions/Service'
-        404:
-          description: Service doesn't exist.
-        default:
-          description: Unexpected error
-          
-    delete:
-      summary: Delete a service
-      description: |
-        This services endpoint method makes a service unavailable.
-      parameters:
-        - name: serviceID
-          description: the service uuid
-          required: true
-          type: string
-          in: path
-      tags:
-        - Services
-      responses:
-        200:
-          description: Service was sucessfully deleted.
-        404:
-          description: Service doesn't exist.
-        default:
-          description: Unexpected error
-  
-  
+
   /types:
     get:
       summary: Get types of licenses
@@ -399,7 +263,7 @@ paths:
               $ref: '#/definitions/Type'
         default:
           description: Unexpected error
-  
+
     post:
       summary: Create new license type
       description: |
@@ -426,7 +290,7 @@ paths:
           description: Missing fields.
         default:
           description: Unexpected error
-         
+
   /types/{typeID}:
     get:
       summary: Get a license type
@@ -449,7 +313,7 @@ paths:
           description: License type doesn't exist.
         default:
           description: Unexpected error
-          
+
     delete:
       summary: Delete a license type
       description: |
@@ -469,8 +333,8 @@ paths:
           description: License type doesn't exist.
         default:
           description: Unexpected error
-  
-  
+
+
 definitions:
   License:
     type: object
@@ -500,11 +364,11 @@ definitions:
         description: Date the license is going to expire.
       active:
         type: boolean
-        description: If the license is valid or not. 
+        description: If the license is valid or not.
       suspended:
         type: boolean
-        description: If the license is suspended or not. 
- 
+        description: If the license is suspended or not.
+
   Type:
     type: object
     properties:
@@ -519,34 +383,4 @@ definitions:
         description: Duration in days that license is valid for.
       active:
         type: boolean
-        description: If the license type is valid or not.  
-        
-  Service:
-    type: object
-    properties:
-      service_uuid:
-        type: string
-        description: Unique identifier.
-      description:
-        type: string
-        description: Description of the license.
-      startingDate:
-        type: string
-        format: date
-        description: Date the service started to be available.
-      expiringDate:
-        type: string
-        format: date
-        description: Date the service will expiry and stop being available.
-      external_service_uuid:
-        type: string
-        description: Unique identifier of the service outside the license manager.
-      active:
-        type: boolean
-        description: If the license is valid or not. 
-        
-        
-        
-        
-        
-        
+        description: If the license type is valid or not.
