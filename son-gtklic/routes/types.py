@@ -11,16 +11,16 @@ from models import License, Type
 class TypesList(Resource):
 
     def get(self):
-        state = 'all'
-        if 'state' in request.args:
-            state = request.args.get('state')
+        status = 'all'
+        if 'status' in request.args:
+            status = request.args.get('status')
 
-        if state == 'all':
+        if status == 'all':
             type = Type.query.all()
-        elif state == 'active':
-            type = Type.query.filter_by(active=True).all()
-        elif state == 'inactive':
-            type = Type.query.filter_by(active=False).all()
+        elif status == 'active':
+            type = Type.query.filter_by(status="ACTIVE").all()
+        elif status == 'suspended':
+            type = Type.query.filter_by(active="SUSPENDED").all()
 
         return build_response(status_code=200, description="Types list successfully retrieved", data={"types": [o.serialize for o in type]})
 
@@ -51,7 +51,7 @@ class Types(Resource):
         if type is None:
             return build_response(status_code=404, error="Invalid TypeID", description="Type ID provided does not exist")
 
-        type.active = False
+        type.status = "SUSPENDED"
         db.session.commit()
 
         return build_response(status_code=200, description="Type successfully deleted", data=type.serialize)

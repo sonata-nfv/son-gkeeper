@@ -78,7 +78,7 @@ class TestCase(unittest.TestCase):
         resp_json = json.loads(response.data)
 
         self.assertEqual(resp_json["data"]["type_uuid"], type_uuid)
-        self.assertFalse(resp_json["data"]["active"])
+        self.assertEqual(resp_json["data"]["status"], "SUSPENDED")
 
     def test_add_license(self):
         # Test adding a license
@@ -101,18 +101,18 @@ class TestCase(unittest.TestCase):
                                                         user_uuid=user_uuid,
                                                         description="Test",
                                                         startingDate=startingDate.strftime('%d-%m-%Y %H:%M'),
-                                                        active=True))
+                                                        status="active"))
         self.assertEqual(response.status_code, 200)
         resp_json = json.loads(response.data)
 
         license_uuid = resp_json["data"]["license_uuid"]
         license_expiring_date = resp_json["data"]["expiringDate"]
         desc = resp_json["data"]["description"]
-        suspended = resp_json["data"]["suspended"]
+        status = resp_json["data"]["status"]
 
         self.assertEqual(license_expiring_date, expiringDate.strftime('%d-%m-%Y %H:%M'))
         self.assertEqual(desc, "Test")
-        self.assertFalse(suspended)
+        self.assertEqual(status, "ACTIVE")
 
         # Testing adding a license that the same user already has for a service of that type
         response = self.app.post("/api/v1/licenses/", data=dict(type_uuid=type_uuid,
@@ -120,7 +120,7 @@ class TestCase(unittest.TestCase):
                                                         user_uuid=user_uuid,
                                                         description="Test",
                                                         startingDate=startingDate.strftime('%d-%m-%Y %H:%M'),
-                                                        active=True))
+                                                        status="active"))
         self.assertEqual(response.status_code, 304)
 
         # New user for Testing
@@ -132,18 +132,18 @@ class TestCase(unittest.TestCase):
                                                         user_uuid=user_uuid,
                                                         description="Test",
                                                         startingDate=startingDate.strftime('%d-%m-%Y %H:%M'),
-                                                        active=False))
+                                                        status="inactive"))
         self.assertEqual(response.status_code, 200)
         resp_json = json.loads(response.data)
 
         license_uuid = resp_json["data"]["license_uuid"]
         license_expiring_date = resp_json["data"]["expiringDate"]
         desc = resp_json["data"]["description"]
-        suspended = resp_json["data"]["suspended"]
+        status = resp_json["data"]["status"]
 
         self.assertEqual(license_expiring_date, expiringDate.strftime('%d-%m-%Y %H:%M'))
         self.assertEqual(desc, "Test")
-        self.assertTrue(suspended)
+        self.assertEqual(status, "INACTIVE")
 
     def test_get_license(self):
         # Test getting a license
@@ -166,7 +166,7 @@ class TestCase(unittest.TestCase):
                                                         user_uuid=user_uuid,
                                                         description="Test",
                                                         startingDate=startingDate.strftime('%d-%m-%Y %H:%M'),
-                                                        active=True))
+                                                        status="active"))
         self.assertEqual(response.status_code, 200)
         resp_json = json.loads(response.data)
 
@@ -215,7 +215,7 @@ class TestCase(unittest.TestCase):
                                                         user_uuid=user_uuid,
                                                         description="Test",
                                                         startingDate=startingDate.strftime('%d-%m-%Y %H:%M'),
-                                                        active=True))
+                                                        status="active"))
         self.assertEqual(response.status_code, 200)
         resp_json = json.loads(response.data)
 
@@ -258,7 +258,7 @@ class TestCase(unittest.TestCase):
                                                         user_uuid=user_uuid,
                                                         description="Test",
                                                         startingDate=startingDate.strftime('%d-%m-%Y %H:%M'),
-                                                        active=True))
+                                                        status="active"))
         self.assertEqual(response.status_code, 200)
         resp_json = json.loads(response.data)
 
@@ -270,7 +270,7 @@ class TestCase(unittest.TestCase):
         resp_json = json.loads(response.data)
 
         self.assertEqual(license_uuid, resp_json["data"]["license_uuid"])
-        self.assertTrue(resp_json["data"]["suspended"])
+        self.assertEqual(resp_json["data"]["status"], "SUSPENDED")
 
     def test_cancel_license(self):
         # Test canceling a license
@@ -293,7 +293,7 @@ class TestCase(unittest.TestCase):
                                                         user_uuid=user_uuid,
                                                         description="Test",
                                                         startingDate=startingDate.strftime('%d-%m-%Y %H:%M'),
-                                                        active=True))
+                                                        status="active"))
         self.assertEqual(response.status_code, 200)
         resp_json = json.loads(response.data)
 
@@ -305,7 +305,7 @@ class TestCase(unittest.TestCase):
         resp_json = json.loads(response.data)
 
         self.assertEqual(license_uuid, resp_json["data"]["license_uuid"])
-        self.assertFalse(resp_json["data"]["active"])
+        self.assertEqual(resp_json["data"]["status"], "INACTIVE")
 
 
 if __name__ == '__main__':

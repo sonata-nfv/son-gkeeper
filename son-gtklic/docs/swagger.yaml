@@ -69,10 +69,10 @@ paths:
           type: string
           format: date
           in: formData
-        - name: active
-          description: The license initial state. If true the license starts active, if false the license starts suspended. Default is true.
+        - name: status
+          description: The license initial state. Allowed values are active, inactive and suspended. Default is active.
           required: false
-          type: boolean
+          type: string
           in: formData
       tags:
         - Licenses
@@ -88,7 +88,7 @@ paths:
             One of the following errors:
               - Missing user_uuid, service_uuid or type_uuid paramenters
               - License type required exists but is not active
-              - Active parameter was not a boolean
+              - Status parameter was not valid
         404:
           description: |
             One of the following errors:
@@ -249,8 +249,8 @@ paths:
       tags:
         - Types
       parameters:
-      - name: state
-        description: State of the license type. Options are all, active, inactive. Default is all.
+      - name: status
+        description: State of the license type. Options are all, active, suspended. Default is all.
         required: false
         type: string
         in: query
@@ -362,12 +362,9 @@ definitions:
         type: string
         format: date
         description: Date the license is going to expire.
-      active:
-        type: boolean
-        description: If the license is valid or not.
-      suspended:
-        type: boolean
-        description: If the license is suspended or not.
+      status:
+        type: string
+        description: Status of the license.
 
   Type:
     type: object
@@ -381,6 +378,6 @@ definitions:
       duration:
         type: string
         description: Duration in days that license is valid for.
-      active:
-        type: boolean
-        description: If the license type is valid or not.
+      status:
+        type: string
+        description: Status of the license type.

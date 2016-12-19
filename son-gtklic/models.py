@@ -4,17 +4,18 @@ import uuid
 import datetime
 
 class Type(db.Model):
+    valid_status = ["ACTIVE", "SUSPENDED"]
 
     type_uuid = db.Column(db.String, primary_key=True, default=str(uuid.uuid4()))
     description = db.Column(db.String)
     duration = db.Column(db.Integer)
-    active = db.Column(db.Boolean, default=True)
+    status = db.Column(db.String, default="ACTIVE")
 
-    def __init__(self, description, duration):
+    def __init__(self, description, duration, status="ACTIVE"):
         self.type_uuid = str(uuid.uuid4())
         self.description = description
         self.duration = duration
-        self.active = True
+        self.status = status
 
     @property
     def serialize(self):
@@ -23,11 +24,12 @@ class Type(db.Model):
             'type_uuid': self.type_uuid,
             'type': self.description,
             'duration': self.duration,
-            'active': self.active
+            'status': self.status
         }
 
 
 class License(db.Model):
+    valid_status = ["ACTIVE", "SUSPENDED", "INACTIVE"]
 
     type_uuid = db.Column(db.String, db.ForeignKey("type.type_uuid"), nullable=False)
     service_uuid = db.Column(db.String, nullable=False)
@@ -37,10 +39,9 @@ class License(db.Model):
     description = db.Column(db.String)
     startingDate = db.Column(db.DateTime, default=datetime.datetime.now())
     expiringDate = db.Column(db.DateTime, nullable=False)
-    active = db.Column(db.Boolean, default=True)
-    suspended = db.Column(db.Boolean, default=False)
+    status = db.Column(db.String, default="ACTIVE")
 
-    def __init__(self, type_uuid, service_uuid, user_uuid, description, startingDate, expiringDate, suspended=False, active=None):
+    def __init__(self, type_uuid, service_uuid, user_uuid, description, startingDate, expiringDate, status="ACTIVE"):
         self.type_uuid = type_uuid
         self.service_uuid = service_uuid
         self.user_uuid = user_uuid
@@ -48,9 +49,7 @@ class License(db.Model):
         self.description = description
         self.startingDate = startingDate
         self.expiringDate = expiringDate
-        if not active is None:
-            self.active = active
-        self.suspended = suspended
+        self.status = status
 
     @property
     def serialize(self):
@@ -62,6 +61,5 @@ class License(db.Model):
             'description': self.description,
             'startingDate': self.startingDate.strftime('%d-%m-%Y %H:%M'),
             'expiringDate': self.expiringDate.strftime('%d-%m-%Y %H:%M'),
-            'active': self.active,
-            'suspended': self.suspended
+            'status': self.status
         }
