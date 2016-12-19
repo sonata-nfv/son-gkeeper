@@ -26,53 +26,50 @@
 ## partner consortium (www.sonata-nfv.eu).
 # encoding: utf-8
 require 'tempfile'
+require './models/manager_service.rb'
 
-class PackageManagerService
+class PackageManagerService < ManagerService
   
   attr_reader :url, :logger
   
+  LOG_MESSAGE = 'GtkApi::' + self.name
+  
   def initialize(url, logger)
+    method = LOG_MESSAGE + ".new(url=#{url}, logger=#{logger})"
     @url = url
     @logger = logger
+    @logger.debug(method) {'entered'}
   end
     
   def create(params)
-    log_message = 'PackageManagerService.create'
-    @logger.debug(log_message) {"params=#{params}"}
+    method = LOG_MESSAGE + ".create(#{params})"
+    @logger.debug(method) {'entered'}
+
+    @logger.debug(method) {"params=#{params}"}
     tmpfile = params[:package][:tempfile]
     uri = @url+'/packages'
-    @logger.debug(log_message) {"uri="+uri}
+    @logger.debug(method) {"uri="+uri}
     begin
       response = RestClient.post(uri, params)
-      @logger.debug(log_message) {"response.class=#{response.class}"}
-      @logger.debug(log_message) {"response=#{response}"}
+      @logger.debug(method) {"response.class=#{response.class}"}
+      @logger.debug(method) {"response=#{response}"}
       JSON.parse response
     rescue  => e #RestClient::Conflict
-      @logger.debug(log_message) {e.response}
+      @logger.debug(method) {e.response}
       {error: 'Package is duplicated', package: e.response}
-    end
-    #RestClient.get('http://my-rest-service.com/resource'){ |response, request, result, &block|
-    #  case response.code
-    #  when 200
-    #    p "It worked !"
-    #    response
-    #  when 423
-    #    raise SomeCustomExceptionIfYouWant
-    #  else
-    #    response.return!(request, result, &block)
-    #  end
-    #}
-    
+    end    
   end    
 
   def find_by_uuid(uuid)
+    method = LOG_MESSAGE + ".find_by_uuid(#{uuid})"
+    @logger.debug(method) {'entered'}
     headers = { 'Accept'=> '*/*', 'Content-Type'=>'application/json'}
     headers[:params] = uuid
     begin
       # Get the meta-data first
       response = RestClient.get(@url+"/packages/#{uuid}", headers)
       filename = JSON.parse(response)['filepath']
-      @logger.debug "PackageManagerService.find_by_uuid(#{uuid}): filename=\""+filename+"\""
+      @logger.debug(method) {"filename='"+filename+"'"}
       path = File.join('public','packages',uuid)
       FileUtils.mkdir_p path unless File.exists? path
       
@@ -88,22 +85,24 @@ class PackageManagerService
   end
   
   def find(params)
+    method = LOG_MESSAGE + ".find(#{params})"
+    @logger.debug(method) {'entered'}
     headers = { 'Accept'=> 'application/json', 'Content-Type'=>'application/json'}
     headers[:params] = params
     begin
       response = RestClient.get(@url+'/packages', headers)
-      @logger.debug "PackageManagerService.find: response #{response}"
+      @logger.debug(method) {"response #{response}"}
       response
     rescue => e
       e.to_json 
     end
   end
   
-  def get_log
-    method = "GtkApi::PackageManagerService.get_log: "
-    @logger.debug(method) {'entered'}
-    full_url = @url+'/admin/logs'
-    @logger.debug(method) {'url=' + full_url}
-    RestClient.get(full_url)      
-  end
+  #def get_log
+  #  method = LOG_MESSAGE + ".get_log()"
+  #  @logger.debug(method) {'entered'}
+  #  full_url = @url+'/admin/logs'
+  #  @logger.debug(method) {'url=' + full_url}
+  #  RestClient.get(full_url)      
+  #end
 end

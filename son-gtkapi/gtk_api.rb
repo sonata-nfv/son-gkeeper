@@ -35,6 +35,7 @@ require 'sinatra/cross_origin'
 require 'sinatra/reloader'
 require 'zip'
 require 'sinatra/logger'
+require 'sinatra/namespace'
 
 # Require the bundler gem and then call Bundler.require to load in all gems listed in Gemfile.
 require 'bundler'
@@ -42,7 +43,6 @@ Bundler.require :default, ENV['RACK_ENV'].to_sym
 
 ['helpers', 'routes', 'models'].each do |dir|
   Dir[File.join(File.dirname(__FILE__), dir, '**', '*.rb')].each do |file|
-    puts "Requiring file #{file}"
     require file
   end
 end
@@ -53,6 +53,7 @@ class GtkApi < Sinatra::Base
   register Sinatra::CrossOrigin
   register Sinatra::Reloader
   register Sinatra::Logger
+  register Sinatra::Namespace
   
   helpers GtkApiHelper
 
@@ -82,6 +83,7 @@ class GtkApi < Sinatra::Base
   set :function_management,FunctionManagerService.new(settings.fnctmgmt, logger)
   set :vim_management, VimManagerService.new(settings.vimmgmt, logger)
   set :record_management, RecordManagerService.new(settings.recmgmt, logger)
+  set :licence_management, LicenceManagerService.new(settings.licmgmt, logger)
   
   Zip.setup do |c|
     c.unicode_names = true

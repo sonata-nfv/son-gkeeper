@@ -40,9 +40,11 @@ require 'sinatra/logger'
 require 'bundler'
 Bundler.require :default, ENV['RACK_ENV'].to_sym
 
-require_relative 'routes/init'
-require_relative 'helpers/init'
-require_relative 'models/init'
+['helpers', 'routes', 'models'].each do |dir|
+  Dir[File.join(File.dirname(__FILE__), dir, '**', '*.rb')].each do |file|
+    require file
+  end
+end
 
 # Main class supporting the Gatekeeper's Service Management micro-service
 class GtkVim < Sinatra::Base

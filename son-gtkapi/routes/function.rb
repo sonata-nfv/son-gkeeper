@@ -31,25 +31,31 @@ class GtkApi < Sinatra::Base
   
   # GET many functions
   get '/functions/?' do
+    log_message = MODULE+' GET /functions'
+    logger.debug(log_message) {'entered'}
+    
     uri = Addressable::URI.new
     uri.query_values = params
-    logger.debug "GtkApi: entered GET /functions?#{uri.query}"
     
     params[:offset] ||= DEFAULT_OFFSET 
     params[:limit] ||= DEFAULT_LIMIT
+    logger.debug(log_message) {"params=#{uri.query}"}
      
     functions = settings.function_management.find_functions(params)
     if functions
-      logger.debug "GtkApi: leaving GET /functions?#{uri.query} with #{functions}"
+      logger.debug(log_message) {"leaving with #{functions}"}
       halt 200, functions.to_json if functions
-    else 
-      logger.debug "GtkApi: leaving GET /functions?#{uri.query} with \"No function with params #{uri.query} was found\""
-      json_error 404, "No function with params #{uri.query} was found"
+    else
+      error_message = "No function with params #{uri.query} was found"
+      logger.debug(log_message) {'leaving with "'+error_message+'"'}
+      json_error 404, error_message
     end  
   end
   
   # GET function by uuid
   get '/functions/:uuid' do
+    log_message = MODULE+' GET /functions/:uuid'
+    
     unless params[:uuid].nil?
       logger.info "GtkApiss: entered GET \"/functions/#{params[:uuid]}\""
       function = settings.function_management.find_functions_by_uuid(params[:uuid])
@@ -68,9 +74,9 @@ class GtkApi < Sinatra::Base
   end
   
   get '/admin/functions/logs' do
-    logger.debug "GtkApi: entered GET /admin/functions/logs"
+    logger.debug('GtkApi GET /admin/functions/logs') {'entered'}
     headers 'Content-Type' => 'text/plain; charset=utf8', 'Location' => '/'
     log = settings.function_management.get_log
-    halt 200, log.to_s
+    halt 200, log #.to_s
   end
 end

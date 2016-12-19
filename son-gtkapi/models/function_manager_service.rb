@@ -25,46 +25,65 @@
 ## acknowledge the contributions of their colleagues of the SONATA 
 ## partner consortium (www.sonata-nfv.eu).
 # encoding: utf-8
-class FunctionManagerService
+require './models/manager_service.rb'
+
+class FunctionManagerService < ManagerService
     
-    # We're not yet using this: it allows for multiple implementations, such as Fakes (for testing)
-    attr_reader :url, :logger
-    
-    def initialize(url, logger)
-      @url = url
-      @logger = logger
-    end
+  # We're not yet using this: it allows for multiple implementations, such as Fakes (for testing)
+  attr_reader :url, :logger
   
-    def find_functions_by_uuid(uuid)
-      headers = { 'Accept'=> 'application/json', 'Content-Type'=>'application/json'}
-      headers[:params] = uuid
-      begin
-        response = RestClient.get( @url + "/functions/#{uuid}", headers)
-      rescue => e
-        @logger.error "FunctionManagerService#find_functions_by_uuid: e=#{e.backtrace}"
-        nil 
+  JSON_HEADERS = { 'Accept'=> 'application/json', 'Content-Type'=>'application/json'}
+  LOG_MESSAGE = 'GtkApi::' + self.name
+  
+  def initialize(url, logger)
+    method = LOG_MESSAGE + ".new(url=#{url}, logger=#{logger})"
+    super
+    @logger.debug(method) {'entered'}
+  end
+
+  def find_functions_by_uuid(uuid)
+    method = LOG_MESSAGE + ".find_functions_by_uuid(#{uuid})"
+    @logger.debug(method) {'entered'}
+    begin
+      response = getCurb( url: @url + '/functions/'+uuid, headers: JSON_HEADERS)
+      @logger.debug(method) {'response='+response.body}
+      case response.response_code
+        when 200
+          @logger.debug(method) {'found function(s) ' + response.body}
+          JSON.parse response.body
+        when 404
+          @logger.error(method) {"Function with UUID=#{uuid} was not found"}
+          nil
+        else
+          @logger.error(method) {"Strange error (#{response.response_code}) while looking for function with UUID=#{uuid}"}
+          nil
       end
+    rescue => e
+      @logger.error(method) {"e=#{e.backtrace}"}
+      nil 
     end
-    
-    def find_functions(params)
-      headers = { 'Accept'=> 'application/json', 'Content-Type'=>'application/json'}
-      headers[:params] = params unless params.empty?
-      @logger.debug "FunctionManagerService#find_functions(#{params}): headers=#{headers}"
-      begin
-        response = RestClient.get(@url + '/functions', headers) 
-        @logger.debug "FunctionManagerService#find_functions(#{params}): response=#{response}"
-        JSON.parse response.body
-      rescue => e
-        @logger.error "FunctionManagerService#find_functions: e=#{e.backtrace}"
-        nil 
+  end
+  
+  def find_functions(params)
+    method = LOG_MESSAGE + ".find_functions(#{params})"
+    @logger.debug(method) {'entered'}
+    begin
+      response = getCurb(url: @url + '/functions', params: params, headers: JSON_HEADERS) 
+      @logger.debug(method) {'response='+response.body}
+      case response.response_code
+        when 200
+          @logger.debug(method) {'found function(s) ' + response.body}
+          JSON.parse response.body
+        when 404
+          @logger.error(method) {"Function with params=#{params} were not found"}
+          []
+        else
+          @logger.error(method) {"Strange error (#{response.response_code}) while looking for function with params=#{params}"}
+          nil
       end
+    rescue => e
+      @logger.error(method) {"e=#{e.backtrace}"}
+      nil 
     end
-    
-    def get_log
-      method = "GtkApi::FunctionManagerService.get_log: "
-      @logger.debug(method) {'entered'}
-      full_url = @url+'/admin/logs'
-      @logger.debug(method) {'url=' + full_url}
-      RestClient.get(full_url)      
-    end
+  end
 end
