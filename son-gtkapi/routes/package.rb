@@ -98,6 +98,7 @@ class GtkApi < Sinatra::Base
     logger.debug "GtkApi: leaving GET /packages?#{uri.query} with \"No package found with parameters #{uri.query}\""
     json_error 404, "No package found with parameters #{uri.query}"
   end
+
   
   # PUT 
   put '/packages/?' do
@@ -122,6 +123,15 @@ class GtkApi < Sinatra::Base
     headers 'Content-Type' => 'text/plain; charset=utf8', 'Location' => '/'
     log = settings.package_management.get_log
     halt 200, log.to_s
+  end
+
+  # DELETE son-package by uuid
+  delete '/son-packages/:uuid/?' do
+    unless params[:uuid].nil?
+      logger.info "GtkApi: entered DELETE \"/son-packages/#{params[:uuid]}\""
+      logger.info "GtkApi: leaving DELETE \"/son-packages/#{params[:uuid]}\" with \"Not implemented yet\""
+    end
+    json_error 501, "Not implemented yet"
   end
   
   private
