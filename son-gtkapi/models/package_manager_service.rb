@@ -60,6 +60,7 @@ class PackageManagerService < ManagerService
     end    
   end    
 
+=begin
   def find_by_uuid(uuid)
     method = LOG_MESSAGE + ".find_by_uuid(#{uuid})"
     @logger.debug(method) {'entered'}
@@ -83,7 +84,23 @@ class PackageManagerService < ManagerService
       e.to_json
     end
   end
-  
+=end
+
+  def find_by_uuid(uuid)
+    method = LOG_MESSAGE + ".find_by_uuid_bis(#{uuid})"
+    @logger.debug(method) {'entered'}
+    headers = { 'Accept'=> '*/*', 'Content-Type'=>'application/json'}
+    headers[:params] = uuid
+    begin
+      # Get the meta-data first
+      response = RestClient.get(@url+"/packages/#{uuid}", headers)
+      @logger.debug(method) {"response #{response}"}
+      response
+    rescue => e
+      e.to_json
+    end
+  end
+
   def find(params)
     method = LOG_MESSAGE + ".find(#{params})"
     @logger.debug(method) {'entered'}

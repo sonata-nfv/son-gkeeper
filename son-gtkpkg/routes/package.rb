@@ -82,7 +82,8 @@ class GtkPkg < Sinatra::Base
       json_error 400, error_message
     end
   end
-  
+ 
+=begin  
   get '/packages/:uuid' do
     unless params[:uuid].nil?
       logger.info('GtkPkg.get') { "GtkPkg: entered GET \"/packages/#{params[:uuid]}\""}
@@ -105,6 +106,23 @@ class GtkPkg < Sinatra::Base
     end
     logger.error "GtkPkg: leaving GET \"/packages/#{params[:uuid]}\" with \"No package UUID specified\""
     json_error 400, 'No package UUID specified'
+  end
+=end
+  # GET package descriptor
+  get '/packages/:uuid' do
+    unless params[:uuid].nil?
+      logger.info('GtkPkg.get') { "GtkPkg: entered GET \"/packages/#{params[:uuid]}\""}
+      package = settings.packages_catalogue.find_by_uuid( params[:uuid])
+      if package && package.is_a?(Hash) && package['uuid']
+        logger.info "GtkPkg: leaving GET /packages/#{params[:uuid]} with package found. Package: #{package}"
+        halt 200, package.to_json
+      else
+        logger.error "GtkPkg: leaving GET \"/packages/#{params[:uuid]}\" with \"No package with UUID=#{params[:uuid]} was found\""
+        json_error 400, "No package with UUID=#{params[:uuid]} was found"       
+      end
+    end
+    logger.error "GtkPkg: leaving GET \"/packages/#{params[:uuid]}\" with \"No package UUID specified\""
+    json_error 400, 'No package UUID specified'    
   end
   
   get '/packages/:uuid/package?' do

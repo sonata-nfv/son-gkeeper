@@ -64,18 +64,38 @@ class GtkApi < Sinatra::Base
     json_error 400, 'No package file specified'
   end
 
+
   # GET a specific package
+=begin  
   get '/packages/:uuid/?' do
     unless params[:uuid].nil?
       logger.debug "GtkApi: entered GET /packages/#{params[:uuid]}"
       json_error 400, 'Invalid Package UUID' unless valid? params['uuid']
-      
       get_one_package params[:uuid]
     end
     logger.debug "GtkApi: leaving GET \"/packages/#{params[:uuid]}\" with \"No package UUID specified\""
     json_error 400, 'No package UUID specified'
   end
-  
+=end
+
+  # GET a specific package descriptor
+  get '/packages/:uuid/?' do
+    unless params[:uuid].nil?
+      logger.debug "GtkApi: entered GET /packages/#{params[:uuid]}"
+      json_error 400, 'Invalid Package UUID' unless valid? params['uuid']
+      package = settings.package_management.find_by_uuid(params[:uuid])
+      if package
+        logger.debug "GtkApi: leaving GET /packages/#{params[:uuid]} with package #{package}"
+        halt 200, package
+      else
+        logger.debug "GtkApi: leaving GET \"/packages/#{params[:uuid]}\" with \"No package with UUID=#{params[:uuid]} was found\""
+        json_error 404, "No package with UUID=#{params[:uuid]} was found"
+      end
+    end
+    logger.debug "GtkApi: leaving GET \"/packages/#{params[:uuid]}\" with \"No package UUID specified\""
+    json_error 400, 'No package UUID specified'      
+  end
+
   # GET potentially many packages
   get '/packages/?' do
     uri = Addressable::URI.new
@@ -99,7 +119,6 @@ class GtkApi < Sinatra::Base
     json_error 404, "No package found with parameters #{uri.query}"
   end
 
-  
   # PUT 
   put '/packages/?' do
     unless params[:uuid].nil?
