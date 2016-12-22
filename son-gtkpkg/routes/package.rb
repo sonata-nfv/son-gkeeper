@@ -137,6 +137,21 @@ class GtkPkg < Sinatra::Base
     json_error 400, 'No package UUID specified'
   end
 
+  get '/son-packages/:uuid/?' do
+    unless params[:uuid].nil?
+      package = settings.son_packages_catalogue.find_by_uuid(params[:uuid])
+      if package
+        logger.info "GtkPkg: leaving GET /son-packages/#{params[:uuid]} with son-package found, UUID=#{params[:uuid]}"
+        halt 200, package        
+      else
+        logger.error "GtkPkg: leaving GET \"/son-packages/#{params[:uuid]}\" with \"No son-package with UUID=#{params[:uuid]} was found\""
+        json_error 400, "No son-package with UUID=#{params[:uuid]} was found"       
+      end  
+    end
+    logger.error "GtkPkg: leaving GET \"/son-packages/#{params[:uuid]}\" with \"No son-package UUID specified\""
+    json_error 400, 'No package UUID specified' 
+  end
+
   get '/packages/?' do
     uri = Addressable::URI.new
     uri.query_values = params

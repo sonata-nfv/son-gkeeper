@@ -87,7 +87,7 @@ class PackageManagerService < ManagerService
 =end
 
   def find_by_uuid(uuid)
-    method = LOG_MESSAGE + ".find_by_uuid_bis(#{uuid})"
+    method = LOG_MESSAGE + ".find_by_uuid(#{uuid})"
     @logger.debug(method) {'entered'}
     headers = { 'Accept'=> '*/*', 'Content-Type'=>'application/json'}
     headers[:params] = uuid

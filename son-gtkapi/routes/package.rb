@@ -144,6 +144,25 @@ class GtkApi < Sinatra::Base
     halt 200, log.to_s
   end
 
+  # GET son-package by its uuid
+  get '/son-packages/:uuid/?' do
+    unless params[:uuid].nil?
+      logger.debug "GtkApi: entered GET /son-packages/#{params[:uuid]}"
+      json_error 400, 'Invalid Son-Package UUID' unless valid? params['uuid']
+      son_package = settings.son_package_management.find_by_uuid(params[:uuid])
+      if son_package
+        logger.debug "GtkApi: leaving GET /son-packages/#{params[:uuid]} with son-package with uuid=#{params[:uuid]}"
+        halt 200, son_package
+      else
+        logger.debug "GtkApi: leaving GET \"/son-packages/#{params[:uuid]}\" with \"No son-package with UUID=#{params[:uuid]} was found\""
+        json_error 404, "No son-package with UUID=#{params[:uuid]} was found"
+      end
+    end
+    logger.debug "GtkApi: leaving GET \"/son-packages/#{params[:uuid]}\" with \"No son-package UUID specified\""
+    json_error 400, 'No son-package UUID specified'
+  end
+
+
   # DELETE son-package by uuid
   delete '/son-packages/:uuid/?' do
     unless params[:uuid].nil?

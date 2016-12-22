@@ -78,6 +78,7 @@ class GtkApi < Sinatra::Base
   
   enable :cross_origin
 
+  set :son_package_management, SonPackageManagerService.new(settings.pkgmgmt, logger)
   set :package_management, PackageManagerService.new(settings.pkgmgmt, logger)
   set :service_management, ServiceManagerService.new(settings.srvmgmt, logger)
   set :function_management,FunctionManagerService.new(settings.fnctmgmt, logger)
