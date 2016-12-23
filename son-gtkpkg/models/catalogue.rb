@@ -66,7 +66,9 @@ class Catalogue
     request["content-type"] = 'application/zip'
     request["content-disposition"] = 'attachment; filename=<filename.son>'
     response = http.request(request)
-    puts response.read_body
+    @logger.debug("Catalogue response: " + response.read_body)
+    response.read_body
+    #puts response.read_body
     # Response should return code 201, and ID of the stored son-package
   end
   

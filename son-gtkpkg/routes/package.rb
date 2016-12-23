@@ -52,7 +52,6 @@ class GtkPkg < Sinatra::Base
   post '/packages/?' do
     log_message = 'GtkPkg.post /packages: '
     logger.info(log_message) {"params = #{params}"}
-    
     package = Package.new(catalogue: settings.packages_catalogue, logger: logger, params: {io: params[:package][:tempfile][:tempfile]})
     if package 
       logger.debug(log_message) {"package=#{package.inspect}"}
@@ -60,8 +59,15 @@ class GtkPkg < Sinatra::Base
       logger.info(log_message) {"descriptor is #{descriptor}"}
       if descriptor
         if descriptor.key?('uuid')
-          logger.info(log_message) {"leaving with package #{descriptor.to_json}"}
-          halt 201, {'Location' => "/packages/#{descriptor['uuid']}"}, descriptor.to_json
+          logger.info("Storing son-package in catalogue")
+          package = Package.new(catalogue: settings.son_packages_catalogue, logger: logger, params: {io: params[:package][:tempfile][:tempfile]})
+          son_package = package.store_zip()
+          if son_package && son_package['uuid']
+            descriptor.store("son-package-uuid", son_package['uuid'])
+            logger.info(log_message) {"leaving with package #{descriptor.to_json}"}
+            #halt 201, {'Location' => "/packages/#{descriptor['uuid']}"}, descriptor.to_json
+            halt 201, {'Location' => "/son-packages/#{descriptor['son-package-uuid']}"}, descriptor.to_json
+          end
         elsif descriptor.key?('name') && descriptor.key?('vendor') && descriptor.key?('version')
           error_message = "Version #{descriptor['version']} of package '#{descriptor['name']}' from vendor '#{descriptor['vendor']}' already exists"
           logger.info(log_message) {"leaving with #{error_message}"}
