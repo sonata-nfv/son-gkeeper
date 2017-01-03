@@ -25,8 +25,6 @@
 ## acknowledge the contributions of their colleagues of the SONATA 
 ## partner consortium (www.sonata-nfv.eu).
 # encoding: utf-8
-require 'addressable/uri'
-
 class GtkApi < Sinatra::Base
   
   before do
@@ -58,18 +56,18 @@ class GtkApi < Sinatra::Base
 
   # GET many vims
   get '/vims/?' do
-    uri = Addressable::URI.new
-    #params['offset'] ||= DEFAULT_OFFSET 
-    #params['limit'] ||= DEFAULT_LIMIT
-    uri.query_values = params
-    logger.info "GtkApi: entered GET /vim?#{uri.query}"
+    MESSAGE="GtkApi GET /vims?"+query_string
+    @offset ||= params['offset'] ||= DEFAULT_OFFSET 
+    @limit ||= params['limit'] ||= DEFAULT_LIMIT
+
+    logger.info(MESSAGE) {"entered"}
     vims = settings.vim_management.find_vims(params)
-    logger.debug "GtkApi: GET /vims?#{uri.query} gave #{vims}"
+    logger.debug(MESSAGE) { "vims= #{vims}"}
     if vims 
-      logger.info "GtkApi: leaving GET /vim?#{uri.query} with #{vims}"
-      halt 200, vims.to_json
+      links = build_pagination_headers(url: request_url, limit: @limit.to_i, offset: @offset.to_i, total: vims.size)
+      [200, {'Link' => links}, vims.to_json]
     else
-      logger.info "GtkApi: leaving GET /vim?#{uri.query} with 'No get vims request were created'"
+      logger.info(MESSAGE) { "leaving GET with 'No get vims request were created'"}
       json_error 400, 'No get list of vims request was created'
     end
   end
@@ -95,5 +93,14 @@ class GtkApi < Sinatra::Base
     headers 'Content-Type' => 'text/plain; charset=utf8', 'Location' => '/'
     log = settings.vim_management.get_log
     halt 200, log #.to_s
+  end
+  
+  private 
+  def query_string
+    request.env['QUERY_STRING'].nil? ? '' : '?' + request.env['QUERY_STRING'].to_s
+  end
+
+  def request_url
+    request.env['rack.url_scheme']+'://'+request.env['HTTP_HOST']+request.env['REQUEST_PATH']
   end
 end
