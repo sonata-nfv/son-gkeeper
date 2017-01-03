@@ -76,21 +76,21 @@ class GtkApi < Sinatra::Base
   
   # GET potentially many packages
   get '/packages/?' do
-    message = 'GtkApi::GET /packages/'
+    MESSAGE = 'GtkApi::GET /packages/'
     
-    logger.debug(message) {'entered with '+query_string}
+    logger.debug(MESSAGE) {'entered with '+query_string}
     
     @offset ||= params[:offset] ||= DEFAULT_OFFSET
     @limit ||= params[:limit] ||= DEFAULT_LIMIT
     
     packages = settings.package_management.find(params)
     if packages
-      logger.debug(message) { "leaving with #{packages}"}
+      logger.debug(MESSAGE) { "leaving with #{packages}"}
       links = build_pagination_headers(url: request_url, limit: @limit.to_i, offset: @offset.to_i, total: packages.size)
       [200, {'Link' => links}, packages]
     else
       error_message = 'No package found with parameters '+query_string
-      logger.debug(message) {'leaving with "'+error_message+'"'}
+      logger.debug(MESSAGE) {'leaving with "'+error_message+'"'}
       json_error 404, error_message
     end
   end
