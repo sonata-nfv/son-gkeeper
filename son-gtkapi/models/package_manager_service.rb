@@ -94,7 +94,8 @@ class PackageManagerService < ManagerService
       @logger.debug(method) {"response #{response}"}
       response
     rescue => e
-      e.to_json 
+      @logger.error(method) {"#{e}"}
+      {} 
     end
   end
   

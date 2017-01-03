@@ -78,29 +78,27 @@ class GtkApi < Sinatra::Base
   
   # GET potentially many packages
   get '/packages/?' do
-    uri = Addressable::URI.new
-    uri.query_values = params
-    logger.debug "GtkApi: entered GET /packages?#{uri.query}"
+    message = 'GtkApi::GET /packages/'
+    
+    logger.debug(message) {'entered with '+query_string}
     
     @offset ||= params[:offset] ||= DEFAULT_OFFSET
     @limit ||= params[:limit] ||= DEFAULT_LIMIT
     
     packages = settings.package_management.find(params)
     if packages
-      #if packages.size == 1
-      #  logger.debug "GtkApi: leaving GET /packages?#{uri.query} with package #{packages[0]['uuid']}"
-      #  get_one_package( packages[0]['uuid'])
-      #else
-        logger.debug "GtkApi: leaving GET /packages?#{uri.query} with #{packages}"
-        halt 200, packages
-        #end
+      logger.debug(message) { "leaving with #{packages}"}
+      links = build_pagination_headers(url: request_url, limit: @limit.to_i, offset: @offset.to_i, total: packages.size)
+      [200, {'Link' => links}, packages]
+    else
+      error_message = 'No package found with parameters '+query_string
+      logger.debug(message) {'leaving with "'+error_message+'"'}
+      json_error 404, error_message
     end
-    logger.debug "GtkApi: leaving GET /packages?#{uri.query} with \"No package found with parameters #{uri.query}\""
-    json_error 404, "No package found with parameters #{uri.query}"
   end
   
   # PUT 
-  put '/packages/?' do
+  put '/packages/:uuid/?' do
     unless params[:uuid].nil?
       logger.info "GtkApi: entered PUT /packages/#{params[:uuid]}"
       logger.info "GtkApi: leaving PUT /packages/#{params[:uuid]} with \"Not implemented yet\""
@@ -136,6 +134,14 @@ class GtkApi < Sinatra::Base
       logger.debug "GtkApi: leaving GET \"/packages/#{params[:uuid]}\" with \"No package with UUID=#{params[:uuid]} was found\""
       json_error 404, "No package with UUID=#{params[:uuid]} was found"
     end
+  end
+  
+  def query_string
+    request.env['QUERY_STRING'].nil? ? '' : '?' + request.env['QUERY_STRING'].to_s
+  end
+
+  def request_url
+    request.env['rack.url_scheme']+'://'+request.env['HTTP_HOST']+request.env['REQUEST_PATH']
   end
 end
 
