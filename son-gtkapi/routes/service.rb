@@ -46,7 +46,6 @@ class GtkApi < Sinatra::Base
       logger.debug(log_message) {"leaving with #{services}"}
       links = build_pagination_headers(url: request_url, limit: @limit.to_i, offset: @offset.to_i, total: packages.size)
       [200, {'Link' => links}, services.to_json]
-      halt 200, services.to_json
     else
       message = "No services with #{params} were found"
       logger.debug(log_message) {"leaving with message '"+message+"'"}
