@@ -25,8 +25,6 @@
 ## acknowledge the contributions of their colleagues of the SONATA 
 ## partner consortium (www.sonata-nfv.eu).
 # encoding: utf-8
-require 'addressable/uri'
-
 class GtkApi < Sinatra::Base
   
   before do
@@ -58,19 +56,21 @@ class GtkApi < Sinatra::Base
 
   # GET many requests
   get '/requests/?' do
-    uri = Addressable::URI.new
-    params['offset'] ||= DEFAULT_OFFSET 
-    params['limit'] ||= DEFAULT_LIMIT
-    uri.query_values = params
-    logger.info "GtkApi: entered GET /requests?#{uri.query}"
+    MESSAGE = 'GtkApi::GET /requests/'
+    
+    @offset ||= params['offset'] ||= DEFAULT_OFFSET 
+    @limit ||= params['limit'] ||= DEFAULT_LIMIT
+
+    logger.info(MESSAGE) {'entered with '+query_string}
     requests = settings.service_management.find_requests(params)
-    logger.debug "GtkApi: GET /requests?#{uri.query} gave #{requests}"
+    logger.debug(MESSAGE) {"requests = #{requests}"}
     if requests && requests.is_a?(Array)
-      logger.info "GtkApi: leaving GET /requests?#{uri.query} with #{requests}"
-      halt 200, requests.to_json
+      links = build_pagination_headers(url: request_url, limit: @limit.to_i, offset: @offset.to_i, total: requests.size)
+      [200, {'Link' => links}, requests.to_json]
     else
-      logger.info "GtkApi: leaving GET /requests?#{uri.query} with 'No requests were found'"
-      json_error 400, 'No requests were found'
+      ERROR_MESSAGE = 'No requests with '+query_string+' were found'
+      logger.info(MESSAGE) {"leaving with '"+ERROR_MESSAGE+"'"}
+      json_error 400, ERROR_MESSAGE
     end
   end
   
@@ -97,5 +97,14 @@ class GtkApi < Sinatra::Base
     headers 'Content-Type' => 'text/plain; charset=utf8', 'Location' => '/'
     log = settings.service_management.get_log
     halt 200, log #.to_s
+  end
+  
+  private 
+  def query_string
+    request.env['QUERY_STRING'].nil? ? '' : '?' + request.env['QUERY_STRING'].to_s
+  end
+
+  def request_url
+    request.env['rack.url_scheme']+'://'+request.env['HTTP_HOST']+request.env['REQUEST_PATH']
   end
 end
