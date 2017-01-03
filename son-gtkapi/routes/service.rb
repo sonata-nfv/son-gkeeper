@@ -25,17 +25,13 @@
 ## acknowledge the contributions of their colleagues of the SONATA 
 ## partner consortium (www.sonata-nfv.eu).
 # encoding: utf-8
-require 'addressable/uri'
-
 class GtkApi < Sinatra::Base
   
   # GET many services
   get '/services/?' do
     log_message = MODULE+' GET /services'
     
-    uri = Addressable::URI.new
-    uri.query_values = params
-    logger.debug(log_message) {"entered with #{uri.query}"}
+    logger.debug(log_message) {'entered with '+query_string}
     logger.debug(log_message) {"Settings Srv. Mgmt. = #{settings.service_management.class}"}
     
     @offset ||= params[:offset] ||= DEFAULT_OFFSET
