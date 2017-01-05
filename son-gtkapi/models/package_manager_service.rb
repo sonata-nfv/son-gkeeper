@@ -94,15 +94,9 @@ class PackageManagerService < ManagerService
       @logger.debug(method) {"response #{response}"}
       response
     rescue => e
-      e.to_json 
+      message = "No packages with #{params} were found"
+      logger.debug(method) {"leaving with message '"+message+"'"}
+      json_error 404, message
     end
   end
-  
-  #def get_log
-  #  method = LOG_MESSAGE + ".get_log()"
-  #  @logger.debug(method) {'entered'}
-  #  full_url = @url+'/admin/logs'
-  #  @logger.debug(method) {'url=' + full_url}
-  #  RestClient.get(full_url)      
-  #end
 end

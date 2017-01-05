@@ -25,8 +25,6 @@
 ## acknowledge the contributions of their colleagues of the SONATA 
 ## partner consortium (www.sonata-nfv.eu).
 # encoding: utf-8
-require 'addressable/uri'
-
 class GtkApi < Sinatra::Base
   
   before do
@@ -40,22 +38,21 @@ class GtkApi < Sinatra::Base
   
   # GET many instances
   get '/records/:kind/?' do
-    method = MODULE + "GET /records/#{params[:kind]}"
+    METHOD = MODULE + "GET /records/#{params[:kind]}"
     params.delete('splat')
     params.delete('captures')
-    uri = Addressable::URI.new
-    uri.query_values = params
-    logger.debug(method) {"entered with query parameters '#{uri.query}'"}
+    logger.debug(METHOD) {'entered with query parameters '+query_string}
     
-    params[:offset] ||= DEFAULT_OFFSET 
-    params[:limit] ||= DEFAULT_LIMIT
+    @offset ||= params[:offset] ||= DEFAULT_OFFSET 
+    @limit ||= params[:limit] ||= DEFAULT_LIMIT
     
     records = settings.record_management.find_records(params)
     if records
-      logger.debug(method) {"leaving with #{records}"}
-      halt 200, records.to_json
+      logger.debug(METHOD) {"leaving with #{records}"}
+      links = build_pagination_headers(url: request_url, limit: @limit.to_i, offset: @offset.to_i, total: records.size)
+      [200, {'Link' => links}, records.to_json]
     else
-      logger.debug(method) {"No #{params[:kind]} records found"}
+      logger.debug(METHOD) {"No #{params[:kind]} records found"}
       halt 404, "No #{params[:kind]} records found"
     end
   end
@@ -120,5 +117,14 @@ class GtkApi < Sinatra::Base
     headers 'Content-Type' => 'text/plain; charset=utf8', 'Location' => '/'
     log = settings.record_management.get_log
     halt 200, log #.to_s
+  end
+  
+  private 
+  def query_string
+    request.env['QUERY_STRING'].nil? ? '' : '?' + request.env['QUERY_STRING'].to_s
+  end
+
+  def request_url
+    request.env['rack.url_scheme']+'://'+request.env['HTTP_HOST']+request.env['REQUEST_PATH']
   end
 end

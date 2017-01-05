@@ -25,30 +25,26 @@
 ## acknowledge the contributions of their colleagues of the SONATA 
 ## partner consortium (www.sonata-nfv.eu).
 # encoding: utf-8
-require 'addressable/uri'
-
 class GtkApi < Sinatra::Base
   
   # GET many functions
   get '/functions/?' do
-    log_message = MODULE+' GET /functions'
-    logger.debug(log_message) {'entered'}
+    MESSAGE = MODULE+' GET /functions'
+    logger.debug(MESSAGE) {'entered with '+query_string}
     
-    uri = Addressable::URI.new
-    uri.query_values = params
-    
-    params[:offset] ||= DEFAULT_OFFSET 
-    params[:limit] ||= DEFAULT_LIMIT
-    logger.debug(log_message) {"params=#{uri.query}"}
+    @offset ||= params[:offset] ||= DEFAULT_OFFSET 
+    @limit ||= params[:limit] ||= DEFAULT_LIMIT
+    logger.debug(MESSAGE) {"params=#{params}"}
      
     functions = settings.function_management.find_functions(params)
     if functions
-      logger.debug(log_message) {"leaving with #{functions}"}
-      halt 200, functions.to_json if functions
+      logger.debug(MESSAGE) {"leaving with #{functions}"}
+      links = build_pagination_headers(url: request_url, limit: @limit.to_i, offset: @offset.to_i, total: functions.size)
+      [200, {'Link' => links}, functions.to_json]
     else
-      error_message = "No function with params #{uri.query} was found"
-      logger.debug(log_message) {'leaving with "'+error_message+'"'}
-      json_error 404, error_message
+      ERROR_MESSAGE = "No function with params #{params} was found"
+      logger.debug(MESSAGE) {'leaving with "'+ERROR_MESSAGE+'"'}
+      json_error 404, ERROR_MESSAGE
     end  
   end
   
@@ -78,5 +74,14 @@ class GtkApi < Sinatra::Base
     headers 'Content-Type' => 'text/plain; charset=utf8', 'Location' => '/'
     log = settings.function_management.get_log
     halt 200, log #.to_s
+  end
+  
+  private 
+  def query_string
+    request.env['QUERY_STRING'].nil? ? '' : '?' + request.env['QUERY_STRING'].to_s
+  end
+
+  def request_url
+    request.env['rack.url_scheme']+'://'+request.env['HTTP_HOST']+request.env['REQUEST_PATH']
   end
 end

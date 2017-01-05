@@ -25,26 +25,23 @@
 ## acknowledge the contributions of their colleagues of the SONATA 
 ## partner consortium (www.sonata-nfv.eu).
 # encoding: utf-8
-require 'addressable/uri'
-
 class GtkApi < Sinatra::Base
   
   # GET many services
   get '/services/?' do
     log_message = MODULE+' GET /services'
     
-    uri = Addressable::URI.new
-    uri.query_values = params
-    logger.debug(log_message) {"entered with #{uri.query}"}
+    logger.debug(log_message) {'entered with '+query_string}
     logger.debug(log_message) {"Settings Srv. Mgmt. = #{settings.service_management.class}"}
     
-    params['offset'] ||= DEFAULT_OFFSET 
-    params['limit'] ||= DEFAULT_LIMIT
+    @offset ||= params[:offset] ||= DEFAULT_OFFSET
+    @limit ||= params[:limit] ||= DEFAULT_LIMIT
     
     services = settings.service_management.find_services(params)
     if services
       logger.debug(log_message) {"leaving with #{services}"}
-      halt 200, services.to_json
+      links = build_pagination_headers(url: request_url, limit: @limit.to_i, offset: @offset.to_i, total: services.size)
+      [200, {'Link' => links}, services.to_json]
     else
       message = "No services with #{params} were found"
       logger.debug(log_message) {"leaving with message '"+message+"'"}
@@ -81,5 +78,14 @@ class GtkApi < Sinatra::Base
     log = settings.service_management.get_log
     logger.debug(log_message) {'leaving with log='+log}
     halt 200, log #.to_s
+  end
+  
+  private 
+  def query_string
+    request.env['QUERY_STRING'].nil? ? '' : '?' + request.env['QUERY_STRING'].to_s
+  end
+
+  def request_url
+    request.env['rack.url_scheme']+'://'+request.env['HTTP_HOST']+request.env['REQUEST_PATH']
   end
 end
