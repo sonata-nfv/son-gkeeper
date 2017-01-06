@@ -33,7 +33,7 @@ class GtkApi < Sinatra::Base
   namespace '/api/v2/functions' do
     # GET many functions
     get '/?' do
-      MESSAGE = MODULE+' GET /api/v2/functions/?'
+      MESSAGE = 'GtkApi::GET /api/v2/functions/?'
       logger.debug(MESSAGE) {'entered with '+query_string}
     
       @offset ||= params[:offset] ||= DEFAULT_OFFSET 
@@ -54,32 +54,32 @@ class GtkApi < Sinatra::Base
   
     # GET function by uuid
     get '/:uuid/?' do
-      log_message = MODULE+' GET /api/v2/functions/:uuid/?'
+      log_message = 'GtkApi::GET /api/v2/functions/:uuid/?'
     
       unless params[:uuid].nil?
-        logger.info "GtkApiss: entered GET \"/functions/#{params[:uuid]}\""
+        logger.info(log_message) {"entered with params #{params[:uuid]}"}
         function = settings.function_management.find_functions_by_uuid(params[:uuid])
+        logger.info(log_message) { "found function #{function}"}
         if function 
-          logger.info "GtkApi: in GET /functions/#{params[:uuid]}, found function #{function}"
           response = function
-          logger.info "GtkApi: leaving GET /functions/#{params[:uuid]} with response="+response
+          logger.info(log_message) { "leaving with response=#{response}"}
           halt 200, response
         else
-          logger.error "GtkApi: leaving GET \"/functions/#{params[:uuid]}\" with \"No functions with UUID=#{params[:uuid]} was found\""
+          logger.error(log_message) { "leaving with \"No function with UUID=#{params[:uuid]} was found\""}
           json_error 404, "No function with UUID=#{params[:uuid]} was found"
         end
       end
-      logger.error "GtkApi: leaving GET \"/functions/#{params[:uuid]}\" with \"No function UUID specified\""
+      logger.error(log_message) { "leaving with \"No function UUID specified\""}
       json_error 400, 'No function UUID specified'
     end
   end
   
   namespace '/api/v2/admin/functions' do
     get '/logs/?' do
-      logger.debug('GtkApi GET /api/v2/admin/functions/logs/?') {'entered'}
-      headers 'Content-Type' => 'text/plain; charset=utf8', 'Location' => '/'
+      logger.debug('GtkApi::GET /api/v2/admin/functions/logs/?') {'entered'}
+      headers 'Content-Type' => 'text/plain; charset=utf8', 'Location' => '/api/v2/admin/functions/logs'
       log = settings.function_management.get_log
-      halt 200, log #.to_s
+      halt 200, log
     end
   end
   

@@ -123,7 +123,7 @@ class GtkApi < Sinatra::Base
     get '/logs/?' do
       log_message = 'GtkApi::GET /api/v2/admin/packages/logs/?'
       logger.debug(log_message) {"entered"}
-      headers 'Content-Type' => 'text/plain; charset=utf8', 'Location' => '/'
+      headers 'Content-Type' => 'text/plain; charset=utf8', 'Location' => '/api/v2/admin/packages/logs'
       log = settings.package_management.get_log
       halt 200, log.to_s
     end

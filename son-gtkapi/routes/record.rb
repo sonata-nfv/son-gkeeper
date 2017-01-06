@@ -39,40 +39,38 @@ class GtkApi < Sinatra::Base
         halt 200
       end
   	end
+
+    # GET many instances
+    get '/:kind/?' do
+      METHOD = "GtkApi::GET /api/v2/records/#{params[:kind]}"
+      params.delete('splat')
+      params.delete('captures')
+      logger.debug(METHOD) {'entered with query parameters '+query_string}
   
-    namespace '/:kind' do
-      # GET many instances
-      get '/?' do
-        METHOD = "GtkApi::GET /api/v2/records/#{params[:kind]}"
-        params.delete('splat')
-        params.delete('captures')
-        logger.debug(METHOD) {'entered with query parameters '+query_string}
-    
-        @offset ||= params[:offset] ||= DEFAULT_OFFSET 
-        @limit ||= params[:limit] ||= DEFAULT_LIMIT
-    
-        records = settings.record_management.find_records(params)
-        if records
-          logger.debug(METHOD) {"leaving with #{records}"}
-          links = build_pagination_headers(url: request_url, limit: @limit.to_i, offset: @offset.to_i, total: records.size)
-          [200, {'Link' => links}, records.to_json]
-        else
-          logger.debug(METHOD) {"No #{params[:kind]} records found"}
-          halt 404, "No #{params[:kind]} records found"
-        end
-      end
+      @offset ||= params[:offset] ||= DEFAULT_OFFSET 
+      @limit ||= params[:limit] ||= DEFAULT_LIMIT
   
-      # GET a specific instance
-      get '/:uuid/?' do
-        method = "GtkApi::GET /api/v2/records/#{params[:kind]}/#{params[:uuid]}: "
-        unless params[:uuid].nil?
-          logger.debug(method) {'entered'}
-          json_error 400, 'Invalid Instance UUID' unless valid? params[:uuid]
-        end
-        logger.debug(method) {"leaving with \"No instance UUID specified\""}
-        # TODO!!
-        json_error 400, 'No instance UUID specified'
+      records = settings.record_management.find_records(params)
+      if records
+        logger.debug(METHOD) {"leaving with #{records}"}
+        links = build_pagination_headers(url: request_url, limit: @limit.to_i, offset: @offset.to_i, total: records.size)
+        [200, {'Link' => links}, records.to_json]
+      else
+        logger.debug(METHOD) {"No #{params[:kind]} records found"}
+        halt 404, "No #{params[:kind]} records found"
       end
+    end
+
+    # GET a specific instance
+    get '/:kind/:uuid/?' do
+      method = "GtkApi::GET /api/v2/records/#{params[:kind]}/#{params[:uuid]}: "
+      unless params[:uuid].nil?
+        logger.debug(method) {'entered'}
+        json_error 400, 'Invalid Instance UUID' unless valid? params[:uuid]
+      end
+      logger.debug(method) {"leaving with \"No instance UUID specified\""}
+      # TODO!!
+      json_error 400, 'No instance UUID specified'
     end
   
     # PUT service instance
@@ -80,7 +78,7 @@ class GtkApi < Sinatra::Base
       method = "GtkApi::PUT /api/v2/records/services/#{params[:uuid]}"
       unless params[:uuid].nil?
         logger.debug(method) {'entered'}
-        json_error 400, method + "Invalid Instance UUID=#{params[:uuid]}" unless valid? params[:uuid]
+        json_error 400, method + ": Invalid Instance UUID=#{params[:uuid]}" unless valid? params[:uuid]
 
         # the body of the request is exepected to contain the NSD UUID and the NSD's latest version      
         body_params = JSON.parse(request.body.read)
@@ -117,10 +115,10 @@ class GtkApi < Sinatra::Base
     end
   end
   
-  namespace '/admin/records'
+  namespace '/api/v2/admin/records' do
     # GET module's logs
     get '/logs/?' do
-      method = MODULE + "GET /admin/records/logs/?: "
+      method = "GtkApi::GET /api/v2/admin/records/logs/?: "
       logger.debug(method) {"entered"}
       headers 'Content-Type' => 'text/plain; charset=utf8', 'Location' => '/'
       log = settings.record_management.get_log
