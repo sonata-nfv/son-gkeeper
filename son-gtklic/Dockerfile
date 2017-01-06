@@ -1,8 +1,11 @@
-#############################################################################
-# Requires external Postgres DB to be running, can be another container.    #
-# After is running change the settings.py to the correct connection string. #
-# At last build this container                                              #
-#############################################################################
+###################################################################################
+# Requires external Postgres DB to be running, can be another container.          #
+# Link the database container to this one changing the DATABASE_HOST respectively #
+# At last build this container                                                    #
+# On run please run tests with "python tests.py" as a container argument,         #
+# and after run migrations on the database with "python manage.py db upgrade",    #
+# only then run the container normally.                                           #
+###################################################################################
 
 FROM python:2.7
 ADD requirements.txt /tmp/requirements.txt
@@ -15,21 +18,14 @@ RUN pip install -r /tmp/requirements.txt
 ADD . /code
 WORKDIR /code
 
-EXPOSE 5000
-
 ENV POSTGRES_PASSWORD sonata
 ENV POSTGRES_USER sonata
 ENV POSTGRES_DB licensemanager
-ENV DATABASE_HOST 192.168.46.102
+ENV DATABASE_HOST postgres
 ENV DATABASE_PORT 5432
 ENV PORT 5000
 
-# Run Tests
-RUN ["python", "tests.py"]
-
-# Migrate Database
-# Always return 0 only for the case the migrations repo is not created
-RUN ["python", "manage.py", "db", "upgrade"]
+EXPOSE $PORT
 
 # Run Server
 CMD ["python", "manage.py", "runserver", "--host", "0.0.0.0"]
