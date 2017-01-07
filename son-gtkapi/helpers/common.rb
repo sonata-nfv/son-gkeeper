@@ -25,7 +25,7 @@
 # partner consortium (www.sonata-nfv.eu).
 module GtkApiHelper
   
-  class ArgumentError < Exception; end
+  #class ArgumentError < Exception; end
   
   def content
     #@content ||= Package.decode(package_file_path) || halt 404

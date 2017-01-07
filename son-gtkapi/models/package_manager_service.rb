@@ -94,9 +94,8 @@ class PackageManagerService < ManagerService
       @logger.debug(method) {"response #{response}"}
       response
     rescue => e
-      message = "No packages with #{params} were found"
-      logger.debug(method) {"leaving with message '"+message+"'"}
-      json_error 404, message
+      @logger.debug(method) {e.response}
+      nil
     end
   end
 end
