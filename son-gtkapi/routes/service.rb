@@ -36,12 +36,12 @@ class GtkApi < Sinatra::Base
       log_message = MODULE+' GET /api/v2/services'
     
       logger.debug(log_message) {'entered with '+query_string}
-      logger.debug(log_message) {"Settings Srv. Mgmt. = #{settings.service_management.class}"}
+      logger.debug(log_message) {"Settings Srv. Mgmt. = #{ServiceManagerService.name}"}
     
       @offset ||= params[:offset] ||= DEFAULT_OFFSET
       @limit ||= params[:limit] ||= DEFAULT_LIMIT
     
-      services = settings.service_management.find_services(params)
+      services = ServiceManagerService.find_services(params)
       if services
         logger.debug(log_message) {"leaving with #{services}"}
         links = build_pagination_headers(url: request_url, limit: @limit.to_i, offset: @offset.to_i, total: services.size)
@@ -56,11 +56,11 @@ class GtkApi < Sinatra::Base
     # GET a specific service
     get '/:uuid/?' do
       log_message = MODULE+' GET /api/v2/services/:uuid'
-      logger.debug(log_message) {"Settings Srv. Mgmt. = #{settings.service_management.class}"}
+      logger.debug(log_message) {"Settings Srv. Mgmt. = #{ServiceManagerService.name}"}
       logger.debug(log_message) {"entered with #{params[:uuid]}"}
     
       if valid?(params[:uuid])
-        service = settings.service_management.find_service_by_uuid(params[:uuid])
+        service = ServiceManagerService.find_service_by_uuid(params[:uuid])
         if service
           logger.debug(log_message) {"leaving with #{service}"}
           halt 200, service.to_json
@@ -81,7 +81,7 @@ class GtkApi < Sinatra::Base
       log_message = 'GtkApi: GET /admin/services/logs'
       logger.debug(log_message) {'entered'}
       headers 'Content-Type' => 'text/plain; charset=utf8', 'Location' => '/'
-      log = settings.service_management.get_log
+      log = ServiceManagerService.get_log
       logger.debug(log_message) {'leaving with log='+log}
       halt 200, log #.to_s
     end

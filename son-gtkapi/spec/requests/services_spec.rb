@@ -125,11 +125,11 @@ RSpec.describe GtkApi, type: :controller do
     context 'with (UU)ID given,' do
       context 'valid and stored' do
         before(:example) do
-          stub_request(:get, GtkApi::settings.srvmgmt+'/services/' + service_uuid).to_return(:body => service1.to_json)
+          stub_request(:get, ServiceManagerService.url+'/services/' + service_uuid).to_return(:body => service1.to_json)
           get '/services/'+ service_uuid
         end
         it 'should call the Service Management Service' do
-          expect(a_request(:get, GtkApi::settings.srvmgmt+'/services/' + service_uuid)).to have_been_made
+          expect(a_request(:get, ServiceManagerService.url+'/services/' + service_uuid)).to have_been_made
         end
         
         it 'shoud return success (200)' do
@@ -144,11 +144,11 @@ RSpec.describe GtkApi, type: :controller do
       
       context 'valid but not stored' do
         before(:example) do
-          stub_request(:get, GtkApi::settings.srvmgmt+'/services/' + non_existent_service_uuid).to_return(status: 404)
+          stub_request(:get, ServiceManagerService.url+'/services/' + non_existent_service_uuid).to_return(status: 404)
           get '/services/'+ non_existent_service_uuid
         end
         it 'should call the Service Management Service' do
-          expect(a_request(:get, GtkApi::settings.srvmgmt+'/services/' + non_existent_service_uuid)).to have_been_made
+          expect(a_request(:get, ServiceManagerService.url+'/services/' + non_existent_service_uuid)).to have_been_made
         end
         it 'shoud return :not_found (404)' do   
           expect(last_response.status).to eq(404)
@@ -156,11 +156,11 @@ RSpec.describe GtkApi, type: :controller do
       end
       context 'but invalid' do
         before(:example) do
-          stub_request(:get, GtkApi::settings.srvmgmt+'/services/' + invalid_service_uuid).to_return(status: 404)
+          stub_request(:get, ServiceManagerService.url+'/services/' + invalid_service_uuid).to_return(status: 404)
           get '/services/'+ invalid_service_uuid
         end
         it 'should call the Service Management Service' do
-          expect(a_request(:get, GtkApi::settings.srvmgmt+'/services/' + invalid_service_uuid)).not_to have_been_made
+          expect(a_request(:get, ServiceManagerService.url+'/services/' + invalid_service_uuid)).not_to have_been_made
         end
         it 'shoud return :not_found (404)' do
           expect(last_response.status).to eq(404)
@@ -170,11 +170,11 @@ RSpec.describe GtkApi, type: :controller do
     context 'without (UU)ID given' do
       context 'and no other params' do
         before(:example) do
-          stub_request(:get, GtkApi::settings.srvmgmt+'/services?limit=10&offset=0').to_return(:body => services.to_json)
+          stub_request(:get, ServiceManagerService.url+'/services?limit=10&offset=0').to_return(:body => services.to_json)
           get '/services'
         end
         it 'should call the Service Management Service' do
-          expect(a_request(:get, GtkApi::settings.srvmgmt+'/services?limit=10&offset=0')).to have_been_made
+          expect(a_request(:get, ServiceManagerService.url+'/services?limit=10&offset=0')).to have_been_made
         end
         
         it 'shoud return success (200)' do
@@ -192,13 +192,13 @@ RSpec.describe GtkApi, type: :controller do
       
       context 'and limit param given (offset becomes DEFAULT_OFFSET)' do
         before(:example) do
-          stub_request(:get, GtkApi::settings.srvmgmt+'/services?limit=1&offset='+GtkApi::DEFAULT_OFFSET.to_s)
+          stub_request(:get, ServiceManagerService.url+'/services?limit=1&offset='+GtkApi::DEFAULT_OFFSET.to_s)
             .with(headers: {'Accept'=>'application/json', 'Content-Type'=>'application/json'})
             .to_return(:body => services[0].to_json)
           get '/services?limit=1'
         end
         it 'should call the Service Management Service' do
-          expect(a_request(:get, GtkApi::settings.srvmgmt+'/services?limit=1&offset='+GtkApi::DEFAULT_OFFSET.to_s)
+          expect(a_request(:get, ServiceManagerService.url+'/services?limit=1&offset='+GtkApi::DEFAULT_OFFSET.to_s)
             .with(headers: {'Accept'=>'application/json', 'Content-Type'=>'application/json'}))
             .to have_been_made
         end
@@ -218,13 +218,13 @@ RSpec.describe GtkApi, type: :controller do
         
       context 'and limit and offset param given' do
         before(:example) do
-          stub_request(:get, GtkApi::settings.srvmgmt+'/services?limit=1&offset=1')
+          stub_request(:get, ServiceManagerService.url+'/services?limit=1&offset=1')
             .with(headers: {'Accept'=>'application/json', 'Content-Type'=>'application/json'})
             .to_return(:body => services[1].to_json)
           get '/services?limit=1&offset=1'
         end
         it 'should call the Service Management Service' do
-          expect(a_request(:get, GtkApi::settings.srvmgmt+'/services?limit=1&offset=1')
+          expect(a_request(:get, ServiceManagerService.url+'/services?limit=1&offset=1')
             .with(headers: {'Accept'=>'application/json', 'Content-Type'=>'application/json'}))
             .to have_been_made
         end

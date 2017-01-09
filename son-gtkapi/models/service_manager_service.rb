@@ -32,97 +32,97 @@ class ServiceManagerService < ManagerService
   JSON_HEADERS = { 'Accept'=> 'application/json', 'Content-Type'=>'application/json'}
   LOG_MESSAGE = 'GtkApi::' + self.name
   
-  def initialize(url, logger)
-    method = LOG_MESSAGE + ".new(url=#{url}, logger=#{logger})"
-    super
-    @logger.debug(method){'entered'}
-  end
+  #def initialize(url, logger)
+  #  method = LOG_MESSAGE + ".new(url=#{url}, logger=#{logger})"
+  #  super
+  #  @logger.debug(method){'entered'}
+  #end
     
-  def find_service_by_uuid(uuid)
+  def self.find_service_by_uuid(uuid)
     method = LOG_MESSAGE + ".find_service_by_uuid(#{uuid})"
-    @logger.debug(method) {'entered'}
+    @@logger.debug(method) {'entered'}
     begin
-      response = getCurb(url: @url+"/services/#{uuid}", headers: JSON_HEADERS)
-      @logger.debug(method) {"Leaving with response=#{response.inspect}"}
+      response = self.getCurb(url: @@url+"/services/#{uuid}", headers: JSON_HEADERS)
+      @@logger.debug(method) {"Leaving with response=#{response.inspect}"}
       JSON.parse response.body
     rescue => e
-      @logger.error(method) {"e=#{format_error(e.backtrace)}"}
+      @@logger.error(method) {"e=#{format_error(e.backtrace)}"}
       nil 
     end
   end
   
-  def find_services(params)
+  def self.find_services(params)
     method = LOG_MESSAGE + ".find_services(#{params})"
-    @logger.debug(method) {'entered'}
+    @@logger.debug(method) {'entered'}
 
     begin
-      response = getCurb(url: @url + '/services', params: params, headers: JSON_HEADERS) 
-      @logger.debug(method) {'Leaving with response='+response.body}
+      response = self.getCurb(url: @@url + '/services', params: params, headers: JSON_HEADERS) 
+      @@logger.debug(method) {'Leaving with response='+response.body}
       JSON.parse response.body
     rescue => e
-      @logger.error(method) {"#{e.message} - #{format_error(e.backtrace)}"}
+      @@logger.error(method) {"#{e.message} - #{format_error(e.backtrace)}"}
       nil 
     end
   end
 
-  def find_requests(params)
+  def self.find_requests(params)
     method = LOG_MESSAGE + ".find_requests(#{params})"
-    @logger.debug(method) {'entered'}
+    @@logger.debug(method) {'entered'}
     begin
-      response = getCurb(url:@url + '/requests', params: params, headers: JSON_HEADERS) 
-      @logger.debug(method) {'Leaving with response='+response.body}
+      response = self.getCurb(url:@@url + '/requests', params: params, headers: JSON_HEADERS) 
+      @@logger.debug(method) {'Leaving with response='+response.body}
       JSON.parse response.body
     rescue => e
-      @logger.error(method) {"#{e.message} - #{format_error(e.backtrace)}"}
+      @@logger.error(method) {"#{e.message} - #{format_error(e.backtrace)}"}
       nil 
     end
   end
   
-  def find_requests_by_uuid(uuid)
+  def self.find_requests_by_uuid(uuid)
     method = LOG_MESSAGE + ".find_requests_by_uuid(#{uuid})"
-    @logger.debug(method) {'entered'}
+    @@logger.debug(method) {'entered'}
     begin
-      response = getCurb(url: @url+'/requests/'+uuid, headers: JSON_HEADERS) 
-      @logger.debug(method) {'Leaving with response='+response.body}
+      response = self.getCurb(url: @@url+'/requests/'+uuid, headers: JSON_HEADERS) 
+      @@logger.debug(method) {'Leaving with response='+response.body}
       JSON.parse response.body
     rescue => e
-      @logger.error(method) {"#{e.message} - #{format_error(e.backtrace)}"}
+      @@logger.error(method) {"#{e.message} - #{format_error(e.backtrace)}"}
       nil 
     end
   end
   
-  def create_service_intantiation_request(params)
+  def self.create_service_intantiation_request(params)
     method = LOG_MESSAGE + ".create_service_intantiation_request(#{params})"
-    @logger.debug(method) {'entered'}
+    @@logger.debug(method) {'entered'}
 
     begin
-      @logger.debug(method) {"@url = "+@url}
+      @@logger.debug(method) {"@url = "+@@url}
       #response = RestClient.post(@url+'/requests', params.to_json, content_type: :json, accept: :json) 
-      response = postCurb(@url+'/requests', params.to_json) ## TODO: check if this tests ok!! 
-      @logger.debug(method) {"response="+response}
+      response = self.postCurb(@@url+'/requests', params.to_json) ## TODO: check if this tests ok!! 
+      @@logger.debug(method) {"response="+response}
       parsed_response = JSON.parse(response)
-      @logger.debug(method) {"parsed_response=#{parsed_response}"}
+      @@logger.debug(method) {"parsed_response=#{parsed_response}"}
       parsed_response
     rescue => e
-      @logger.error(method) {"#{e.message} - #{format_error(e.backtrace)}"}
+      @@logger.error(method) {"#{e.message} - #{format_error(e.backtrace)}"}
       nil 
     end      
   end
   
-  def create_service_update_request(nsr_uuid:, nsd:)
+  def self.create_service_update_request(nsr_uuid:, nsd:)
     message = LOG_MESSAGE+'.create_service_update_request'
-    @logger.debug(message) {'entered'}
-    @logger.debug(message) {"service instance=#{nsr_uuid}, nsd=#{nsd}"}
+    @@logger.debug(message) {'entered'}
+    @@logger.debug(message) {"service instance=#{nsr_uuid}, nsd=#{nsd}"}
     begin
-      @logger.debug(message) {"@url = "+@url}
+      @@logger.debug(message) {"@url = "+@@url}
       #response = RestClient.put(@url+'/services/'+nsr_uuid, nsd.to_json, content_type: :json, accept: :json) 
-      response = postCurb(@url+'/services/'+nsr_uuid, nsd.to_json) 
-      @logger.debug(message) {"response="+response}
+      response = self.postCurb(@@url+'/services/'+nsr_uuid, nsd.to_json) 
+      @@logger.debug(message) {"response="+response}
       parsed_response = JSON.parse(response)
-      @logger.debug(message) {"parsed_response=#{parsed_response}"}
+      @@logger.debug(message) {"parsed_response=#{parsed_response}"}
       parsed_response
     rescue => e
-      @logger.error(message) {"#{e.message} - #{format_error(e.backtrace)}"}
+      @@logger.error(message) {"#{e.message} - #{format_error(e.backtrace)}"}
       nil 
     end      
   end

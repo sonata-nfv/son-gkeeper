@@ -46,7 +46,7 @@ class GtkApi < Sinatra::Base
       params = JSON.parse(request.body.read)
       unless params.nil?
         logger.debug(MESSAGE) {"entered with params=#{params}"}
-        new_request = settings.service_management.create_service_intantiation_request(params)
+        new_request = ServiceManagerService.create_service_intantiation_request(params)
         if new_request
           logger.debug(MESSAGE) { "new_request =#{new_request}"}
           halt 201, new_request.to_json
@@ -67,7 +67,7 @@ class GtkApi < Sinatra::Base
       @limit ||= params['limit'] ||= DEFAULT_LIMIT
 
       logger.info(MESSAGE) {'entered with '+query_string}
-      requests = settings.service_management.find_requests(params)
+      requests = ServiceManagerService.find_requests(params)
       logger.debug(MESSAGE) {"requests = #{requests}"}
       if requests && requests.is_a?(Array)
         links = build_pagination_headers(url: request_url, limit: @limit.to_i, offset: @offset.to_i, total: requests.size)
@@ -86,7 +86,7 @@ class GtkApi < Sinatra::Base
         logger.debug(METHOD) {"entered"}
         json_error 400, 'Invalid request UUID' unless valid? params[:uuid]
       
-        request = settings.service_management.find_requests_by_uuid(params['uuid'])
+        request = ServiceManagerService.find_requests_by_uuid(params['uuid'])
         json_error 404, "The request UUID #{params[:uuid]} does not exist" unless request
 
         logger.debug(METHOD) {"leaving with request #{request}"}
@@ -103,7 +103,7 @@ class GtkApi < Sinatra::Base
       METHOD = "GtkApi::GET /api/v2/admin/requests/logs"
       logger.debug(METHOD) {"entered"}
       headers 'Content-Type' => 'text/plain; charset=utf8', 'Location' => '/api/v2/admin/requests/logs'
-      log = settings.service_management.get_log
+      log = ServiceManagerService.get_log
       halt 200, log #.to_s
     end
   end

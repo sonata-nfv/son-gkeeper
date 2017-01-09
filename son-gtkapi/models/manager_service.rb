@@ -32,7 +32,7 @@ class ManagerService
   LOG_MESSAGE = 'GtkApi::' + self.name
   
   def self.config(url:, logger:)
-    method = LOG_MESSAGE + ".config(url=#{url}, logger=#{logger})"
+    method = LOG_MESSAGE + "#config(url=#{url}, logger=#{logger})"
     puts LOG_MESSAGE + ".config(url=#{url}, logger=#{logger})"
     raise ArgumentError.new('PackageManagerService can not be configured with empty url') if url.empty?
     raise ArgumentError.new('PackageManagerService can not be configured with nil logger') if logger.nil?
@@ -49,6 +49,7 @@ class ManagerService
   end
   
   def self.url
+    @@logger.debug(LOG_MESSAGE + "#url") {'@@url='+@@url}
     @@url
   end
   
@@ -80,8 +81,8 @@ class ManagerService
     end
   end
   
-#  def format_error(backtrace)
-#    first_line = backtrace[0].split(":")
-#    "In "+first_line[0].split("/").last+", "+first_line.last+": "+first_line[1]
-#  end
+  def self.format_error(backtrace)
+    first_line = backtrace[0].split(":")
+    "In "+first_line[0].split("/").last+", "+first_line.last+": "+first_line[1]
+  end
 end
