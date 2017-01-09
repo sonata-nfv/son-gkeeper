@@ -29,7 +29,18 @@ class ManagerService
   
   #JSON_HEADERS = { 'Accept'=> 'application/json', 'Content-Type'=>'application/json'}
   CLASS_NAME = self.name
+  LOG_MESSAGE = 'GtkApi::' + self.name
   
+  def self.config(url:, logger:)
+    method = LOG_MESSAGE + ".config(url=#{url}, logger=#{logger})"
+    puts LOG_MESSAGE + ".config(url=#{url}, logger=#{logger})"
+    raise ArgumentError.new('PackageManagerService can not be configured with empty url') if url.empty?
+    raise ArgumentError.new('PackageManagerService can not be configured with nil logger') if logger.nil?
+    @@url = url
+    @@logger = logger
+    @@logger.debug(method) {'entered'}
+  end
+
   def initialize(url, logger)
     method = 'GtkApi::' + CLASS_NAME + ".new(url=#{url}, logger=#{logger})"
     @url = url
@@ -37,7 +48,11 @@ class ManagerService
     @logger.debug(method) {'entered'}
   end
   
-  def get_log
+  def self.url
+    @@url
+  end
+  
+  def self.get_log
     method = 'GtkApi::' + CLASS_NAME + ".get_log()"
     @logger.debug(method) {'entered'}
 
@@ -52,21 +67,21 @@ class ManagerService
       end
   end
   
-  def getCurb(url:, params: {}, headers: {})
+  def self.getCurb(url:, params: {}, headers: {})
     Curl.get(params.empty? ? url : url + '?' + Curl::postalize(params)) do |req|
       req.headers = headers
     end
   end
   
-  def postCurb(url, body)
+  def self.postCurb(url, body)
     Curl.post(url, body) do |req|
       req.headers['Content-type'] = 'application/json'
       req.headers['Accept'] = 'application/json'
     end
   end
   
-  def format_error(backtrace)
-    first_line = backtrace[0].split(":")
-    "In "+first_line[0].split("/").last+", "+first_line.last+": "+first_line[1]
-  end
+#  def format_error(backtrace)
+#    first_line = backtrace[0].split(":")
+#    "In "+first_line[0].split("/").last+", "+first_line.last+": "+first_line[1]
+#  end
 end

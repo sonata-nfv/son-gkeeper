@@ -29,52 +29,45 @@ require 'tempfile'
 require './models/manager_service.rb'
 
 class PackageManagerService < ManagerService
-  
+
   attr_reader :url, :logger
   
   LOG_MESSAGE = 'GtkApi::' + self.name
   
-  def initialize(url, logger)
-    method = LOG_MESSAGE + ".new(url=#{url}, logger=#{logger})"
-    @url = url
-    @logger = logger
-    @logger.debug(method) {'entered'}
-  end
-    
-  def create(params)
+  def self.create(params)
     method = LOG_MESSAGE + ".create(#{params})"
-    @logger.debug(method) {'entered'}
+    @@logger.debug(method) {'entered'}
 
-    @logger.debug(method) {"params=#{params}"}
+    @@logger.debug(method) {"params=#{params}"}
     tmpfile = params[:package][:tempfile]
-    uri = @url+'/packages'
-    @logger.debug(method) {"uri="+uri}
+    uri = @@url+'/packages'
+    @@logger.debug(method) {"uri="+uri}
     begin
       response = RestClient.post(uri, params)
-      @logger.debug(method) {"response.class=#{response.class}"}
-      @logger.debug(method) {"response=#{response}"}
+      @@logger.debug(method) {"response.class=#{response.class}"}
+      @@logger.debug(method) {"response=#{response}"}
       JSON.parse response
     rescue  => e #RestClient::Conflict
-      @logger.debug(method) {e.response}
+      @@logger.debug(method) {e.response}
       {error: 'Package is duplicated', package: e.response}
     end    
   end    
 
-  def find_by_uuid(uuid)
+  def self.find_by_uuid(uuid)
     method = LOG_MESSAGE + ".find_by_uuid(#{uuid})"
-    @logger.debug(method) {'entered'}
+    @@logger.debug(method) {'entered'}
     headers = { 'Accept'=> '*/*', 'Content-Type'=>'application/json'}
     headers[:params] = uuid
     begin
       # Get the meta-data first
-      response = RestClient.get(@url+"/packages/#{uuid}", headers)
+      response = RestClient.get(@@url+"/packages/#{uuid}", headers)
       filename = JSON.parse(response)['filepath']
-      @logger.debug(method) {"filename='"+filename+"'"}
+      @@logger.debug(method) {"filename='"+filename+"'"}
       path = File.join('public','packages',uuid)
       FileUtils.mkdir_p path unless File.exists? path
       
       # Get the package it self
-      package = RestClient.get(@url+"/packages/#{uuid}/package")
+      package = RestClient.get(@@url+"/packages/#{uuid}/package")
       File.open(filename, 'wb') do |f|
         f.write package
       end
@@ -84,17 +77,17 @@ class PackageManagerService < ManagerService
     end
   end
   
-  def find(params)
+  def self.find(params)
     method = LOG_MESSAGE + ".find(#{params})"
-    @logger.debug(method) {'entered'}
+    @@logger.debug(method) {'entered'}
     headers = { 'Accept'=> 'application/json', 'Content-Type'=>'application/json'}
     headers[:params] = params
     begin
-      response = RestClient.get(@url+'/packages', headers)
-      @logger.debug(method) {"response #{response}"}
+      response = RestClient.get(@@url+'/packages', headers)
+      @@logger.debug(method) {"response #{response}"}
       response
     rescue => e
-      @logger.debug(method) {e.response}
+      @@logger.debug(method) {e.response}
       nil
     end
   end
