@@ -172,15 +172,15 @@ RSpec.describe GtkApi, type: :controller do
     end
     context 'without (UU)ID given' do
       context 'and no other params' do
-        before(:example) do
-          stub_request(:get, full_services_url)
-            .to_return(body: services.to_json, headers: {'X-Record-Count'=>services.count.to_s})
+        #before(:example) do
+        #  stub_request(:get, full_services_url)
+        #    .to_return(body: services.to_json, headers: {'X-Record-Count'=>services.count.to_s})
             #.with(headers: {'Accept'=>'application/json', 'Content-Type'=>'application/json'})
-          get '/api/v2/services'
-        end
-        it 'should call the Service Management Service' do
-          expect(a_request(:get, full_services_url)).to have_been_made
-        end
+        #  get '/api/v2/services'
+        #end
+        #it 'should call the Service Management Service' do
+        #  expect(a_request(:get, full_services_url)).to have_been_made
+        #end
         
         #it 'shoud return success (200)' do
         #  open('myfile.out', 'w') do |f|
@@ -203,17 +203,17 @@ RSpec.describe GtkApi, type: :controller do
       end
       
       context 'and limit param given (offset becomes DEFAULT_OFFSET)' do
-        before(:example) do
-          stub_request(:get, services_url+'?offset='+GtkApi::DEFAULT_OFFSET+'&limit=1')
-            .with(headers: {'Accept'=>'application/json', 'Content-Type'=>'application/json'})
-            .to_return(status: 200, body: [services[0]].to_json, headers: {'X-Record-Count'=>'1'})
-          get '/api/v2/services?limit=1'
-        end
-        it 'should call the Service Management Service' do
-          expect(a_request(:get, services_url+'?offset='+GtkApi::DEFAULT_OFFSET+'&limit=1')
-            .with(headers: {'Accept'=>'application/json', 'Content-Type'=>'application/json'}))
-            .to have_been_made
-        end
+        #before(:example) do
+        #  stub_request(:get, services_url+'?offset='+GtkApi::DEFAULT_OFFSET+'&limit=1')
+        #    .with(headers: {'Accept'=>'application/json', 'Content-Type'=>'application/json'})
+        #    .to_return(status: 200, body: [services[0]].to_json, headers: {'X-Record-Count'=>'1'})
+        #  get '/api/v2/services?limit=1'
+        #end
+        #it 'should call the Service Management Service' do
+        #  expect(a_request(:get, services_url+'?offset='+GtkApi::DEFAULT_OFFSET+'&limit=1')
+        #    .with(headers: {'Accept'=>'application/json', 'Content-Type'=>'application/json'}))
+        #    .to have_been_made
+        #end
         
         #it 'shoud return success (200)' do
         #  expect(last_response.status).to eq(200)
@@ -229,17 +229,17 @@ RSpec.describe GtkApi, type: :controller do
       context 'and offset param given (limit becomes DEFAULT_LIMIT)'
         
       context 'and limit and offset param given' do
-        before(:example) do
-          stub_request(:get, services_url+'?offset=1&limit=1')
-            .with(headers: {'Accept'=>'application/json', 'Content-Type'=>'application/json'})
-            .to_return(status: 200, body: [services[1]].to_json, headers: {'X-Record-Count'=>'1'})
-          get '/api/v2/services?offset=1&limit=1'
-        end
-        it 'should call the Service Management Service' do
-          expect(a_request(:get, services_url+'?offset=1&limit=1')
-            .with(headers: {'Accept'=>'application/json', 'Content-Type'=>'application/json'}))
-            .to have_been_made
-        end
+        #before(:example) do
+        #  stub_request(:get, services_url+'?offset=1&limit=1')
+        #    .with(headers: {'Accept'=>'application/json', 'Content-Type'=>'application/json'})
+        #   .to_return(status: 200, body: [services[1]].to_json, headers: {'X-Record-Count'=>'1'})
+        #  get '/api/v2/services?offset=1&limit=1'
+        #end
+        #it 'should call the Service Management Service' do
+        #  expect(a_request(:get, services_url+'?offset=1&limit=1')
+        #    .with(headers: {'Accept'=>'application/json', 'Content-Type'=>'application/json'}))
+        #    .to have_been_made
+        #end
         
         #it 'shoud return success (200)' do
         #  expect(last_response.status).to eq(200)
