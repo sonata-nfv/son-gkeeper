@@ -29,6 +29,7 @@ require 'sinatra/namespace'
 class GtkApi < Sinatra::Base
 
   register Sinatra::Namespace
+  helpers GtkApiHelper
   
   namespace '/api/v2/services' do
     # GET many services
@@ -36,16 +37,18 @@ class GtkApi < Sinatra::Base
       log_message = MODULE+' GET /api/v2/services'
     
       logger.debug(log_message) {'entered with '+query_string}
-      logger.debug(log_message) {"Settings Srv. Mgmt. = #{ServiceManagerService.name}"}
     
       @offset ||= params[:offset] ||= DEFAULT_OFFSET
       @limit ||= params[:limit] ||= DEFAULT_LIMIT
+      logger.debug(log_message) {"offset=#{@offset}, limit=#{@limit}"}
     
       services = ServiceManagerService.find_services(params)
+      logger.debug(log_message) {"Found services #{services}"}
       if services
-        logger.debug(log_message) {"leaving with #{services}"}
-        links = build_pagination_headers(url: request_url, limit: @limit.to_i, offset: @offset.to_i, total: services.size)
-        [200, {'Link' => links}, services.to_json]
+        logger.debug(log_message) {"links: request_url=#{request_url}, limit:=#{@limit.to_i}, offset:=#{@offset.to_i}, total:=#{services[:count]}"}
+        links = build_pagination_headers(url: request_url, limit: @limit.to_i, offset: @offset.to_i, total: services[:count].to_i)
+        logger.debug(log_message) {"links: #{links}"}
+        [200, {'Link' => links, 'X-Record-Count' => services[:count]}, services[:items].to_json]
       else
         message = "No services with #{params} were found"
         logger.debug(log_message) {"leaving with message '"+message+"'"}
@@ -93,6 +96,8 @@ class GtkApi < Sinatra::Base
   end
 
   def request_url
+    log_message = 'GtkApi::request_url'
+    logger.debug(log_message) {"Schema=#{request.env['rack.url_scheme']}, host=#{request.env['HTTP_HOST']}, path=#{request.env['REQUEST_PATH']}"}
     request.env['rack.url_scheme']+'://'+request.env['HTTP_HOST']+request.env['REQUEST_PATH']
   end
 end

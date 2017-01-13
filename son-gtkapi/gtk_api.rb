@@ -79,9 +79,7 @@ class GtkApi < Sinatra::Base
   enable :cross_origin
 
   # TODO: make this relationship loosely coupled
-  #set :package_management, PackageManagerService.new(settings.pkgmgmt, logger)
   PackageManagerService.config(url: settings.pkgmgmt, logger: logger)
-  #set :service_management, ServiceManagerService.new(settings.srvmgmt, logger)
   ServiceManagerService.config(url: settings.srvmgmt, logger: logger)
   set :function_management,FunctionManagerService.new(settings.fnctmgmt, logger)
   set :vim_management, VimManagerService.new(settings.vimmgmt, logger)

@@ -43,7 +43,7 @@ class ServiceManagerService < ManagerService
     @@logger.debug(method) {'entered'}
     begin
       response = self.getCurb(url: @@url+"/services/#{uuid}", headers: JSON_HEADERS)
-      @@logger.debug(method) {"Leaving with response=#{response.inspect}"}
+      @@logger.debug(method) {"Leaving with response.body=#{response.body}"}
       JSON.parse response.body
     rescue => e
       @@logger.error(method) {"e=#{format_error(e.backtrace)}"}
@@ -54,11 +54,17 @@ class ServiceManagerService < ManagerService
   def self.find_services(params)
     method = LOG_MESSAGE + ".find_services(#{params})"
     @@logger.debug(method) {'entered'}
+    services = {}
 
     begin
-      response = self.getCurb(url: @@url + '/services', params: params, headers: JSON_HEADERS) 
-      @@logger.debug(method) {'Leaving with response='+response.body}
-      JSON.parse response.body
+      result = self.getCurb(url: @@url + '/services', params: params, headers: JSON_HEADERS) 
+      @@logger.debug(method) {"result headers #{result.headers} "}
+      @@logger.debug(method) {"result body #{result.body} "}
+      services[:items] = JSON.parse result.body
+      services[:count] = ServiceManagerService.get_record_count_from_response_headers(result.header_str)
+      
+      @@logger.debug(method) {"Leaving with #{services[:count]} records, items=#{services[:items]}"}
+      services
     rescue => e
       @@logger.error(method) {"#{e.message} - #{format_error(e.backtrace)}"}
       nil 
