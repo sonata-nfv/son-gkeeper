@@ -28,7 +28,7 @@
 class GtkApi < Sinatra::Base
 
   # Show API Logs
-  get '/admin/logs' do
+  get '/api/v2/admin/logs' do
     headers 'Content-Type' => 'text/plain; charset=utf8', 'Location' => '/'
     logger.debug("GtkApi GET /admin/logs") {'entered'}
     File.open('log/'+ENV['RACK_ENV']+'.log', 'r').read

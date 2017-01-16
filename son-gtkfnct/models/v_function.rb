@@ -34,25 +34,26 @@ class VFunction
   JSON_HEADERS = {'Accept'=>'application/json', 'Content-Type'=>'application/json'}
   
   def initialize(url, logger)
+    log_message= "GtkFnct::VFunction.new"
     @url = url
     @logger = logger
+    @logger.debug(log_message) {"url="+@url}
   end
   
   def find(params)
     headers = { 'Accept'=> 'application/json', 'Content-Type'=>'application/json'}
     headers[:params] = params unless params.empty?
-    pp "VFunction#find(#{params}): headers #{headers}"
+    log_message= "GtkFnct::VFunction.find"
+    @logger.debug(log_message) {"entered with params=#{params} and headers=#{headers}"}
 
-    uri = @url
-    pp "VFunction#find(#{uri})"
     begin
-      response = RestClient.get(uri, headers)
-      pp "VFunction#find: response #{response}"
-      services = JSON.parse(response.body)
-      pp "VFunction#find: services #{services}"
-      services
+      response = RestClient.get(@url, headers)
+      @logger.debug(log_message) {"response=#{response}"}
+      functions = JSON.parse(response.body)
+      @logger.debug(log_message) {"functions= #{functions}"}
+      functions
     rescue => e
-      puts e.backtrace
+      @logger.error(log_message) {e.backtrace}
       nil
     end
   end
@@ -60,13 +61,16 @@ class VFunction
   def find_by_uuid(uuid)
     headers = { 'Accept'=> 'application/json', 'Content-Type'=>'application/json'}
     headers[:params] = uuid
+    log_message= "GtkFnct::VFunction.find_by_uuid"
+    @logger.debug(log_message) {"entered with uuid=#{uuid}"}
     begin
       response = RestClient.get(@url + "/#{uuid}", headers) 
-      parsed_response = JSON.parse(response)
-      pp "VFunction#find_by_uuid(#{uuid}): #{parsed_response}"
-      parsed_response      
+      @logger.debug(log_message) {"response=#{response}"}
+      function = JSON.parse(response)
+      @logger.debug(log_message) {"function=#{function}"}
+      function      
     rescue => e
-      puts e.backtrace
+      @logger.error(log_message) {e.backtrace}
       nil
     end
   end

@@ -53,7 +53,7 @@ class Repository
   def find(params)
     headers = JSON_HEADERS
     headers[:params] = params unless params.empty?
-    method = "Repository.find(#{params}): "
+    method = "Repository.find(#{params})"
     @logger.debug(method) {"headers #{headers}"}
     @logger.debug(method) {"calling #{@url}"}
     
@@ -62,8 +62,9 @@ class Repository
       @logger.debug(method) {"response=#{response}"}  
       JSON.parse response.body
     rescue => e
-      @logger.error(method) {format_error(e.backtrace)}
-      e.to_json
+      @logger.error(method) {"response=#{response}"}  
+      @logger.error(method) {e.backtrace.each {|l| puts l}} #format_error(e.backtrace)
+      []
     end
   end
   

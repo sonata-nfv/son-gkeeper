@@ -28,60 +28,67 @@
 # encoding: utf-8
 require 'json' 
 require 'pp'
-require 'addressable/uri'
 
 class GtkFnct < Sinatra::Base
 
   get '/functions/?' do
-    logger.debug "GtkFnct: entered GET /functions with params #{params}"
-    uri = Addressable::URI.new
+    log_message="GtkFnct GET /functions"
+    logger.debug(log_message) {"entered with params #{params}"}
 
     # Remove list of wanted fields from the query parameter list
     field_list = params.delete('fields')
-    uri.query_values = params
-    logger.debug 'GtkFnct: GET /functions: uri.query='+uri.query
-    logger.debug "GtkFnct: GET /functions: params=#{params}"
+    logger.debug(log_message) { 'query_string='+query_string}
+    logger.debug(log_message) { "params without fields=#{params}"}
     
     functions = settings.functions_catalogue.find(params)
+    logger.debug(log_message) { "functions=#{functions}"}
     if functions
-      logger.debug "GtkFnct: GET /functions: #{functions}"
-
       if field_list
         fields = field_list.split(',')
-        logger.debug "GtkFnct: GET /functions: fields=#{fields}"
+        logger.debug(log_message) {"fields=#{fields}"}
         response = functions.to_json(:only => fields)
       else
         response = functions.to_json
       end
-      logger.debug "GtkFnct: leaving GET /functions?#{uri.query} with response="+response
+      logger.debug(log_message) { "leaving with response="+response}
       halt 200, response
     else
-      logger.debug "GtkFnct: leaving GET /functions?#{uri.query} with \"No function with params #{uri.query} was found\""
-      json_error 404, "No function with params #{uri.query} was found"
+      logger.debug(log_message) { "leaving with \"No function with params #{query_string} was found\""}
+      json_error 404, "No function with params #{query_string} was found"
     end
   end
   
   get '/functions/:uuid' do
+    log_message = "GtkFnct GET /functions/:uuid"
     unless params[:uuid].nil?
-    logger.info "GtkFnct: entered GET \"/functions/#{params[:uuid]}\""
-    function = settings.functions_catalogue.find_by_uuid(params[:uuid])
+      logger.debug(log_message) {"entered with uuid=#{params[:uuid]}"}
+      function = settings.functions_catalogue.find_by_uuid(params[:uuid])
+      logger.info(log_message) { "found function #{function}"}
       if function && function.is_a?(Hash) && function['uuid']
-        logger.info "GtkFnct: in GET /functions/#{params[:uuid]}, found function #{function}"
         response = function.to_json
-        logger.info "GtkFnct: leaving GET /functions/#{params[:uuid]} with response="+response
+        logger.info(log_message) { "leaving with response="+response}
         halt 200, response
       else
-        logger.error "GtkFnct: leaving GET \"/functions/#{params[:uuid]}\" with \"No function with UUID=#{params[:uuid]} was found\""
+        logger.error(log_message) { "leaving with \"No function with UUID=#{params[:uuid]} was found\""}
         json_error 404, "No function with UUID=#{params[:uuid]} was found"
       end
     end
-    logger.error "GtkFnct: leaving GET \"/functions/#{params[:uuid]}\" with \"No function UUID specified\""
+    logger.error(log_message) { "eaving with \"No function UUID specified\""}
     json_error 400, 'No function UUID specified'
   end
-  
   
   get '/admin/logs' do
     logger.debug "GtkFnct: entered GET /admin/logs"
     File.open('log/'+ENV['RACK_ENV']+'.log', 'r').read
-  end  
+  end
+  
+  private
+    
+  def query_string
+    request.env['QUERY_STRING'].nil? ? '' : '?' + request.env['QUERY_STRING'].to_s
+  end
+
+  def request_url
+    request.env['rack.url_scheme']+'://'+request.env['HTTP_HOST']+request.env['REQUEST_PATH']
+  end
 end

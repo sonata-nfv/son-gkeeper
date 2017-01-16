@@ -29,6 +29,7 @@ class ManagerService
   
   #JSON_HEADERS = { 'Accept'=> 'application/json', 'Content-Type'=>'application/json'}
   CLASS_NAME = self.name
+  LOG_MESSAGE = 'GtkApi::' + self.name
   
   def initialize(url, logger)
     method = 'GtkApi::' + CLASS_NAME + ".new(url=#{url}, logger=#{logger})"
@@ -37,36 +38,37 @@ class ManagerService
     @logger.debug(method) {'entered'}
   end
   
-  def get_log
-    method = 'GtkApi::' + CLASS_NAME + ".get_log()"
-    @logger.debug(method) {'entered'}
-
-    response=getCurb(url: @url+'/admin/logs', headers: {'Content-Type' => 'text/plain; charset=utf8', 'Location' => '/'})
-    @logger.debug(method) {'status=' + response.response_code.to_s}
-    case response.response_code
-      when 200
-        response.body
-      else
-        @logger.error(method) {'status=' + response.response_code.to_s}
-        nil
+  def self.getCurb(url:, params: {}, headers: {}, logger: nil)
+    res=Curl.get(params.empty? ? url : url + '?' + Curl::postalize(params)) do |req|
+      headers.each do |h|
+        logger.debug(LOG_MESSAGE) {"header['" + h[0] + "]: '" + h[1] + "'"} if logger
+        req.headers[h[0]] = h[1]
       end
-  end
-  
-  def getCurb(url:, params: {}, headers: {})
-    Curl.get(params.empty? ? url : url + '?' + Curl::postalize(params)) do |req|
-      req.headers = headers
     end
+    logger.debug(LOG_MESSAGE) {'header_str='+res.header_str} if logger
+    res
   end
   
-  def postCurb(url, body)
+  def self.postCurb(url, body)
     Curl.post(url, body) do |req|
       req.headers['Content-type'] = 'application/json'
       req.headers['Accept'] = 'application/json'
     end
   end
   
-  def format_error(backtrace)
+  def self.format_error(backtrace)
     first_line = backtrace[0].split(":")
     "In "+first_line[0].split("/").last+", "+first_line.last+": "+first_line[1]
+  end
+    
+  def self.get_record_count_from_response_headers(header_str)
+    # From http://stackoverflow.com/questions/14345805/get-response-headers-from-curb
+    http_response, *http_headers = header_str.split(/[\r\n]+/).map(&:strip)
+    http_headers = Hash[http_headers.flat_map{ |s| s.scan(/^(\S+): (.+)/) }]
+
+    #http_response # => "HTTP/1.1 200 OK"
+    #http_headers => { "Date" => "2013-01-10 09:07:42 -0700", "Content-Type" => "text/html", "Server" => "WEBrick/1.3.1 (Ruby/1.9.3/2012-11-10)",
+    #        "Content-Length" => "62164", "Connection" => "Keep-Alive"}
+    http_headers['X-Record-Count']
   end
 end

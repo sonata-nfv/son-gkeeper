@@ -78,12 +78,13 @@ class GtkApi < Sinatra::Base
   
   enable :cross_origin
 
-  set :package_management, PackageManagerService.new(settings.pkgmgmt, logger)
-  set :service_management, ServiceManagerService.new(settings.srvmgmt, logger)
-  set :function_management,FunctionManagerService.new(settings.fnctmgmt, logger)
-  set :vim_management, VimManagerService.new(settings.vimmgmt, logger)
-  set :record_management, RecordManagerService.new(settings.recmgmt, logger)
+  # TODO: make this relationship loosely coupled
+  PackageManagerService.config(url: settings.pkgmgmt, logger: logger)
+  ServiceManagerService.config(url: settings.srvmgmt, logger: logger)
+  FunctionManagerService.config(url: settings.fnctmgmt, logger: logger)
+  RecordManagerService.config(url: settings.recmgmt, logger: logger)
   set :licence_management, LicenceManagerService.new(settings.licmgmt, logger)
+  set :vim_management, VimManagerService.new(settings.vimmgmt, logger)
   
   Zip.setup do |c|
     c.unicode_names = true

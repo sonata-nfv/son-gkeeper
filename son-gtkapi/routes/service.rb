@@ -25,59 +25,69 @@
 ## acknowledge the contributions of their colleagues of the SONATA 
 ## partner consortium (www.sonata-nfv.eu).
 # encoding: utf-8
+require 'sinatra/namespace'
 class GtkApi < Sinatra::Base
+
+  register Sinatra::Namespace
+  helpers GtkApiHelper
   
-  # GET many services
-  get '/services/?' do
-    log_message = MODULE+' GET /services'
+  namespace '/api/v2/services' do
+    # GET many services
+    get '/?' do
+      log_message = MODULE+' GET /api/v2/services'
     
-    logger.debug(log_message) {'entered with '+query_string}
-    logger.debug(log_message) {"Settings Srv. Mgmt. = #{settings.service_management.class}"}
+      logger.debug(log_message) {'entered with '+query_string}
     
-    @offset ||= params[:offset] ||= DEFAULT_OFFSET
-    @limit ||= params[:limit] ||= DEFAULT_LIMIT
+      @offset ||= params[:offset] ||= DEFAULT_OFFSET
+      @limit ||= params[:limit] ||= DEFAULT_LIMIT
+      logger.debug(log_message) {"offset=#{@offset}, limit=#{@limit}"}
     
-    services = settings.service_management.find_services(params)
-    if services
-      logger.debug(log_message) {"leaving with #{services}"}
-      links = build_pagination_headers(url: request_url, limit: @limit.to_i, offset: @offset.to_i, total: services.size)
-      [200, {'Link' => links}, services.to_json]
-    else
-      message = "No services with #{params} were found"
-      logger.debug(log_message) {"leaving with message '"+message+"'"}
-      json_error 404, message
-    end
-  end
-  
-  # GET a specific service
-  get '/services/:uuid' do
-    log_message = MODULE+' GET /services/:uuid'
-    logger.debug(log_message) {"Settings Srv. Mgmt. = #{settings.service_management.class}"}
-    logger.debug(log_message) {"entered with #{params[:uuid]}"}
-    
-    if valid?(params[:uuid])
-      service = settings.service_management.find_service_by_uuid(params[:uuid])
-      if service
-        logger.debug(log_message) {"leaving with #{service}"}
-        halt 200, service.to_json
+      services = ServiceManagerService.find_services(params)
+      logger.debug(log_message) {"Found services #{services}"}
+      if services
+        logger.debug(log_message) {"links: request_url=#{request_url}, limit:=#{@limit.to_i}, offset:=#{@offset.to_i}, total:=#{services[:count]}"}
+        links = build_pagination_headers(url: request_url, limit: @limit.to_i, offset: @offset.to_i, total: services[:count].to_i)
+        logger.debug(log_message) {"links: #{links}"}
+        [200, {'Link' => links, 'X-Record-Count' => services[:count]}, services[:items].to_json]
       else
-        logger.debug(log_message) {"leaving with message 'Service #{params[:uuid]} not found'"}
-        json_error 404, "Service #{params[:uuid]} not found"
+        message = "No services with #{params} were found"
+        logger.debug(log_message) {"leaving with message '"+message+"'"}
+        json_error 404, message
       end
-    else
-      message = "Service #{params[:uuid]} not valid"
-      logger.debug(log_message) {"leaving with message '"+message+"'"}
-      json_error 404, message
+    end
+  
+    # GET a specific service
+    get '/:uuid/?' do
+      log_message = MODULE+' GET /api/v2/services/:uuid'
+      logger.debug(log_message) {"Settings Srv. Mgmt. = #{ServiceManagerService.name}"}
+      logger.debug(log_message) {"entered with #{params[:uuid]}"}
+    
+      if valid?(params[:uuid])
+        service = ServiceManagerService.find_service_by_uuid(params[:uuid])
+        if service
+          logger.debug(log_message) {"leaving with #{service}"}
+          halt 200, service.to_json
+        else
+          logger.debug(log_message) {"leaving with message 'Service #{params[:uuid]} not found'"}
+          json_error 404, "Service #{params[:uuid]} not found"
+        end
+      else
+        message = "Service #{params[:uuid]} not valid"
+        logger.debug(log_message) {"leaving with message '"+message+"'"}
+        json_error 404, message
+      end
     end
   end
   
-  get '/admin/services/logs' do
-    log_message = 'GtkApi: GET /admin/services/logs'
-    logger.debug(log_message) {'entered'}
-    headers 'Content-Type' => 'text/plain; charset=utf8', 'Location' => '/'
-    log = settings.service_management.get_log
-    logger.debug(log_message) {'leaving with log='+log}
-    halt 200, log #.to_s
+  namespace '/api/v2/admin/services' do
+    get '/logs/?' do
+      log_message = 'GtkApi: GET /admin/services/logs'
+      logger.debug(log_message) {'entered'}
+      headers 'Content-Type' => 'text/plain; charset=utf8', 'Location' => '/'
+      log = ServiceManagerService.get_log
+      logger.debug(log_message) {'leaving with log='+log}
+      halt 200, log #.to_s
+    end
   end
   
   private 
@@ -86,6 +96,8 @@ class GtkApi < Sinatra::Base
   end
 
   def request_url
+    log_message = 'GtkApi::request_url'
+    logger.debug(log_message) {"Schema=#{request.env['rack.url_scheme']}, host=#{request.env['HTTP_HOST']}, path=#{request.env['REQUEST_PATH']}"}
     request.env['rack.url_scheme']+'://'+request.env['HTTP_HOST']+request.env['REQUEST_PATH']
   end
 end
