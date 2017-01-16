@@ -79,7 +79,7 @@ class GtkApi < Sinatra::Base
     end
   end
   
-  namespace '/admin/services' do
+  namespace '/api/v2/admin/services' do
     get '/logs/?' do
       log_message = 'GtkApi: GET /admin/services/logs'
       logger.debug(log_message) {'entered'}

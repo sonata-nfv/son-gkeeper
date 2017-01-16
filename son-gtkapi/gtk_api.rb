@@ -81,10 +81,10 @@ class GtkApi < Sinatra::Base
   # TODO: make this relationship loosely coupled
   PackageManagerService.config(url: settings.pkgmgmt, logger: logger)
   ServiceManagerService.config(url: settings.srvmgmt, logger: logger)
-  FunctionManagerService.config(url:settings.fnctmgmt, logger: logger)
-  set :vim_management, VimManagerService.new(settings.vimmgmt, logger)
-  set :record_management, RecordManagerService.new(settings.recmgmt, logger)
+  FunctionManagerService.config(url: settings.fnctmgmt, logger: logger)
+  RecordManagerService.config(url: settings.recmgmt, logger: logger)
   set :licence_management, LicenceManagerService.new(settings.licmgmt, logger)
+  set :vim_management, VimManagerService.new(settings.vimmgmt, logger)
   
   Zip.setup do |c|
     c.unicode_names = true

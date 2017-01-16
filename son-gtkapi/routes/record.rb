@@ -42,21 +42,21 @@ class GtkApi < Sinatra::Base
 
     # GET many instances
     get '/:kind/?' do
-      METHOD = "GtkApi::GET /api/v2/records/#{params[:kind]}"
+      log_message = "GtkApi::GET /api/v2/records/#{params[:kind]}"
       params.delete('splat')
       params.delete('captures')
-      logger.debug(METHOD) {'entered with query parameters '+query_string}
+      logger.debug(log_message) {'entered with query parameters '+query_string}
   
       @offset ||= params[:offset] ||= DEFAULT_OFFSET 
       @limit ||= params[:limit] ||= DEFAULT_LIMIT
   
-      records = settings.record_management.find_records(params)
+      records = RecordManagerService.find_records(params)
       if records
-        logger.debug(METHOD) {"leaving with #{records}"}
+        logger.debug(log_message) {"leaving with #{records}"}
         links = build_pagination_headers(url: request_url, limit: @limit.to_i, offset: @offset.to_i, total: records.size)
         [200, {'Link' => links}, records.to_json]
       else
-        logger.debug(METHOD) {"No #{params[:kind]} records found"}
+        logger.debug(log_message) {"No #{params[:kind]} records found"}
         halt 404, "No #{params[:kind]} records found"
       end
     end
@@ -90,11 +90,11 @@ class GtkApi < Sinatra::Base
         end
       
         # here we have the 
-        descriptor = settings.service_management.find_service_by_uuid(body_params['latest_nsd_id'])
+        descriptor = RecordManagerService.find_service_by_uuid(body_params['latest_nsd_id'])
         if descriptor
           logger.debug(method) {"found #{descriptor}"}
 
-          update_request = settings.service_management.create_service_update_request(nsr_uuid: params[:uuid], nsd: descriptor)
+          update_request = ServiceManagerService.create_service_update_request(nsr_uuid: params[:uuid], nsd: descriptor)
           if update_request
             logger.debug(method) { "update_request =#{update_request}"}
             halt 201, update_request.to_json
@@ -121,7 +121,7 @@ class GtkApi < Sinatra::Base
       method = "GtkApi::GET /api/v2/admin/records/logs/?: "
       logger.debug(method) {"entered"}
       headers 'Content-Type' => 'text/plain; charset=utf8', 'Location' => '/'
-      log = settings.record_management.get_log
+      log = RecordManagerService.get_log
       halt 200, log #.to_s
     end
   end
