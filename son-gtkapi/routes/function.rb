@@ -33,22 +33,22 @@ class GtkApi < Sinatra::Base
   namespace '/api/v2/functions' do
     # GET many functions
     get '/?' do
-      MESSAGE = 'GtkApi::GET /api/v2/functions/?'
-      logger.debug(MESSAGE) {'entered with '+query_string}
+      log_message = 'GtkApi::GET /api/v2/functions/?'
+      logger.debug(log_message) {'entered with '+query_string}
     
       @offset ||= params[:offset] ||= DEFAULT_OFFSET 
       @limit ||= params[:limit] ||= DEFAULT_LIMIT
-      logger.debug(MESSAGE) {"params=#{params}"}
+      logger.debug(log_message) {"params=#{params}"}
      
-      functions = settings.function_management.find_functions(params)
+      functions = FunctionManagerService.find_functions(params)
       if functions
-        logger.debug(MESSAGE) {"leaving with #{functions}"}
+        logger.debug(log_message) {"leaving with #{functions}"}
         links = build_pagination_headers(url: request_url, limit: @limit.to_i, offset: @offset.to_i, total: functions.size)
         [200, {'Link' => links}, functions.to_json]
       else
-        ERROR_MESSAGE = "No function with params #{params} was found"
-        logger.debug(MESSAGE) {'leaving with "'+ERROR_MESSAGE+'"'}
-        json_error 404, ERROR_MESSAGE
+        error_message = "No function with params #{params} was found"
+        logger.debug(log_message) {'leaving with "'+error_message+'"'}
+        json_error 404, error_message
       end  
     end
   
@@ -58,7 +58,7 @@ class GtkApi < Sinatra::Base
     
       unless params[:uuid].nil?
         logger.info(log_message) {"entered with params #{params[:uuid]}"}
-        function = settings.function_management.find_functions_by_uuid(params[:uuid])
+        function = FunctionManagerService.find_functions_by_uuid(params[:uuid])
         logger.info(log_message) { "found function #{function}"}
         if function 
           response = function
@@ -78,7 +78,7 @@ class GtkApi < Sinatra::Base
     get '/logs/?' do
       logger.debug('GtkApi::GET /api/v2/admin/functions/logs/?') {'entered'}
       headers 'Content-Type' => 'text/plain; charset=utf8', 'Location' => '/api/v2/admin/functions/logs'
-      log = settings.function_management.get_log
+      log = FunctionManagerService.get_log
       halt 200, log
     end
   end

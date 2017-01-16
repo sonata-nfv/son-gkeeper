@@ -35,55 +35,74 @@ class FunctionManagerService < ManagerService
   JSON_HEADERS = { 'Accept'=> 'application/json', 'Content-Type'=>'application/json'}
   LOG_MESSAGE = 'GtkApi::' + self.name
   
-  def initialize(url, logger)
-    method = LOG_MESSAGE + ".new(url=#{url}, logger=#{logger})"
-    super
-    @logger.debug(method) {'entered'}
+  def self.config(url:, logger:)
+    method = LOG_MESSAGE + "#config(url=#{url}, logger=#{logger})"
+    raise ArgumentError.new('FunctionManagerService can not be configured with nil url') if url.nil?
+    raise ArgumentError.new('FunctionManagerService can not be configured with empty url') if url.empty?
+    raise ArgumentError.new('FunctionManagerService can not be configured with nil logger') if logger.nil?
+    @@url = url
+    @@logger = logger
+    @@logger.debug(method) {'entered'}
   end
 
-  def find_functions_by_uuid(uuid)
+  def self.find_functions_by_uuid(uuid)
     method = LOG_MESSAGE + ".find_functions_by_uuid(#{uuid})"
-    @logger.debug(method) {'entered'}
+    @@logger.debug(method) {'entered'}
     begin
-      response = getCurb( url: @url + '/functions/'+uuid, headers: JSON_HEADERS)
-      @logger.debug(method) {'response='+response.body}
+      response = getCurb( url: @@url + '/functions/'+uuid, headers: JSON_HEADERS)
+      @@logger.debug(method) {'response='+response.body}
       case response.response_code
         when 200
-          @logger.debug(method) {'found function(s) ' + response.body}
+          @@logger.debug(method) {'found function(s) ' + response.body}
           JSON.parse response.body
         when 404
-          @logger.error(method) {"Function with UUID=#{uuid} was not found"}
+          @@logger.error(method) {"Function with UUID=#{uuid} was not found"}
           nil
         else
-          @logger.error(method) {"Strange error (#{response.response_code}) while looking for function with UUID=#{uuid}"}
+          @@logger.error(method) {"Strange error (#{response.response_code}) while looking for function with UUID=#{uuid}"}
           nil
       end
     rescue => e
-      @logger.error(method) {"e=#{e.backtrace}"}
+      @@logger.error(method) {"e=#{e.backtrace}"}
       nil 
     end
   end
   
-  def find_functions(params)
+  def self.find_functions(params)
     method = LOG_MESSAGE + ".find_functions(#{params})"
-    @logger.debug(method) {'entered'}
+    @@logger.debug(method) {'entered'}
     begin
-      response = getCurb(url: @url + '/functions', params: params, headers: JSON_HEADERS) 
-      @logger.debug(method) {'response='+response.body}
+      response = getCurb(url: @@url + '/functions', params: params, headers: JSON_HEADERS, logger: @@logger) 
+      @@logger.debug(method) {'response='+response.body}
       case response.response_code
         when 200
-          @logger.debug(method) {'found function(s) ' + response.body}
+          @@logger.debug(method) {'found function(s) ' + response.body}
           JSON.parse response.body
         when 404
-          @logger.error(method) {"Function with params=#{params} were not found"}
+          @@logger.error(method) {"Function with params=#{params} were not found"}
           []
         else
-          @logger.error(method) {"Strange error (#{response.response_code}) while looking for function with params=#{params}"}
+          @@logger.error(method) {"Strange error (#{response.response_code}) while looking for function with params=#{params}"}
           nil
       end
     rescue => e
-      @logger.error(method) {"e=#{e.backtrace}"}
+      @@logger.error(method) {"e=#{e.backtrace}"}
       nil 
     end
+  end
+  
+  def self.get_log
+    method = 'GtkApi::' + CLASS_NAME + ".get_log()"
+    @@logger.debug(method) {'entered'}
+
+    response=getCurb(url: @@url+'/admin/logs', headers: {'Content-Type' => 'text/plain; charset=utf8', 'Location' => '/'}, logger: @@logger)
+    @@logger.debug(method) {'status=' + response.response_code.to_s}
+    case response.response_code
+      when 200
+        response.body
+      else
+        @@logger.error(method) {'status=' + response.response_code.to_s}
+        nil
+      end
   end
 end

@@ -81,7 +81,7 @@ class GtkApi < Sinatra::Base
   # TODO: make this relationship loosely coupled
   PackageManagerService.config(url: settings.pkgmgmt, logger: logger)
   ServiceManagerService.config(url: settings.srvmgmt, logger: logger)
-  set :function_management,FunctionManagerService.new(settings.fnctmgmt, logger)
+  FunctionManagerService.config(url:settings.fnctmgmt, logger: logger)
   set :vim_management, VimManagerService.new(settings.vimmgmt, logger)
   set :record_management, RecordManagerService.new(settings.recmgmt, logger)
   set :licence_management, LicenceManagerService.new(settings.licmgmt, logger)
