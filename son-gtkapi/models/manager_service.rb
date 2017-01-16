@@ -31,16 +31,6 @@ class ManagerService
   CLASS_NAME = self.name
   LOG_MESSAGE = 'GtkApi::' + self.name
   
-  def self.config(url:, logger:)
-    method = LOG_MESSAGE + "#config(url=#{url}, logger=#{logger})"
-    raise ArgumentError.new('PackageManagerService can not be configured with nil url') if url.nil?
-    raise ArgumentError.new('PackageManagerService can not be configured with empty url') if url.empty?
-    raise ArgumentError.new('PackageManagerService can not be configured with nil logger') if logger.nil?
-    @@url = url
-    @@logger = logger
-    @@logger.debug(method) {'entered'}
-  end
-
   def initialize(url, logger)
     method = 'GtkApi::' + CLASS_NAME + ".new(url=#{url}, logger=#{logger})"
     @url = url
@@ -48,34 +38,14 @@ class ManagerService
     @logger.debug(method) {'entered'}
   end
   
-  def self.url
-    @@logger.debug(LOG_MESSAGE + "#url") {'@@url='+@@url}
-    @@url
-  end
-  
-  def self.get_log
-    method = 'GtkApi::' + CLASS_NAME + ".get_log()"
-    @@logger.debug(method) {'entered'}
-
-    response=getCurb(url: @@url+'/admin/logs', headers: {'Content-Type' => 'text/plain; charset=utf8', 'Location' => '/'})
-    @@logger.debug(method) {'status=' + response.response_code.to_s}
-    case response.response_code
-      when 200
-        response.body
-      else
-        @@logger.error(method) {'status=' + response.response_code.to_s}
-        nil
-      end
-  end
-  
-  def self.getCurb(url:, params: {}, headers: {})
+  def self.getCurb(url:, params: {}, headers: {}, logger: nil)
     res=Curl.get(params.empty? ? url : url + '?' + Curl::postalize(params)) do |req|
       headers.each do |h|
-        @@logger.debug(LOG_MESSAGE) {"header['" + h[0] + "]: '" + h[1] + "'"}
+        logger.debug(LOG_MESSAGE) {"header['" + h[0] + "]: '" + h[1] + "'"} if logger
         req.headers[h[0]] = h[1]
       end
     end
-    @@logger.debug(LOG_MESSAGE) {'header_str='+res.header_str}
+    logger.debug(LOG_MESSAGE) {'header_str='+res.header_str} if logger
     res
   end
   

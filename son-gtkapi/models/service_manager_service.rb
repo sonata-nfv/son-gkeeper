@@ -38,11 +38,21 @@ class ServiceManagerService < ManagerService
   #  @logger.debug(method){'entered'}
   #end
     
+  def self.config(url:, logger:)
+    method = LOG_MESSAGE + "#config(url=#{url}, logger=#{logger})"
+    raise ArgumentError.new('ServiceManagerService can not be configured with nil url') if url.nil?
+    raise ArgumentError.new('ServiceManagerService can not be configured with empty url') if url.empty?
+    raise ArgumentError.new('ServiceManagerService can not be configured with nil logger') if logger.nil?
+    @@url = url
+    @@logger = logger
+    @@logger.debug(method) {'entered'}
+  end
+
   def self.find_service_by_uuid(uuid)
     method = LOG_MESSAGE + ".find_service_by_uuid(#{uuid})"
     @@logger.debug(method) {'entered'}
     begin
-      response = self.getCurb(url: @@url+"/services/#{uuid}", headers: JSON_HEADERS)
+      response = self.getCurb(url: @@url+"/services/#{uuid}", headers: JSON_HEADERS, logger: @@logger)
       @@logger.debug(method) {"Leaving with response.body=#{response.body}"}
       JSON.parse response.body
     rescue => e
@@ -57,7 +67,7 @@ class ServiceManagerService < ManagerService
     services = {}
 
     begin
-      result = self.getCurb(url: @@url + '/services', params: params, headers: JSON_HEADERS) 
+      result = self.getCurb(url: @@url + '/services', params: params, headers: JSON_HEADERS, logger: @@logger) 
       @@logger.debug(method) {"result headers #{result.headers} "}
       @@logger.debug(method) {"result body #{result.body} "}
       services[:items] = JSON.parse result.body
@@ -75,7 +85,7 @@ class ServiceManagerService < ManagerService
     method = LOG_MESSAGE + ".find_requests(#{params})"
     @@logger.debug(method) {'entered'}
     begin
-      response = self.getCurb(url:@@url + '/requests', params: params, headers: JSON_HEADERS) 
+      response = self.getCurb(url:@@url + '/requests', params: params, headers: JSON_HEADERS, logger: @@logger) 
       @@logger.debug(method) {'Leaving with response='+response.body}
       JSON.parse response.body
     rescue => e
@@ -88,7 +98,7 @@ class ServiceManagerService < ManagerService
     method = LOG_MESSAGE + ".find_requests_by_uuid(#{uuid})"
     @@logger.debug(method) {'entered'}
     begin
-      response = self.getCurb(url: @@url+'/requests/'+uuid, headers: JSON_HEADERS) 
+      response = self.getCurb(url: @@url+'/requests/'+uuid, headers: JSON_HEADERS, logger: @@logger) 
       @@logger.debug(method) {'Leaving with response='+response.body}
       JSON.parse response.body
     rescue => e
@@ -131,5 +141,25 @@ class ServiceManagerService < ManagerService
       @@logger.error(message) {"#{e.message} - #{format_error(e.backtrace)}"}
       nil 
     end      
+  end
+  
+  def self.get_log
+    method = 'GtkApi::' + CLASS_NAME + ".get_log()"
+    @@logger.debug(method) {'entered'}
+
+    response=getCurb(url: @@url+'/admin/logs', headers: {'Content-Type' => 'text/plain; charset=utf8', 'Location' => '/'}, logger: @@logger)
+    @@logger.debug(method) {'status=' + response.response_code.to_s}
+    case response.response_code
+      when 200
+        response.body
+      else
+        @@logger.error(method) {'status=' + response.response_code.to_s}
+        nil
+      end
+  end
+  
+  def self.url
+    @@logger.debug(LOG_MESSAGE + "#url") {'@@url='+@@url}
+    @@url
   end
 end

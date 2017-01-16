@@ -34,6 +34,16 @@ class PackageManagerService < ManagerService
   
   LOG_MESSAGE = 'GtkApi::' + self.name
   
+  def self.config(url:, logger:)
+    method = LOG_MESSAGE + "#config(url=#{url}, logger=#{logger})"
+    raise ArgumentError.new('PackageManagerService can not be configured with nil url') if url.nil?
+    raise ArgumentError.new('PackageManagerService can not be configured with empty url') if url.empty?
+    raise ArgumentError.new('PackageManagerService can not be configured with nil logger') if logger.nil?
+    @@url = url
+    @@logger = logger
+    @@logger.debug(method) {'entered'}
+  end
+
   def self.create(params)
     method = LOG_MESSAGE + ".create(#{params})"
     @@logger.debug(method) {'entered'}
@@ -90,5 +100,25 @@ class PackageManagerService < ManagerService
       @@logger.debug(method) {e.response}
       nil
     end
+  end
+  
+  def self.get_log
+    method = 'GtkApi::' + CLASS_NAME + ".get_log()"
+    @@logger.debug(method) {'entered'}
+
+    response=getCurb(url: @@url+'/admin/logs', headers: {'Content-Type' => 'text/plain; charset=utf8', 'Location' => '/'}, logger: @@logger)
+    @@logger.debug(method) {'status=' + response.response_code.to_s}
+    case response.response_code
+      when 200
+        response.body
+      else
+        @@logger.error(method) {'status=' + response.response_code.to_s}
+        nil
+      end
+  end
+  
+  def self.url
+    @@logger.debug(LOG_MESSAGE + "#url") {'@@url='+@@url}
+    @@url
   end
 end
