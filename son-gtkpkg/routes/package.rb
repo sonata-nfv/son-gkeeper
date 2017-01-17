@@ -60,13 +60,25 @@ class GtkPkg < Sinatra::Base
       if descriptor
         if descriptor.key?('uuid')
           logger.info("Storing son-package in catalogue")
-          package = Package.new(catalogue: settings.son_packages_catalogue, logger: logger, params: {io: params[:package][:tempfile][:tempfile]})
-          son_package = package.store_zip()
+          son_package = Package.new(catalogue: settings.son_packages_catalogue, logger: logger, params: {io: params[:package][:tempfile][:tempfile]})
+          son_package = son_package.store_zip()
           if son_package && son_package['uuid']
-            descriptor.store("son-package-uuid", son_package['uuid'])
-            logger.info(log_message) {"leaving with package #{descriptor.to_json}"}
-            #halt 201, {'Location' => "/packages/#{descriptor['uuid']}"}, descriptor.to_json
-            halt 201, {'Location' => "/son-packages/#{descriptor['son-package-uuid']}"}, descriptor.to_json
+            package = Package.new(catalogue: settings.packages_catalogue, logger: logger, params: {io: params[:package][:tempfile][:tempfile]})
+            response = package.add_sonpackage_id(descriptor['uuid'], son_package['uuid'])
+            if response.nil?
+              descriptor.store("son-package-uuid", son_package['uuid'])
+              logger.info(log_message) {"leaving with package #{descriptor.to_json}"}
+              #halt 201, {'Location' => "/packages/#{descriptor['uuid']}"}, descriptor.to_json
+              halt 201, {'Location' => "/son-packages/#{descriptor['son-package-uuid']}"}, descriptor.to_json
+            else
+              error_message = "Error storing son-package-uuid in descriptor: " + response
+              logger.error(log_message) {"leaving with #{error_message}"}
+              json_error 400, error_message
+            end
+          else
+            error_message = 'Error storing son-package.'
+            logger.error(log_message) {"leaving with #{error_message}"}
+            json_error 400, error_message            
           end
         elsif descriptor.key?('name') && descriptor.key?('vendor') && descriptor.key?('version')
           error_message = "Version #{descriptor['version']} of package '#{descriptor['name']}' from vendor '#{descriptor['vendor']}' already exists"

@@ -106,6 +106,26 @@ class Catalogue
   def delete
   end
   
+  def set_sonpackage_id(desc_uuid, sonp_uuid)
+    method = "Catalogue.set_sonpackage_id: "
+    @logger.debug(method) {"desc_uuid=#{desc_uuid}, sonp_uuid=#{sonp_uuid}"}
+    headers = {'Content-Type'=>'application/json'}
+    begin
+      uri = URI(@url + '/' + desc_uuid.to_s + '?sonp_uuid=' + sonp_uuid.to_s)
+      req = Net::HTTP::Put.new(uri)
+      req.content_type = 'application/json'
+      response = Net::HTTP.start(uri.hostname, uri.port) { |http|
+        http.request(req)
+      }
+      #response = RestClient.put(@url + '/' + desc_uuid.to_s + '?sonp_uuid=' + sonp_uuid.to_s, :content_type => 'application/json')
+      @logger.debug(method) {"response was #{response}"}
+      nil
+    rescue => e
+      @logger.error format_error(e.backtrace)
+      e.to_json
+    end
+  end
+
   private
   
   def format_error(backtrace)
