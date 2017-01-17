@@ -45,6 +45,19 @@ class FunctionManagerService < ManagerService
     @@logger.debug(method) {'entered'}
   end
 
+  def self.find_function_by_uuid(uuid)
+    method = LOG_MESSAGE + ".find_function_by_uuid(#{uuid})"
+    @@logger.debug(method) {'entered'}
+    begin
+      response = self.getCurb(url: @@url+"/functions/#{uuid}", headers: JSON_HEADERS, logger: @@logger)
+      @@logger.debug(method) {"Leaving with response.body=#{response.body}"}
+      JSON.parse response.body
+    rescue => e
+      @@logger.error(method) {"e=#{format_error(e.backtrace)}"}
+      nil 
+    end
+  end
+
   def self.find_functions_by_uuid(uuid)
     method = LOG_MESSAGE + ".find_functions_by_uuid(#{uuid})"
     @@logger.debug(method) {'entered'}
@@ -53,7 +66,7 @@ class FunctionManagerService < ManagerService
       @@logger.debug(method) {'response='+response.body}
       case response.response_code
         when 200
-          @@logger.debug(method) {'found function(s) ' + response.body}
+          @@logger.debug(method) {'found function ' + response.body}
           JSON.parse response.body
         when 404
           @@logger.error(method) {"Function with UUID=#{uuid} was not found"}

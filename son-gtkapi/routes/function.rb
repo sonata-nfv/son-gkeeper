@@ -55,22 +55,22 @@ class GtkApi < Sinatra::Base
     # GET function by uuid
     get '/:uuid/?' do
       log_message = 'GtkApi::GET /api/v2/functions/:uuid/?'
+      logger.debug(log_message) {"entered with #{params[:uuid]}"}
     
-      unless params[:uuid].nil?
-        logger.info(log_message) {"entered with params #{params[:uuid]}"}
-        function = FunctionManagerService.find_functions_by_uuid(params[:uuid])
-        logger.info(log_message) { "found function #{function}"}
-        if function 
-          response = function
-          logger.info(log_message) { "leaving with response=#{response}"}
-          halt 200, response
+      if valid?(params[:uuid])
+        function = FunctionManagerService.find_function_by_uuid(params[:uuid])
+        if function
+          logger.debug(log_message) {"leaving with #{function}"}
+          halt 200, function.to_json
         else
-          logger.error(log_message) { "leaving with \"No function with UUID=#{params[:uuid]} was found\""}
-          json_error 404, "No function with UUID=#{params[:uuid]} was found"
+          logger.debug(log_message) {"leaving with message 'Service #{params[:uuid]} not found'"}
+          json_error 404, "Function #{params[:uuid]} not found"
         end
+      else
+        message = "Function #{params[:uuid]} not valid"
+        logger.debug(log_message) {"leaving with message '"+message+"'"}
+        json_error 404, message
       end
-      logger.error(log_message) { "leaving with \"No function UUID specified\""}
-      json_error 400, 'No function UUID specified'
     end
   end
   
