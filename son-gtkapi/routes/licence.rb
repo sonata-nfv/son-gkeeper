@@ -25,60 +25,59 @@
 ## acknowledge the contributions of their colleagues of the SONATA 
 ## partner consortium (www.sonata-nfv.eu).
 # encoding: utf-8
-require 'addressable/uri'
-
+require 'sinatra/namespace'
 class GtkApi < Sinatra::Base
   
-  #namespace '/api/v2' do
+  register Sinatra::Namespace
+  namespace '/api/v2' do
     
     # GET licence types
-    get '/api/v2/licence-types/?' do
-      log_message = 'GtkApi GET /licence-types'
+    get '/licence-types/?' do
+      MESSAGE = 'GtkApi::GET /api/v2/licence-types/?'
       
-      uri = Addressable::URI.new
-      uri.query_values = params
-      logger.debug(log_message) {"entered with #{uri.query}"}
+      logger.debug(log_message) {"entered with #{query_string}"}
       
-      params['offset'] ||= DEFAULT_OFFSET 
-      params['limit'] ||= DEFAULT_LIMIT
+      @offset ||= params['offset'] ||= DEFAULT_OFFSET 
+      @limit ||= params['limit'] ||= DEFAULT_LIMIT
     
       licence_types = settings.licence_management.find_licence_types(params)
       if licence_types
-        logger.debug(log_message) {"leaving with #{licence_types}"}
-        halt 200, licence_types.to_json
+        logger.debug(MESSAGE) {"leaving with #{licence_types}"}
+        links = build_pagination_headers(url: request_url, limit: @limit.to_i, offset: @offset.to_i, total: licence_types.size)
+        [200, {'Link' => links}, licence_types.to_json]
       else
-        message = "No licence types with #{params} were found"
-        logger.debug(log_message) {"leaving with message '"+message+"'"}
-        json_error 404, message
+        ERROR_MESSAGE = "No licence types with #{params} were found"
+        logger.debug(MESSAGE) {"leaving with message '"+ERROR_MESSAGE+"'"}
+        json_error 404, ERROR_MESSAGE
       end
     end
 
     # GET many licences
-    get '/api/v2/licences/?' do
-      log_message = 'GtkApi GET /services'
+    get '/licences/?' do
+      # TODO
+      MESSAGE = 'GtkApi::GET /api/v2/licences/?'
     
-      uri = Addressable::URI.new
-      uri.query_values = params
-      logger.debug(log_message) {"entered with #{uri.query}"}
-      logger.debug(log_message) {"Settings Srv. Mgmt. = #{settings.service_management.class}"}
+      logger.debug(MESSAGE) {"entered with "+query_string}
+      logger.debug(MESSAGE) {"Settings Srv. Mgmt. = #{settings.service_management.class}"}
     
-      params['offset'] ||= DEFAULT_OFFSET 
-      params['limit'] ||= DEFAULT_LIMIT
+      @offset ||= params['offset'] ||= DEFAULT_OFFSET 
+      @limit ||= params['limit'] ||= DEFAULT_LIMIT
     
-      services = settings.service_management.find_services(params)
-      if services
-        logger.debug(log_message) {"leaving with #{services}"}
-        halt 200, services.to_json
+      licences = settings.service_management.find_services(params)
+      if licences
+        logger.debug(MESSAGE) {"leaving with #{licences}"}
+        links = build_pagination_headers(url: request_url, limit: @limit.to_i, offset: @offset.to_i, total: licences.size)
+        [200, {'Link' => links}, licences.to_json]
       else
-        message = "No services with #{params} were found"
-        logger.debug(log_message) {"leaving with message '"+message+"'"}
-        json_error 404, message
+        ERROR_MESSAGE = "No services with #{params} were found"
+        logger.debug(MESSAGE) {"leaving with message '"+ERROR_MESSAGE+"'"}
+        json_error 404, ERROR_MESSAGE
       end
     end
   
     # GET a specific licence
-    get '/api/v2/licences/:uuid' do
-      log_message = MODULE+' GET /services/:uuid'
+    get '/licences/:uuid/?' do
+      log_message = MODULE+' GET /api/v2/services/:uuid'
       logger.debug(log_message) {"Settings Srv. Mgmt. = #{settings.service_management.class}"}
       logger.debug(log_message) {"entered with #{params[:uuid]}"}
     
@@ -97,12 +96,21 @@ class GtkApi < Sinatra::Base
         json_error 404, message
       end
     end
+  end
   
-    get '/api/v2/admin/licences/logs' do
-      logger.debug "GtkApi: entered GET /admin/licences/logs"
-      headers 'Content-Type' => 'text/plain; charset=utf8', 'Location' => '/'
-      log = settings.licence_management.get_log
-      halt 200, log #.to_s
-    end
-    #end
+  get '/api/v2/admin/licences/logs' do
+    logger.debug "GtkApi: entered GET /api/v2/admin/licences/logs"
+    headers 'Content-Type' => 'text/plain; charset=utf8', 'Location' => '/api/v2/admin/licences/logs'
+    log = settings.licence_management.get_log
+    halt 200, log
+  end
+    
+  private 
+  def query_string
+    request.env['QUERY_STRING'].nil? ? '' : '?' + request.env['QUERY_STRING'].to_s
+  end
+
+  def request_url
+    request.env['rack.url_scheme']+'://'+request.env['HTTP_HOST']+request.env['REQUEST_PATH']
+  end
 end
