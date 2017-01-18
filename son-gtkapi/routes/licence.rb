@@ -49,6 +49,7 @@ class GtkApi < Sinatra::Base
         ERROR_MESSAGE = "No licence types with #{params} were found"
         logger.debug(MESSAGE) {"leaving with message '"+ERROR_MESSAGE+"'"}
         json_error 404, ERROR_MESSAGE
+
       end
     end
 
@@ -78,6 +79,7 @@ class GtkApi < Sinatra::Base
     # GET a specific licence
     get '/licences/:uuid/?' do
       log_message = MODULE+' GET /api/v2/services/:uuid'
+
       logger.debug(log_message) {"Settings Srv. Mgmt. = #{settings.service_management.class}"}
       logger.debug(log_message) {"entered with #{params[:uuid]}"}
     
@@ -98,12 +100,12 @@ class GtkApi < Sinatra::Base
     end
   end
   
-    get '/api/v2/admin/licences/logs' do
-      logger.debug "GtkApi: entered GET /api/v2/admin/licences/logs"
-      headers 'Content-Type' => 'text/plain; charset=utf8', 'Location' => '/api/v2/admin/licences/logs'
-      log = settings.licence_management.get_log
-      halt 200, log
-    end
+  get '/api/v2/admin/licences/logs' do
+    logger.debug "GtkApi: entered GET /api/v2/admin/licences/logs"
+    headers 'Content-Type' => 'text/plain; charset=utf8', 'Location' => '/api/v2/admin/licences/logs'
+    log = settings.licence_management.get_log
+    halt 200, log
+  end
     
   private 
   def query_string

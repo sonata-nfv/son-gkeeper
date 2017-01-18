@@ -1,4 +1,3 @@
-## SONATA - Gatekeeper
 ##
 ## Copyright (c) 2015 SONATA-NFV [, ANY ADDITIONAL AFFILIATION]
 ## ALL RIGHTS RESERVED.
@@ -26,31 +25,50 @@
 ## acknowledge the contributions of their colleagues of the SONATA 
 ## partner consortium (www.sonata-nfv.eu).
 # encoding: utf-8
-require 'json'
+require './models/manager_service.rb'
 
-class NService
+class LicenceManagerService < ManagerService
   
   JSON_HEADERS = { 'Accept'=> 'application/json', 'Content-Type'=>'application/json'}
+  LOG_MESSAGE = 'GtkApi::' + self.name
   
-  def initialize(repository, logger)
-    raise ArgumentError.new('NService.initialize: repository can not be nil') if repository.nil?
-    raise ArgumentError.new('NService.initialize: logger can not be nil') if logger.nil?
-    @repository = repository
-    @logger = logger
-    @logger.debug "NService.new(repository=#{repository}, logger#{logger})"
-  end
-  
-  def find(params)
-    @logger.debug "NService.find(#{params})"
-    services = @repository.find(params)
-    @logger.debug "NService.find: #{services}"
-    services
+  def initialize(url, logger)
+    method = LOG_MESSAGE + ".new(url=#{url}, logger=#{logger})"
+    #@url = url
+    #@logger = logger
+    super
+    @logger.debug(method) {'entered'}
   end
 
-  def find_by_uuid(uuid)
-    @logger.debug "NService.find_by_uuid(#{uuid})"
-    service = @repository.find_by_uuid(uuid)
-    @logger.debug "NService.find_by_uuid: #{service}"
-    service
+  # TODO
+  def find_functions_by_uuid(uuid)
+    method = LOG_MESSAGE + ".find_functions_by_uuid(#{uuid})"
+    @logger.debug(method) {'entered'}
+    headers = JSON_HEADERS
+    headers[:params] = uuid
+    begin
+      response = getCurb(url: @url + "/functions/#{uuid}", headers: headers)
+      # Shouldn't we parse before returning?
+      #JSON.parse response.body
+    rescue => e
+      @logger.error(method) {"e=#{e.backtrace}"}
+      nil 
+    end
+  end
+  
+  def find_functions(params)
+    method = LOG_MESSAGE + ".find_functions(#{params})"
+    @logger.debug(method) {'entered'}
+    headers = JSON_HEADERS
+    headers[:params] = params unless params.empty?
+    @logger.debug(method) {"headers=#{headers}"}
+    begin
+      response = getCurb(urb: @url + '/functions', headers: headers) 
+      @logger.debug(method) {"response=#{response}"}
+      JSON.parse response.body
+    rescue => e
+      @logger.error(method) {"e=#{e.backtrace}"}
+      nil 
+    end
   end
 end

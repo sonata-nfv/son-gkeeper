@@ -25,72 +25,65 @@
 ## acknowledge the contributions of their colleagues of the SONATA 
 ## partner consortium (www.sonata-nfv.eu).
 # encoding: utf-8
-class RecordManagerService
+require './models/manager_service.rb'
+
+class RecordManagerService < ManagerService
   
   JSON_HEADERS = { 'Accept'=> 'application/json', 'Content-Type'=>'application/json'}
   LOG_MESSAGE = 'GtkApi::' + self.name
   
-  def initialize(url, logger)
-    method = LOG_MESSAGE + ".new(url=#{url}, logger=#{logger})"
-    @url = url
-    @logger = logger
-    @logger.debug(method) {'entered'}
+  def self.config(url:, logger:)
+    method = LOG_MESSAGE + "#config(url=#{url}, logger=#{logger})"
+    raise ArgumentError.new('RecordManagerService can not be configured with nil url') if url.nil?
+    raise ArgumentError.new('RecordManagerService can not be configured with empty url') if url.empty?
+    raise ArgumentError.new('RecordManagerService can not be configured with nil logger') if logger.nil?
+    @@url = url
+    @@logger = logger
+    @@logger.debug(method) {'entered'}
   end
     
-  def find_records(params)
+  def self.find_records(params)
     method = LOG_MESSAGE + ".find_records(#{params})"
-    @logger.debug(method) {'entered'}
-    headers = JSON_HEADERS
+    @@logger.debug(method) {'entered'}
     kind = params['kind']
     params.delete('kind')
-    headers[:params] = params unless params.empty?
-    @logger.debug(method) {"headers=#{headers}"}
-    begin
-      @logger.debug(method) {"getting #{kind} from #{@url}"}
-      #response = RestClient.get(@url+'/'+kind, headers) 
-      response = getCurb(@url+'/'+kind, headers) 
-      @logger.debug(method) {"response=#{response}"}
-      JSON.parse response.body
-    rescue => e
-      @logger.error(method) {"#{e.message} - #{format_error(e.backtrace)}"}
-      nil 
-    end
-  end
-  
-  def find_service_by_uuid(uuid)
-    method = LOG_MESSAGE + ".find_service_by_uuid(#{uuid})"
-    @logger.debug(method) {'entered'}
-    headers = JSON_HEADERS
-    begin
-      #response = RestClient.get(@url+'/services/'+uuid, headers) 
-      response = getCurb(@url+'/services/'+uuid, headers) 
-      @logger.debug(method) {"response=#{response}"}
-      JSON.parse response.body
-    rescue => e
-      @logger.error(method) {"#{e.message} - #{format_error(e.backtrace)}"}
-      nil 
-    end
-  end
-  
-  def get_log
-    method = LOG_MESSAGE + ".get_log()"
-    @logger.debug(method) {'entered'}
-    full_url = @url+'/admin/logs'
-    @logger.debug(method) {'url=' + full_url}
-    #RestClient.get(full_url)
-    getCurb(full_url)   
-  end
-  
-  private
-  
-  def getCurb(url, headers={})
-    Curl.get(url) do |req|
-      req.headers = headers
-    end
-  end
 
-  def format_error(backtrace)
-    first_line = backtrace[0].split(":")
-    "In "+first_line[0].split("/").last+", "+first_line.last+": "+first_line[1]
+    begin
+      @@logger.debug(method) {'getting '+kind+' from '+@@url}
+      response = getCurb(url: @@url + '/' + kind, params: params, headers: JSON_HEADERS) 
+      @@logger.debug(method) {'response=' + response.body}
+      JSON.parse response.body
+    rescue => e
+      @@logger.error(method) {"#{e.message} - #{format_error(e.backtrace)}"}
+      nil 
+    end
+  end
+  
+  def self.find_service_by_uuid(uuid)
+    method = LOG_MESSAGE + ".find_service_by_uuid(#{uuid})"
+    @@logger.debug(method) {'entered'}
+    begin
+      response = getCurb(url: @url+'/services/'+uuid, headers: JSON_HEADERS) 
+      @@logger.debug(method) {'response='+response.body}
+      JSON.parse response.body
+    rescue => e
+      @@logger.error(method) {"#{e.message} - #{format_error(e.backtrace)}"}
+      nil 
+    end
+  end
+  
+  def self.get_log
+    method = 'GtkApi::' + CLASS_NAME + ".get_log()"
+    @@logger.debug(method) {'entered'}
+
+    response=getCurb(url: @@url+'/admin/logs', headers: {'Content-Type' => 'text/plain; charset=utf8', 'Location' => '/'}, logger: @@logger)
+    @@logger.debug(method) {'status=' + response.response_code.to_s}
+    case response.response_code
+      when 200
+        response.body
+      else
+        @@logger.error(method) {'status=' + response.response_code.to_s}
+        nil
+      end
   end
 end

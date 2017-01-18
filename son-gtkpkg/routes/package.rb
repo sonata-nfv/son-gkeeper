@@ -28,9 +28,10 @@
 # encoding: utf-8
 require 'json' 
 require 'pp'
-require 'addressable/uri'
 
 class GtkPkg < Sinatra::Base
+
+  LOG_MESSAGE = 'GtkPkg::'
 
   # Receive the Java package
   #post '/uploads' do
@@ -50,7 +51,7 @@ class GtkPkg < Sinatra::Base
   #end
 
   post '/packages/?' do
-    log_message = 'GtkPkg.post /packages: '
+    log_message = LOG_MESSAGE + ' POST /packages'
     logger.info(log_message) {"params = #{params}"}
     
     package = Package.new(catalogue: settings.packages_catalogue, logger: logger, params: {io: params[:package][:tempfile][:tempfile]})
@@ -120,24 +121,29 @@ class GtkPkg < Sinatra::Base
   end
 
   get '/packages/?' do
-    uri = Addressable::URI.new
-    uri.query_values = params
-    logger.debug "GtkPkg: entered GET \"/packages/#{uri.query}\""
-    
-    #packages = Package.find(params, logger)
+    message = LOG_MESSAGE + ' GET "/packages/'+query_string+'"'
+    logger.debug(message) {"entered"}
+
     packages = settings.packages_catalogue.find(params)
-    logger.debug "GtkPkg: GET /packages: #{packages}"
+    logger.debug(message) {"packages: #{packages}"}
     if packages && packages.is_a?(Array)
-      logger.debug "GtkPkg: leaving GET /packages/#{uri.query} with \"Found #{packages.size} packages\""
-      halt 200, packages.to_json
+      logger.debug(message) {"leaving with #{packages.size} package(s) found"}
+      [200, {}, packages.to_json]
     else
-      logger.info "GtkPkg: leaving GET /packages/#{uri.query} with \"No package with params #{uri.query} was found\""
-      json_error 404, "No package with params #{uri.query} was found"
+      error_message = "No package with params #{params} was found"
+      logger.info(message) { "leaving with \"#{error_message}\""}
+      json_error 404, error_message
     end
   end
   
   get '/admin/logs/?' do
     logger.debug "GtkPkg: entered GET /admin/logs"
     File.open('log/'+ENV['RACK_ENV']+'.log', 'r').read
+  end
+  
+  private
+  
+  def query_string
+    request.env['QUERY_STRING'].nil? ? '' : '?' + request.env['QUERY_STRING'].to_s
   end
 end

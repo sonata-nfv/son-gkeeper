@@ -25,28 +25,27 @@
 ## acknowledge the contributions of their colleagues of the SONATA 
 ## partner consortium (www.sonata-nfv.eu).
 # encoding: utf-8
-class VimManagerService
+require './models/manager_service.rb'
+
+class VimManagerService < ManagerService
   
   JSON_HEADERS = { 'Accept'=> 'application/json', 'Content-Type'=>'application/json'}
   LOG_MESSAGE = 'GtkApi::' + self.name
   
   def initialize(url, logger)
     method = LOG_MESSAGE + ".new(url=#{url}, logger=#{logger})"
-    @url = url
-    @logger = logger
+    #@url = url
+    #@logger = logger
+    super
     @logger.debug(method) {'entered'}
   end
     
   def find_vims(params)
     method = LOG_MESSAGE + ".find_vims(#{params})"
-    @logger.debug(method) {"entered"}
-    
-    headers = JSON_HEADERS
-    headers[:params] = params unless params.empty?
+    @logger.debug(method) {'entered'}    
     begin
-      #response = RestClient.get( @url+"/vim", headers)
-      response = getCurb(@url+'/vim', headers) 
-      @logger.debug(method) {"response=#{response}"}
+      response = getCurb(url:url, headers:JSON_HEADERS) 
+      @logger.debug(method) {'response='+response.body}
       JSON.parse response.body
     rescue => e
       @logger.error(method) {"e=#{format_error(e.backtrace)}"}
@@ -75,44 +74,12 @@ class VimManagerService
   def find_vim_request_by_uuid(uuid)
     method = LOG_MESSAGE + ".find_vim_request_by_uuid(#{uuid})"
     @logger.debug(method) {'entered'}
-    headers = JSON_HEADERS
-    headers[:params] = uuid
     begin
-      #response = RestClient.get( @url+"/vim_request/#{uuid}", headers)
-      response = getCurb(@url+'/vim_request/'+uuid, headers) 
+      response = getCurb(url:@url+'/vim_request/'+uuid, headers: JSON_HEADERS) 
       JSON.parse response.body
     rescue => e
       @logger.error(method) {"#{e.message} - #{format_error(e.backtrace)}"}
       nil 
     end
-  end
-  
-  def get_log
-    method = LOG_MESSAGE + ".get_log()"
-    @logger.debug(method) {'entered'}
-    full_url = @url+'/admin/logs'
-    @logger.debug(method) {'url=' + full_url}
-    #RestClient.get(full_url)
-    getCurb(full_url)
-  end
-  
-  private
-  
-  def getCurb(url, headers={})
-    Curl.get(url) do |req|
-      req.headers = headers
-    end
-  end
-  
-  def postCurb(url, body)
-    Curl.post(url, body) do |req|
-      req.headers['Content-type'] = 'application/json'
-      req.headers['Accept'] = 'application/json'
-    end
-  end
-  
-  def format_error(backtrace)
-    first_line = backtrace[0].split(":")
-    "In "+first_line[0].split("/").last+", "+first_line.last+": "+first_line[1]
   end
 end
