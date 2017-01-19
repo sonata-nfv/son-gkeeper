@@ -15,4 +15,5 @@ ENV SERVICE_MANAGEMENT_URL http://son-gtksrv:5300
 ENV FUNCTION_MANAGEMENT_URL http://son-gtkfnct:5500
 ENV VIM_MANAGEMENT_URL http://son-gtkvim:5700
 ENV RECORD_MANAGEMENT_URL http://son-gtkrec:5800
+ENV LICENCE_MANAGEMENT_URL http://son-gtkrec:5900
 CMD ["foreman", "start"]
