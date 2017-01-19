@@ -83,7 +83,7 @@ class GtkApi < Sinatra::Base
   ServiceManagerService.config(url: settings.srvmgmt, logger: logger)
   FunctionManagerService.config(url: settings.fnctmgmt, logger: logger)
   RecordManagerService.config(url: settings.recmgmt, logger: logger)
-  set :licence_management, LicenceManagerService.new(settings.licmgmt, logger)
+  LicenceManagerService.config(url: settings.licmgmt, logger: logger)
   set :vim_management, VimManagerService.new(settings.vimmgmt, logger)
   
   Zip.setup do |c|

@@ -114,7 +114,7 @@ class ServiceManagerService < ManagerService
     begin
       @@logger.debug(method) {"@url = "+@@url}
       #response = RestClient.post(@url+'/requests', params.to_json, content_type: :json, accept: :json) 
-      response = self.postCurb(@@url+'/requests', params.to_json) ## TODO: check if this tests ok!! 
+      response = self.postCurb(url: @@url+'/requests', body: params.to_json) ## TODO: check if this tests ok!! 
       @@logger.debug(method) {"response="+response}
       parsed_response = JSON.parse(response)
       @@logger.debug(method) {"parsed_response=#{parsed_response}"}
@@ -132,7 +132,7 @@ class ServiceManagerService < ManagerService
     begin
       @@logger.debug(message) {"@url = "+@@url}
       #response = RestClient.put(@url+'/services/'+nsr_uuid, nsd.to_json, content_type: :json, accept: :json) 
-      response = self.postCurb(@@url+'/services/'+nsr_uuid, nsd.to_json) 
+      response = self.postCurb(url: @@url+'/services/'+nsr_uuid, body: nsd.to_json) 
       @@logger.debug(message) {"response="+response}
       parsed_response = JSON.parse(response)
       @@logger.debug(message) {"parsed_response=#{parsed_response}"}
