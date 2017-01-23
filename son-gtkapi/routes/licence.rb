@@ -59,12 +59,11 @@ class GtkApi < Sinatra::Base
       MESSAGE = 'GtkApi::GET /api/v2/licences/?'
     
       logger.debug(MESSAGE) {"entered with "+query_string}
-      logger.debug(MESSAGE) {"Settings Srv. Mgmt. = #{settings.service_management.class}"}
     
       @offset ||= params['offset'] ||= DEFAULT_OFFSET 
       @limit ||= params['limit'] ||= DEFAULT_LIMIT
     
-      licences = LicenceManagerService.find_services(params)
+      licences = LicenceManagerService.find_licences(params)
       if licences
         logger.debug(MESSAGE) {"leaving with #{licences}"}
         links = build_pagination_headers(url: request_url, limit: @limit.to_i, offset: @offset.to_i, total: licences.size)
@@ -79,12 +78,10 @@ class GtkApi < Sinatra::Base
     # GET a specific licence
     get '/licences/:uuid/?' do
       log_message = MODULE+' GET /api/v2/services/:uuid'
-
-      logger.debug(log_message) {"Settings Srv. Mgmt. = #{settings.service_management.class}"}
       logger.debug(log_message) {"entered with #{params[:uuid]}"}
     
       if valid?(params[:uuid])
-        service = LicenceManagerService.find_service_by_uuid(params[:uuid])
+        service = LicenceManagerService.find_licence_by_uuid(params[:uuid])
         if service
           logger.debug(log_message) {"leaving with #{service}"}
           halt 200, service.to_json

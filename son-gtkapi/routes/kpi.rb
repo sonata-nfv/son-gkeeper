@@ -58,6 +58,7 @@ class GtkApi < Sinatra::Base
       logger.debug(MESSAGE) { "leaving with 'No request id specified'"}
       json_error 400, 'No params specified for the create request'
     end
+  end
   
   private 
   def query_string

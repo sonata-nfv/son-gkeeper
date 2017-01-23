@@ -56,7 +56,7 @@ class LicenceManagerService < ManagerService
   end
   
   # TODO
-  def self.find_functions_by_uuid(uuid)
+  def self.find_licence_by_uuid(uuid)
     method = LOG_MESSAGE + "#find_functions_by_uuid(#{uuid})"
     @@logger.debug(method) {'entered'}
     headers = JSON_HEADERS
@@ -78,7 +78,7 @@ class LicenceManagerService < ManagerService
     headers[:params] = params unless params.empty?
     @@logger.debug(method) {"headers=#{headers}"}
     begin
-      response = getCurb(urb: @@url + '/api/v1/type', headers: headers) 
+      response = getCurb(urb: @@url + '/api/v1/types', headers: headers) 
       @@logger.debug(method) {"response=#{response}"}
       JSON.parse response.body
     rescue => e
@@ -87,6 +87,22 @@ class LicenceManagerService < ManagerService
     end
   end
   
+  def self.find_licences(params)
+    method = LOG_MESSAGE + "#find_licences(#{params})"
+    @@logger.debug(method) {'entered'}
+    headers = JSON_HEADERS
+    headers[:params] = params unless params.empty?
+    @@logger.debug(method) {"headers=#{headers}"}
+    begin
+      response = getCurb(urb: @@url + '/api/v1/licences', headers: headers) 
+      @@logger.debug(method) {"response=#{response}"}
+      JSON.parse response.body
+    rescue => e
+      @@logger.error(method) {"e=#{e.backtrace}"}
+      nil 
+    end
+  end
+
   def self.get_log
     method = LOG_MESSAGE + "#get_log()"
     @@logger.debug(method) {'entered'}
