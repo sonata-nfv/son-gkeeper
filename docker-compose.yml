@@ -12,6 +12,7 @@ services:
      - FUNCTION_MANAGEMENT_URL=http://son-gtkfnct:5500 # 5600?
      - VIM_MANAGEMENT_URL=http://son-gtkvim:5700
      - RECORD_MANAGEMENT_URL=http://son-gtkrec:5800
+     - KPI_MANAGEMENT_URL=http://son-gtkkpi:5400
     ports:
       - "32001:5000"
     restart: always
@@ -127,6 +128,23 @@ services:
       driver: gelf
       options:
         gelf-address: "udp://logs.sonata-nfv.eu:12900"
+
+  son-gtkkpi:
+    image: registry.sonata-nfv.eu:5000/son-gtkkpi    
+    ports:
+      - "5400"
+    restart: always
+    environment:
+     - PUSHGATEWAY_HOST=prometheus
+     - PUSHGATEWAY_PORT=9091     
+    depends_on:
+     - prometheus
+    extra_hosts:
+      - "jenkins.sonata-nfv.eu:192.168.60.5"
+    logging:
+      driver: gelf
+      options:
+        gelf-address: "udp://logs.sonata-nfv.eu:12900"        
 
   postgres:
     image: ntboes/postgres-uuid
