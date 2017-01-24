@@ -33,22 +33,22 @@ class GtkApi < Sinatra::Base
     
     # GET licence types
     get '/licence-types/?' do
-      MESSAGE = 'GtkApi::GET /api/v2/licence-types/?'
+      log_message = 'GtkApi::GET /api/v2/licence-types/?'
       
-      logger.debug(MESSAGE) {"entered with #{query_string}"}
+      logger.debug(log_message) {"entered with #{query_string}"}
       
       @offset ||= params['offset'] ||= DEFAULT_OFFSET 
       @limit ||= params['limit'] ||= DEFAULT_LIMIT
     
       licence_types = LicenceManagerService.find_licence_types(params)
       if licence_types
-        logger.debug(MESSAGE) {"leaving with #{licence_types}"}
+        logger.debug(log_message) {"leaving with #{licence_types}"}
         links = build_pagination_headers(url: request_url, limit: @limit.to_i, offset: @offset.to_i, total: licence_types.size)
         [200, {'Link' => links}, licence_types.to_json]
       else
-        ERROR_MESSAGE = "No licence types with #{params} were found"
-        logger.debug(MESSAGE) {"leaving with message '"+ERROR_MESSAGE+"'"}
-        json_error 404, ERROR_MESSAGE
+        error_message = "No licence types with #{params} were found"
+        logger.debug(log_message) {"leaving with message '"+error_message+"'"}
+        json_error 404, error_message
 
       end
     end
@@ -56,22 +56,22 @@ class GtkApi < Sinatra::Base
     # GET many licences
     get '/licences/?' do
       # TODO
-      MESSAGE = 'GtkApi::GET /api/v2/licences/?'
+      log_message = 'GtkApi::GET /api/v2/licences/?'
     
-      logger.debug(MESSAGE) {"entered with "+query_string}
+      logger.debug(log_message) {"entered with "+query_string}
     
       @offset ||= params['offset'] ||= DEFAULT_OFFSET 
       @limit ||= params['limit'] ||= DEFAULT_LIMIT
     
       licences = LicenceManagerService.find_licences(params)
       if licences
-        logger.debug(MESSAGE) {"leaving with #{licences}"}
+        logger.debug(log_message) {"leaving with #{licences}"}
         links = build_pagination_headers(url: request_url, limit: @limit.to_i, offset: @offset.to_i, total: licences.size)
         [200, {'Link' => links}, licences.to_json]
       else
-        ERROR_MESSAGE = "No services with #{params} were found"
-        logger.debug(MESSAGE) {"leaving with message '"+ERROR_MESSAGE+"'"}
-        json_error 404, ERROR_MESSAGE
+        error_message = "No licences with #{params} were found"
+        logger.debug(log_message) {"leaving with message '"+error_message+"'"}
+        json_error 404, error_message
       end
     end
   

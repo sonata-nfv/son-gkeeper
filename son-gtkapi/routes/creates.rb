@@ -30,11 +30,10 @@ class GtkApi < Sinatra::Base
 
   register Sinatra::Namespace
   helpers GtkApiHelper
-  
-  MESSAGE = 'GtkApi::POST /api/v2'
-  
+    
+  namespace '/api/v2/' do
     post '/api/v2/licence-types/?' do
-      log_message = MESSAGE + '/licence-types/?'
+      log_message = 'GtkApi::POST /licence-types/?'
       params = JSON.parse(request.body.read)
       logger.info(log_message) {"entered with params=#{params}"}
       raise ArgumentError.new('Licence type has to have a description') unless params && params['description']
@@ -55,9 +54,8 @@ class GtkApi < Sinatra::Base
       end
     end
     
-    namespace '/api/v2/' do
     post '/licences/?' do
-      log_message = MESSAGE + '/licences/?'
+      log_message = 'GtkApi::POST /licences/?'
       logger.info(log_message) {"entered with params=#{params}"}
     end
   end
