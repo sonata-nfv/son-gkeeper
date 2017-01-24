@@ -40,8 +40,7 @@ class ManagerService
   
   def self.getCurb(url:, params: {}, headers: {}, logger: nil)
     log_message=LOG_MESSAGE+'#getCurb'
-    logger.debug(log_message) {"entered with url=#{url}, params=#{params}, headers=#{headers}"}
-    logger.debug(log_message) {"logger=#{logger.inspect}"} if logger
+    logger.debug(log_message) {"entered with url=#{url}, params=#{params}, headers=#{headers}, logger=#{logger.inspect}"} if logger
     res=Curl.get(params.empty? ? url : url + '?' + Curl::postalize(params)) do |req|
       headers.each do |h|
         logger.debug(log_message) {"header['" + h[0] + "]: '" + h[1] + "'"} if logger

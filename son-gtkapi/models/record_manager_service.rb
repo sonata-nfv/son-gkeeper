@@ -50,7 +50,7 @@ class RecordManagerService < ManagerService
 
     begin
       @@logger.debug(method) {'getting '+kind+' from '+@@url}
-      response = getCurb(url: @@url + '/' + kind, params: params, headers: JSON_HEADERS) 
+      response = getCurb(url: @@url + '/' + kind, params: params, headers: JSON_HEADERS, logger: @@logger) 
       @@logger.debug(method) {'response=' + response.body}
       JSON.parse response.body
     rescue => e
@@ -64,7 +64,7 @@ class RecordManagerService < ManagerService
     method = LOG_MESSAGE + ".find_service_by_uuid(#{uuid})"
     @@logger.debug(method) {'entered'}
     begin
-      response = getCurb(url: @url+'/services/'+uuid, headers: JSON_HEADERS) 
+      response = getCurb(url: @url+'/services/'+uuid, headers: JSON_HEADERS, logger: @@logger) 
       @@logger.debug(method) {'response='+response.body}
       JSON.parse response.body
     rescue => e
