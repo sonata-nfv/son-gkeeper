@@ -39,21 +39,27 @@ class ManagerService
   end
   
   def self.getCurb(url:, params: {}, headers: {}, logger: nil)
+    log_message=LOG_MESSAGE+'#getCurb'
+    logger.debug() {"entered with url=#{url}, params=#{params}, headers=#{headers}, logger=#{logger.inspect}"} if logger
     res=Curl.get(params.empty? ? url : url + '?' + Curl::postalize(params)) do |req|
       headers.each do |h|
-        logger.debug(LOG_MESSAGE) {"header['" + h[0] + "]: '" + h[1] + "'"} if logger
+        logger.debug(log_message) {"header['" + h[0] + "]: '" + h[1] + "'"} if logger
         req.headers[h[0]] = h[1]
       end
     end
-    logger.debug(LOG_MESSAGE) {'header_str='+res.header_str} if logger
+    logger.debug(log_message) {'header_str='+res.header_str} if logger
     res
   end
   
-  def self.postCurb(url, body)
-    Curl.post(url, body) do |req|
+  def self.postCurb(url:, body:, logger: nil)
+    log_message=LOG_MESSAGE+'#postCurb'
+    logger.debug(log_message) {"entered with url=#{url}, body=#{body}, logger=#{logger.inspect}"} if logger
+    res=Curl.post(url, body) do |req|
       req.headers['Content-type'] = 'application/json'
       req.headers['Accept'] = 'application/json'
     end
+    logger.debug(log_message) {"response=#{res.body}"} if logger
+    res.body
   end
   
   def self.format_error(backtrace)

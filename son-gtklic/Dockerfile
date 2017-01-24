@@ -18,14 +18,14 @@ RUN pip install -r /tmp/requirements.txt
 ADD . /code
 WORKDIR /code
 
-ENV POSTGRES_PASSWORD sonata
-ENV POSTGRES_USER sonata
-ENV POSTGRES_DB licensemanager
+ENV POSTGRES_PASSWORD sonatatest
+ENV POSTGRES_USER postgres
+ENV POSTGRES_DB gatekeeper
 ENV DATABASE_HOST postgres
 ENV DATABASE_PORT 5432
 ENV PORT 5000
 
-EXPOSE $PORT
+EXPOSE 6000
 
 # Run Server
 CMD ["python", "manage.py", "runserver", "--host", "0.0.0.0"]

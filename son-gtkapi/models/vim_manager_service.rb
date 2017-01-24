@@ -60,7 +60,7 @@ class VimManagerService < ManagerService
     begin
       @logger.debug(method) {"@url = "+@url}
       #response = RestClient.post(@url+'/vim', params.to_json, content_type: :json, accept: :json) 
-      response = postCurb(@url+'/vim', params.to_json) 
+      response = postCurb(url: @url+'/vim', body: params.to_json) 
       @logger.debug(method) {"response="+response}
       parsed_response = JSON.parse(response)
       @logger.debug(method) {"parsed_response=#{parsed_response}"}
