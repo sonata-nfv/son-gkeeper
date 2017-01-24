@@ -2,7 +2,40 @@ require 'json'
 require 'sinatra'
 require_relative '../helpers/init'
 
+class Keycloak < Sinatra::Application
+
+  post '/register' do
+    registration
+  end
+
+  post '/login' do
+    username = params[:username]
+    password = params[:password]
+
+    credentials = {"type" => "password", "value" => password.to_s}
+    login(username, credentials)
+  end
+
+  post '/auth' do
+    # TODO: implement authentication API
+  end
+
+  post '/authorize' do
+    authorize
+  end
+
+  post '/userinfo' do
+    # TODO: implement userinfo API
+  end
+
+  post '/logout' do
+    logout
+  end
+end
+
 class SecuredAPI < Sinatra::Application
+  # This is a sample of a secured API
+
   get '/services' do
     # content_type :json
     # {message: "Hello, User!"}.to_json
@@ -57,6 +90,7 @@ class SecuredAPI < Sinatra::Application
 end
 
 class PublicAPI < Sinatra::Application
+  # This is a sample of a public API
 
   post '/login' do
     username = params[:username]
@@ -68,28 +102,5 @@ class PublicAPI < Sinatra::Application
     else
       halt 401
     end
-  end
-end
-
-class Keycloak < Sinatra::Application
-
-  post '/register' do
-    registration
-  end
-
-  post '/login' do
-    username = params[:username]
-    password = params[:password]
-
-    credentials = {"type" => "password", "value" => password.to_s}
-    login(username, credentials)
-  end
-
-  post '/auth' do
-    authorize
-  end
-
-  post '/logout' do
-    logout
   end
 end

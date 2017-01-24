@@ -20,7 +20,29 @@ configure do
   log_file = File.new("#{settings.root}/log/#{settings.environment}.log", 'a+')
   log_file.sync = true
   use Rack::CommonLogger, log_file
+
+  # turn keycloak realm pub key into an actual openssl compat pub key.
+  #keycloak_config = JSON.parse(File.read('keycloak.json'))
+  #@s = "-----BEGIN PUBLIC KEY-----\n"
+  #@s += keycloak_config['realm-public-key'].scan(/.{1,64}/).join("\n")
+  #@s += "\n-----END PUBLIC KEY-----\n"
+  #@key = OpenSSL::PKey::RSA.new @s
+  #set :keycloak_pub_key, @key
+  #set :keycloak_client_id, keycloak_config['resource']
+  #set :keycloak_url, keycloak_config['auth-server-url'] + '/' + keycloak_config['realm'] + '/'
+
+  # configure clever client. the clever-ruby gem uses a global to handle interactions.
+  # Clever.configure do |config|
+  #   config.token = 'DEMO_TOKEN'
+  # end
+  # Print token settings
+  # puts "settings.keycloak_pub_key: ", settings.keycloak_pub_key
+
+  # set up the rest of sinatra config stuffz
+  set :server, :puma
+  set :environment, :production
 end
+
 
 before do
   logger.level = Logger::DEBUG
@@ -33,6 +55,23 @@ class Adapter < Sinatra::Application
   config_file 'config/config.yml'
 end
 
+configure do
+  # turn keycloak realm pub key into an actual openssl compat pub key.
+  keycloak_config = JSON.parse(File.read('config/keycloak.json'))
+  @s = "-----BEGIN PUBLIC KEY-----\n"
+  @s += keycloak_config['realm-public-key'].scan(/.{1,64}/).join("\n")
+  @s += "\n-----END PUBLIC KEY-----\n"
+  @key = OpenSSL::PKey::RSA.new @s
+  set :keycloak_pub_key, @key
+  set :keycloak_client_id, keycloak_config['resource']
+  set :keycloak_url, keycloak_config['auth-server-url'] + '/' + keycloak_config['realm'] + '/'
+
+  # Print token settings
+  puts "settings.keycloak_pub_key: ", settings.keycloak_pub_key
+
+  set :server, :puma
+  set :environment, :production
+end
 
 class SecuredAPI < Sinatra::Application
   use JwtAuth
@@ -40,7 +79,7 @@ class SecuredAPI < Sinatra::Application
   def initialize
     super
 
-    # Read users-rights form a datasource
+    # Read users-rights from a datasource
     @accounts = {
         user1: [{'Service' => 'FW'}],
         user2: [{'Service' => 'FW'}, {'Service' => 'LB'}],
@@ -48,7 +87,7 @@ class SecuredAPI < Sinatra::Application
     }
   end
 
-  def process_request req, scope
+  def process_request (req, scope)
     scopes, user = req.env.values_at :scopes, :user
     username = user['username'].to_sym
 

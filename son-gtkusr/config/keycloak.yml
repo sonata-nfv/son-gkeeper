@@ -4,4 +4,4 @@ address: 127.0.0.1
 port: 8081
 uri: auth
 realm: adapter
-token: df7e816d-0337-4fbe-a3f4-7b5263eaba9f
+secret: df7e816d-0337-4fbe-a3f4-7b5263eaba9f
