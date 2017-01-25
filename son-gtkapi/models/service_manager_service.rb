@@ -54,11 +54,15 @@ class ServiceManagerService < ManagerService
     begin
       response = self.getCurb(url: @@url+"/services/#{uuid}", headers: JSON_HEADERS, logger: @@logger)
       @@logger.debug(method) {"Leaving with response.body=#{response.body}"}
-      JSON.parse response.body
+      if response.body.empty?
+        nil
+      else
+        JSON.parse response.body
+      end
     rescue => e
       @@logger.error(method) {"Error during processing: #{$!}"}
       @@logger.error(method) {"Backtrace:\n\t#{e.backtrace.join("\n\t")}"}
-      nil 
+      nil
     end
   end
   

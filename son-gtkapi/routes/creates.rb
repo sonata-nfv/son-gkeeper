@@ -31,12 +31,13 @@ class GtkApi < Sinatra::Base
   register Sinatra::Namespace
   helpers GtkApiHelper
     
-  namespace '/api/v2/' do
-    post '/api/v2/licence-types/?' do
+  namespace '/api/v2' do
+    post '/licence-types/?' do
       log_message = 'GtkApi::POST /licence-types/?'
       params = JSON.parse(request.body.read)
       logger.info(log_message) {"entered with params=#{params}"}
       raise ArgumentError.new('Licence type has to have a description') unless params && params['description']
+      raise ArgumentError.new('Licence type has to have a duration') unless params && params['duration']
     
       # description, duration, status
       licence_type = LicenceManagerService.create_type(params)
@@ -56,7 +57,35 @@ class GtkApi < Sinatra::Base
     
     post '/licences/?' do
       log_message = 'GtkApi::POST /licences/?'
-      logger.info(log_message) {"entered with params=#{params}"}
+      body = request.body.read
+      raise ArgumentError.new('Licences have to have parameters') if (body && body.empty?)
+      logger.debug(log_message) {"body=#{body}"}
+      # 'type_uuid', String *
+      # 'service_uuid', String *
+      # 'user_uuid', String *
+      # 'license_uuid', String *
+      # 'description', String
+      # 'startingDate', DateTime
+      # 'expiringDate', DateTime * 
+      # 'status', String
+      
+      params = JSON.parse(body)
+      logger.debug(log_message) {"entered with params=#{params}"}
+    
+      # description, duration, status
+      licence = LicenceManagerService.create_licence(params)
+      logger.debug(log_message) {"licence=#{licence.inspect}"}
+      if licence
+        if licence.is_a?(Hash) && (licence[:uuid] || licence['uuid'])
+          logger.info(log_message) {"leaving with licence: #{licence}"}
+          headers 'Location'=> LicenceManagerService.url+"/licences/#{licence[:uuid]}", 'Content-Type'=> 'application/json'
+          halt 201, licence.to_json
+        else
+          json_error 400, 'No UUID given to licence'
+        end
+      else
+        json_error 400, 'Licence not created'
+      end
     end
   end
 end

@@ -75,22 +75,44 @@ class GtkApi < Sinatra::Base
       end
     end
   
-    # GET a specific licence
-    get '/licences/:uuid/?' do
-      log_message = MODULE+' GET /api/v2/services/:uuid'
+    # GET a specific licence type
+    get '/licence-types/:uuid/?' do
+      log_message = MODULE+' GET /api/v2/licence-types/:uuid'
       logger.debug(log_message) {"entered with #{params[:uuid]}"}
     
       if valid?(params[:uuid])
-        service = LicenceManagerService.find_licence_by_uuid(params[:uuid])
-        if service
-          logger.debug(log_message) {"leaving with #{service}"}
-          halt 200, service.to_json
+        licence_type = LicenceManagerService.find_licence_type_by_uuid(params[:uuid])
+        if licence_type
+          logger.debug(log_message) {"leaving with #{licence_type}"}
+          halt 200, licence_type.to_json
         else
-          logger.debug(log_message) {"leaving with message 'Service #{params[:uuid]} not found'"}
-          json_error 404, "Service #{params[:uuid]} not found"
+          logger.debug(log_message) {"leaving with message 'Licence type #{params[:uuid]} not found'"}
+          json_error 404, "Licence type #{params[:uuid]} not found"
         end
       else
-        message = "Service #{params[:uuid]} not valid"
+        message = "Licence type #{params[:uuid]} not valid"
+        logger.debug(log_message) {"leaving with message '"+message+"'"}
+        json_error 404, message
+      end
+    end
+
+
+    # GET a specific licence
+    get '/licences/:uuid/?' do
+      log_message = MODULE+' GET /api/v2/licences/:uuid'
+      logger.debug(log_message) {"entered with #{params[:uuid]}"}
+    
+      if valid?(params[:uuid])
+        licence = LicenceManagerService.find_licence_by_uuid(params[:uuid])
+        if licence
+          logger.debug(log_message) {"leaving with #{licence}"}
+          halt 200, licence.to_json
+        else
+          logger.debug(log_message) {"leaving with message 'Licence #{params[:uuid]} not found'"}
+          json_error 404, "Licence #{params[:uuid]} not found"
+        end
+      else
+        message = "Licence #{params[:uuid]} not valid"
         logger.debug(log_message) {"leaving with message '"+message+"'"}
         json_error 404, message
       end
