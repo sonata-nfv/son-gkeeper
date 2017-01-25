@@ -39,11 +39,11 @@ class ManagerService
   end
   
   def self.getCurb(url:, params: {}, headers: {}, logger: nil)
-    log_message=LOG_MESSAGE+'#getCurb'
-    logger.debug() {"entered with url=#{url}, params=#{params}, headers=#{headers}, logger=#{logger.inspect}"} if logger
+    log_message=LOG_MESSAGE+"##{__method__}"
+    logger.debug(log_message) {"entered with url=#{url}, params=#{params}, headers=#{headers}, logger=#{logger.inspect}"} if logger
     res=Curl.get(params.empty? ? url : url + '?' + Curl::postalize(params)) do |req|
       headers.each do |h|
-        logger.debug(log_message) {"header['" + h[0] + "]: '" + h[1] + "'"} if logger
+        logger.debug(log_message) {"header[#{h[0]}]: #{h[1]}"} if logger
         req.headers[h[0]] = h[1]
       end
     end
@@ -52,7 +52,7 @@ class ManagerService
   end
   
   def self.postCurb(url:, body:, logger: nil)
-    log_message=LOG_MESSAGE+'#postCurb'
+    log_message=LOG_MESSAGE+"##{__method__}"
     logger.debug(log_message) {"entered with url=#{url}, body=#{body}, logger=#{logger.inspect}"} if logger
     res=Curl.post(url, body) do |req|
       req.headers['Content-type'] = 'application/json'

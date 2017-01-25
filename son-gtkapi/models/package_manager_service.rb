@@ -58,7 +58,8 @@ class PackageManagerService < ManagerService
       @@logger.debug(method) {"response=#{response}"}
       JSON.parse response
     rescue  => e #RestClient::Conflict
-      @@logger.debug(method) {e.response}
+      @@logger.error(method) {"Error during processing: #{$!}"}
+      @@logger.error(method) {"Backtrace:\n\t#{e.backtrace.join("\n\t")}"}
       {error: 'Package is duplicated', package: e.response}
     end    
   end    
@@ -83,6 +84,8 @@ class PackageManagerService < ManagerService
       end
       filename
     rescue => e
+      @@logger.error(method) {"Error during processing: #{$!}"}
+      @@logger.error(method) {"Backtrace:\n\t#{e.backtrace.join("\n\t")}"}
       e.to_json
     end
   end
@@ -97,7 +100,8 @@ class PackageManagerService < ManagerService
       @@logger.debug(method) {"response #{response}"}
       response
     rescue => e
-      @@logger.debug(method) {e.response}
+      @@logger.error(method) {"Error during processing: #{$!}"}
+      @@logger.error(method) {"Backtrace:\n\t#{e.backtrace.join("\n\t")}"}
       nil
     end
   end
@@ -112,7 +116,8 @@ class PackageManagerService < ManagerService
       when 200
         response.body
       else
-        @@logger.error(method) {'status=' + response.response_code.to_s}
+        @@logger.error(method) {"Error during processing: #{$!}"}
+        @@logger.error(method) {"Backtrace:\n\t#{e.backtrace.join("\n\t")}"}
         nil
       end
   end

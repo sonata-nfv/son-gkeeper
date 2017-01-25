@@ -59,7 +59,6 @@ class GtkApi < Sinatra::Base
     # GET a specific service
     get '/:uuid/?' do
       log_message = MODULE+' GET /api/v2/services/:uuid'
-      logger.debug(log_message) {"Settings Srv. Mgmt. = #{ServiceManagerService.name}"}
       logger.debug(log_message) {"entered with #{params[:uuid]}"}
     
       if valid?(params[:uuid])

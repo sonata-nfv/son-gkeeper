@@ -53,7 +53,8 @@ class KpiManagerService < ManagerService
       @logger.debug(method) {"parsed_response=#{parsed_response}"}
       parsed_response
     rescue => e
-      @logger.error(method) {"#{e.message} - #{format_error(e.backtrace)}"}
+      @@logger.error(method) {"Error during processing: #{$!}"}
+      @@logger.error(method) {"Backtrace:\n\t#{e.backtrace.join("\n\t")}"}
       nil 
     end      
   end

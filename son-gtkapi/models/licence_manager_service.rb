@@ -31,6 +31,8 @@ class LicenceManagerService < ManagerService
   
   JSON_HEADERS = { 'Accept'=> 'application/json', 'Content-Type'=>'application/json'}
   LOG_MESSAGE = 'GtkApi::' + self.name
+  LICENCE_TYPES_URL = '/api/v1/types/'
+  LICENCES_URL = '/api/v1/licences/'
   
   def self.config(url:, logger:)
     method = LOG_MESSAGE + "#config(url=#{url}, logger=#{logger})"
@@ -43,30 +45,61 @@ class LicenceManagerService < ManagerService
   end
 
   def self.create_type(params)
-    method = LOG_MESSAGE + "#create_type(params=#{params})"
+    method = LOG_MESSAGE + "#" + __method__+"(params=#{params})"
     @@logger.debug(method) {'entered'}
     begin
-      licence_type = postCurb(url: @@url+'/api/v1/types', body: params, logger: @@logger)
+      licence_type = postCurb(url: @@url+LICENCE_TYPES_URL, body: params, logger: @@logger)
       @@logger.debug(method) {"licence_type=#{licence_type.body}"}
       JSON.parse licence_type.body
     rescue  => e #RestClient::Conflict
-      @@logger.debug(method) {e.backtrace}
+      @@logger.error(method) {"Error during processing: #{$!}"}
+      @@logger.error(method) {"Backtrace:\n\t#{e.backtrace.join("\n\t")}"}
       {error: 'Licence type not created', licence_type: e.backtrace}
     end
   end
   
-  # TODO
-  def self.find_licence_by_uuid(uuid)
-    method = LOG_MESSAGE + "#find_functions_by_uuid(#{uuid})"
+  def self.create_licence(params)
+    method = LOG_MESSAGE + "#" + __method__+"(params=#{params})"
+    @@logger.debug(method) {'entered'}
+    begin
+      licence = postCurb(url: @@url+LICENCES_URL, body: params, logger: @@logger)
+      @@logger.debug(method) {"licence=#{licence.body}"}
+      JSON.parse licence.body
+    rescue  => e #RestClient::Conflict
+      @@logger.error(method) {"Error during processing: #{$!}"}
+      @@logger.error(method) {"Backtrace:\n\t#{e.backtrace.join("\n\t")}"}
+      {error: 'Licence type not created', licence: e.backtrace}
+    end
+  end
+
+  def self.find_licence_type_by_uuid(uuid)
+    method = LOG_MESSAGE + "##{__method__}(#{uuid})"
     @@logger.debug(method) {'entered'}
     headers = JSON_HEADERS
-    headers[:params] = uuid
+    #headers[:params] = uuid
     begin
-      response = getCurb(url: @@url + "/functions/#{uuid}", headers: headers)
-      # Shouldn't we parse before returning?
-      #JSON.parse response.body
+      response = getCurb(url: @@url + LICENCE_TYPES_URL + uuid + '/', headers: headers, logger: @@logger)
+      parsed_response = JSON.parse response.body
+      #{"status_code:": 200, "data": {"duration": 10, "status": "ACTIVE", "type": "Private", "type_uuid": "9e0dffc3-707e-41b6-81d1-79196cfe88a9"}, "description": "Type successfully retrieved", "error": ""}
+      parsed_response['data']
     rescue => e
-      @@logger.error(method) {"e=#{e.backtrace}"}
+      @@logger.error(method) {"Error during processing: #{$!}"}
+      @@logger.error(method) {"Backtrace:\n\t#{e.backtrace.join("\n\t")}"}
+      nil 
+    end
+  end
+
+  def self.find_licence_by_uuid(uuid)
+    method = LOG_MESSAGE + "##{__method__}(#{uuid})"
+    @@logger.debug(method) {'entered'}
+    headers = JSON_HEADERS
+    #headers[:params] = uuid
+    begin
+      response = getCurb(url: @@url + LICENCES_URL + uuid + '/', headers: headers, logger: @@logger)
+      JSON.parse response.body
+    rescue => e
+      @@logger.error(method) {"Error during processing: #{$!}"}
+      @@logger.error(method) {"Backtrace:\n\t#{e.backtrace.join("\n\t")}"}
       nil 
     end
   end
@@ -78,11 +111,14 @@ class LicenceManagerService < ManagerService
     headers[:params] = params unless params.empty?
     @@logger.debug(method) {"headers=#{headers}"}
     begin
-      response = getCurb(urb: @@url + '/api/v1/types', headers: headers) 
+      response = getCurb(url: @@url + LICENCE_TYPES_URL, headers: headers, logger: @@logger) 
       @@logger.debug(method) {"response=#{response}"}
-      JSON.parse response.body
+      parsed_response = JSON.parse response.body
+      #{"status_code:"=>200, "data"=>{"types"=>[{"duration"=>1000, "status"=>"ACTIVE", "type"=>"Public", "type_uuid"=>"21cf0db6-f96b-4659-a463-05d5c3413141"}, {"duration"=>10, "status"=>"ACTIVE", "type"=>"Private", "type_uuid"=>"9e0dffc3-707e-41b6-81d1-79196cfe88a9"}]}, "description"=>"Types list successfully retrieved", "error"=>""}
+      parsed_response['data']['types']
     rescue => e
-      @@logger.error(method) {"e=#{e.backtrace}"}
+      @@logger.error(method) {"Error during processing: #{$!}"}
+      @@logger.error(method) {"Backtrace:\n\t#{e.backtrace.join("\n\t")}"}
       nil 
     end
   end
@@ -94,11 +130,12 @@ class LicenceManagerService < ManagerService
     headers[:params] = params unless params.empty?
     @@logger.debug(method) {"headers=#{headers}"}
     begin
-      response = getCurb(urb: @@url + '/api/v1/licences', headers: headers) 
+      response = getCurb(url: @@url + LICENCES_URL, headers: headers, logger: @@logger) 
       @@logger.debug(method) {"response=#{response}"}
       JSON.parse response.body
     rescue => e
-      @@logger.error(method) {"e=#{e.backtrace}"}
+      @@logger.error(method) {"Error during processing: #{$!}"}
+      @@logger.error(method) {"Backtrace:\n\t#{e.backtrace.join("\n\t")}"}
       nil 
     end
   end
@@ -113,7 +150,8 @@ class LicenceManagerService < ManagerService
       when 200
         response.body
       else
-        @@logger.error(method) {'status=' + response.response_code.to_s}
+        @@logger.error(method) {"Error during processing: #{$!}"}
+        @@logger.error(method) {"Backtrace:\n\t#{e.backtrace.join("\n\t")}"}
         nil
       end
   end
