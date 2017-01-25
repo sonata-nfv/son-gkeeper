@@ -1,5 +1,3 @@
-## SONATA - Gatekeeper
-##
 ## Copyright (c) 2015 SONATA-NFV [, ANY ADDITIONAL AFFILIATION]
 ## ALL RIGHTS RESERVED.
 ## 
@@ -26,8 +24,25 @@
 ## acknowledge the contributions of their colleagues of the SONATA 
 ## partner consortium (www.sonata-nfv.eu).
 # encoding: utf-8
-require_relative 'catalogue'
-require_relative 'package'
-require_relative 'n_service'
-require_relative 'v_function'
+# spec/spec_helper.rb
+require 'rack/test'
+require 'rspec'
+require 'webmock/rspec'
 
+ENV['RACK_ENV'] ||= 'test'
+
+$: << File.expand_path('../..', __FILE__)
+require 'gtk_kpi'
+
+def app
+  GtkSrv
+end
+
+RSpec.configure do |config|
+  config.include Rack::Test::Methods
+  config.mock_with :rspec
+  config.include WebMock::API
+end
+
+# WebMock.disable_net_connect!(allow_localhost: true)
+WebMock.allow_net_connect!

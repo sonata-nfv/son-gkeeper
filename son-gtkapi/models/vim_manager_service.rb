@@ -25,68 +25,61 @@
 ## acknowledge the contributions of their colleagues of the SONATA 
 ## partner consortium (www.sonata-nfv.eu).
 # encoding: utf-8
-class VimManagerService
+require './models/manager_service.rb'
+
+class VimManagerService < ManagerService
   
   JSON_HEADERS = { 'Accept'=> 'application/json', 'Content-Type'=>'application/json'}
+  LOG_MESSAGE = 'GtkApi::' + self.name
   
   def initialize(url, logger)
-    @url = url
-    @logger = logger
+    method = LOG_MESSAGE + ".new(url=#{url}, logger=#{logger})"
+    #@url = url
+    #@logger = logger
+    super
+    @logger.debug(method) {'entered'}
   end
     
   def find_vims(params)
-    headers = JSON_HEADERS
-    headers[:params] = params unless params.empty?
+    method = LOG_MESSAGE + ".find_vims(#{params})"
+    @logger.debug(method) {'entered'}    
     begin
-      response = RestClient.get( @url+"/vim", headers)
-      @logger.debug "VimManagerService.find_vims(#{params}): response=#{response}"
+      response = getCurb(url:url, headers:JSON_HEADERS) 
+      @logger.debug(method) {'response='+response.body}
       JSON.parse response.body
     rescue => e
-      @logger.error "VimManagerService.find_vims: e=#{format_error(e.backtrace)}"
+      @logger.error(method) {"e=#{format_error(e.backtrace)}"}
       nil 
     end
   end
   
   def create_vim(params)
-    @logger.debug "VimManagerService.create_service_intantiation_request(#{params})"
+    method = LOG_MESSAGE + ".create_vim(#{params})"
+    @logger.debug(method) {"entered"}
+    
     begin
-      @logger.debug "VimManagerService.create_service_intantiation_request: @url = "+@url
-      response = RestClient.post(@url+'/vim', params.to_json, content_type: :json, accept: :json) 
-      @logger.debug "VimManagerService.create_service_intantiation_request: response="+response
+      @logger.debug(method) {"@url = "+@url}
+      #response = RestClient.post(@url+'/vim', params.to_json, content_type: :json, accept: :json) 
+      response = postCurb(url: @url+'/vim', body: params.to_json) 
+      @logger.debug(method) {"response="+response}
       parsed_response = JSON.parse(response)
-      @logger.debug "VimManagerService.create_service_intantiation_request: parsed_response=#{parsed_response}"
+      @logger.debug(method) {"parsed_response=#{parsed_response}"}
       parsed_response
     rescue => e
-      @logger.error "VimManagerService.create_service_intantiation_request: #{e.message} - #{format_error(e.backtrace)}"
+      @logger.error(method) {"#{e.message} - #{format_error(e.backtrace)}"}
       nil 
     end      
   end
   
   def find_vim_request_by_uuid(uuid)
-    headers = JSON_HEADERS
-    headers[:params] = uuid
+    method = LOG_MESSAGE + ".find_vim_request_by_uuid(#{uuid})"
+    @logger.debug(method) {'entered'}
     begin
-      response = RestClient.get( @url+"/vim_request/#{uuid}", headers)
+      response = getCurb(url:@url+'/vim_request/'+uuid, headers: JSON_HEADERS) 
       JSON.parse response.body
     rescue => e
-      @logger.error "VimManagerService#find_requests_by_uuid: #{e.message} - #{format_error(e.backtrace)}"
+      @logger.error(method) {"#{e.message} - #{format_error(e.backtrace)}"}
       nil 
     end
   end
-  
-  def get_log
-    method = "GtkApi::VimManagerService.get_log: "
-    @logger.debug(method) {'entered'}
-    full_url = @url+'/admin/logs'
-    @logger.debug(method) {'url=' + full_url}
-    RestClient.get(full_url)      
-  end
-  
-  private
-  
-  def format_error(backtrace)
-    first_line = backtrace[0].split(":")
-    "In "+first_line[0].split("/").last+", "+first_line.last+": "+first_line[1]
-  end
-  
 end

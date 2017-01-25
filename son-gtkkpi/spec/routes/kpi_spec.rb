@@ -1,4 +1,3 @@
-##
 ## Copyright (c) 2015 SONATA-NFV [, ANY ADDITIONAL AFFILIATION]
 ## ALL RIGHTS RESERVED.
 ## 
@@ -25,4 +24,17 @@
 ## acknowledge the contributions of their colleagues of the SONATA 
 ## partner consortium (www.sonata-nfv.eu).
 # encoding: utf-8
-require_relative 'common'
+require_relative '../spec_helper'
+require 'json'
+
+RSpec.describe GtkKpi do
+
+  describe 'POST /kpi' do
+    it 'accepts new prometheus metric requests'
+  end
+
+  # describe 'PUT /kpi' do
+  #   it 'increases a prometheus metric counter'
+  # end
+  
+end

@@ -1,4 +1,3 @@
-# encoding: utf-8
 ##
 ## Copyright (c) 2015 SONATA-NFV [, ANY ADDITIONAL AFFILIATION]
 ## ALL RIGHTS RESERVED.
@@ -26,4 +25,7 @@
 ## acknowledge the contributions of their colleagues of the SONATA 
 ## partner consortium (www.sonata-nfv.eu).
 # encoding: utf-8
-require_relative 'request'
+root = ::File.dirname(__FILE__)
+require ::File.join(root, 'gtk_kpi')
+
+run GtkKpi

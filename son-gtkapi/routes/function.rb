@@ -25,52 +25,70 @@
 ## acknowledge the contributions of their colleagues of the SONATA 
 ## partner consortium (www.sonata-nfv.eu).
 # encoding: utf-8
-require 'addressable/uri'
-
+require 'sinatra/namespace'
 class GtkApi < Sinatra::Base
+
+  register Sinatra::Namespace
   
-  # GET many functions
-  get '/functions/?' do
-    uri = Addressable::URI.new
-    uri.query_values = params
-    logger.debug "GtkApi: entered GET /functions?#{uri.query}"
+  namespace '/api/v2/functions' do
+    # GET many functions
+    get '/?' do
+      log_message = 'GtkApi::GET /api/v2/functions/?'
+      logger.debug(log_message) {'entered with '+query_string}
     
-    params[:offset] ||= DEFAULT_OFFSET 
-    params[:limit] ||= DEFAULT_LIMIT
+      @offset ||= params[:offset] ||= DEFAULT_OFFSET 
+      @limit ||= params[:limit] ||= DEFAULT_LIMIT
+      logger.debug(log_message) {"params=#{params}"}
      
-    functions = settings.function_management.find_functions(params)
-    if functions
-      logger.debug "GtkApi: leaving GET /functions?#{uri.query} with #{functions}"
-      halt 200, functions.to_json if functions
-    else 
-      logger.debug "GtkApi: leaving GET /functions?#{uri.query} with \"No function with params #{uri.query} was found\""
-      json_error 404, "No function with params #{uri.query} was found"
-    end  
-  end
-  
-  # GET function by uuid
-  get '/functions/:uuid' do
-    unless params[:uuid].nil?
-      logger.info "GtkApiss: entered GET \"/functions/#{params[:uuid]}\""
-      function = settings.function_management.find_functions_by_uuid(params[:uuid])
-      if function 
-        logger.info "GtkApi: in GET /functions/#{params[:uuid]}, found function #{function}"
-        response = function
-        logger.info "GtkApi: leaving GET /functions/#{params[:uuid]} with response="+response
-        halt 200, response
+      functions = FunctionManagerService.find_functions(params)
+      if functions
+        logger.debug(log_message) {"leaving with #{functions}"}
+        links = build_pagination_headers(url: request_url, limit: @limit.to_i, offset: @offset.to_i, total: functions.size)
+        [200, {'Link' => links}, functions.to_json]
       else
-        logger.error "GtkApi: leaving GET \"/functions/#{params[:uuid]}\" with \"No functions with UUID=#{params[:uuid]} was found\""
-        json_error 404, "No function with UUID=#{params[:uuid]} was found"
+        error_message = "No function with params #{params} was found"
+        logger.debug(log_message) {'leaving with "'+error_message+'"'}
+        json_error 404, error_message
+      end  
+    end
+  
+    # GET function by uuid
+    get '/:uuid/?' do
+      log_message = 'GtkApi::GET /api/v2/functions/:uuid/?'
+      logger.debug(log_message) {"entered with #{params[:uuid]}"}
+    
+      if valid?(params[:uuid])
+        function = FunctionManagerService.find_function_by_uuid(params[:uuid])
+        if function
+          logger.debug(log_message) {"leaving with #{function}"}
+          halt 200, function.to_json
+        else
+          logger.debug(log_message) {"leaving with message 'Service #{params[:uuid]} not found'"}
+          json_error 404, "Function #{params[:uuid]} not found"
+        end
+      else
+        message = "Function #{params[:uuid]} not valid"
+        logger.debug(log_message) {"leaving with message '"+message+"'"}
+        json_error 404, message
       end
     end
-    logger.error "GtkApi: leaving GET \"/functions/#{params[:uuid]}\" with \"No function UUID specified\""
-    json_error 400, 'No function UUID specified'
   end
   
-  get '/admin/functions/logs' do
-    logger.debug "GtkApi: entered GET /admin/functions/logs"
-    headers 'Content-Type' => 'text/plain; charset=utf8', 'Location' => '/'
-    log = settings.function_management.get_log
-    halt 200, log.to_s
+  namespace '/api/v2/admin/functions' do
+    get '/logs/?' do
+      logger.debug('GtkApi::GET /api/v2/admin/functions/logs/?') {'entered'}
+      headers 'Content-Type' => 'text/plain; charset=utf8', 'Location' => '/api/v2/admin/functions/logs'
+      log = FunctionManagerService.get_log
+      halt 200, log
+    end
+  end
+  
+  private 
+  def query_string
+    request.env['QUERY_STRING'].nil? ? '' : '?' + request.env['QUERY_STRING'].to_s
+  end
+
+  def request_url
+    request.env['rack.url_scheme']+'://'+request.env['HTTP_HOST']+request.env['REQUEST_PATH']
   end
 end

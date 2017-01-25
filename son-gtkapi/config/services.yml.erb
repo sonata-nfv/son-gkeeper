@@ -31,6 +31,8 @@ development: &common_settings
   fnctmgmt: <%= ENV['FUNCTION_MANAGEMENT_URL'] %>
   vimmgmt: <%= ENV['VIM_MANAGEMENT_URL'] %>
   recmgmt: <%= ENV['RECORD_MANAGEMENT_URL'] %>
+  licmgmt: <%= ENV['LICENCE_MANAGEMENT_URL'] %>
+  kpimgmt: <%= ENV['KPI_MANAGEMENT_URL'] %>
 
 test:
   <<: *common_settings

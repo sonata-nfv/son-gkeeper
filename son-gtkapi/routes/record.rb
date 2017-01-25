@@ -25,100 +25,113 @@
 ## acknowledge the contributions of their colleagues of the SONATA 
 ## partner consortium (www.sonata-nfv.eu).
 # encoding: utf-8
-require 'addressable/uri'
-
+require 'sinatra/namespace'
 class GtkApi < Sinatra::Base
   
-  before do
-    if request.request_method == 'OPTIONS'
-      response.headers['Access-Control-Allow-Origin'] = '*'
-      response.headers['Access-Control-Allow-Methods'] = 'POST,PUT'      
-      response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Access-Control-Allow-Headers, Authorization, X-Requested-With'
-      halt 200
-    end
-	end
+  register Sinatra::Namespace
   
-  # GET many instances
-  get '/records/:kind/?' do
-    method = MODULE + "GET /records/#{params[:kind]}"
-    params.delete('splat')
-    params.delete('captures')
-    uri = Addressable::URI.new
-    uri.query_values = params
-    logger.debug(method) {"entered with query parameters '#{uri.query}'"}
-    
-    params[:offset] ||= DEFAULT_OFFSET 
-    params[:limit] ||= DEFAULT_LIMIT
-    
-    records = settings.record_management.find_records(params)
-    if records
-      logger.debug(method) {"leaving with #{records}"}
-      halt 200, records.to_json
-    else
-      logger.debug(method) {"No #{params[:kind]} records found"}
-      halt 404, "No #{params[:kind]} records found"
-    end
-  end
-  
-  # GET a specific instance
-  get '/records/:kind/:uuid/?' do
-    method = MODULE + "GET /records/#{params[:kind]}/#{params[:uuid]}: "
-    unless params[:uuid].nil?
-      logger.debug(method) {'entered'}
-      json_error 400, 'Invalid Instance UUID' unless valid? params[:uuid]
-    end
-    logger.debug(method) {"leaving with \"No instance UUID specified\""}
-    # TODO!!
-    json_error 400, 'No instance UUID specified'
-  end
-  
-  # PUT service instance
-  put '/records/services/:uuid/?' do
-    method = MODULE + " PUT /records/services/#{params[:uuid]}"
-    unless params[:uuid].nil?
-      logger.debug(method) {'entered'}
-      json_error 400, method + "Invalid Instance UUID=#{params[:uuid]}" unless valid? params[:uuid]
-
-      # the body of the request is exepected to contain the NSD UUID and the NSD's latest version      
-      body_params = JSON.parse(request.body.read)
-      logger.debug(method) {"body_params=#{body_params}"}
-      unless body_params.key?('nsd_id') && body_params.key?('latest_nsd_id')
-        message = 'Both :nsd_id and :latest_nsd_id must be present'
-        logger.debug(method) {"Leaving with \"#{message}\""}
-        halt 404, message
+  namespace '/api/v2/records' do
+    before do
+      if request.request_method == 'OPTIONS'
+        response.headers['Access-Control-Allow-Origin'] = '*'
+        response.headers['Access-Control-Allow-Methods'] = 'POST,PUT'      
+        response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Access-Control-Allow-Headers, Authorization, X-Requested-With'
+        halt 200
       end
-      
-      # here we have the 
-      descriptor = settings.service_management.find_service_by_uuid(body_params['latest_nsd_id'])
-      if descriptor
-        logger.debug(method) {"found #{descriptor}"}
+  	end
 
-        update_request = settings.service_management.create_service_update_request(nsr_uuid: params[:uuid], nsd: descriptor)
-        if update_request
-          logger.debug(method) { "update_request =#{update_request}"}
-          halt 201, update_request.to_json
-        else
-          message = 'No request was created'
-          logger.debug(method) { "leaving with #{message}"}
-          json_error 400, message
-        end
+    # GET many instances
+    get '/:kind/?' do
+      log_message = "GtkApi::GET /api/v2/records/#{params[:kind]}"
+      params.delete('splat')
+      params.delete('captures')
+      logger.debug(log_message) {'entered with query parameters '+query_string}
+  
+      @offset ||= params[:offset] ||= DEFAULT_OFFSET 
+      @limit ||= params[:limit] ||= DEFAULT_LIMIT
+  
+      records = RecordManagerService.find_records(params)
+      if records
+        logger.debug(log_message) {"leaving with #{records}"}
+        links = build_pagination_headers(url: request_url, limit: @limit.to_i, offset: @offset.to_i, total: records.size)
+        [200, {'Link' => links}, records.to_json]
       else
-        message = "No descriptor with uuid=#{params[:latest_nsd_id]} found"
-        logger.debug(method) {"leaving with \"#{message}\""}
-        halt 404, message
+        logger.debug(log_message) {"No #{params[:kind]} records found"}
+        halt 404, "No #{params[:kind]} records found"
       end
     end
-    message = 'No instance UUID specified'
-    logger.debug(method) {"leaving with \"#{message}\""}
-    json_error 400, message
+
+    # GET a specific instance
+    get '/:kind/:uuid/?' do
+      method = "GtkApi::GET /api/v2/records/#{params[:kind]}/#{params[:uuid]}: "
+      unless params[:uuid].nil?
+        logger.debug(method) {'entered'}
+        json_error 400, 'Invalid Instance UUID' unless valid? params[:uuid]
+      end
+      logger.debug(method) {"leaving with \"No instance UUID specified\""}
+      # TODO!!
+      json_error 400, 'No instance UUID specified'
+    end
+  
+    # PUT service instance
+    put '/services/:uuid/?' do
+      method = "GtkApi::PUT /api/v2/records/services/#{params[:uuid]}"
+      unless params[:uuid].nil?
+        logger.debug(method) {'entered'}
+        json_error 400, method + ": Invalid Instance UUID=#{params[:uuid]}" unless valid? params[:uuid]
+
+        # the body of the request is exepected to contain the NSD UUID and the NSD's latest version      
+        body_params = JSON.parse(request.body.read)
+        logger.debug(method) {"body_params=#{body_params}"}
+        unless body_params.key?('nsd_id') && body_params.key?('latest_nsd_id')
+          message = 'Both :nsd_id and :latest_nsd_id must be present'
+          logger.debug(method) {"Leaving with \"#{message}\""}
+          halt 404, message
+        end
+      
+        # here we have the 
+        descriptor = RecordManagerService.find_service_by_uuid(body_params['latest_nsd_id'])
+        if descriptor
+          logger.debug(method) {"found #{descriptor}"}
+
+          update_request = ServiceManagerService.create_service_update_request(nsr_uuid: params[:uuid], nsd: descriptor)
+          if update_request
+            logger.debug(method) { "update_request =#{update_request}"}
+            halt 201, update_request.to_json
+          else
+            message = 'No request was created'
+            logger.debug(method) { "leaving with #{message}"}
+            json_error 400, message
+          end
+        else
+          message = "No descriptor with uuid=#{params[:latest_nsd_id]} found"
+          logger.debug(method) {"leaving with \"#{message}\""}
+          halt 404, message
+        end
+      end
+      message = 'No instance UUID specified'
+      logger.debug(method) {"leaving with \"#{message}\""}
+      json_error 400, message
+    end
   end
   
-  # GET module's logs
-  get '/admin/records/logs' do
-    method = MODULE + "GET /admin/records/logs: "
-    logger.debug(method) {"entered"}
-    headers 'Content-Type' => 'text/plain; charset=utf8', 'Location' => '/'
-    log = settings.record_management.get_log
-    halt 200, log.to_s
+  namespace '/api/v2/admin/records' do
+    # GET module's logs
+    get '/logs/?' do
+      method = "GtkApi::GET /api/v2/admin/records/logs/?: "
+      logger.debug(method) {"entered"}
+      headers 'Content-Type' => 'text/plain; charset=utf8', 'Location' => '/'
+      log = RecordManagerService.get_log
+      halt 200, log #.to_s
+    end
+  end
+  
+  private 
+  def query_string
+    request.env['QUERY_STRING'].nil? ? '' : '?' + request.env['QUERY_STRING'].to_s
+  end
+
+  def request_url
+    request.env['rack.url_scheme']+'://'+request.env['HTTP_HOST']+request.env['REQUEST_PATH']
   end
 end

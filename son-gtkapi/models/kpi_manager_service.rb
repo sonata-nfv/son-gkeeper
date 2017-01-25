@@ -1,4 +1,3 @@
-# encoding: utf-8
 ##
 ## Copyright (c) 2015 SONATA-NFV [, ANY ADDITIONAL AFFILIATION]
 ## ALL RIGHTS RESERVED.
@@ -26,5 +25,36 @@
 ## acknowledge the contributions of their colleagues of the SONATA 
 ## partner consortium (www.sonata-nfv.eu).
 # encoding: utf-8
-require_relative 'service'
-require_relative 'request'
+require './models/manager_service.rb'
+
+class KpiManagerService < ManagerService
+  
+  JSON_HEADERS = { 'Accept'=> 'application/json', 'Content-Type'=>'application/json'}
+  LOG_MESSAGE = 'GtkApi::' + self.name
+  
+  def initialize(url, logger)
+    method = LOG_MESSAGE + ".new(url=#{url}, logger=#{logger})"
+    #@url = url
+    #@logger = logger
+    super
+    @logger.debug(method) {'entered'}
+  end
+
+  def increase_metric(params)
+    method = LOG_MESSAGE + ".increase_metric(#{params})"
+    @logger.debug(method) {"entered"}
+    
+    begin
+      @logger.debug(method) {"@url = "+@url}
+      #response = RestClient.post(@url+'/kpi', params.to_json, content_type: :json, accept: :json) 
+      response = postCurb(@url+'/kpi', params.to_json) 
+      @logger.debug(method) {"response="+response}
+      parsed_response = JSON.parse(response)
+      @logger.debug(method) {"parsed_response=#{parsed_response}"}
+      parsed_response
+    rescue => e
+      @logger.error(method) {"#{e.message} - #{format_error(e.backtrace)}"}
+      nil 
+    end      
+  end
+end
