@@ -124,9 +124,7 @@ class ServiceManagerService < ManagerService
       #response = RestClient.post(@url+'/requests', params.to_json, content_type: :json, accept: :json) 
       response = self.postCurb(url: @@url+'/requests', body: params.to_json) ## TODO: check if this tests ok!! 
       @@logger.debug(method) {"response="+response}
-      parsed_response = JSON.parse(response)
-      @@logger.debug(method) {"parsed_response=#{parsed_response}"}
-      parsed_response
+      esponse
     rescue => e
       @@logger.error(method) {"Error during processing: #{$!}"}
       @@logger.error(method) {"Backtrace:\n\t#{e.backtrace.join("\n\t")}"}
@@ -143,9 +141,7 @@ class ServiceManagerService < ManagerService
       #response = RestClient.put(@url+'/services/'+nsr_uuid, nsd.to_json, content_type: :json, accept: :json) 
       response = self.postCurb(url: @@url+'/services/'+nsr_uuid, body: nsd.to_json) 
       @@logger.debug(message) {"response="+response}
-      parsed_response = JSON.parse(response)
-      @@logger.debug(message) {"parsed_response=#{parsed_response}"}
-      parsed_response
+      response
     rescue => e
       @@logger.error(method) {"Error during processing: #{$!}"}
       @@logger.error(method) {"Backtrace:\n\t#{e.backtrace.join("\n\t")}"}
