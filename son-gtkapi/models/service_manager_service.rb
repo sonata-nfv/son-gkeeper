@@ -124,7 +124,7 @@ class ServiceManagerService < ManagerService
       #response = RestClient.post(@url+'/requests', params.to_json, content_type: :json, accept: :json) 
       response = self.postCurb(url: @@url+'/requests', body: params.to_json) ## TODO: check if this tests ok!! 
       @@logger.debug(method) {"response="+response}
-      esponse
+      response
     rescue => e
       @@logger.error(method) {"Error during processing: #{$!}"}
       @@logger.error(method) {"Backtrace:\n\t#{e.backtrace.join("\n\t")}"}
