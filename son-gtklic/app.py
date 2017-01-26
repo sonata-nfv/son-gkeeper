@@ -31,7 +31,7 @@ def dropdb():
 
 # Method used to unify responses sintax
 def build_response(status_code, description="", error="", data=""):
-    jd = {"status_code:" : status_code, "error": error, "description": description, "data": data}
+    jd = {"status_code" : status_code, "error": error, "description": description, "data": data}
     resp = Response(response=json.dumps(jd), status=status_code, mimetype="application/json")
     return resp
 
