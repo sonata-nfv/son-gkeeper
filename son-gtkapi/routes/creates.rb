@@ -43,13 +43,9 @@ class GtkApi < Sinatra::Base
       licence_type = LicenceManagerService.create_type(params)
       logger.debug(log_message) {"licence_type=#{licence_type.inspect}"}
       if licence_type
-        if licence_type.is_a?(Hash) && (licence_type[:uuid] || licence_type['uuid'])
-          logger.info(log_message) {"leaving with licence_type: #{licence_type}"}
-          headers 'Location'=> LicenceManagerService.url+"/licence-types/#{licence_type[:uuid]}", 'Content-Type'=> 'application/json'
-          halt 201, licence_type.to_json
-        else
-          json_error 400, 'No UUID given to licence type'
-        end
+        logger.info(log_message) {"leaving with licence_type: #{licence_type}"}
+        headers 'Location'=> LicenceManagerService.url+"/licence-types/#{licence_type[:uuid]}", 'Content-Type'=> 'application/json'
+        halt 201, licence_type.to_json
       else
         json_error 400, 'Licence type not created'
       end
