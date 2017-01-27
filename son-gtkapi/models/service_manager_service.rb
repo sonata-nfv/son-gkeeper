@@ -31,12 +31,6 @@ class ServiceManagerService < ManagerService
   
   JSON_HEADERS = { 'Accept'=> 'application/json', 'Content-Type'=>'application/json'}
   LOG_MESSAGE = 'GtkApi::' + self.name
-  
-  #def initialize(url, logger)
-  #  method = LOG_MESSAGE + ".new(url=#{url}, logger=#{logger})"
-  #  super
-  #  @logger.debug(method){'entered'}
-  #end
     
   def self.config(url:, logger:)
     method = LOG_MESSAGE + "#config(url=#{url}, logger=#{logger})"
@@ -49,21 +43,7 @@ class ServiceManagerService < ManagerService
   end
 
   def self.find_service_by_uuid(uuid)
-    method = LOG_MESSAGE + ".find_service_by_uuid(#{uuid})"
-    @@logger.debug(method) {'entered'}
-    begin
-      response = self.getCurb(url: @@url+"/services/#{uuid}", headers: JSON_HEADERS, logger: @@logger)
-      @@logger.debug(method) {"Leaving with response.body=#{response.body}"}
-      if response.body.empty?
-        nil
-      else
-        JSON.parse response.body
-      end
-    rescue => e
-      @@logger.error(method) {"Error during processing: #{$!}"}
-      @@logger.error(method) {"Backtrace:\n\t#{e.backtrace.join("\n\t")}"}
-      nil
-    end
+    find(url: @@url + '/services/' + uuid, log_message: LOG_MESSAGE + "##{__method__}(#{uuid})", logger: @@logger)
   end
   
   def self.find_services(params)
@@ -88,31 +68,11 @@ class ServiceManagerService < ManagerService
   end
 
   def self.find_requests(params)
-    method = LOG_MESSAGE + ".find_requests(#{params})"
-    @@logger.debug(method) {'entered'}
-    begin
-      response = self.getCurb(url:@@url + '/requests', params: params, headers: JSON_HEADERS, logger: @@logger) 
-      @@logger.debug(method) {'Leaving with response='+response.body}
-      JSON.parse response.body
-    rescue => e
-      @@logger.error(method) {"Error during processing: #{$!}"}
-      @@logger.error(method) {"Backtrace:\n\t#{e.backtrace.join("\n\t")}"}
-      nil 
-    end
+    find(url: @@url + '/requests', params: params, log_message: LOG_MESSAGE + "##{__method__}(#{params})", logger: @@logger)
   end
   
   def self.find_requests_by_uuid(uuid)
-    method = LOG_MESSAGE + ".find_requests_by_uuid(#{uuid})"
-    @@logger.debug(method) {'entered'}
-    begin
-      response = self.getCurb(url: @@url+'/requests/'+uuid, headers: JSON_HEADERS, logger: @@logger) 
-      @@logger.debug(method) {'Leaving with response='+response.body}
-      JSON.parse response.body
-    rescue => e
-      @@logger.error(method) {"Error during processing: #{$!}"}
-      @@logger.error(method) {"Backtrace:\n\t#{e.backtrace.join("\n\t")}"}
-      nil 
-    end
+    find(url: @@url + '/requests/' + uuid, log_message: LOG_MESSAGE + "##{__method__}(#{uuid})", logger: @@logger)
   end
   
   def self.create_service_intantiation_request(params)
@@ -147,22 +107,6 @@ class ServiceManagerService < ManagerService
       @@logger.error(method) {"Backtrace:\n\t#{e.backtrace.join("\n\t")}"}
       nil 
     end      
-  end
-  
-  def self.get_log
-    method = 'GtkApi::' + CLASS_NAME + ".get_log()"
-    @@logger.debug(method) {'entered'}
-
-    response=getCurb(url: @@url+'/admin/logs', headers: {'Content-Type' => 'text/plain; charset=utf8', 'Location' => '/'}, logger: @@logger)
-    @@logger.debug(method) {'status=' + response.response_code.to_s}
-    case response.response_code
-      when 200
-        response.body
-      else
-        @@logger.error(method) {"Error during processing: #{$!}"}
-        @@logger.error(method) {"Backtrace:\n\t#{e.backtrace.join("\n\t")}"}
-        nil
-      end
   end
   
   def self.url

@@ -80,12 +80,12 @@ class GtkApi < Sinatra::Base
   
   namespace '/api/v2/admin/services' do
     get '/logs/?' do
-      log_message = 'GtkApi: GET /admin/services/logs'
+      log_message = 'GtkApi::GET /admin/services/logs'
       logger.debug(log_message) {'entered'}
       headers 'Content-Type' => 'text/plain; charset=utf8', 'Location' => '/'
-      log = ServiceManagerService.get_log
+      log = ServiceManagerService.get_log(url:ServiceManagerService.url+'/admin/logs', log_message:log_message, logger: logger)
       logger.debug(log_message) {'leaving with log='+log}
-      halt 200, log #.to_s
+      halt 200, log
     end
   end
   

@@ -105,23 +105,7 @@ class PackageManagerService < ManagerService
       nil
     end
   end
-  
-  def self.get_log
-    method = 'GtkApi::' + CLASS_NAME + ".get_log()"
-    @@logger.debug(method) {'entered'}
-
-    response=getCurb(url: @@url+'/admin/logs', headers: {'Content-Type' => 'text/plain; charset=utf8', 'Location' => '/'}, logger: @@logger)
-    @@logger.debug(method) {'status=' + response.response_code.to_s}
-    case response.response_code
-      when 200
-        response.body
-      else
-        @@logger.error(method) {"Error during processing: #{$!}"}
-        @@logger.error(method) {"Backtrace:\n\t#{e.backtrace.join("\n\t")}"}
-        nil
-      end
-  end
-  
+    
   def self.url
     @@logger.debug(LOG_MESSAGE + "#url") {'@@url='+@@url}
     @@url

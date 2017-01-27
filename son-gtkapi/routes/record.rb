@@ -118,10 +118,11 @@ class GtkApi < Sinatra::Base
   namespace '/api/v2/admin/records' do
     # GET module's logs
     get '/logs/?' do
-      method = "GtkApi::GET /api/v2/admin/records/logs/?: "
-      logger.debug(method) {"entered"}
+      log_message = "GtkApi::GET /api/v2/admin/records/logs"
+      logger.debug(log_message) {"entered"}
       headers 'Content-Type' => 'text/plain; charset=utf8', 'Location' => '/'
-      log = RecordManagerService.get_log
+      log = RecordManagerService.get_log(url:RecordManagerService.url+'/admin/logs', log_message:log_message, logger: logger)
+      logger.debug(log_message) {'leaving with log='+log}
       halt 200, log #.to_s
     end
   end

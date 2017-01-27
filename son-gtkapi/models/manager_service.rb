@@ -93,4 +93,32 @@ class ManagerService
     #        "Content-Length" => "62164", "Connection" => "Keep-Alive"}
     http_headers['X-Record-Count']
   end
+  
+  def self.get_log(url:, log_message:'', logger: nil)
+    logger.debug(log_message) {'entered'} if logger
+
+    response=getCurb(url: url, headers: {'Content-Type' => 'text/plain; charset=utf8', 'Location' => '/'}, logger: logger)
+    logger.debug(log_message) {'status=' + response.response_code.to_s} if logger
+    case response.response_code
+      when 200
+        response.body
+      else
+        logger.error(log_message) {"Error during processing: #{$!}"} if logger
+        logger.error(log_message) {"Backtrace:\n\t#{e.backtrace.join("\n\t")}"} if logger
+        nil
+      end
+  end
+
+  def self.find(url:, params: {}, log_message:'', logger: nil)
+    logger.debug(log_message) {'entered'}
+    begin
+      response = getCurb(url: url, params: params, headers: JSON_HEADERS, logger: logger)
+      logger.debug(log_message) {"response=#{response}"} if logger
+      JSON.parse response.body
+    rescue => e
+      logger.error(log_message) {"Error during processing: #{$!}"} if logger
+      logger.error(log_message) {"Backtrace:\n\t#{e.backtrace.join("\n\t")}"} if logger
+      nil 
+    end    
+  end
 end

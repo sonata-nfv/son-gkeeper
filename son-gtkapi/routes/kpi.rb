@@ -46,7 +46,7 @@ class GtkApi < Sinatra::Base
       params = JSON.parse(request.body.read)
       unless params.nil?
         logger.debug(MESSAGE) {"entered with params=#{params}"}
-        new_request = settings.kpi_management.create_metric(params)
+        new_request = KpiManagerService.create_metric(params)
         if new_request
           logger.debug(MESSAGE) {"new_request =#{new_request}"}
           halt 201, new_request.to_json

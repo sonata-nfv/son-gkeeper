@@ -134,11 +134,12 @@ class GtkApi < Sinatra::Base
   
   namespace '/api/v2/admin/packages' do
     get '/logs/?' do
-      log_message = 'GtkApi::GET /api/v2/admin/packages/logs/?'
-      logger.debug(log_message) {"entered"}
-      headers 'Content-Type' => 'text/plain; charset=utf8', 'Location' => request_url+'/api/v2/admin/packages/logs'
-      log = PackageManagerService.get_log
-      halt 200, log.to_s
+      log_message = 'GtkApi::GET /api/v2/admin/packages/logs'
+      logger.debug(log_message) {'entered'}
+      headers 'Content-Type' => 'text/plain; charset=utf8', 'Location' => '/'
+      log = PackageManagerService.get_log(url:PackageManagerService.url+'/admin/logs', log_message:log_message, logger: logger)
+      logger.debug(log_message) {'leaving with log='+log}
+      halt 200, log #.to_s
     end
   end
   
