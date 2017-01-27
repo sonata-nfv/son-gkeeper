@@ -27,7 +27,7 @@
 # encoding: utf-8
 class ManagerService
   
-  #JSON_HEADERS = { 'Accept'=> 'application/json', 'Content-Type'=>'application/json'}
+  JSON_HEADERS = { 'Accept'=> 'application/json', 'Content-Type'=>'application/json'}
   CLASS_NAME = self.name
   LOG_MESSAGE = 'GtkApi::' + self.name
   
@@ -48,7 +48,18 @@ class ManagerService
       end
     end
     logger.debug(log_message) {'header_str='+res.header_str} if logger
-    res
+    logger.debug(log_message) {'methods='+res.methods-Object.methods} if logger
+    logger.debug(log_message) {"response=#{res.inspect}"} if logger
+    logger.debug(log_message) {"response body=#{res.body}"} if logger
+    begin
+      parsed_response = JSON.parse(res.body)
+      logger.debug(log_message) {"parsed_response=#{parsed_response}"} if logger
+      parsed_response
+    rescue => e
+      logger.error(log_message) {"Error during processing: #{$!}"} if logger
+      logger.error(log_message) {"Backtrace:\n\t#{e.backtrace.join("\n\t")}"} if logger
+      nil 
+    end
   end
   
   def self.postCurb(url:, body:, headers: {}, logger: nil)
@@ -64,9 +75,7 @@ class ManagerService
         end
       end
     end
-    logger.debug(log_message) {"response =#{res}"} if logger
     logger.debug(log_message) {"response body=#{res.body}"} if logger
-    logger.debug(log_message) {"response body type is #{res.body.class}"} if logger
     begin
       parsed_response = JSON.parse(res.body)
       logger.debug(log_message) {"parsed_response=#{parsed_response}"} if logger
@@ -78,15 +87,26 @@ class ManagerService
     end
   end
   
+  private
+  
   def self.format_error(backtrace)
     first_line = backtrace[0].split(":")
     "In "+first_line[0].split("/").last+", "+first_line.last+": "+first_line[1]
   end
     
-  def self.get_record_count_from_response_headers(header_str)
+  def self.get_header_from_response_headers(header_str)
     # From http://stackoverflow.com/questions/14345805/get-response-headers-from-curb
     http_response, *http_headers = header_str.split(/[\r\n]+/).map(&:strip)
     http_headers = Hash[http_headers.flat_map{ |s| s.scan(/^(\S+): (.+)/) }]
+
+    #http_response # => "HTTP/1.1 200 OK"
+    #http_headers => { "Date" => "2013-01-10 09:07:42 -0700", "Content-Type" => "text/html", "Server" => "WEBrick/1.3.1 (Ruby/1.9.3/2012-11-10)",
+    #        "Content-Length" => "62164", "Connection" => "Keep-Alive"}
+  end
+
+  def self.get_record_count_from_response_headers(header_str)
+    # From http://stackoverflow.com/questions/14345805/get-response-headers-from-curb
+    http_headers = get_header_from_response_headers(header_str)
 
     #http_response # => "HTTP/1.1 200 OK"
     #http_headers => { "Date" => "2013-01-10 09:07:42 -0700", "Content-Type" => "text/html", "Server" => "WEBrick/1.3.1 (Ruby/1.9.3/2012-11-10)",
@@ -109,16 +129,10 @@ class ManagerService
       end
   end
 
-  def self.find(url:, params: {}, log_message:'', logger: nil)
+  def self.find(url:, params: {}, headers: JSON_HEADERS, log_message:'', logger: nil)
     logger.debug(log_message) {'entered'}
-    begin
-      response = getCurb(url: url, params: params, headers: JSON_HEADERS, logger: logger)
-      logger.debug(log_message) {"response=#{response}"} if logger
-      JSON.parse response.body
-    rescue => e
-      logger.error(log_message) {"Error during processing: #{$!}"} if logger
-      logger.error(log_message) {"Backtrace:\n\t#{e.backtrace.join("\n\t")}"} if logger
-      nil 
-    end    
+    response = getCurb(url: url, params: params, headers: headers, logger: logger)
+    logger.debug(log_message) {"response=#{response}"} if logger
+    response
   end
 end

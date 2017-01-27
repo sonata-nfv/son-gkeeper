@@ -105,18 +105,4 @@ class LicenceManagerService < ManagerService
     @@logger.debug(LOG_MESSAGE + "#url") {'@@url='+@@url}
     @@url
   end
-  
-  private
-  def self.find(url:, params: {}, log_message:'')
-    @@logger.debug(log_message) {'entered'}
-    begin
-      response = getCurb(url: url, params: params, headers: JSON_HEADERS, logger: @@logger) 
-      @@logger.debug(log_message) {"response=#{response}"}
-      JSON.parse response.body
-    rescue => e
-      @@logger.error(log_message) {"Error during processing: #{$!}"}
-      @@logger.error(log_message) {"Backtrace:\n\t#{e.backtrace.join("\n\t")}"}
-      nil 
-    end    
-  end
 end
