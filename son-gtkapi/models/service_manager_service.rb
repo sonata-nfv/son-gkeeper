@@ -42,30 +42,22 @@ class ServiceManagerService < ManagerService
     @@logger.debug(method) {'entered'}
   end
 
-  def self.find_service_by_uuid(uuid)
-    find(url: @@url + '/services/' + uuid, log_message: LOG_MESSAGE + "##{__method__}(#{uuid})", logger: @@logger)
+  def self.find_service_by_uuid(uuid:, params: {})
+    find(url: @@url + '/services/' + uuid, params: params, log_message: LOG_MESSAGE + "##{__method__}(#{uuid})", logger: @@logger)
   end
   
   def self.find_services(params)
-    method = LOG_MESSAGE + ".find_services(#{params})"
-    @@logger.debug(method) {'entered'}
-    services = {}
+    log_message = LOG_MESSAGE + "##{__method__}(#{params})"
+    @@logger.debug(log_message) {'entered'}
+    # first find limited 
+    services=find(url: @@url + '/services', params: params, log_message: LOG_MESSAGE + "##{__method__}(#{params})", logger: @@logger)
 
-    begin
-      result = self.getCurb(url: @@url + '/services', params: params, headers: JSON_HEADERS, logger: @@logger) 
-      @@logger.debug(method) {"result headers #{result.headers} "}
-      @@logger.debug(method) {"result body #{result.body} "}
-      services[:items] = JSON.parse result.body
-      services[:count] = ServiceManagerService.get_record_count_from_response_headers(result.header_str)
-      
-      @@logger.debug(method) {"Leaving with #{services[:count]} records, items=#{services[:items]}"}
-      services
-    rescue => e
-      @@logger.error(method) {"Error during processing: #{$!}"}
-      @@logger.error(method) {"Backtrace:\n\t#{e.backtrace.join("\n\t")}"}
-      nil 
-    end
-  end
+    # and now remove 'limit' and ask again   
+    params.delete 'limit' 
+    unlimited_services = find(url: @@url + '/services', params: params, log_message: LOG_MESSAGE + "##{__method__}(#{params})", logger: @@logger)
+
+    {count: unlimited_services.count, items: services}
+ end
 
   def self.find_requests(params)
     find(url: @@url + '/requests', params: params, log_message: LOG_MESSAGE + "##{__method__}(#{params})", logger: @@logger)
@@ -76,7 +68,7 @@ class ServiceManagerService < ManagerService
   end
   
   def self.create_service_intantiation_request(params)
-    method = LOG_MESSAGE + ".create_service_intantiation_request(#{params})"
+    method = LOG_MESSAGE + "##{__method__}(#{params})"
     @@logger.debug(method) {'entered'}
 
     begin
