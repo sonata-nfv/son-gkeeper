@@ -117,6 +117,58 @@ class GtkApi < Sinatra::Base
         json_error 404, message
       end
     end
+    
+    post '/licence-types/?' do
+      log_message = 'GtkApi::POST /licence-types/?'
+      params = JSON.parse(request.body.read)
+      logger.info(log_message) {"entered with params=#{params}"}
+      raise ArgumentError.new('Licence type has to have a description') unless params && params['description']
+      raise ArgumentError.new('Licence type has to have a duration') unless params && params['duration']
+    
+      # description, duration, status
+      licence_type = LicenceManagerService.create_type(params)
+      logger.debug(log_message) {"licence_type=#{licence_type.inspect}"}
+      if licence_type
+        logger.info(log_message) {"leaving with licence_type: #{licence_type}"}
+        headers 'Location'=> LicenceManagerService.url+"/licence-types/#{licence_type[:uuid]}", 'Content-Type'=> 'application/json'
+        halt 201, licence_type.to_json
+      else
+        json_error 400, 'Licence type not created'
+      end
+    end
+    
+    post '/licences/?' do
+      log_message = 'GtkApi::POST /licences/?'
+      body = request.body.read
+      raise ArgumentError.new('Licences have to have parameters') if (body && body.empty?)
+      logger.debug(log_message) {"body=#{body}"}
+      # 'type_uuid', String *
+      # 'service_uuid', String *
+      # 'user_uuid', String *
+      # 'license_uuid', String *
+      # 'description', String
+      # 'startingDate', DateTime
+      # 'expiringDate', DateTime * 
+      # 'status', String
+      
+      params = JSON.parse(body)
+      logger.debug(log_message) {"entered with params=#{params}"}
+    
+      # description, duration, status
+      licence = LicenceManagerService.create_licence(params)
+      logger.debug(log_message) {"licence=#{licence.inspect}"}
+      if licence
+        if licence.is_a?(Hash) && (licence[:uuid] || licence['uuid'])
+          logger.info(log_message) {"leaving with licence: #{licence}"}
+          headers 'Location'=> LicenceManagerService.url+"/licences/#{licence[:uuid]}", 'Content-Type'=> 'application/json'
+          halt 201, licence.to_json
+        else
+          json_error 400, 'No UUID given to licence'
+        end
+      else
+        json_error 400, 'Licence not created'
+      end
+    end
   end
   
   namespace '/api/v2/admin/licences' do
@@ -132,7 +184,7 @@ class GtkApi < Sinatra::Base
     
   private 
   def query_string
-    request.env['QUERY_STRING'].nil? ? '' : '?' + request.env['QUERY_STRING'].to_s
+    request.env['QUERY_STRING'].empty? ? '' : '?' + request.env['QUERY_STRING'].to_s
   end
 
   def request_url
