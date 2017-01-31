@@ -41,18 +41,19 @@ class ManagerService
   def self.getCurb(url:, params: {}, headers: {}, logger: nil)
     log_message=LOG_MESSAGE+"##{__method__}"
     logger.debug(log_message) {"entered with url=#{url}, params=#{params}, headers=#{headers}, logger=#{logger.inspect}"} if logger
-    res=Curl.get(params.empty? ? url : url + '?' + Curl::postalize(params)) do |req|
+    complete_url = params.empty? ? url : url + '?' + Curl::postalize(params)
+    logger.debug(log_message) {"complete_url=#{complete_url}"} if logger
+    res=Curl.get(complete_url) do |req|
       headers.each do |h|
         logger.debug(log_message) {"header[#{h[0]}]: #{h[1]}"} if logger
         req.headers[h[0]] = h[1]
       end
     end
-    logger.debug(log_message) {'header_str='+res.header_str} if logger
-    logger.debug(log_message) {'methods='+res.methods-Object.methods} if logger
-    logger.debug(log_message) {"response=#{res.inspect}"} if logger
+    logger.debug(log_message) {"header_str=#{res.header_str}"} if logger
     logger.debug(log_message) {"response body=#{res.body}"} if logger
+     
     begin
-      parsed_response = JSON.parse(res.body)
+      parsed_response = res.body.empty? ? {} : JSON.parse(res.body, symbolize_names: true)
       logger.debug(log_message) {"parsed_response=#{parsed_response}"} if logger
       parsed_response
     rescue => e
@@ -77,7 +78,7 @@ class ManagerService
     end
     logger.debug(log_message) {"response body=#{res.body}"} if logger
     begin
-      parsed_response = JSON.parse(res.body)
+      parsed_response = JSON.parse(res.body, symbolize_names: true)
       logger.debug(log_message) {"parsed_response=#{parsed_response}"} if logger
       parsed_response
     rescue => e
@@ -111,7 +112,7 @@ class ManagerService
     #http_response # => "HTTP/1.1 200 OK"
     #http_headers => { "Date" => "2013-01-10 09:07:42 -0700", "Content-Type" => "text/html", "Server" => "WEBrick/1.3.1 (Ruby/1.9.3/2012-11-10)",
     #        "Content-Length" => "62164", "Connection" => "Keep-Alive"}
-    http_headers['X-Record-Count']
+    http_headers['Record-Count']
   end
   
   def self.get_log(url:, log_message:'', logger: nil)
