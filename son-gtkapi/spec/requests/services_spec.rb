@@ -29,7 +29,8 @@ RSpec.describe GtkApi, type: :controller do
   include Rack::Test::Methods
   def app() GtkApi end
   
-  let(:service_uuid) { SecureRandom.uuid}
+  let(:service1_uuid) { "393da5e4-4771-480f-adc9-22f0023e8460"}
+  let(:service2_uuid) { "f0dbf7d3-13d6-429d-af27-28eff8bc039c"}
   let(:non_existent_service_uuid) {"a525f7ae-803c-458b-9521-13e260639fcb"}
   let(:invalid_service_uuid) {"a525f7ae-803c"}
   let(:service1) {{
@@ -74,7 +75,7 @@ RSpec.describe GtkApi, type: :controller do
       { connection_points_reference:["ns:input","vnf_firewall:input"], connectivity_type:"E-Line", id:"input-2-fw"},
       { connection_points_reference:["vnf_firewall:output","vnf_vtc:input"], connectivity_type:"E-Line", id:"fw-2-vtc"},
       { connection_points_reference:["vnf_vtc:output","ns:output"], connectivity_type:"E-Line", id:"vtc-2-output"}],
-    uuid: service_uuid
+    uuid: service1_uuid
   }}
   let(:service2) {{
     author: "Felipe Vicens, Atos IT Solutions and Services Iberia",
@@ -118,7 +119,7 @@ RSpec.describe GtkApi, type: :controller do
       { connection_points_reference:["ns:input","vnf_firewall:input"], connectivity_type:"E-Line", id:"input-2-fw"},
       { connection_points_reference:["vnf_firewall:output","vnf_vtc:input"], connectivity_type:"E-Line", id:"fw-2-vtc"},
       { connection_points_reference:["vnf_vtc:output","ns:output"], connectivity_type:"E-Line", id:"vtc-2-output"}],
-    uuid: service_uuid
+    uuid: service2_uuid
   }}
   let(:services) { [ service1, service2 ]}
   let(:services_url) { ServiceManagerService.url+'/services' }
@@ -128,11 +129,11 @@ RSpec.describe GtkApi, type: :controller do
     context 'with UUID given,' do
       context 'valid and known' do
         before(:each) do
-          stub_request(:get, services_url + '/' + service_uuid).to_return(body: service1.to_json)
-          get '/api/v2/services/'+ service_uuid
+          stub_request(:get, services_url + '/' + service1_uuid).to_return(body: service1.to_json)
+          get '/api/v2/services/'+ service1_uuid
         end
         it 'should call the Service Management Service' do
-          expect(a_request(:get, services_url + '/' + service_uuid)).to have_been_made
+          expect(a_request(:get, services_url + '/' + service1_uuid)).to have_been_made
         end
         
         it 'shoud return success (200)' do
@@ -140,8 +141,8 @@ RSpec.describe GtkApi, type: :controller do
         end
         
         it 'should return only one service' do
-          parsed_response = JSON.parse(last_response.body)
-          expect(parsed_response['uuid']).to eq(service_uuid)
+          parsed_response = JSON.parse(last_response.body, symbolize_names: true)
+          expect(parsed_response[:uuid]).to eq(service1_uuid)
         end
       end
       
