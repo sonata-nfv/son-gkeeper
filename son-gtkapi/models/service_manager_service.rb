@@ -54,6 +54,7 @@ class ServiceManagerService < ManagerService
 
     # and now remove 'limit' and ask again   
     params.delete 'limit' 
+    params.delete 'offset' 
     unlimited_services = find(url: @@url + '/services', params: params, log_message: LOG_MESSAGE + "##{__method__}(#{params})", logger: @@logger)
 
     {count: unlimited_services.count, items: services}
@@ -73,7 +74,6 @@ class ServiceManagerService < ManagerService
 
     begin
       @@logger.debug(method) {"@url = "+@@url}
-      #response = RestClient.post(@url+'/requests', params.to_json, content_type: :json, accept: :json) 
       response = self.postCurb(url: @@url+'/requests', body: params.to_json) ## TODO: check if this tests ok!! 
       @@logger.debug(method) {"response="+response}
       response

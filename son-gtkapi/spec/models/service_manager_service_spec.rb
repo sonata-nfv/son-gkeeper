@@ -34,17 +34,17 @@ RSpec.describe ServiceManagerService, type: :model do
   let(:service_to_be_created_2) {{name:'name', version:'0.2', vendor:'vendor'}}
   let(:created_service_2) {service_to_be_created_2.merge({uuid: service_uuid})}
   let(:all_services) { {'count': 2, 'items':[ created_service_1, created_service_2 ]}}
-  #let(:curl_easy) {instance_double("Curl::Easy", head_str: 'HTTP/1.1 200')} 
+  let(:services_url) { ServiceManagerService.url+'/services' }
   describe '#find_services' do
     it 'with default parameters should return two services' do
       resp = OpenStruct.new(head_str: 'HTTP/1.1 200', body: all_services.to_json)      
-      allow(Curl).to receive(:get).with('http://localhost:5300/services?limit=10&offset=0').and_return(resp) 
+      allow(Curl).to receive(:get).with(services_url+'?limit=10&offset=0').and_return(resp) 
       services = ServiceManagerService.find_services({'limit': 10, 'offset': 0})
       expect(services).to eq({'count': 2, 'items': all_services})      
     end
     it 'with only default offset parameter (0) should return two services' do
       resp = OpenStruct.new(head_str: 'HTTP/1.1 200', body: all_services.to_json)      
-      allow(Curl).to receive(:get).with('http://localhost:5300/services?offset=0').and_return(resp) 
+      allow(Curl).to receive(:get).with(services_url+'?offset=0').and_return(resp) 
       services = ServiceManagerService.find_services({'offset': 0})
       expect(services).to eq({'count': 2, 'items': all_services})      
     end
@@ -61,13 +61,13 @@ RSpec.describe ServiceManagerService, type: :model do
     context 'with valid UUID' do
       it 'should find a service with a known UUID' do
         resp = OpenStruct.new(head_str: 'HTTP/1.1 200', body: all_services[0].to_json)      
-        allow(Curl).to receive(:get).with('http://localhost:5300/services/'+service_uuid).and_return(resp) 
+        allow(Curl).to receive(:get).with(services_url+'/'+service_uuid).and_return(resp) 
         service = ServiceManagerService.find_service_by_uuid(uuid: service_uuid)
         expect(service).to eq(all_services[0])      
       end
       it 'should not find a service with an unknown UUID' do
         resp = OpenStruct.new(head_str: 'HTTP/1.1 404', body: {}.to_json)      
-        allow(Curl).to receive(:get).with('http://localhost:5300/services/'+unknown_service_uuid).and_return(resp) 
+        allow(Curl).to receive(:get).with(services_url+'/'+unknown_service_uuid).and_return(resp) 
         service = ServiceManagerService.find_service_by_uuid(uuid: unknown_service_uuid)
         expect(service).to eq({})      
       end
@@ -76,6 +76,8 @@ RSpec.describe ServiceManagerService, type: :model do
     end
   end
   describe '#find_requests' do
+    context 'without any restrictive parameter'
+    
   end
   describe '#find_requests_by_uuid' do
     context 'with valid' do
@@ -87,9 +89,30 @@ RSpec.describe ServiceManagerService, type: :model do
     end
   end
   describe '#create_service_intantiation_request' do
-    it 'should POST /catalogues/packages to catalogues'
+    let(:request_service_instantiation) {{service_uuid: service_uuid}}
+    let(:creation_fields) do
+      {
+        serice_instance_uuid: service_uuid,
+        request_type: 'CREATE',
+        status: 'NEW',
+        created_at:"2016-11-11T10:21:00.007+00:00",
+        updated_at:"2016-11-11T10:21:00.007+00:00"
+      }
+    end
+    let(:created_service_instantiation) {request_service_instantiation.merge(creation_fields)}
+    
+    it 'with valid service UUID saves the request' do
+    end
+    context 'with invalid service UUID' do
+      it 'fails when it is null'
+      it 'fails when it is unknown'
+      it 'fails when it is invalid'
+    end
   end
   describe '#create_service_update_request' do
-    it 'should POST /catalogues/packages to catalogues'
+    context 'without any UUID'
+    context 'with an unknown UUID'
+    context 'with a known UUID'
+    
   end
 end

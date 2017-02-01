@@ -127,7 +127,7 @@ RSpec.describe GtkApi, type: :controller do
   describe 'GET /api/v2/services' do
     context 'with UUID given,' do
       context 'valid and known' do
-        before(:example) do
+        before(:each) do
           stub_request(:get, services_url + '/' + service_uuid).to_return(body: service1.to_json)
           get '/api/v2/services/'+ service_uuid
         end
@@ -146,7 +146,7 @@ RSpec.describe GtkApi, type: :controller do
       end
       
       context 'valid but unknown' do
-        before(:example) do
+        before(:each) do
           stub_request(:get, services_url + '/' + non_existent_service_uuid).to_return(status: 404)
           get '/api/v2/services/'+ non_existent_service_uuid
         end
@@ -158,7 +158,7 @@ RSpec.describe GtkApi, type: :controller do
         end
       end
       context 'but invalid' do
-        before(:example) do
+        before(:each) do
           stub_request(:get, services_url + '/' + invalid_service_uuid).to_return(status: 404)
           get '/api/v2/services/'+ invalid_service_uuid
         end
@@ -172,11 +172,11 @@ RSpec.describe GtkApi, type: :controller do
     end
     context 'without UUID' do
       context 'and no other params given' do
-        before(:example) do
+        before(:each) do
           stub_request(:get, full_services_url)
             .with(headers: {'Accept'=>'application/json', 'Content-Type'=>'application/json'})
             .to_return(status: 200, body: services.to_json, headers: {'Record-Count'=>services.count.to_s})
-            stub_request(:get, services_url+'?offset='+GtkApi::DEFAULT_OFFSET)
+            stub_request(:get, services_url)
               .with(headers: {'Accept'=>'application/json', 'Content-Type'=>'application/json'})
               .to_return(status: 200, body: services.to_json, headers: {'Record-Count'=>services.count.to_s})
           get '/api/v2/services'
@@ -195,23 +195,17 @@ RSpec.describe GtkApi, type: :controller do
         end
         
         it 'shoud return the total number of records in a custom header' do
-          open('last_response_parsed_response.out', 'w') do |f|
-            f.puts "status=#{last_response.status}"
-            f.puts "headers=#{last_response.headers}"
-            f.puts "body=#{last_response.body}"
-          end
-          
           expect(last_response.headers.keys).to include(:'Record-Count')
           expect(last_response.headers[:'Record-Count']).to eq(2)
         end
       end
       
       context 'and limit param given (offset becomes DEFAULT_OFFSET)' do
-        before(:example) do
+        before(:each) do
           stub_request(:get, services_url+'?limit=1&offset='+GtkApi::DEFAULT_OFFSET)
             .with(headers: {'Accept'=>'application/json', 'Content-Type'=>'application/json'})
             .to_return(status: 200, body: services[0].to_json, headers: {'Record-Count'=>services.count.to_s})
-          stub_request(:get, services_url+'?offset='+GtkApi::DEFAULT_OFFSET)
+          stub_request(:get, services_url)
             .with(headers: {'Accept'=>'application/json', 'Content-Type'=>'application/json'})
             .to_return(status: 200, body: services.to_json, headers: {'Record-Count'=>services.count.to_s})
           get '/api/v2/services?limit=1'
@@ -236,26 +230,34 @@ RSpec.describe GtkApi, type: :controller do
       context 'and offset param given (limit becomes DEFAULT_LIMIT)'
         
       context 'and limit and offset param given' do
-        #before(:example) do
-        #  stub_request(:get, services_url+'?offset=1&limit=1')
-        #    .with(headers: {'Accept'=>'application/json', 'Content-Type'=>'application/json'})
-        #   .to_return(status: 200, body: [services[1]].to_json, headers: {'Record-Count'=>'1'})
-        #  get '/api/v2/services?offset=1&limit=1'
-        #end
-        #it 'should call the Service Management Service' do
-        #  expect(a_request(:get, services_url+'?offset=1&limit=1')
-        #    .with(headers: {'Accept'=>'application/json', 'Content-Type'=>'application/json'}))
-        #    .to have_been_made
-        #end
+        before(:each) do
+          stub_request(:get, services_url+'?offset=1&limit=1')
+            .with(headers: {'Accept'=>'application/json', 'Content-Type'=>'application/json'})
+            .to_return(status: 200, body: services[1].to_json, headers: {'Record-Count'=>'1'})
+          stub_request(:get, services_url)
+            .with(headers: {'Accept'=>'application/json', 'Content-Type'=>'application/json'})
+            .to_return(status: 200, body: services.to_json, headers: {'Record-Count'=>services.count.to_s})
+          get '/api/v2/services?offset=1&limit=1'
+        end
+        it 'should call the Service Management Service' do
+          expect(a_request(:get, services_url+'?offset=1&limit=1')
+            .with(headers: {'Accept'=>'application/json', 'Content-Type'=>'application/json'}))
+            .to have_been_made
+        end
         
-        #it 'shoud return success (200)' do
-        #  expect(last_response.status).to eq(200)
-        #end
+        it 'shoud return success (200)' do
+          expect(last_response.status).to eq(200)
+        end
         
-        #it 'should return all services (as long as they are < DEFAULT_MAX_LIMIT)' do
-        #  parsed_response = JSON.parse(last_response.body)
-        #  expect(parsed_response['uuid']).to eq(services[1][:uuid])
-        #end
+        it 'should return all services (as long as they are < DEFAULT_MAX_LIMIT)' do
+          #open('last_response_parsed_response.out', 'w') do |f|
+          #  f.puts "status=#{last_response.status}"
+          #  f.puts "headers=#{last_response.headers}"
+          #  f.puts "body=#{last_response.body}"
+          #end
+          parsed_response = JSON.parse(last_response.body, symbolize_names: true)
+          expect(parsed_response[:uuid]).to eq(services[1][:uuid])
+        end
       end      
     end
   end

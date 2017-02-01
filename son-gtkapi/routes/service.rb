@@ -46,7 +46,7 @@ class GtkApi < Sinatra::Base
       services = ServiceManagerService.find_services(params)
       logger.debug(log_message) {"Found services #{services}"}
       unless services.empty?
-        logger.debug(log_message) {"links: request_url=#{request_url}, limit:=#{@limit}, offset:=#{@offset}, total:=#{services[:count]}"}
+        logger.debug(log_message) {"links: request_url=#{request_url}, limit=#{@limit}, offset=#{@offset}, total=#{services[:count]}"}
         links = build_pagination_headers(url: request_url, limit: @limit.to_i, offset: @offset.to_i, total: services[:count].to_i)
         logger.debug(log_message) {"links: #{links}"}
         headers 'Link': links, 'Record-Count': services[:count]
