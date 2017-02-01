@@ -54,10 +54,15 @@ class ServiceManagerService < ManagerService
     begin
       response = self.getCurb(url: @@url+"/services/#{uuid}", headers: JSON_HEADERS, logger: @@logger)
       @@logger.debug(method) {"Leaving with response.body=#{response.body}"}
-      JSON.parse response.body
+      if response.body.empty?
+        nil
+      else
+        JSON.parse response.body
+      end
     rescue => e
-      @@logger.error(method) {"e=#{format_error(e.backtrace)}"}
-      nil 
+      @@logger.error(method) {"Error during processing: #{$!}"}
+      @@logger.error(method) {"Backtrace:\n\t#{e.backtrace.join("\n\t")}"}
+      nil
     end
   end
   
@@ -76,7 +81,8 @@ class ServiceManagerService < ManagerService
       @@logger.debug(method) {"Leaving with #{services[:count]} records, items=#{services[:items]}"}
       services
     rescue => e
-      @@logger.error(method) {"#{e.message} - #{format_error(e.backtrace)}"}
+      @@logger.error(method) {"Error during processing: #{$!}"}
+      @@logger.error(method) {"Backtrace:\n\t#{e.backtrace.join("\n\t")}"}
       nil 
     end
   end
@@ -89,7 +95,8 @@ class ServiceManagerService < ManagerService
       @@logger.debug(method) {'Leaving with response='+response.body}
       JSON.parse response.body
     rescue => e
-      @@logger.error(method) {"#{e.message} - #{format_error(e.backtrace)}"}
+      @@logger.error(method) {"Error during processing: #{$!}"}
+      @@logger.error(method) {"Backtrace:\n\t#{e.backtrace.join("\n\t")}"}
       nil 
     end
   end
@@ -102,7 +109,8 @@ class ServiceManagerService < ManagerService
       @@logger.debug(method) {'Leaving with response='+response.body}
       JSON.parse response.body
     rescue => e
-      @@logger.error(method) {"#{e.message} - #{format_error(e.backtrace)}"}
+      @@logger.error(method) {"Error during processing: #{$!}"}
+      @@logger.error(method) {"Backtrace:\n\t#{e.backtrace.join("\n\t")}"}
       nil 
     end
   end
@@ -116,11 +124,10 @@ class ServiceManagerService < ManagerService
       #response = RestClient.post(@url+'/requests', params.to_json, content_type: :json, accept: :json) 
       response = self.postCurb(url: @@url+'/requests', body: params.to_json) ## TODO: check if this tests ok!! 
       @@logger.debug(method) {"response="+response}
-      parsed_response = JSON.parse(response)
-      @@logger.debug(method) {"parsed_response=#{parsed_response}"}
-      parsed_response
+      response
     rescue => e
-      @@logger.error(method) {"#{e.message} - #{format_error(e.backtrace)}"}
+      @@logger.error(method) {"Error during processing: #{$!}"}
+      @@logger.error(method) {"Backtrace:\n\t#{e.backtrace.join("\n\t")}"}
       nil 
     end      
   end
@@ -134,11 +141,10 @@ class ServiceManagerService < ManagerService
       #response = RestClient.put(@url+'/services/'+nsr_uuid, nsd.to_json, content_type: :json, accept: :json) 
       response = self.postCurb(url: @@url+'/services/'+nsr_uuid, body: nsd.to_json) 
       @@logger.debug(message) {"response="+response}
-      parsed_response = JSON.parse(response)
-      @@logger.debug(message) {"parsed_response=#{parsed_response}"}
-      parsed_response
+      response
     rescue => e
-      @@logger.error(message) {"#{e.message} - #{format_error(e.backtrace)}"}
+      @@logger.error(method) {"Error during processing: #{$!}"}
+      @@logger.error(method) {"Backtrace:\n\t#{e.backtrace.join("\n\t")}"}
       nil 
     end      
   end
@@ -153,7 +159,8 @@ class ServiceManagerService < ManagerService
       when 200
         response.body
       else
-        @@logger.error(method) {'status=' + response.response_code.to_s}
+        @@logger.error(method) {"Error during processing: #{$!}"}
+        @@logger.error(method) {"Backtrace:\n\t#{e.backtrace.join("\n\t")}"}
         nil
       end
   end

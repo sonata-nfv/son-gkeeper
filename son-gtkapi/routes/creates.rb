@@ -30,35 +30,58 @@ class GtkApi < Sinatra::Base
 
   register Sinatra::Namespace
   helpers GtkApiHelper
-  
-  MESSAGE = 'GtkApi::POST /api/v2'
-  
-    post '/api/v2/licence-types/?' do
-      log_message = MESSAGE + '/licence-types/?'
+    
+  namespace '/api/v2' do
+    post '/licence-types/?' do
+      log_message = 'GtkApi::POST /licence-types/?'
       params = JSON.parse(request.body.read)
       logger.info(log_message) {"entered with params=#{params}"}
       raise ArgumentError.new('Licence type has to have a description') unless params && params['description']
+      raise ArgumentError.new('Licence type has to have a duration') unless params && params['duration']
     
       # description, duration, status
       licence_type = LicenceManagerService.create_type(params)
       logger.debug(log_message) {"licence_type=#{licence_type.inspect}"}
       if licence_type
-        if licence_type.is_a?(Hash) && (licence_type[:uuid] || licence_type['uuid'])
-          logger.info(log_message) {"leaving with licence_type: #{licence_type}"}
-          headers 'Location'=> LicenceManagerService.url+"/licence-types/#{licence_type[:uuid]}", 'Content-Type'=> 'application/json'
-          halt 201, licence_type.to_json
-        else
-          json_error 400, 'No UUID given to licence type'
-        end
+        logger.info(log_message) {"leaving with licence_type: #{licence_type}"}
+        headers 'Location'=> LicenceManagerService.url+"/licence-types/#{licence_type[:uuid]}", 'Content-Type'=> 'application/json'
+        halt 201, licence_type.to_json
       else
         json_error 400, 'Licence type not created'
       end
     end
     
-    namespace '/api/v2/' do
     post '/licences/?' do
-      log_message = MESSAGE + '/licences/?'
-      logger.info(log_message) {"entered with params=#{params}"}
+      log_message = 'GtkApi::POST /licences/?'
+      body = request.body.read
+      raise ArgumentError.new('Licences have to have parameters') if (body && body.empty?)
+      logger.debug(log_message) {"body=#{body}"}
+      # 'type_uuid', String *
+      # 'service_uuid', String *
+      # 'user_uuid', String *
+      # 'license_uuid', String *
+      # 'description', String
+      # 'startingDate', DateTime
+      # 'expiringDate', DateTime * 
+      # 'status', String
+      
+      params = JSON.parse(body)
+      logger.debug(log_message) {"entered with params=#{params}"}
+    
+      # description, duration, status
+      licence = LicenceManagerService.create_licence(params)
+      logger.debug(log_message) {"licence=#{licence.inspect}"}
+      if licence
+        if licence.is_a?(Hash) && (licence[:uuid] || licence['uuid'])
+          logger.info(log_message) {"leaving with licence: #{licence}"}
+          headers 'Location'=> LicenceManagerService.url+"/licences/#{licence[:uuid]}", 'Content-Type'=> 'application/json'
+          halt 201, licence.to_json
+        else
+          json_error 400, 'No UUID given to licence'
+        end
+      else
+        json_error 400, 'Licence not created'
+      end
     end
   end
 end

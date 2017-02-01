@@ -48,7 +48,8 @@ class VimManagerService < ManagerService
       @logger.debug(method) {'response='+response.body}
       JSON.parse response.body
     rescue => e
-      @logger.error(method) {"e=#{format_error(e.backtrace)}"}
+      @@logger.error(method) {"Error during processing: #{$!}"}
+      @@logger.error(method) {"Backtrace:\n\t#{e.backtrace.join("\n\t")}"}
       nil 
     end
   end
@@ -62,11 +63,10 @@ class VimManagerService < ManagerService
       #response = RestClient.post(@url+'/vim', params.to_json, content_type: :json, accept: :json) 
       response = postCurb(url: @url+'/vim', body: params.to_json) 
       @logger.debug(method) {"response="+response}
-      parsed_response = JSON.parse(response)
-      @logger.debug(method) {"parsed_response=#{parsed_response}"}
-      parsed_response
+      response
     rescue => e
-      @logger.error(method) {"#{e.message} - #{format_error(e.backtrace)}"}
+      @@logger.error(method) {"Error during processing: #{$!}"}
+      @@logger.error(method) {"Backtrace:\n\t#{e.backtrace.join("\n\t")}"}
       nil 
     end      
   end
@@ -78,7 +78,8 @@ class VimManagerService < ManagerService
       response = getCurb(url:@url+'/vim_request/'+uuid, headers: JSON_HEADERS) 
       JSON.parse response.body
     rescue => e
-      @logger.error(method) {"#{e.message} - #{format_error(e.backtrace)}"}
+      @@logger.error(method) {"Error during processing: #{$!}"}
+      @@logger.error(method) {"Backtrace:\n\t#{e.backtrace.join("\n\t")}"}
       nil 
     end
   end

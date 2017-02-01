@@ -43,3 +43,5 @@ RSpec.configure do |conf|
     configuration.syntax = :expect
   end
 end
+
+WebMock.disable_net_connect!(allow_localhost: true)

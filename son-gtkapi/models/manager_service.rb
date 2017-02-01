@@ -39,11 +39,11 @@ class ManagerService
   end
   
   def self.getCurb(url:, params: {}, headers: {}, logger: nil)
-    log_message=LOG_MESSAGE+'#getCurb'
-    logger.debug() {"entered with url=#{url}, params=#{params}, headers=#{headers}, logger=#{logger.inspect}"} if logger
+    log_message=LOG_MESSAGE+"##{__method__}"
+    logger.debug(log_message) {"entered with url=#{url}, params=#{params}, headers=#{headers}, logger=#{logger.inspect}"} if logger
     res=Curl.get(params.empty? ? url : url + '?' + Curl::postalize(params)) do |req|
       headers.each do |h|
-        logger.debug(log_message) {"header['" + h[0] + "]: '" + h[1] + "'"} if logger
+        logger.debug(log_message) {"header[#{h[0]}]: #{h[1]}"} if logger
         req.headers[h[0]] = h[1]
       end
     end
@@ -51,15 +51,31 @@ class ManagerService
     res
   end
   
-  def self.postCurb(url:, body:, logger: nil)
-    log_message=LOG_MESSAGE+'#postCurb'
+  def self.postCurb(url:, body:, headers: {}, logger: nil)
+    log_message=LOG_MESSAGE+"##{__method__}"
     logger.debug(log_message) {"entered with url=#{url}, body=#{body}, logger=#{logger.inspect}"} if logger
     res=Curl.post(url, body) do |req|
-      req.headers['Content-type'] = 'application/json'
-      req.headers['Accept'] = 'application/json'
+      if headers.empty?
+        req.headers['Content-type'] = req.headers['Accept'] = 'application/json'
+      else
+        headers.each do |h|
+          logger.debug(log_message) {"header[#{h[0]}]: #{h[1]}"} if logger
+          req.headers[h[0]] = h[1]
+        end
+      end
     end
-    logger.debug(log_message) {"response=#{res.body}"} if logger
-    res.body
+    logger.debug(log_message) {"response =#{res}"} if logger
+    logger.debug(log_message) {"response body=#{res.body}"} if logger
+    logger.debug(log_message) {"response body type is #{res.body.class}"} if logger
+    begin
+      parsed_response = JSON.parse(res.body)
+      logger.debug(log_message) {"parsed_response=#{parsed_response}"} if logger
+      parsed_response
+    rescue => e
+      logger.error(log_message) {"Error during processing: #{$!}"} if logger
+      logger.error(log_message) {"Backtrace:\n\t#{e.backtrace.join("\n\t")}"} if logger
+      nil 
+    end
   end
   
   def self.format_error(backtrace)
