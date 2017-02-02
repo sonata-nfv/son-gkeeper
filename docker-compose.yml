@@ -137,6 +137,13 @@ services:
     environment:
      - PUSHGATEWAY_HOST=prometheus
      - PUSHGATEWAY_PORT=9091     
+     - POSTGRES_PASSWORD=sonata
+     - POSTGRES_USER=sonatatest
+     - RACK_ENV=integration
+     - DATABASE_HOST=postgres
+     - DATABASE_PORT=5432
+    depends_on:
+     - postgres
     extra_hosts:
       - "jenkins.sonata-nfv.eu:192.168.60.5"
     logging:
@@ -172,16 +179,16 @@ services:
    ports:
     - "8086:8086"
 
-  mysql:
-   image: registry.sonata-nfv.eu:5000/son-monitor-mysql
-   restart: always
-   ports:
-    - "3306:3306"
-   environment:
-    - MYSQL_ROOT_PASSWORD=1234
-    - MYSQL_USER=monitoringuser
-    - MYSQL_PASSWORD=sonata
-    - MYSQL_DATABASE=monitoring
+  #mysql:
+  # image: registry.sonata-nfv.eu:5000/son-monitor-mysql
+  # restart: always
+  # ports:
+  #  - "3306:3306"
+  # environment:
+  #  - MYSQL_ROOT_PASSWORD=1234
+  #  - MYSQL_USER=monitoringuser
+  #  - MYSQL_PASSWORD=sonata
+  #  - MYSQL_DATABASE=monitoring
 
   pushgateway:
    image: registry.sonata-nfv.eu:5000/son-monitor-pushgateway
