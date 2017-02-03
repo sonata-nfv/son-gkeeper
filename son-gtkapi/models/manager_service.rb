@@ -51,11 +51,11 @@ class ManagerService
     end
     logger.debug(log_message) {"header_str=#{res.header_str}"} if logger
     logger.debug(log_message) {"response body=#{res.body}"} if logger
-     
+    count = get_record_count_from_response_headers(res.header_str).to_i
     begin
       parsed_response = res.body.empty? ? {} : JSON.parse(res.body, symbolize_names: true)
       logger.debug(log_message) {"parsed_response=#{parsed_response}"} if logger
-      parsed_response
+      {count: count, items: parsed_response}
     rescue => e
       logger.error(log_message) {"Error during processing: #{$!}"} if logger
       logger.error(log_message) {"Backtrace:\n\t#{e.backtrace.join("\n\t")}"} if logger
@@ -107,7 +107,8 @@ class ManagerService
 
   def self.get_record_count_from_response_headers(header_str)
     # From http://stackoverflow.com/questions/14345805/get-response-headers-from-curb
-    http_headers = get_header_from_response_headers(header_str)
+    http_response, *http_headers = header_str.split(/[\r\n]+/).map(&:strip)
+    http_headers = Hash[http_headers.flat_map{ |s| s.scan(/^(\S+): (.+)/) }]
 
     #http_response # => "HTTP/1.1 200 OK"
     #http_headers => { "Date" => "2013-01-10 09:07:42 -0700", "Content-Type" => "text/html", "Server" => "WEBrick/1.3.1 (Ruby/1.9.3/2012-11-10)",

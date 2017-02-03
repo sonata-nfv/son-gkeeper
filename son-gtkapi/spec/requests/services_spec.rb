@@ -142,7 +142,7 @@ RSpec.describe GtkApi, type: :controller do
         
         it 'should return only one service' do
           parsed_response = JSON.parse(last_response.body, symbolize_names: true)
-          expect(parsed_response[:uuid]).to eq(service1_uuid)
+          expect(parsed_response[:items][:uuid]).to eq(service1_uuid)
         end
       end
       

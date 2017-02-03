@@ -49,15 +49,7 @@ class ServiceManagerService < ManagerService
   def self.find_services(params)
     log_message = LOG_MESSAGE + "##{__method__}(#{params})"
     @@logger.debug(log_message) {'entered'}
-    # first find limited 
-    services=find(url: @@url + '/services', params: params, log_message: LOG_MESSAGE + "##{__method__}(#{params})", logger: @@logger)
-
-    # and now remove 'limit' and ask again   
-    params.delete 'limit' 
-    params.delete 'offset' 
-    unlimited_services = find(url: @@url + '/services', params: params, log_message: LOG_MESSAGE + "##{__method__}(#{params})", logger: @@logger)
-
-    {count: unlimited_services.count, items: services}
+    find(url: @@url + '/services', params: params, log_message: LOG_MESSAGE + "##{__method__}(#{params})", logger: @@logger)
  end
 
   def self.find_requests(params)

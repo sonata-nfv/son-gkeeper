@@ -70,7 +70,7 @@ class GtkApi < Sinatra::Base
         # TOD: mind that, besides the URL-based uuid we might as well pass other params, like fields we want to show
         #params.delete :uuid
         service = ServiceManagerService.find_service_by_uuid(uuid: uuid) #, params: params)
-        if service && !service.empty?
+        if service[:count] && !service[:items].empty?
           logger.debug(log_message) {"leaving with #{service}"}
           halt 200, service.to_json
         else

@@ -33,46 +33,40 @@ RSpec.describe ServiceManagerService, type: :model do
   let(:created_service_1) {service_to_be_created_1.merge({uuid: service_uuid})}
   let(:service_to_be_created_2) {{name:'name', version:'0.2', vendor:'vendor'}}
   let(:created_service_2) {service_to_be_created_2.merge({uuid: service_uuid})}
-  let(:all_services) { {'count': 2, 'items':[ created_service_1, created_service_2 ]}}
+  let(:all_services) { {count: 2, items:[ created_service_1, created_service_2 ]}}
   let(:services_url) { ServiceManagerService.url+'/services' }
   describe '#find_services' do
     it 'with default parameters should return two services' do
-      resp = OpenStruct.new(head_str: 'HTTP/1.1 200', body: all_services.to_json)      
+      resp = OpenStruct.new(header_str: "HTTP/1.1 200\nRecord-Count: 2", body: all_services.to_json)      
       allow(Curl).to receive(:get).with(services_url+'?limit=10&offset=0').and_return(resp) 
-      services = ServiceManagerService.find_services({'limit': 10, 'offset': 0})
-      expect(services).to eq({'count': 2, 'items': all_services})      
+      services = ServiceManagerService.find_services({limit: 10, offset: 0})
+      expect(services).to eq({count: 2, items: all_services})      
     end
     it 'with only default offset parameter (0) should return two services' do
-      resp = OpenStruct.new(head_str: 'HTTP/1.1 200', body: all_services.to_json)      
+      resp = OpenStruct.new(header_str: "HTTP/1.1 200\nRecord-Count: 2", body: all_services.to_json)      
       allow(Curl).to receive(:get).with(services_url+'?offset=0').and_return(resp) 
-      services = ServiceManagerService.find_services({'offset': 0})
-      expect(services).to eq({'count': 2, 'items': all_services})      
+      services = ServiceManagerService.find_services({offset: 0})
+      expect(services).to eq({count: 2, items: all_services})      
     end
-    #it 'with parameter limit 1 should return one service' do
-      #resp = OpenStruct.new(head_str: 'HTTP/1.1 200', body: all_services.to_json)      
-      #allow(Curl).to receive(:get).with('http://localhost:5300/services?offset=0').and_return(resp) 
-      #resp = OpenStruct.new(head_str: 'HTTP/1.1 200', body: all_services[0].to_json)      
-      #allow(Curl).to receive(:get).with('http://localhost:5300/services?limit=1&offset=0').and_return(resp) 
-      #services = ServiceManagerService.find_services({'limit': 1, 'offset': 0})
-      #expect(services).to eq({'count': 2, 'items': all_services[0]})      
-      #end
+    it 'with parameter limit 1 should return one service' do
+      resp = OpenStruct.new(header_str: "HTTP/1.1 200\nRecord-Count: 2", body: created_service_1.to_json)      
+      allow(Curl).to receive(:get).with(services_url+'?limit=1&offset=0').and_return(resp) 
+      services = ServiceManagerService.find_services({limit: 1, offset: 0})
+      expect(services).to eq({count: 2, items: created_service_1})      
+    end
   end
   describe '#find_service_by_uuid' do
-    context 'with valid UUID' do
-      it 'should find a service with a known UUID' do
-        resp = OpenStruct.new(head_str: 'HTTP/1.1 200', body: all_services[0].to_json)      
-        allow(Curl).to receive(:get).with(services_url+'/'+service_uuid).and_return(resp) 
-        service = ServiceManagerService.find_service_by_uuid(uuid: service_uuid)
-        expect(service).to eq(all_services[0])      
-      end
-      it 'should not find a service with an unknown UUID' do
-        resp = OpenStruct.new(head_str: 'HTTP/1.1 404', body: {}.to_json)      
-        allow(Curl).to receive(:get).with(services_url+'/'+unknown_service_uuid).and_return(resp) 
-        service = ServiceManagerService.find_service_by_uuid(uuid: unknown_service_uuid)
-        expect(service).to eq({})      
-      end
+    it 'should find a service with a known UUID' do
+      resp = OpenStruct.new(header_str: "HTTP/1.1 200\nRecord-Count: 1", body: created_service_1.to_json)      
+      allow(Curl).to receive(:get).with(services_url+'/'+service_uuid).and_return(resp) 
+      service = ServiceManagerService.find_service_by_uuid(uuid: service_uuid)
+      expect(service).to eq({count: 1, items: created_service_1})      
     end
-    context 'with an invalid UUID' do
+    it 'should not find a service with an unknown UUID' do
+      resp = OpenStruct.new(header_str: 'HTTP/1.1 404', body: '{}')      
+      allow(Curl).to receive(:get).with(services_url+'/'+unknown_service_uuid).and_return(resp) 
+      service = ServiceManagerService.find_service_by_uuid(uuid: unknown_service_uuid)
+      expect(service).to eq({count: 0, items: {}})
     end
   end
   describe '#find_requests' do
@@ -80,13 +74,8 @@ RSpec.describe ServiceManagerService, type: :model do
     
   end
   describe '#find_requests_by_uuid' do
-    context 'with valid' do
-      it 'and known UUID should find and return the request'
-      it 'and unknown UUID should return an empty list'
-    end
-    context 'with invalid UUID' do
-      it 'should return an error'
-    end
+    it 'and known UUID should find and return the request'
+    it 'and unknown UUID should return an empty list'
   end
   describe '#create_service_intantiation_request' do
     let(:request_service_instantiation) {{service_uuid: service_uuid}}
