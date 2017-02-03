@@ -82,10 +82,13 @@ class Catalogue
       # If there's only one, that's it
       json_unrestricted = JSON.parse unrestricted.body
       @logger.debug(log_message) {"json_unrestricted #{json_unrestricted}"}
-      if json_unrestricted.is_a?(Array) && json_unrestricted.count == 1
+
+      if json_unrestricted.empty?
+        @logger.debug(log_message) {"unrestricted has no records"}
+        result = {count: 0, items: []}
+      elsif json_unrestricted.count == 1
         @logger.debug(log_message) {"unrestricted has only one record"}
-        result[:count] = 1
-        result[:items] = json_unrestricted
+        result = {count: 1, items: json_unrestricted}
       else # Should have more than one record
         @logger.debug(log_message) {"unrestricted has more than one record"}
         result[:count] = json_unrestricted.count
