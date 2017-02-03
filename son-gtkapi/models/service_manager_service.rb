@@ -53,10 +53,14 @@ class ServiceManagerService < ManagerService
  end
 
   def self.find_requests(params)
+    log_message = LOG_MESSAGE + "##{__method__}(#{params})"
+    @@logger.debug(log_message) {'entered'}
     find(url: @@url + '/requests', params: params, log_message: LOG_MESSAGE + "##{__method__}(#{params})", logger: @@logger)
   end
   
   def self.find_requests_by_uuid(uuid)
+    log_message = LOG_MESSAGE + "##{__method__}(#{params})"
+    @@logger.debug(log_message) {'entered'}
     find(url: @@url + '/requests/' + uuid, log_message: LOG_MESSAGE + "##{__method__}(#{uuid})", logger: @@logger)
   end
   
@@ -67,7 +71,7 @@ class ServiceManagerService < ManagerService
     begin
       @@logger.debug(method) {"@url = "+@@url}
       response = self.postCurb(url: @@url+'/requests', body: params.to_json) ## TODO: check if this tests ok!! 
-      @@logger.debug(method) {"response="+response}
+      @@logger.debug(method) {"response=#{response}"}
       response
     rescue => e
       @@logger.error(method) {"Error during processing: #{$!}"}

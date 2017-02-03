@@ -69,9 +69,10 @@ class GtkApi < Sinatra::Base
       logger.info(MESSAGE) {'entered with '+query_string}
       requests = ServiceManagerService.find_requests(params)
       logger.debug(MESSAGE) {"requests = #{requests}"}
-      if requests && requests.is_a?(Array)
-        links = build_pagination_headers(url: request_url, limit: @limit.to_i, offset: @offset.to_i, total: requests.size)
-        [200, {'Link' => links}, requests.to_json]
+      if requests
+        links = build_pagination_headers(url: request_url, limit: @limit.to_i, offset: @offset.to_i, total: requests[:count])
+        headers 'Link' => links, 'Record-Count' => requests[:count].to_s
+        halt 200, requests[:items].to_json
       else
         ERROR_MESSAGE = 'No requests with '+query_string+' were found'
         logger.info(MESSAGE) {"leaving with '"+ERROR_MESSAGE+"'"}
