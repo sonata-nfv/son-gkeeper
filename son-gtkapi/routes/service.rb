@@ -49,7 +49,7 @@ class GtkApi < Sinatra::Base
         logger.debug(log_message) {"links: request_url=#{request_url}, limit=#{@limit}, offset=#{@offset}, total=#{services[:count]}"}
         links = build_pagination_headers(url: request_url, limit: @limit.to_i, offset: @offset.to_i, total: services[:count].to_i)
         logger.debug(log_message) {"links: #{links}"}
-        headers 'Link': links, 'Record-Count': services[:count].to_s
+        headers 'Link'=> links, 'Record-Count'=> services[:count].to_s
         status 200
         halt services[:items].to_json
       else
