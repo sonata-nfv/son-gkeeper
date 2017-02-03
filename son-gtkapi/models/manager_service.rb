@@ -119,7 +119,11 @@ class ManagerService
   def self.get_log(url:, log_message:'', logger: nil)
     logger.debug(log_message) {'entered'} if logger
 
-    response=getCurb(url: url, headers: {'Content-Type' => 'text/plain; charset=utf8', 'Location' => '/'}, logger: logger)
+    response=Curl.get( url) do |req|
+      req.headers['Content-Type'] = 'text/plain; charset=utf8'
+      req.headers['Location'] = '/'
+    end    
+    
     logger.debug(log_message) {'status=' + response.response_code.to_s} if logger
     case response.response_code
       when 200
