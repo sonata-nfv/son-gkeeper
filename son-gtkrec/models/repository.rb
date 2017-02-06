@@ -61,11 +61,19 @@ class Repository
       response = RestClient.get(@url, headers)
       @logger.debug(method) {"response=#{response}"}  
       services_or_functions = JSON.parse(response.body)
-      {status: response.code.to_i, count: services_or_functions.count, items: services_or_functions}
+      case response.code.to_i
+      when 200
+        {status: 200, count: services_or_functions.count, items: services_or_functions, message:"OK"}
+      when 400
+      when 404
+        {status: 200, count: 0, items: [], message:"OK"}
+      else
+        {status: 500, count: 0, items: [], message:"Internal Error"}
+      end
     rescue => e
       @logger.error(method) {"response=#{response}"}  
       @logger.error(method) {e.backtrace.each {|l| puts l}} #format_error(e.backtrace)
-      {status: 400, count: 0, items: []}
+      {status: 500, count: 0, items: [], message: "#{e.backtrace.join("\n\t")}"}
     end
   end
   

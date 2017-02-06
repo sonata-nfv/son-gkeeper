@@ -43,13 +43,13 @@ class RecordManagerService < ManagerService
   end
   
   def self.find_records(params)
-    kind = params['kind']
-    params.delete('kind')
-    find(url: @@url + '/records/' + kind, params: params, log_message: LOG_MESSAGE + "##{__method__}(#{params})", logger: @@logger)
+    #params['kind']
+    kind = params.delete('kind')
+    find(url: @@url + '/' + kind, params: params, log_message: LOG_MESSAGE + "##{__method__}(#{params})", logger: @@logger) # + '/records/' 
   end
   
   def self.find_record_by_uuid(uuid)
-    find(url: @@url + '/records/' + kind + '/' + uuid, log_message: LOG_MESSAGE + "##{__method__}(#{uuid})", logger: @@logger)
+    find(url: @@url + '/' + kind + '/' + uuid, log_message: LOG_MESSAGE + "##{__method__}(#{uuid})", logger: @@logger) #+ '/records/' 
   end
   
   def self.url
