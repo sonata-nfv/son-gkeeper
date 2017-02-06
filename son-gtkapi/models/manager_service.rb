@@ -51,15 +51,25 @@ class ManagerService
     end
     logger.debug(log_message) {"header_str=#{res.header_str}"} if logger
     logger.debug(log_message) {"response body=#{res.body}"} if logger
-    count = get_record_count_from_response_headers(res.header_str).to_i
-    begin
-      parsed_response = res.body.empty? ? {} : JSON.parse(res.body, symbolize_names: true)
-      logger.debug(log_message) {"parsed_response=#{parsed_response}"} if logger
-      {count: count, items: parsed_response}
-    rescue => e
-      logger.error(log_message) {"Error during processing: #{$!}"} if logger
-      logger.error(log_message) {"Backtrace:\n\t#{e.backtrace.join("\n\t")}"} if logger
-      nil 
+    count = get_record_count_from_response_headers(res.header_str)
+    status = get_status_from_response_headers(res.header_str)
+    case status
+    when 200
+      begin
+        parsed_response = res.body.empty? ? {} : JSON.parse(res.body, symbolize_names: true)
+        logger.debug(log_message) {"parsed_response=#{parsed_response}"} if logger
+        {status: status, count: count, items: parsed_response, message: "OK"}
+      rescue => e
+        logger.error(log_message) {"Error during processing: #{$!}"} if logger
+        logger.error(log_message) {"Backtrace:\n\t#{e.backtrace.join("\n\t")}"} if logger
+        {status: nil, count: nil, items: nil, message: "Error processing #{$!}: \n\t#{e.backtrace.join("\n\t")}"}
+      end
+    when 400
+    when 404
+      logger.debug(log_message) {"Records not found for url=#{url}, params=#{params}, headers=#{headers}, logger=#{logger.inspect}"} if logger
+      {status: status, count: 0, items: [], message: "Not Found"}
+    else
+      {status: nil, count: nil, items: nil, message: "Status #{status} unprocessable"}
     end
   end
   
@@ -105,6 +115,13 @@ class ManagerService
     #        "Content-Length" => "62164", "Connection" => "Keep-Alive"}
   end
 
+  def self.get_status_from_response_headers(header_str)
+    # From http://stackoverflow.com/questions/14345805/get-response-headers-from-curb
+    #http_response # => "HTTP/1.1 200 OK"
+    http_status = header_str.split(/[\r\n]+/).map(&:strip)[0].split(" ")
+    http_status[1].to_i
+  end
+
   def self.get_record_count_from_response_headers(header_str)
     # From http://stackoverflow.com/questions/14345805/get-response-headers-from-curb
     http_response, *http_headers = header_str.split(/[\r\n]+/).map(&:strip)
@@ -113,7 +130,7 @@ class ManagerService
     #http_response # => "HTTP/1.1 200 OK"
     #http_headers => { "Date" => "2013-01-10 09:07:42 -0700", "Content-Type" => "text/html", "Server" => "WEBrick/1.3.1 (Ruby/1.9.3/2012-11-10)",
     #        "Content-Length" => "62164", "Connection" => "Keep-Alive"}
-    http_headers['Record-Count']
+    http_headers['Record-Count'].to_i
   end
   
   def self.get_log(url:, log_message:'', logger: nil)

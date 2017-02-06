@@ -60,11 +60,12 @@ class Repository
     begin
       response = RestClient.get(@url, headers)
       @logger.debug(method) {"response=#{response}"}  
-      JSON.parse response.body
+      services_or_functions = JSON.parse(response.body)
+      {status: response.code.to_i, count: services_or_functions.count, items: services_or_functions}
     rescue => e
       @logger.error(method) {"response=#{response}"}  
       @logger.error(method) {e.backtrace.each {|l| puts l}} #format_error(e.backtrace)
-      []
+      {status: 400, count: 0, items: []}
     end
   end
   

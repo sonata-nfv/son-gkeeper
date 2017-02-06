@@ -51,13 +51,15 @@ class GtkApi < Sinatra::Base
       @limit ||= params[:limit] ||= DEFAULT_LIMIT
   
       records = RecordManagerService.find_records(params)
-      if records
+      case records[:status]
+      when 200
         logger.debug(log_message) {"leaving with #{records}"}
-        links = build_pagination_headers(url: request_url, limit: @limit.to_i, offset: @offset.to_i, total: records.size)
-        [200, {'Link' => links}, records.to_json]
+        links = build_pagination_headers(url: request_url, limit: @limit.to_i, offset: @offset.to_i, total: records[:count])
+        headers 'Link' => links
+        halt 200, records[:items].to_json
       else
         logger.debug(log_message) {"No #{params[:kind]} records found"}
-        halt 404, "No #{params[:kind]} records found"
+        halt 404, '[]'
       end
     end
 
@@ -67,9 +69,17 @@ class GtkApi < Sinatra::Base
       unless params[:uuid].nil?
         logger.debug(method) {'entered'}
         json_error 400, 'Invalid Instance UUID' unless valid? params[:uuid]
+        record = RecordManagerService.find_record_by_uuid(params[:uuid])
+        case record[:status]
+        when 200
+          logger.debug(log_message) {"leaving with #{record}"}
+          halt 200, record[:items].to_json
+        else
+          logger.debug(log_message) {"No #{params[:kind]} record with uuid #{params[:uuid]} found"}
+          halt 404, "No #{params[:kind]} record with uuid #{params[:uuid]} found"
+        end
       end
       logger.debug(method) {"leaving with \"No instance UUID specified\""}
-      # TODO!!
       json_error 400, 'No instance UUID specified'
     end
   

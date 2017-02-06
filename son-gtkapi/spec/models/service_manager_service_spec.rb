@@ -31,28 +31,29 @@ RSpec.describe ServiceManagerService, type: :model do
   let(:unknown_service_uuid) {SecureRandom.uuid}
   let(:service_to_be_created_1) {{name:'name', version:'0.1', vendor:'vendor'}}
   let(:created_service_1) {service_to_be_created_1.merge({uuid: service_uuid})}
+  let(:response_service_1) {service_to_be_created_1.merge({uuid: service_uuid})}
   let(:service_to_be_created_2) {{name:'name', version:'0.2', vendor:'vendor'}}
   let(:created_service_2) {service_to_be_created_2.merge({uuid: service_uuid})}
-  let(:all_services) { {count: 2, items:[ created_service_1, created_service_2 ]}}
+  let(:all_services) { [ created_service_1, created_service_2 ]}
   let(:services_url) { ServiceManagerService.url+'/services' }
   describe '#find_services' do
     it 'with default parameters should return two services' do
       resp = OpenStruct.new(header_str: "HTTP/1.1 200 OK\nRecord-Count: 2", body: all_services.to_json)      
       allow(Curl).to receive(:get).with(services_url+'?limit=10&offset=0').and_return(resp) 
       services = ServiceManagerService.find_services({limit: 10, offset: 0})
-      expect(services).to eq({count: 2, items: all_services})      
+      expect(services).to eq({status: 200, count: 2, items: all_services, message: "OK"})      
     end
     it 'with only default offset parameter (0) should return two services' do
       resp = OpenStruct.new(header_str: "HTTP/1.1 200 OK\nRecord-Count: 2", body: all_services.to_json)      
       allow(Curl).to receive(:get).with(services_url+'?offset=0').and_return(resp) 
       services = ServiceManagerService.find_services({offset: 0})
-      expect(services).to eq({count: 2, items: all_services})      
+      expect(services).to eq({status: 200, count: 2, items: all_services, message: "OK"})      
     end
     it 'with parameter limit 1 should return one service' do
       resp = OpenStruct.new(header_str: "HTTP/1.1 200 OK\nRecord-Count: 2", body: created_service_1.to_json)      
       allow(Curl).to receive(:get).with(services_url+'?limit=1&offset=0').and_return(resp) 
       services = ServiceManagerService.find_services({limit: 1, offset: 0})
-      expect(services).to eq({count: 2, items: created_service_1})      
+      expect(services).to eq({status: 200, count: 2, items: created_service_1, message: "OK"})      
     end
   end
   describe '#find_service_by_uuid' do
@@ -60,13 +61,13 @@ RSpec.describe ServiceManagerService, type: :model do
       resp = OpenStruct.new(header_str: "HTTP/1.1 200 OK\nRecord-Count: 1", body: created_service_1.to_json)      
       allow(Curl).to receive(:get).with(services_url+'/'+service_uuid).and_return(resp) 
       service = ServiceManagerService.find_service_by_uuid(uuid: service_uuid)
-      expect(service).to eq({count: 1, items: created_service_1})      
+      expect(service).to eq({status: 200, count: 1, items: created_service_1, message: "OK"})      
     end
     it 'should not find a service with an unknown UUID' do
-      resp = OpenStruct.new(header_str: 'HTTP/1.1 404', body: '{}')      
+      resp = OpenStruct.new(header_str: 'HTTP/1.1 404 Not Found', body: '{}')      
       allow(Curl).to receive(:get).with(services_url+'/'+unknown_service_uuid).and_return(resp) 
       service = ServiceManagerService.find_service_by_uuid(uuid: unknown_service_uuid)
-      expect(service).to eq({count: 0, items: {}})
+      expect(service).to eq({status: 404, count: 0, items: [], message: "Not Found"})
     end
   end
   describe '#find_requests' do

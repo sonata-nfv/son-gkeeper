@@ -33,7 +33,7 @@ class RecordManagerService < ManagerService
   LOG_MESSAGE = 'GtkApi::' + self.name
   
   def self.config(url:, logger:)
-    method = LOG_MESSAGE + "##{__method__}url=#{url}, logger=#{logger})"
+    method = LOG_MESSAGE + "##{__method__}(url=#{url}, logger=#{logger})"
     raise ArgumentError.new('RecordManagerService can not be configured with nil url') if url.nil?
     raise ArgumentError.new('RecordManagerService can not be configured with empty url') if url.empty?
     raise ArgumentError.new('RecordManagerService can not be configured with nil logger') if logger.nil?
@@ -48,7 +48,7 @@ class RecordManagerService < ManagerService
     find(url: @@url + '/records/' + kind, params: params, log_message: LOG_MESSAGE + "##{__method__}(#{params})", logger: @@logger)
   end
   
-  def self.find_service_by_uuid(uuid)
-    find(url: @@url + '/services/' + uuid, log_message: LOG_MESSAGE + "##{__method__}(#{uuid})", logger: @@logger)
+  def self.find_record_by_uuid(uuid)
+    find(url: @@url + '/records/' + kind + '/' + uuid, log_message: LOG_MESSAGE + "##{__method__}(#{uuid})", logger: @@logger)
   end
 end
