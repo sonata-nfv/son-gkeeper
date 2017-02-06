@@ -54,9 +54,14 @@ class GtkRec < Sinatra::Base
       logger.debug(method) {"leaving with response=#{response}"}
       headers 'Record-Count'=>services[:count].to_s
       halt 200, response
-    else
+    when 400
+    when 404
       logger.debug(method) {"leaving with \"No service with params #{query_string} was found\""}
-      json_error 404, "No service with params #{query_string} was found"
+      headers 'Record-Count'=>'0'
+      halt 200, '[]'
+    else
+      logger.debug(method) {"leaving with \"Serious error while fetching services\""}
+      halt 500, "Serious error while fetching services"
     end
   end
   
@@ -78,8 +83,7 @@ class GtkRec < Sinatra::Base
   end
 
   get '/admin/logs' do
-    method = MODULE + ' GET /admin/logs'
-    logger.debug(method) {'entered'}
+    logger.debug "GtkRec: entered GET /admin/logs"
     File.open('log/'+ENV['RACK_ENV']+'.log', 'r').read
   end  
   

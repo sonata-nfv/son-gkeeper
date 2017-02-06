@@ -57,9 +57,14 @@ class GtkRec < Sinatra::Base
       logger.debug(method) {"leaving with response=#{response}"}
       headers 'Record-Count'=>functions[:count].to_s
       halt 200, response
+    when 400
+    when 404
+      logger.debug(method) {"No function with params #{query_string} was found"}
+      headers 'Record-Count'=>'0'
+      halt 200, '[]'
     else
-      logger.debug(method) {"leaving with \"No function with params #{query_string} was found\""}
-      json_error 404, "No function with params #{query_string} was found"
+      logger.debug(method) {"leaving with \"Serious error while fetching function records\""}
+      halt 500, "Serious error while fetching function records"
     end
   end
   

@@ -51,4 +51,9 @@ class RecordManagerService < ManagerService
   def self.find_record_by_uuid(uuid)
     find(url: @@url + '/records/' + kind + '/' + uuid, log_message: LOG_MESSAGE + "##{__method__}(#{uuid})", logger: @@logger)
   end
+  
+  def self.url
+    @@logger.debug(LOG_MESSAGE + "#url") {'@@url='+@@url}
+    @@url
+  end
 end

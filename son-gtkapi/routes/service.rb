@@ -45,7 +45,8 @@ class GtkApi < Sinatra::Base
     
       services = ServiceManagerService.find_services(params)
       logger.debug(log_message) {"Found services #{services}"}
-      unless services.empty?
+      case services[:status]
+      when 200
         logger.debug(log_message) {"links: request_url=#{request_url}, limit=#{@limit}, offset=#{@offset}, total=#{services[:count]}"}
         links = build_pagination_headers(url: request_url, limit: @limit.to_i, offset: @offset.to_i, total: services[:count].to_i)
         logger.debug(log_message) {"links: #{links}"}
@@ -67,7 +68,7 @@ class GtkApi < Sinatra::Base
       if valid?(params[:uuid])
         uuid = params[:uuid]
         
-        # TOD: mind that, besides the URL-based uuid we might as well pass other params, like fields we want to show
+        # TODO: mind that, besides the URL-based uuid we might as well pass other params, like fields we want to show
         #params.delete :uuid
         service = ServiceManagerService.find_service_by_uuid(uuid: uuid) #, params: params)
         if service[:count] && !service[:items].empty?
