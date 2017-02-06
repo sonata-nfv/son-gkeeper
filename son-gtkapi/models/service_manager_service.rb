@@ -31,12 +31,6 @@ class ServiceManagerService < ManagerService
   
   JSON_HEADERS = { 'Accept'=> 'application/json', 'Content-Type'=>'application/json'}
   LOG_MESSAGE = 'GtkApi::' + self.name
-  
-  #def initialize(url, logger)
-  #  method = LOG_MESSAGE + ".new(url=#{url}, logger=#{logger})"
-  #  super
-  #  @logger.debug(method){'entered'}
-  #end
     
   def self.config(url:, logger:)
     method = LOG_MESSAGE + "#config(url=#{url}, logger=#{logger})"
@@ -48,82 +42,36 @@ class ServiceManagerService < ManagerService
     @@logger.debug(method) {'entered'}
   end
 
-  def self.find_service_by_uuid(uuid)
-    method = LOG_MESSAGE + ".find_service_by_uuid(#{uuid})"
-    @@logger.debug(method) {'entered'}
-    begin
-      response = self.getCurb(url: @@url+"/services/#{uuid}", headers: JSON_HEADERS, logger: @@logger)
-      @@logger.debug(method) {"Leaving with response.body=#{response.body}"}
-      if response.body.empty?
-        nil
-      else
-        JSON.parse response.body
-      end
-    rescue => e
-      @@logger.error(method) {"Error during processing: #{$!}"}
-      @@logger.error(method) {"Backtrace:\n\t#{e.backtrace.join("\n\t")}"}
-      nil
-    end
+  def self.find_service_by_uuid(uuid:, params: {})
+    find(url: @@url + '/services/' + uuid, params: params, log_message: LOG_MESSAGE + "##{__method__}(#{uuid})", logger: @@logger)
   end
   
   def self.find_services(params)
-    method = LOG_MESSAGE + ".find_services(#{params})"
-    @@logger.debug(method) {'entered'}
-    services = {}
-
-    begin
-      result = self.getCurb(url: @@url + '/services', params: params, headers: JSON_HEADERS, logger: @@logger) 
-      @@logger.debug(method) {"result headers #{result.headers} "}
-      @@logger.debug(method) {"result body #{result.body} "}
-      services[:items] = JSON.parse result.body
-      services[:count] = ServiceManagerService.get_record_count_from_response_headers(result.header_str)
-      
-      @@logger.debug(method) {"Leaving with #{services[:count]} records, items=#{services[:items]}"}
-      services
-    rescue => e
-      @@logger.error(method) {"Error during processing: #{$!}"}
-      @@logger.error(method) {"Backtrace:\n\t#{e.backtrace.join("\n\t")}"}
-      nil 
-    end
-  end
+    log_message = LOG_MESSAGE + "##{__method__}(#{params})"
+    @@logger.debug(log_message) {'entered'}
+    find(url: @@url + '/services', params: params, log_message: LOG_MESSAGE + "##{__method__}(#{params})", logger: @@logger)
+ end
 
   def self.find_requests(params)
-    method = LOG_MESSAGE + ".find_requests(#{params})"
-    @@logger.debug(method) {'entered'}
-    begin
-      response = self.getCurb(url:@@url + '/requests', params: params, headers: JSON_HEADERS, logger: @@logger) 
-      @@logger.debug(method) {'Leaving with response='+response.body}
-      JSON.parse response.body
-    rescue => e
-      @@logger.error(method) {"Error during processing: #{$!}"}
-      @@logger.error(method) {"Backtrace:\n\t#{e.backtrace.join("\n\t")}"}
-      nil 
-    end
+    log_message = LOG_MESSAGE + "##{__method__}(#{params})"
+    @@logger.debug(log_message) {'entered'}
+    find(url: @@url + '/requests', params: params, log_message: LOG_MESSAGE + "##{__method__}(#{params})", logger: @@logger)
   end
   
   def self.find_requests_by_uuid(uuid)
-    method = LOG_MESSAGE + ".find_requests_by_uuid(#{uuid})"
-    @@logger.debug(method) {'entered'}
-    begin
-      response = self.getCurb(url: @@url+'/requests/'+uuid, headers: JSON_HEADERS, logger: @@logger) 
-      @@logger.debug(method) {'Leaving with response='+response.body}
-      JSON.parse response.body
-    rescue => e
-      @@logger.error(method) {"Error during processing: #{$!}"}
-      @@logger.error(method) {"Backtrace:\n\t#{e.backtrace.join("\n\t")}"}
-      nil 
-    end
+    log_message = LOG_MESSAGE + "##{__method__}(#{params})"
+    @@logger.debug(log_message) {'entered'}
+    find(url: @@url + '/requests/' + uuid, log_message: LOG_MESSAGE + "##{__method__}(#{uuid})", logger: @@logger)
   end
   
   def self.create_service_intantiation_request(params)
-    method = LOG_MESSAGE + ".create_service_intantiation_request(#{params})"
+    method = LOG_MESSAGE + "##{__method__}(#{params})"
     @@logger.debug(method) {'entered'}
 
     begin
       @@logger.debug(method) {"@url = "+@@url}
-      #response = RestClient.post(@url+'/requests', params.to_json, content_type: :json, accept: :json) 
       response = self.postCurb(url: @@url+'/requests', body: params.to_json) ## TODO: check if this tests ok!! 
-      @@logger.debug(method) {"response="+response}
+      @@logger.debug(method) {"response=#{response}"}
       response
     rescue => e
       @@logger.error(method) {"Error during processing: #{$!}"}
@@ -147,22 +95,6 @@ class ServiceManagerService < ManagerService
       @@logger.error(method) {"Backtrace:\n\t#{e.backtrace.join("\n\t")}"}
       nil 
     end      
-  end
-  
-  def self.get_log
-    method = 'GtkApi::' + CLASS_NAME + ".get_log()"
-    @@logger.debug(method) {'entered'}
-
-    response=getCurb(url: @@url+'/admin/logs', headers: {'Content-Type' => 'text/plain; charset=utf8', 'Location' => '/'}, logger: @@logger)
-    @@logger.debug(method) {'status=' + response.response_code.to_s}
-    case response.response_code
-      when 200
-        response.body
-      else
-        @@logger.error(method) {"Error during processing: #{$!}"}
-        @@logger.error(method) {"Backtrace:\n\t#{e.backtrace.join("\n\t")}"}
-        nil
-      end
   end
   
   def self.url

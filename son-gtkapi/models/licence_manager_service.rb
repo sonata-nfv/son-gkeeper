@@ -81,58 +81,28 @@ class LicenceManagerService < ManagerService
   end
 
   def self.find_licence_type_by_uuid(uuid)
-    licence_type=find(url: @@url + LICENCE_TYPES_URL + uuid + '/', log_message: LOG_MESSAGE + "##{__method__}(#{uuid})")
+    licence_type=find(url: @@url + LICENCE_TYPES_URL + uuid + '/', log_message: LOG_MESSAGE + "##{__method__}(#{uuid})", logger: @@logger)
       #{"status_code:": 200, "data": {"duration": 10, "status": "ACTIVE", "type": "Private", "type_uuid": "9e0dffc3-707e-41b6-81d1-79196cfe88a9"}, "description": "Type successfully retrieved", "error": ""}
     licence_type['data'] if licence_type
   end
 
   def self.find_licence_by_uuid(uuid)
-    find(url: @@url + LICENCES_URL + uuid + '/', log_message: LOG_MESSAGE + "##{__method__}(#{uuid})")
+    find(url: @@url + LICENCES_URL + uuid + '/', log_message: LOG_MESSAGE + "##{__method__}(#{uuid})", logger: @@logger)
     licence['data'] if licence_type
   end
   
   def self.find_licence_types(params)
-    licence_types=find(url: @@url + LICENCE_TYPES_URL, params: params, log_message: LOG_MESSAGE + "##{__method__}(#{params})")
+    licence_types=find(url: @@url + LICENCE_TYPES_URL, params: params, log_message: LOG_MESSAGE + "##{__method__}(#{params})", logger: @@logger)
       #{"status_code:"=>200, "data"=>{"types"=>[{"duration"=>1000, "status"=>"ACTIVE", "type"=>"Public", "type_uuid"=>"21cf0db6-f96b-4659-a463-05d5c3413141"}, {"duration"=>10, "status"=>"ACTIVE", "type"=>"Private", "type_uuid"=>"9e0dffc3-707e-41b6-81d1-79196cfe88a9"}]}, "description"=>"Types list successfully retrieved", "error"=>""}
     licence_types['data']['types'] if licence_types
   end
   
   def self.find_licences(params)
-    find(url: @@url + LICENCES_URL, params: params, log_message: LOG_MESSAGE + "##{__method__}(#{params})")
-  end
-
-  def self.get_log
-    method = LOG_MESSAGE + "##{__method__}()"
-    @@logger.debug(method) {'entered'}
-
-    response=getCurb(url: @@url+'/admin/logs', headers: {'Content-Type' => 'text/plain; charset=utf8', 'Location' => '/'}, logger: @@logger)
-    @@logger.debug(method) {'status=' + response.response_code.to_s}
-    case response.response_code
-      when 200
-        response.body
-      else
-        @@logger.error(method) {"Error during processing: #{$!}"}
-        @@logger.error(method) {"Backtrace:\n\t#{e.backtrace.join("\n\t")}"}
-        nil
-      end
+    find(url: @@url + LICENCES_URL, params: params, log_message: LOG_MESSAGE + "##{__method__}(#{params})", logger: @@logger)
   end
   
   def self.url
     @@logger.debug(LOG_MESSAGE + "#url") {'@@url='+@@url}
     @@url
-  end
-  
-  private
-  def self.find(url:, params: {}, log_message:'')
-    @@logger.debug(log_message) {'entered'}
-    begin
-      response = getCurb(url: url, params: params, headers: JSON_HEADERS, logger: @@logger) 
-      @@logger.debug(log_message) {"response=#{response}"}
-      JSON.parse response.body
-    rescue => e
-      @@logger.error(log_message) {"Error during processing: #{$!}"}
-      @@logger.error(log_message) {"Backtrace:\n\t#{e.backtrace.join("\n\t")}"}
-      nil 
-    end    
   end
 end

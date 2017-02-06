@@ -53,7 +53,7 @@ class GtkSrv < Sinatra::Base
         records = services[:items].to_json
       end
       logger.debug(log_message) { "leaving with #{services[:count]}: #{records}"}
-      headers 'X-Record-Count' => services[:count].to_s
+      headers 'Record-Count' => services[:count].to_s
       halt 200, records
     else
       logger.debug(log_message) { "leaving with \"No service with params #{query_string} was found\""}
@@ -131,5 +131,4 @@ class GtkSrv < Sinatra::Base
     logger.debug(log_message) {"Schema=#{request.env['rack.url_scheme']}, host=#{request.env['HTTP_HOST']}, path=#{request.env['REQUEST_PATH']}"}
     request.env['rack.url_scheme']+'://'+request.env['HTTP_HOST']+request.env['REQUEST_PATH']
   end
-  
 end

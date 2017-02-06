@@ -38,17 +38,21 @@ class GtkApi < Sinatra::Base
     
       logger.debug(log_message) {'entered with '+query_string}
     
-      @offset ||= params[:offset] ||= DEFAULT_OFFSET
-      @limit ||= params[:limit] ||= DEFAULT_LIMIT
+      @offset ||= params['offset'] ||= DEFAULT_OFFSET
+      @limit ||= params['limit'] ||= DEFAULT_LIMIT
       logger.debug(log_message) {"offset=#{@offset}, limit=#{@limit}"}
+      logger.debug(log_message) {"params=#{params}"}
     
       services = ServiceManagerService.find_services(params)
       logger.debug(log_message) {"Found services #{services}"}
-      if services
-        logger.debug(log_message) {"links: request_url=#{request_url}, limit:=#{@limit.to_i}, offset:=#{@offset.to_i}, total:=#{services[:count]}"}
+      case services[:status]
+      when 200
+        logger.debug(log_message) {"links: request_url=#{request_url}, limit=#{@limit}, offset=#{@offset}, total=#{services[:count]}"}
         links = build_pagination_headers(url: request_url, limit: @limit.to_i, offset: @offset.to_i, total: services[:count].to_i)
         logger.debug(log_message) {"links: #{links}"}
-        [200, {'Link' => links, 'X-Record-Count' => services[:count]}, services[:items].to_json]
+        headers 'Link'=> links, 'Record-Count'=> services[:count].to_s
+        status 200
+        halt services[:items].to_json
       else
         message = "No services with #{params} were found"
         logger.debug(log_message) {"leaving with message '"+message+"'"}
@@ -59,11 +63,15 @@ class GtkApi < Sinatra::Base
     # GET a specific service
     get '/:uuid/?' do
       log_message = MODULE+' GET /api/v2/services/:uuid'
-      logger.debug(log_message) {"entered with #{params[:uuid]}"}
+      logger.debug(log_message) {"entered with #{params}"}
     
       if valid?(params[:uuid])
-        service = ServiceManagerService.find_service_by_uuid(params[:uuid])
-        if service
+        uuid = params[:uuid]
+        
+        # TODO: mind that, besides the URL-based uuid we might as well pass other params, like fields we want to show
+        #params.delete :uuid
+        service = ServiceManagerService.find_service_by_uuid(uuid: uuid) #, params: params)
+        if service[:count] && !service[:items].empty?
           logger.debug(log_message) {"leaving with #{service}"}
           halt 200, service.to_json
         else
@@ -80,18 +88,18 @@ class GtkApi < Sinatra::Base
   
   namespace '/api/v2/admin/services' do
     get '/logs/?' do
-      log_message = 'GtkApi: GET /admin/services/logs'
+      log_message = 'GtkApi::GET /admin/services/logs'
       logger.debug(log_message) {'entered'}
       headers 'Content-Type' => 'text/plain; charset=utf8', 'Location' => '/'
-      log = ServiceManagerService.get_log
+      log = ServiceManagerService.get_log(url:ServiceManagerService.url+'/admin/logs', log_message:log_message, logger: logger)
       logger.debug(log_message) {'leaving with log='+log}
-      halt 200, log #.to_s
+      halt 200, log
     end
   end
   
   private 
   def query_string
-    request.env['QUERY_STRING'].nil? ? '' : '?' + request.env['QUERY_STRING'].to_s
+    request.env['QUERY_STRING'].empty? ? '' : '?' + request.env['QUERY_STRING'].to_s
   end
 
   def request_url

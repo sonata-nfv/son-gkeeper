@@ -37,7 +37,7 @@ class NService
     raise ArgumentError.new('NService.initialize: logger can not be nil') if logger.nil?
     @repository = repository
     @logger = logger
-    @logger.debug "NService.new(repository=#{repository}, logger#{logger})"
+    @logger.debug "NService.new(repository=#{repository.inspect}, logger#{logger.inspect})"
   end
   
   def find(params)

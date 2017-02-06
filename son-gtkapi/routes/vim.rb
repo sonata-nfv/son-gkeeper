@@ -46,7 +46,7 @@ class GtkApi < Sinatra::Base
       params = JSON.parse(request.body.read)
       unless params.nil?
         logger.debug(MESSAGE) {"entered with params=#{params}"}
-        new_request = settings.vim_management.create_vim(params)
+        new_request = VimManagerService.create_vim(params)
         if new_request
           logger.debug(MESSAGE) {"new_request =#{new_request}"}
           halt 201, new_request.to_json
@@ -66,7 +66,7 @@ class GtkApi < Sinatra::Base
       @limit ||= params['limit'] ||= DEFAULT_LIMIT
 
       logger.info(MESSAGE) {"entered"}
-      vims = settings.vim_management.find_vims(params)
+      vims = VimManagerService.find_vims(params)
       logger.debug(MESSAGE) { "vims= #{vims}"}
       if vims 
         links = build_pagination_headers(url: request_url, limit: @limit.to_i, offset: @offset.to_i, total: vims.size)
@@ -83,7 +83,7 @@ class GtkApi < Sinatra::Base
         logger.debug "GtkApi: GET /api/v2/vims/#{params[:uuid]}"
         json_error 400, 'Invalid request UUID' unless valid? params[:uuid]
       
-        request = settings.vim_management.find_vim_request_by_uuid(params['uuid'])
+        request = VimManagerService.find_vim_request_by_uuid(params['uuid'])
         json_error 404, "The vim_request UUID #{params[:uuid]} does not exist" unless request
 
         logger.debug "GtkApi: leaving GET /vim_request/#{params[:uuid]}\" with request #{request}"
@@ -96,19 +96,23 @@ class GtkApi < Sinatra::Base
   
   namespace '/api/v2/admin/vims' do
     get '/logs/?' do
-      logger.debug "GtkApi: entered GET /api/v2/admin/vims/logs"
+      log_message = 'GtkApi::GET /api/v2/admin/vims/logs'
+      logger.debug(log_message) {'entered'}
       headers 'Content-Type' => 'text/plain; charset=utf8', 'Location' => '/'
-      log = settings.vim_management.get_log
-      halt 200, log #.to_s
+      log = VimManagerService.get_log(url:'/admin/logs', log_message:log_message, logger: logger)
+      logger.debug(log_message) {'leaving with log='+log}
+      halt 200, log
     end
   end
   
   private 
   def query_string
-    request.env['QUERY_STRING'].nil? ? '' : '?' + request.env['QUERY_STRING'].to_s
+    request.env['QUERY_STRING'].empty? ? '' : '?' + request.env['QUERY_STRING'].to_s
   end
 
   def request_url
-    request.env['rack.url_scheme']+'://'+request.env['HTTP_HOST']+request.env['REQUEST_PATH']
+    log_message = 'GtkApi::request_url'
+    logger.debug(log_message) {"Schema=#{request.env['rack.url_scheme']}, host=#{request.env['HTTP_HOST']}, path=#{request.env['REQUEST_PATH']}"}
+    "#{request.env['rack.url_scheme']}://#{request.env['HTTP_HOST']}#{request.env['REQUEST_PATH']}"
   end
 end
