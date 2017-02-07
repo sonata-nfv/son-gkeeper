@@ -1,5 +1,30 @@
 source 'https://rubygems.org'
 
+<<<<<<< HEAD
+<<<<<<< HEAD
+gem 'rake'
+gem 'sinatra', '~> 1.4.3', require: 'sinatra/base'
+gem 'sinatra-contrib', '~> 1.4.1', require: false
+gem 'pry'
+gem 'puma'
+gem 'rest-client'
+gem 'rack-parser', require: 'rack/parser'
+gem 'sinatra-cross_origin'
+gem 'ci_reporter_rspec'
+gem 'rubyzip', '>= 1.0.0'
+gem 'foreman'
+gem 'addressable'
+gem 'bunny', '>= 2.3.0'
+gem 'rubocop'
+gem 'rubocop-checkstyle_formatter', require: false
+gem 'pg'
+gem 'activerecord'
+gem 'sinatra-activerecord', '2.0.10'
+gem 'sinatra-logger', '0.1.1'
+gem 'sinatra-active-model-serializers', '0.3.0'
+=======
+=======
+>>>>>>> upstream/master
 gem 'rake', '11.2.2'
 gem 'sinatra', '1.4.7', require: 'sinatra/base'
 gem 'sinatra-contrib', '1.4.7', require: false
@@ -19,6 +44,10 @@ gem 'activerecord', '4.2.5.1'
 gem 'sinatra-activerecord', '2.0.4'
 gem 'sinatra-logger', '0.1.1'
 gem 'sinatra-active-model-serializers', '0.2.2'
+<<<<<<< HEAD
+>>>>>>> upstream/master
+=======
+>>>>>>> upstream/master
 
 group :test do
   gem 'webmock', '2.1.0'
@@ -30,4 +59,8 @@ end
 
 group :test, :development do
   gem 'capybara', '2.7.1'
+<<<<<<< HEAD
 end
+=======
+end
+>>>>>>> upstream/master
