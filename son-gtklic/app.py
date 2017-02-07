@@ -21,7 +21,7 @@ migrate = Migrate(app, db)
 
 manager = Manager(app)
 manager.add_command('db', MigrateCommand)
-manager.add_command("runserver", Server())
+manager.add_command("runserver", Server(port=app.config["PORT"]))
 
 @manager.command
 def dropdb():
