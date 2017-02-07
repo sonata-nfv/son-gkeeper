@@ -37,12 +37,8 @@ def build_response(status_code, description="", error="", data=""):
 
 
 from routes.licenses import *
-from routes.types import *
 
 api = Api(app)
-
-api.add_resource(TypesList, '/api/v1/types/')
-api.add_resource(Types, '/api/v1/types/<typeID>/')
 
 api.add_resource(LicensesList, '/api/v1/licenses/')
 api.add_resource(Licenses, '/api/v1/licenses/<licenseID>/')
