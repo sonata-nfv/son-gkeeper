@@ -109,11 +109,22 @@ class LicenceManagerService < ManagerService
   def self.find_licence_types(params)
     licence_types=find(url: @@url + LICENCE_TYPES_URL, params: params, log_message: LOG_MESSAGE + "##{__method__}(#{params})", logger: @@logger)
       #{"status_code:"=>200, "data"=>{"types"=>[{"duration"=>1000, "status"=>"ACTIVE", "type"=>"Public", "type_uuid"=>"21cf0db6-f96b-4659-a463-05d5c3413141"}, {"duration"=>10, "status"=>"ACTIVE", "type"=>"Private", "type_uuid"=>"9e0dffc3-707e-41b6-81d1-79196cfe88a9"}]}, "description"=>"Types list successfully retrieved", "error"=>""}
-    licence_types['data']['types'] if licence_types
+    licence_types[:items][:data][:types] if licence_types
   end
   
   def self.find_licences(params)
-    find(url: @@url + LICENCES_URL, params: params, log_message: LOG_MESSAGE + "##{__method__}(#{params})", logger: @@logger)
+    method = LOG_MESSAGE + "##{__method__}(#{params})"
+    licences = find(url: @@url + LICENCES_URL, params: params, log_message: LOG_MESSAGE + "##{__method__}(#{params})", logger: @@logger)
+    @@logger.debug(method) {"licences=#{licences}"}
+    case licences[:status]
+    when 200
+      {status: 200, count: licences[:items][:data][:licences].count, items: licences[:items][:data][:licences], message: "OK"}
+    when 400
+    when 404
+      {status: 200, count: 0, items: [], message: "OK"}
+    else
+      {status: licences[:status], count: 0, items: [], message: "Error"}
+    end
   end
   
   def self.url
