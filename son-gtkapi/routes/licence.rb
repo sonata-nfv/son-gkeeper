@@ -30,14 +30,14 @@ class GtkApi < Sinatra::Base
   
   register Sinatra::Namespace
   namespace '/api/v2' do
-    options '/' do
-    #before do
-    #  if request.request_method == 'OPTIONS'
+    #options '/' do
+    before do
+      if request.request_method == 'OPTIONS'
         response.headers['Access-Control-Allow-Origin'] = '*'
         response.headers['Access-Control-Allow-Methods'] = 'POST,PUT'      
         response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Access-Control-Allow-Headers, Authorization, X-Requested-With'
         halt 200
-    #  end
+      end
     end
     
     # GET licence types
