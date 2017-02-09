@@ -65,6 +65,21 @@ class LicenceManagerService < ManagerService
     end
   end
   
+  def self.valid?(params)
+    method = LOG_MESSAGE + "##{__method__}(#{params})"
+    @@logger.debug(method) {'entered'}
+    headers = {'Content-Type'=>'application/x-www-form-urlencoded'}
+    begin
+      licence = postCurb(url: @@url+LICENCES_URL, body: params, headers: headers, logger: @@logger)
+      @@logger.debug(method) {"licence=#{licence.body}"}
+      JSON.parse licence.body
+    rescue  => e #RestClient::Conflict
+      @@logger.error(method) {"Error during processing: #{$!}"}
+      @@logger.error(method) {"Backtrace:\n\t#{e.backtrace.join("\n\t")}"}
+      {error: 'Licence type not created', licence: e.backtrace}
+    end
+  end
+  
   def self.create_licence(params)
     method = LOG_MESSAGE + "##{__method__}(#{params})"
     @@logger.debug(method) {'entered'}
@@ -105,4 +120,30 @@ class LicenceManagerService < ManagerService
     @@logger.debug(LOG_MESSAGE + "#url") {'@@url='+@@url}
     @@url
   end
+  
+  #def user
+  #  @user ||= User.find(params[:user_id]) || halt(404)
+  #end
+
+  #def service
+   # @service ||= user.services.find(params[:service_id]) || halt(404)
+  #end
+
+  #def task_date
+  #  @task_date ||= Date.iso8601(params[:task_date])
+  #rescue ArgumentError
+  #  halt 400
+  #end
+
+  #def tasks
+  #  @tasks ||= project.tasks_due_on(task_date)
+  #end
+  
+  # now use this with
+  #get '/users/:user_id/projects/:project_id/tasks-due-on/:task_date' do
+  #  tasks.to_json
+  #end
+  
+  
+  
 end

@@ -30,6 +30,15 @@ class GtkApi < Sinatra::Base
   
   register Sinatra::Namespace
   namespace '/api/v2' do
+    options '/' do
+    #before do
+    #  if request.request_method == 'OPTIONS'
+        response.headers['Access-Control-Allow-Origin'] = '*'
+        response.headers['Access-Control-Allow-Methods'] = 'POST,PUT'      
+        response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Access-Control-Allow-Headers, Authorization, X-Requested-With'
+        halt 200
+    #  end
+    end
     
     # GET licence types
     get '/licence-types/?' do
@@ -62,19 +71,24 @@ class GtkApi < Sinatra::Base
     
       @offset ||= params['offset'] ||= DEFAULT_OFFSET 
       @limit ||= params['limit'] ||= DEFAULT_LIMIT
-    
+
       licences = LicenceManagerService.find_licences(params)
-      if licences
-        logger.debug(log_message) {"leaving with #{licences}"}
-        links = build_pagination_headers(url: request_url, limit: @limit.to_i, offset: @offset.to_i, total: licences.size)
-        [200, {'Link' => links}, licences.to_json]
+      logger.debug(log_message) {"Found licences #{licences}"}
+      case licences[:status]
+      when 200
+        logger.debug(log_message) {"links: request_url=#{request_url}, limit=#{@limit}, offset=#{@offset}, total=#{licences[:count]}"}
+        links = build_pagination_headers(url: request_url, limit: @limit.to_i, offset: @offset.to_i, total: licences[:count].to_i)
+        logger.debug(log_message) {"links: #{links}"}
+        headers 'Link'=> links, 'Record-Count'=> services[:count].to_s
+        status 200
+        halt licences[:items].to_json
       else
-        error_message = "No licences with #{params} were found"
-        logger.debug(log_message) {"leaving with message '"+error_message+"'"}
-        json_error 404, error_message
+        message = "No licences with #{params} were found"
+        logger.debug(log_message) {"leaving with message '"+message+"'"}
+        json_error 404, message
       end
     end
-  
+      
     # GET a specific licence type
     get '/licence-types/:uuid/?' do
       log_message = MODULE+' GET /api/v2/licence-types/:uuid'
@@ -151,22 +165,28 @@ class GtkApi < Sinatra::Base
       # 'expiringDate', DateTime * 
       # 'status', String
       
-      params = JSON.parse(body)
+      params = JSON.parse(body, symbolize_names: true)
       logger.debug(log_message) {"entered with params=#{params}"}
+      
+      if LicenceManagerService.valid? params
     
-      # description, duration, status
-      licence = LicenceManagerService.create_licence(params)
-      logger.debug(log_message) {"licence=#{licence.inspect}"}
-      if licence
-        if licence.is_a?(Hash) && (licence[:uuid] || licence['uuid'])
-          logger.info(log_message) {"leaving with licence: #{licence}"}
-          headers 'Location'=> LicenceManagerService.url+"/licences/#{licence[:uuid]}", 'Content-Type'=> 'application/json'
-          halt 201, licence.to_json
+        # description, duration, status
+        licence = LicenceManagerService.create_licence(params)
+        logger.debug(log_message) {"licence=#{licence.inspect}"}
+        if licence
+          if licence.is_a?(Hash) && (licence[:uuid] || licence['uuid'])
+            logger.info(log_message) {"leaving with licence: #{licence}"}
+            headers 'Location'=> LicenceManagerService.url+"/licences/#{licence[:uuid]}", 'Content-Type'=> 'application/json'
+            halt 201, licence.to_json
+          else
+            json_error 400, 'No UUID given to licence'
+          end
         else
-          json_error 400, 'No UUID given to licence'
+          json_error 400, 'Licence not created'
         end
       else
-        json_error 400, 'Licence not created'
+        # :unprocessable_entity
+        json_error 422, "Invalid parameters: #{params}"
       end
     end
   end
