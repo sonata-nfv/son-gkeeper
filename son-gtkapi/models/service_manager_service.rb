@@ -50,18 +50,14 @@ class ServiceManagerService < ManagerService
     log_message = LOG_MESSAGE + "##{__method__}(#{params})"
     @@logger.debug(log_message) {'entered'}
     services=find(url: @@url + '/services', params: params, log_message: LOG_MESSAGE + "##{__method__}(#{params})", logger: @@logger)
-    {
-      status: services[:status], 
-      count: services[:count], 
-      items: services[:items].is_a?(Hash) ? [services[:items]] : services[:items], 
-      message: services[:message]
-    }
+    vectorize_hash services
  end
 
   def self.find_requests(params)
     log_message = LOG_MESSAGE + "##{__method__}(#{params})"
     @@logger.debug(log_message) {'entered'}
-    find(url: @@url + '/requests', params: params, log_message: LOG_MESSAGE + "##{__method__}(#{params})", logger: @@logger)
+    requests=find(url: @@url + '/requests', params: params, log_message: LOG_MESSAGE + "##{__method__}(#{params})", logger: @@logger)
+    vectorize_hash requests
   end
   
   def self.find_requests_by_uuid(uuid)
