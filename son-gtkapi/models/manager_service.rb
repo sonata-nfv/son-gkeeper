@@ -56,7 +56,7 @@ class ManagerService
     case status
     when 200
       begin
-        parsed_response = res.body.empty? ? {} : JSON.parse(res.body, symbolize_names: true)
+        parsed_response = res.body.empty? ? [{}] : JSON.parse(res.body, symbolize_names: true)
         logger.debug(log_message) {"parsed_response=#{parsed_response}"} if logger
         {status: status, count: count, items: parsed_response, message: "OK"}
       rescue => e
