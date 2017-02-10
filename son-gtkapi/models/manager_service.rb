@@ -158,4 +158,13 @@ class ManagerService
     logger.debug(log_message) {"response=#{response}"} if logger
     response
   end
+  
+  def self.vectorize_hash(hash)
+    {
+      status: hash[:status], 
+      count: hash[:count], 
+      items: hash[:items].is_a?(Hash) ? [hash[:items]] : hash[:items], 
+      message: hash[:message]
+    }
+  end
 end

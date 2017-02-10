@@ -45,7 +45,8 @@ class RecordManagerService < ManagerService
   def self.find_records(params)
     #params['kind']
     kind = params.delete('kind')
-    find(url: @@url + '/' + kind, params: params, log_message: LOG_MESSAGE + "##{__method__}(#{params})", logger: @@logger) # + '/records/' 
+    records= find(url: @@url + '/' + kind, params: params, log_message: LOG_MESSAGE + "##{__method__}(#{params})", logger: @@logger)
+    vectorize_hash records
   end
   
   def self.find_record_by_uuid(uuid)
