@@ -14,7 +14,7 @@
 ## See the License for the specific language governing permissions and
 ## limitations under the License.
 ##
-## Neither the name of the SONATA-NFV
+## Neither the name of the SONATA-NFV [, ANY ADDITIONAL AFFILIATION]
 ## nor the names of its contributors may be used to endorse or promote
 ## products derived from this software without specific prior written
 ## permission.
@@ -25,13 +25,31 @@
 ## acknowledge the contributions of their colleagues of the SONATA
 ## partner consortium (www.sonata-nfv.eu).
 
-# config.ru (run with rackup)
-# require './app'
-require File.expand_path '../gtk_usr.rb', __FILE__
+require 'yard'
+require 'rspec/core/rake_task'
+require 'ci/reporter/rake/rspec'
+require '../son-gtkusr/gtk_usr'
 
-# run Sinatra::Application
-run Rack::URLMap.new({
-                         '/' => Adapter,
-                         '/api/v1/' => Keycloak,
-                         '/tests' => SecuredAPI
-                     })
+task default: ['ci:all']
+
+desc 'Start the service'
+task :start do
+  puts 'SON-GTKUSR ADAPTER STARTING...'
+  conf = File.expand_path('config.ru', File.dirname(__FILE__))
+  exec("puma #{conf} -b tcp://0.0.0.0:4021")
+end
+
+desc 'Run Unit Tests'
+# RSpec::Core::RakeTask.new :specs do |task|
+#   task.pattern = Dir['spec/**/*_spec.rb']
+# end
+
+# YARD::Rake::YardocTask.new do |t|
+#   t.files = %w(main.rb helpers/*.rb routes/*.rb)
+# end
+
+task :default => [:swagger]
+
+# namespace :ci do
+#   task all: %w(ci:setup:rspec specs)
+# end

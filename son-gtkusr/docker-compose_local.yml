@@ -1,0 +1,15 @@
+son-gtkusr:
+  image: registry.sonata-nfv.eu:5000/son-gtkusr
+  links:
+    - keycloak
+  ports:
+    - ""
+  restart: always
+
+keycloak:
+  image:
+  links:
+    - ""
+  ports:
+    - ""
+  restart: always

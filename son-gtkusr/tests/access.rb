@@ -8,26 +8,50 @@ def parse_json(message)
     parsed_message = JSON.parse(message) # parse json message
   rescue JSON::ParserError => e
     # If JSON not valid, return with errors
-    logger.error "JSON parsing: #{e}"
     return message, e.to_s + "\n"
   end
 
   return parsed_message, nil
 end
 
+# "token_endpoint":"http://localhost:8081/auth/realms/master/protocol/openid-connect/token"
+def adminbased()
+  @address = 'localhost'
+  @port = '8081'
+  @uri = 'auth'
+  @client_name = 'adapter'
+  @client_secret = 'df7e816d-0337-4fbe-a3f4-7b5263eaba9f'
+  @access_token = nil
+
+  url = URI('http://' + @address.to_s + ':' + @port.to_s + '/' + @uri.to_s + '/realms/master/protocol/openid-connect/token')
+
+  res = Net::HTTP.post_form(url, 'client_id' => @client_name, 'client_secret' => @client_secret,
+#                            'username' => "user",
+#                            'password' => "1234",
+                            'grant_type' => "client_credentials")
+
+  if res.body['access_token']
+    parsed_res, code = parse_json(res.body)
+    @access_token = parsed_res['access_token']
+    puts "ACCESS_TOKEN RECEIVED" , parsed_res['access_token']
+    parsed_res['access_token']
+  end
+end
+
+# "token_endpoint":"http://localhost:8081/auth/realms/master/protocol/openid-connect/token"
 def userbased
   # curl -d "client_id=admin-cli" -d "username=user1" -d "password=1234" -d "grant_type=password" "http://localhost:8081/auth/realms/SONATA/protocol/openid-connect/token"
-  client_id = "register"
-  @usrname = "dang03"
-  pwd = "D031287d"
+  client_id = "adapter"
+  @usrname = "user"
+  pwd = "1234"
   grt_type = "password"
   http_path = "http://localhost:8081/auth/realms/master/protocol/openid-connect/token"
   idp_path = "http://localhost:8081/auth/realms/master/broker/github/login?"
   # puts `curl -X POST --data "client_id=#{client_id}&username=#{usrname}"&password=#{pwd}&grant_type=#{grt_type} #{http_path}`
 
-  # uri = URI(http_path)
-  uri = URI(idp_path)
-  res = Net::HTTP.post_form(uri, 'client_id' => client_id,
+  uri = URI(http_path)
+  # uri = URI(idp_path)
+  res = Net::HTTP.post_form(uri, 'client_id' => client_id, 'client_secret' => 'df7e816d-0337-4fbe-a3f4-7b5263eaba9f',
                             'username' => @usrname,
                             'password' => pwd,
                             'grant_type' => grt_type)
@@ -44,11 +68,13 @@ def userbased
     parsed_res, code = parse_json(res.body)
     @access_token = parsed_res['access_token']
     puts "ACCESS_TOKEN RECEIVED", parsed_res['access_token']
+    parsed_res['access_token']
   else
     401
   end
 end
 
+# "token_endpoint":"http://localhost:8081/auth/realms/master/protocol/openid-connect/token"
 def clientbased
   # curl -d "client_id=admin-cli" -d "username=user1" -d "password=1234" -d "grant_type=password" "http://localhost:8081/auth/realms/SONATA/protocol/openid-connect/token"
   http_path = "http://localhost:8081/auth/realms/master/protocol/openid-connect/token"
@@ -56,10 +82,12 @@ def clientbased
   # puts `curl -X POST --data "client_id=#{client_id}&username=#{usrname}"&password=#{pwd}&grant_type=#{grt_type} #{http_path}`
 
   uri = URI(http_path)
+
   res = Net::HTTP.post_form(uri, 'client_id' => 'adapter',
                             'client_secret' => 'df7e816d-0337-4fbe-a3f4-7b5263eaba9f',
                             'grant_type' => 'client_credentials'
                             )
+
   puts "RES.HEADER: ", res.header
   puts "RES.BODY: ", res.body
 
@@ -90,24 +118,143 @@ def get_public_key
   keycloak_pub_key = @key
 end
 
+# Token Validation Endpoint
+# "token_introspection_endpoint":"http://localhost:8081/auth/realms/master/protocol/openid-connect/token/introspect"
+def token_validation(token)
+  # puts "TEST ACCESS_TOKEN", token
+  # decode_token(token, keycloak_pub_key)
+  # url = URI("http://localhost:8081/auth/realms/master/clients-registrations/openid-connect/")
+  url = URI("http://127.0.0.1:8081/auth/realms/master/protocol/openid-connect/token/introspect")
+  # ttp = Net::HTTP.new(url.host, url.port)
+
+  # request = Net::HTTP::Post.new(url.to_s)
+  # request = Net::HTTP::Get.new(url.to_s)
+  # request["authorization"] = 'bearer ' + token
+  # request["content-type"] = 'application/json'
+  # body = {"token" => token}
+
+  # request.body = body.to_json
+
+  res = Net::HTTP.post_form(url, 'client_id' => 'adapter',
+                            'client_secret' => 'df7e816d-0337-4fbe-a3f4-7b5263eaba9f',
+                            'grant_type' => 'client_credentials', 'token' => token)
+
+  puts "RESPONSE_INTROSPECT", res.read_body
+  res.read_body
+  # RESPONSE_INTROSPECT:
+  # {"jti":"bc1200e5-3b6d-43f2-a125-dc4ed45c7ced","exp":1486105972,"nbf":0,"iat":1486051972,"iss":"http://localhost:8081/auth/realms/master","aud":"adapter","sub":"67cdf213-349b-4539-bdb2-43351bf3f56e","typ":"Bearer","azp":"adapter","auth_time":0,"session_state":"608a2a72-198d-440b-986f-ddf37883c802","name":"","preferred_username":"service-account-adapter","email":"service-account-adapter@placeholder.org","acr":"1","client_session":"2c31bbd9-c13d-43f1-bb30-d9bd46e3c0ab","allowed-origins":[],"realm_access":{"roles":["create-realm","admin","uma_authorization"]},"resource_access":{"adapter":{"roles":["uma_protection"]},"master-realm":{"roles":["view-identity-providers","view-realm","manage-identity-providers","impersonation","create-client","manage-users","view-authorization","manage-events","manage-realm","view-events","view-users","view-clients","manage-authorization","manage-clients"]},"account":{"roles":["manage-account","view-profile"]}},"clientHost":"127.0.0.1","clientId":"adapter","clientAddress":"127.0.0.1","client_id":"adapter","username":"service-account-adapter","active":true}
+end
+
+# Method that allows end-user authentication through authorized browser
+# "authorization_endpoint":"http://localhost:8081/auth/realms/master/protocol/openid-connect/auth"
+def authorize_browser(token=nil)
+  client_id = "adapter"
+  @usrname = "user"
+  pwd = "1234"
+  grt_type = "password"
+
+  query = "response_type=code&scope=openid%20profile&client_id=adapter&redirect_uri=http://127.0.0.1/"
+  http_path = "http://localhost:8081/auth/realms/master/protocol/openid-connect/auth" + "?" + query
+  url = URI(http_path)
+  http = Net::HTTP.new(url.host, url.port)
+  request = Net::HTTP::Get.new(url.to_s)
+  #request["authorization"] = 'bearer ' + token
+
+  response = http.request(request)
+  # p "RESPONSE", response.body
+
+  File.open('codeflow.html', 'wb') do |f|
+    f.puts response.read_body
+  end
+end
+
+# "userinfo_endpoint":"http://localhost:8081/auth/realms/master/protocol/openid-connect/userinfo"
+def userinfo(token)
+  http_path = "http://localhost:8081/auth/realms/master/protocol/openid-connect/userinfo"
+  url = URI(http_path)
+  http = Net::HTTP.new(url.host, url.port)
+  # request = Net::HTTP::Post.new(url.to_s)
+  request = Net::HTTP::Get.new(url.to_s)
+  request["authorization"] = 'bearer ' + token
+  #request["content-type"] = 'application/json'
+  #body = {}
+
+  #request.body = body.to_json
+  response = http.request(request)
+  puts "RESPONSE", response.read_body
+  response_json = parse_json(response.read_body)[0]
+end
+
+# "end_session_endpoint":"http://localhost:8081/auth/realms/master/protocol/openid-connect/logout"
+def logout(token, user=nil)
+  # user = token['sub']#'971fc827-6401-434e-8ea0-5b0f6d33cb41'
+  user = userinfo(token)["sub"]
+  p "SUB", user
+  # http_path = "http://localhost:8081/auth/realms/master/protocol/openid-connect/logout"
+  http_path ="http://localhost:8081/auth/admin/realms/master/users/#{user}/logout"
+  url = URI(http_path)
+  http = Net::HTTP.new(url.host, url.port)
+  # request = Net::HTTP::Post.new(url.to_s)
+  request = Net::HTTP::Post.new(url.to_s)
+  request["authorization"] = 'bearer ' + token
+  request["content-type"] = 'application/x-www-form-urlencoded'
+  #request["content-type"] = 'application/json'
+
+  #request.set_form_data({'client_id' => 'adapter',
+  #                       'client_secret' => 'df7e816d-0337-4fbe-a3f4-7b5263eaba9f',
+  #                       'username' => 'user',
+  #                       'password' => '1234',
+  #                       'grant_type' => 'password'})
+  #request.set_form_data('refresh_token' => token)
+
+  #_remove_all_user_sessions_associated_with_the_user
+
+  #request.body = body.to_json
+
+  response = http.request(request)
+  puts "RESPONSE CODE", response.code
+  # puts "RESPONSE BODY", response.body
+  #response_json = parse_json(response.read_body)[0]
+end
+
+# Public key used by realm encoded as a JSON Web Key (JWK).
+# This key can be used to verify tokens issued by Keycloak without making invocations to the server.
+def certificates
+  http_path = "http://localhost:8081/auth/realms/master/protocol/openid-connect/certs"
+  url = URI(http_path)
+  http = Net::HTTP.new(url.host, url.port)
+  # request = Net::HTTP::Post.new(url.to_s)
+  request = Net::HTTP::Get.new(url.to_s)
+  #request["authorization"] = 'bearer ' + token
+  #request["content-type"] = 'application/json'
+  #body = {}
+
+  #request.body = body.to_json
+  response = http.request(request)
+  puts "RESPONSE", response.read_body
+  response_json = parse_json(response.read_body)[0]
+end
+
 def decode_token(token, keycloak_pub_key)
   @decoded_payload, @decoded_header = JWT.decode token, keycloak_pub_key, true, { :algorithm => 'RS256' }
   # puts "DECODED_TOKEN: ", @decoded_token
   puts "DECODED_HEADER: ", @decoded_header
   puts "DECODED_PAYLOAD: ", @decoded_payload
+  return @decoded_header, @decoded_payload
 end
 
+# "registration_endpoint":"http://localhost:8081/auth/realms/master/clients-registrations/openid-connect"
 def register_client (token, keycloak_pub_key)
   puts "TEST ACCESS_TOKEN", token
   decode_token(token, keycloak_pub_key)
-  url = URI("http://127.0.0.1:8081/auth/realms/master/clients-registrations/openid-connect/")
+  url = URI("http://localhost:8081/auth/realms/master/clients-registrations/openid-connect/")
   #url = URI("http://127.0.0.1:8081/auth/realms/master/protocol/openid-connect/token/introspect")
   #url = URI("http://127.0.0.1:8081/auth/realms/master/protocol/openid-connect/userinfo")
   http = Net::HTTP.new(url.host, url.port)
 
   request = Net::HTTP::Post.new(url.to_s)
   #request = Net::HTTP::Get.new(url.to_s)
-  #request["authorization"] = 'Bearer ' + token
+  request["authorization"] = 'bearer ' + token
   request["content-type"] = 'application/json'
   body = {"client_name" => "myclient",
           "client_secret" => "1234-admin"}
@@ -116,19 +263,184 @@ def register_client (token, keycloak_pub_key)
 
   response = http.request(request)
   puts "RESPONSE", response.read_body
+  response_json = parse_json(response.read_body)[0]
+
+  @reg_uri = response_json['registration_client_uri']
+  @reg_token = response_json['registration_access_token']
+  @reg_id = response_json['client_id']
+  @reg_secret = response_json['client_secret']
+end
+def register_user(token) #, username,firstname, lastname, email, credentials)
+  body = {"username" => "tester",
+          "enabled" => true,
+          "totp" => false,
+          "emailVerified" => false,
+          "firstName" => "User",
+          "lastName" => "Sample",
+          "email" => "tester.sample@email.com.br",
+          "credentials" => [
+              {"type" => "password",
+               "value" => "1234"}
+          ],
+          "requiredActions" => [],
+          "federatedIdentities" => [],
+          "attributes" => {"tester" => ["true"],"admin" => ["false"]},
+          "realmRoles" => [],
+          "clientRoles" => {},
+          "groups" => []}
+
+  url = URI("http://localhost:8081/auth/admin/realms/master/users")
+  http = Net::HTTP.new(url.host, url.port)
+
+  request = Net::HTTP::Post.new(url.to_s)
+  request["authorization"] = 'Bearer ' + token
+
+  request["content-type"] = 'application/json'
+  request.body = body.to_json
+
+  response = http.request(request)
+  puts "REG CODE", response.code
+  puts "REG BODY", response.body
+
+  #GET new registered user Id
+  url = URI("http://localhost:8081/auth/admin/realms/master/users?username=tester")
+  http = Net::HTTP.new(url.host, url.port)
+
+  request = Net::HTTP::Get.new(url.to_s)
+  request["authorization"] = 'Bearer ' + token
+  request.body = body.to_json
+
+  response = http.request(request)
+  puts "ID CODE", response.code
+  puts "ID BODY", response.body
+  user_id = response.body[0]['id']
+  puts "USER ID", user_id
+  return
+  #- Use the endpoint to setup temporary password of user (It will
+  #automatically add requiredAction for UPDATE_PASSWORD
+  url = URI("http://localhost:8081/auth/admin/realms/master/users/#{user_id}/reset-password")
+  http = Net::HTTP.new(url.host, url.port)
+  request = Net::HTTP::Put.new(url.to_s)
+  request["authorization"] = 'Bearer ' + token
+  request["content-type"] = 'application/json'
+
+  credentials = {"credentials" => [
+      {"type" => "password",
+       "value" => "1234"}]}
+
+  request.body = credentials.to_json
+  response = http.request(request)
+  puts "CRED CODE", response.code
+  puts "CRED BODY", response.body
+
+  #- Then use the endpoint for update user and send the empty array of
+  #requiredActions in it. This will ensure that UPDATE_PASSWORD required
+  #action will be deleted and user won't need to update password again.
+  url = URI("http://localhost:8081/auth/admin/realms/master/users/#{user_id}")
+  http = Net::HTTP.new(url.host, url.port)
+  request = Net::HTTP::Put.new(url.to_s)
+  request["authorization"] = 'Bearer ' + token
+  request["content-type"] = 'application/json'
+
+  body = {"requiredActions" => []}
+
+  request.body = body.to_json
+  response = http.request(request)
+  puts "UPD CODE", response.code
+  puts "UPD BODY", response.body
 end
 
-#userbased
-#clientbased
-#token = clientbased
-token = "eyJhbGciOiJSUzI1NiJ9.eyJqdGkiOiIzOGU1YjgwMC01Yjc2LTQ3YzQtOTljNC0xYjhhOTdmNWFiNzIiLCJleHAiOjE0ODUxMDE0MzMsIm5iZiI6MCwiaWF0IjoxNDg0ODQyMjMzLCJpc3MiOiJodHRwOi8vbG9jYWxob3N0OjgwODEvYXV0aC9yZWFsbXMvbWFzdGVyIiwiYXVkIjoiaHR0cDovL2xvY2FsaG9zdDo4MDgxL2F1dGgvcmVhbG1zL21hc3RlciIsInR5cCI6IkluaXRpYWxBY2Nlc3NUb2tlbiJ9.WOnoVdL_C6fncSIY7AT5S9sykkOZL8tumJWirydE_FwKRmJcCyeiRo41b6AvWChGP6Wqjw-8iqFdX4fHAfBUFTL_jlzLu67YfZbfq6xeR4blHgVLsKET_8h00ZyNzgE6-lvRHCKQJ0msKblFkQJm1DiHYlJpyaTW4gwanKMzEyWq_n0eOvYMp0G_z5PmqtoAj1VN0GlXa_lE2gQP-wSMpz57c5KHNKCVtwUMzdoBUvOj4ZMFq80JR91Tnsk5lAvQd_4Szitcycx2Q5SXdtvLwDb_UeEUQr-yyGcSFFO2fW-XwQ9Dgi68UG4Nc69AY0cWU9-6nlvQKfFCa32yx0LfMQ"
-key = get_public_key
-decode_token(token, key)
-register_client(token, key)
+def login_user_bis (token, username=nil, credentials=nil)
+  url = URI("http://localhost:8081/auth/realms/master/protocol/openid-connect/token")
+  http = Net::HTTP.new(url.host, url.port)
+  request = Net::HTTP::Post.new(url.to_s)
+  request["authorization"] = 'Bearer ' + token
+  request["content-type"] = 'application/x-www-form-urlencoded'
 
-#(40 known properties: "software_version", "tos_uri", "application_type", "redirect_uris", "client_id", "sector_identifier_uri", "request_object_signing_alg", "contacts", "scope", "post_logout_redirect_uris", "grant_types", "client_id_issued_at", "logo_uri", "client_secret_expires_at", "userinfo_signed_response_alg", "policy_uri", "id_token_encrypted_response_enc", "jwks_uri", "id_token_encrypted_response_alg", "client_secret", "registration_access_token", "default_max_age", "require_auth_time", "subject_type", "request_object_encryption_enc", "token_endpoint_auth_signing_alg", "default_acr_values", "request_object_encryption_alg", "initiate_login_uri", "software_id", "token_endpoint_auth_method", "jwks", "id_token_signed_response_alg", "request_uris", "client_uri", "response_types", "userinfo_encrypted_response_enc", "registration_client_uri", "client_name", "userinfo_encrypted_response_alg"])
+
+  request.set_form_data({'client_id' => 'adapter',
+                         'client_secret' => 'df7e816d-0337-4fbe-a3f4-7b5263eaba9f',
+                         'username' => 'user',
+                         'password' => '1234',
+                         'grant_type' => 'password'})
+
+  response = http.request(request)
+  # puts "USER ACCESS TOKEN RECEIVED: ", response.read_body
+  parsed_res, code = parse_json(response.body)
+  puts "USER ACCESS TOKEN RECEIVED: ", parsed_res['access_token']
+  parsed_res['access_token']
+end
+
+def management(token)
+  #pub = get_public_key
+  #header, payload = decode_token(token, pub)
+  #session = payload['session_state']
+  user_id = '971fc827-6401-434e-8ea0-5b0f6d33cb41'
+  http_path = "http://localhost:8081/auth/admin/realms/master/users/#{user_id}"
+  url = URI(http_path)
+  http = Net::HTTP.new(url.host, url.port)
+  #request = Net::HTTP::Post.new(url.to_s)
+  request = Net::HTTP::Get.new(url.to_s)
+  request["authorization"] = 'bearer ' + token
+  #request["content-type"] = 'application/x-www-form-urlencoded'
+  #request["content-type"] = 'application/json'
+
+  #request.set_form_data({'client_id' => 'adapter',
+  #                       'client_secret' => 'df7e816d-0337-4fbe-a3f4-7b5263eaba9f',
+  #                       'username' => 'user',
+  #                       'password' => '1234',
+  #                       'grant_type' => 'password'})
+  #request.set_form_data('refresh_token' => token)
+
+  #_remove_all_user_sessions_associated_with_the_user
+
+  #request.body = body.to_json
+
+  response = http.request(request)
+  puts "RESPONSE CODE", response.code
+  puts "RESPONSE BODY", response.body
+end
 =begin
-"software_version",
+"grant_types_supported":["authorization_code","implicit","refresh_token","password","client_credentials"]
+"response_types_supported":["code","none","id_token","token","id_token token","code id_token","code token","code id_token token"]
+"subject_types_supported":["public"]
+"id_token_signing_alg_values_supported":["RS256"]
+"userinfo_signing_alg_values_supported":["RS256"]
+"request_object_signing_alg_values_supported":["none","RS256"]
+"response_modes_supported":["query","fragment","form_post"]
+"token_endpoint_auth_methods_supported":["private_key_jwt","client_secret_basic","client_secret_post"]
+"token_endpoint_auth_signing_alg_values_supported":["RS256"]
+"claims_supported":["sub","iss","auth_time","name","given_name","family_name","preferred_username","email"]
+"claim_types_supported":["normal"]
+"claims_parameter_supported":false
+"scopes_supported":["openid","offline_access"]
+"request_parameter_supported":true
+"request_uri_parameter_supported":true}
+=end
+
+# token = userbased
+token = clientbased
+#token = adminbased
+#pub = get_public_key
+#token_validation(token)
+# certificates
+# authenticate(token)
+# userinfo(token)
+#decode_token(token, pub)
+# register_client(token, pub)
+#token2 = login_user_bis(token)
+#sleep(3)
+#logout_user(token,)
+#sleep(3)
+#token_validation(token)
+#management(token)
+#logout(token2)
+#sleep(2)
+#token_validation(token2)
+register_user(token)
+
+=begin
+    "software_version",
     "tos_uri",
     "application_type",
     "redirect_uris",
