@@ -53,7 +53,7 @@ RSpec.describe ServiceManagerService, type: :model do
       resp = OpenStruct.new(header_str: "HTTP/1.1 200 OK\nRecord-Count: 2", body: created_service_1.to_json)      
       allow(Curl).to receive(:get).with(services_url+'?limit=1&offset=0').and_return(resp) 
       services = ServiceManagerService.find_services({limit: 1, offset: 0})
-      expect(services).to eq({status: 200, count: 2, items: created_service_1, message: "OK"})      
+      expect(services).to eq({status: 200, count: 2, items: [created_service_1], message: "OK"})      
     end
   end
   describe '#find_service_by_uuid' do
