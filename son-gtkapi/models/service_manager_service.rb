@@ -49,7 +49,13 @@ class ServiceManagerService < ManagerService
   def self.find_services(params)
     log_message = LOG_MESSAGE + "##{__method__}(#{params})"
     @@logger.debug(log_message) {'entered'}
-    find(url: @@url + '/services', params: params, log_message: LOG_MESSAGE + "##{__method__}(#{params})", logger: @@logger)
+    services=find(url: @@url + '/services', params: params, log_message: LOG_MESSAGE + "##{__method__}(#{params})", logger: @@logger)
+    {
+      status: services[:status], 
+      count: services[:count], 
+      items: services[:items].is_a?(Hash) ? [services[:items]] : services[:items], 
+      message: services[:message]
+    }
  end
 
   def self.find_requests(params)
