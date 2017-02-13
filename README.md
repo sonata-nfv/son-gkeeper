@@ -34,7 +34,7 @@ Micro-services currently implemented are the following:
 The last three micro-services are still a work in progress. Most of these micro-services have been implemented using [`ruby`](https://github.com/ruby/ruby/tree/ruby_2_2) programming language and the [`sinatra`](https://github.com/sinatra/sinatra) framework. The exception is the [`son-gtklic`](https://github.com/sonata-nfv/son-gkeeper/tree/master/son-gtklic), which is implemented in [`python`](https://www.python.org/). The only need is that the micro-service to be implemented provides a REST API, whatever the language it is implemented in.
 
 ### Building
-'Building' the Gatekkeper, given the approach mentioned above, is more like 'composing' it from the available micro-services. So:
+'Building' the Gatekeeper, given the approach mentioned above, is more like 'composing' it from the available micro-services. So:
 
 * each micro-service is provided in its own container (we're using [`docker`](https://github.com/docker/docker));
 * the `Dockerfile` in each folder specifies the environment the container needs to work;
