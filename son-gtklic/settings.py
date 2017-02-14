@@ -14,3 +14,9 @@ DEBUG = False
 
 # Default timeout for when validating licenses to external urls
 TIMEOUT = 5
+
+# Default log file names for developing and production
+if DEBUG:
+    LOG_FILE = "log/development.log"
+else:
+    LOG_FILE = "log/production.log"

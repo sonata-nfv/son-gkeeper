@@ -4,6 +4,7 @@ import os
 import json
 import unittest
 import xmlrunner
+import logging
 
 from flask import Flask, Response
 from flask_sqlalchemy import SQLAlchemy
@@ -15,6 +16,10 @@ app = Flask(__name__)
 
 app.config.from_pyfile('settings.py')
 
+logger = logging.getLogger('werkzeug')
+handler = logging.FileHandler(app.config["LOG_FILE"])
+logger.addHandler(handler)
+app.logger.addHandler(handler)
 
 db = SQLAlchemy(app)
 migrate = Migrate(app, db)
