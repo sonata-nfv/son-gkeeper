@@ -2,7 +2,7 @@ require 'json'
 require 'sinatra'
 require 'net/http'
 # require 'openssl'
-# require 'yaml'
+require 'yaml'
 # require 'open-uri'
 
 # Checks if a JSON message is valid
@@ -116,6 +116,48 @@ class Adapter < Sinatra::Application
     puts "USER ADDED!"
     @access_token
   end
+
+  def set_keycloak_config()
+    #TODO: Implement
+    conf = YAML::load_file('../config/keycloak.yml') #Load
+    conf['address'] = 'localhost'
+    conf['port'] = 8081
+    conf['uri'] = 'auth' #Modify
+    conf['realm'] = 'SONATA' #Modify
+    conf['client'] = 'adapter' #Modify
+    # conf['secret'] = ''
+    File.open('../config/keycloak.yml', 'w') {|f| f.write conf.to_yaml } #Store
+  end
+
+  def set_sonata_realm()
+    #TODO: Implement
+    #Requirement: pre-defined SONATA Realm json template:
+    # ./standalone.sh -Dkeycloak.migration.action=export -Dkeycloak.migration.provider=singleFile -Dkeycloak.migration.file=</path/to/template.json>
+    #Then, import template into Keycloak thorugh REST API
+
+  end
+
+  def set_adapter_client()
+    #TODO: Implement
+    #Create a new client
+
+    #Client's client_id must be unique!
+    #POST /admin/realms/{realm}/clients
+    #BodyParameter = ClientRepresentation
+    #realm = realm name (not id!)
+
+  end
+
+  def set_adapter_client_credentials()
+    #TODO: Implement
+  end
+
+  def set_keycloak_credentials()
+    #TODO: Implement
+  end
+
+
+
 
 #Comment about ROLES
 =begin

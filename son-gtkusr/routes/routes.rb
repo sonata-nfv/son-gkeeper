@@ -78,8 +78,8 @@ class Keycloak < Sinatra::Application
     login(username, credentials)
   end
 
-  post '/auth' do
-    # TODO: implement authentication API
+  post '/authenticate' do
+    auth
   end
 
   post '/authorize' do
@@ -87,13 +87,14 @@ class Keycloak < Sinatra::Application
   end
 
   post '/userinfo' do
-    # TODO: implement userinfo API
+    userinfo
   end
 
   post '/logout' do
     logout
   end
 end
+
 =begin
 class SecuredAPI < Sinatra::Application
   # This is a sample of a secured API

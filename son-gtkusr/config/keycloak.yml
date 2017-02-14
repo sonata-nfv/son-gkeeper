@@ -1,8 +1,7 @@
 ---
-# Keycloak configuration
 address: localhost
 port: 8081
 uri: auth
-realm: master
+realm: SONATA
 client: adapter
 secret: df7e816d-0337-4fbe-a3f4-7b5263eaba9f

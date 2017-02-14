@@ -31,7 +31,7 @@ require File.expand_path '../gtk_usr.rb', __FILE__
 
 # run Sinatra::Application
 run Rack::URLMap.new({
-                         '/' => Adapter,
-                         '/api/v1/' => Keycloak,
+                         '/admin' => Adapter,
+                         '/api/v1' => Keycloak,
                          '/tests' => SecuredAPI
                      })

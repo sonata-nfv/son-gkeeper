@@ -270,6 +270,7 @@ def register_client (token, keycloak_pub_key)
   @reg_id = response_json['client_id']
   @reg_secret = response_json['client_secret']
 end
+
 def register_user(token) #, username,firstname, lastname, email, credentials)
   body = {"username" => "tester",
           "enabled" => true,
@@ -313,9 +314,9 @@ def register_user(token) #, username,firstname, lastname, email, credentials)
   response = http.request(request)
   puts "ID CODE", response.code
   puts "ID BODY", response.body
-  user_id = response.body[0]['id']
+  user_id = parse_json(response.body).first[0]["id"]
   puts "USER ID", user_id
-  return
+
   #- Use the endpoint to setup temporary password of user (It will
   #automatically add requiredAction for UPDATE_PASSWORD
   url = URI("http://localhost:8081/auth/admin/realms/master/users/#{user_id}/reset-password")
@@ -324,9 +325,9 @@ def register_user(token) #, username,firstname, lastname, email, credentials)
   request["authorization"] = 'Bearer ' + token
   request["content-type"] = 'application/json'
 
-  credentials = {"credentials" => [
-      {"type" => "password",
-       "value" => "1234"}]}
+  credentials = {"type" => "password",
+                  "value" => "1234",
+                  "temporary" => "false"}
 
   request.body = credentials.to_json
   response = http.request(request)
@@ -348,6 +349,10 @@ def register_user(token) #, username,firstname, lastname, email, credentials)
   response = http.request(request)
   puts "UPD CODE", response.code
   puts "UPD BODY", response.body
+end
+
+def set_user_roles(token)
+  #TODO: Implement
 end
 
 def login_user_bis (token, username=nil, credentials=nil)
@@ -400,6 +405,26 @@ def management(token)
   puts "RESPONSE CODE", response.code
   puts "RESPONSE BODY", response.body
 end
+
+def set_Keycloak_config()
+  #TODO: Implement
+  require 'yaml'
+=begin
+    # Keycloak configuration
+    address: localhost
+    port: 8081
+    uri: auth
+    realm: master
+    client: adapter
+    secret: df7e816d-0337-4fbe-a3f4-7b5263eaba9f
+=end
+  conf = YAML::load_file('../config/keycloak.yml') #Load
+  conf['uri']= 'auth' #Modify
+  conf['realm']= 'SONATA' #Modify
+  conf['client']= 'adapter' #Modify
+  File.open('../config/keycloak.yml', 'w') {|f| f.write conf.to_yaml } #Store
+end
+
 =begin
 "grant_types_supported":["authorization_code","implicit","refresh_token","password","client_credentials"]
 "response_types_supported":["code","none","id_token","token","id_token token","code id_token","code token","code id_token token"]
@@ -419,7 +444,7 @@ end
 =end
 
 # token = userbased
-token = clientbased
+#token = clientbased
 #token = adminbased
 #pub = get_public_key
 #token_validation(token)
@@ -437,7 +462,8 @@ token = clientbased
 #logout(token2)
 #sleep(2)
 #token_validation(token2)
-register_user(token)
+#register_user(token)
+set_Keycloak_config
 
 =begin
     "software_version",

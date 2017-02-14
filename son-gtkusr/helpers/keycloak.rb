@@ -24,7 +24,6 @@ class Keycloak < Sinatra::Application
 
   # p keycloak_config
   # p "ISSUER", ENV['JWT_ISSUER']
-
   @address = keycloak_config['address']
   @port = keycloak_config['port']
   @uri = keycloak_config['uri']
@@ -163,6 +162,83 @@ class Keycloak < Sinatra::Application
     # {"jti":"bc1200e5-3b6d-43f2-a125-dc4ed45c7ced","exp":1486105972,"nbf":0,"iat":1486051972,"iss":"http://localhost:8081/auth/realms/master","aud":"adapter","sub":"67cdf213-349b-4539-bdb2-43351bf3f56e","typ":"Bearer","azp":"adapter","auth_time":0,"session_state":"608a2a72-198d-440b-986f-ddf37883c802","name":"","preferred_username":"service-account-adapter","email":"service-account-adapter@placeholder.org","acr":"1","client_session":"2c31bbd9-c13d-43f1-bb30-d9bd46e3c0ab","allowed-origins":[],"realm_access":{"roles":["create-realm","admin","uma_authorization"]},"resource_access":{"adapter":{"roles":["uma_protection"]},"master-realm":{"roles":["view-identity-providers","view-realm","manage-identity-providers","impersonation","create-client","manage-users","view-authorization","manage-events","manage-realm","view-events","view-users","view-clients","manage-authorization","manage-clients"]},"account":{"roles":["manage-account","view-profile"]}},"clientHost":"127.0.0.1","clientId":"adapter","clientAddress":"127.0.0.1","client_id":"adapter","username":"service-account-adapter","active":true}
   end
 
+  def register_user(token) #, username,firstname, lastname, email, credentials)
+    body = {"username" => "tester",
+            "enabled" => true,
+            "totp" => false,
+            "emailVerified" => false,
+            "firstName" => "User",
+            "lastName" => "Sample",
+            "email" => "tester.sample@email.com.br",
+            "credentials" => [
+                {"type" => "password",
+                 "value" => "1234"}
+            ],
+            "requiredActions" => [],
+            "federatedIdentities" => [],
+            "attributes" => {"tester" => ["true"],"admin" => ["false"]},
+            "realmRoles" => [],
+            "clientRoles" => {},
+            "groups" => []}
+
+    url = URI("http://localhost:8081/auth/admin/realms/master/users")
+    http = Net::HTTP.new(url.host, url.port)
+
+    request = Net::HTTP::Post.new(url.to_s)
+    request["authorization"] = 'Bearer ' + token
+    request["content-type"] = 'application/json'
+    request.body = body.to_json
+    response = http.request(request)
+    puts "REG CODE", response.code
+    puts "REG BODY", response.body
+
+    #GET new registered user Id
+    url = URI("http://localhost:8081/auth/admin/realms/master/users?username=tester")
+    http = Net::HTTP.new(url.host, url.port)
+
+    request = Net::HTTP::Get.new(url.to_s)
+    request["authorization"] = 'Bearer ' + token
+    request.body = body.to_json
+
+    response = http.request(request)
+    puts "ID CODE", response.code
+    puts "ID BODY", response.body
+    user_id = parse_json(response.body).first[0]["id"]
+    puts "USER ID", user_id
+
+    #- Use the endpoint to setup temporary password of user (It will
+    #automatically add requiredAction for UPDATE_PASSWORD
+    url = URI("http://localhost:8081/auth/admin/realms/master/users/#{user_id}/reset-password")
+    http = Net::HTTP.new(url.host, url.port)
+    request = Net::HTTP::Put.new(url.to_s)
+    request["authorization"] = 'Bearer ' + token
+    request["content-type"] = 'application/json'
+
+    credentials = {"type" => "password",
+                   "value" => "1234",
+                   "temporary" => "false"}
+
+    request.body = credentials.to_json
+    response = http.request(request)
+    puts "CRED CODE", response.code
+    puts "CRED BODY", response.body
+
+    #- Then use the endpoint for update user and send the empty array of
+    #requiredActions in it. This will ensure that UPDATE_PASSWORD required
+    #action will be deleted and user won't need to update password again.
+    url = URI("http://localhost:8081/auth/admin/realms/master/users/#{user_id}")
+    http = Net::HTTP.new(url.host, url.port)
+    request = Net::HTTP::Put.new(url.to_s)
+    request["authorization"] = 'Bearer ' + token
+    request["content-type"] = 'application/json'
+
+    body = {"requiredActions" => []}
+
+    request.body = body.to_json
+    response = http.request(request)
+    puts "UPD CODE", response.code
+    puts "UPD BODY", response.body
+  end
 
   # "registration_endpoint":"http://localhost:8081/auth/realms/master/clients-registrations/openid-connect"
   def register_client (token, keycloak_pub_key, realm=nil)
@@ -307,7 +383,6 @@ class Keycloak < Sinatra::Application
     end
   end
 
-
   # Method that allows end-user authentication through authorized browser
   # "authorization_endpoint":"http://localhost:8081/auth/realms/master/protocol/openid-connect/auth"
   def authorize_browser(token=nil, realm=nil)
@@ -394,39 +469,18 @@ class Keycloak < Sinatra::Application
   def authorize
     ###
     #TODO: Implement
+    #=> Check token!
+    #=> Response => 20X or 40X
   end
 
   def refresh
     ###
     #TODO: Implement
+    #=> Check if token.expired?
+    #=> Then GET new token
   end
-end
 
-
-def register_user (username,firstname, lastname, email, credentials)
-  body = {"username" => "User.Sample",
-          "enabled" => true,
-          "totp" => false,
-          "emailVerified" => false,
-          "firstName" => "User",
-          "lastName" => "Sample",
-          "email" => "user.sample at email.com.br",
-          "credentials" => [
-              {"type" => "password",
-               "value" => "myPassword"}
-          ]
-  }
-
-  url = URI("http://localhost:8081/auth/admin/realms/master/users")
-  http = Net::HTTP.new(url.host, url.port)
-
-  request = Net::HTTP::Post.new(url.to_s)
-  # TODO: Add admin token access
-  request["authorization"] = 'Bearer ' + @access_token.to_s
-
-  request["content-type"] = 'application/json'
-  request.body = body.to_json
-
-  response = http.request(request)
-  puts response.read_body
+  def set_user_roles(token)
+    #TODO: Implement
+  end
 end
