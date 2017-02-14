@@ -12,6 +12,7 @@ services:
      - FUNCTION_MANAGEMENT_URL=http://son-gtkfnct:5500 # 5600?
      - VIM_MANAGEMENT_URL=http://son-gtkvim:5700
      - RECORD_MANAGEMENT_URL=http://son-gtkrec:5800
+     - KPI_MANAGEMENT_URL=http://son-gtkkpi:5400
     ports:
       - "32001:5000"
     restart: always
@@ -106,6 +107,50 @@ services:
       options:
         gelf-address: "udp://logs.sonata-nfv.eu:12900"
 
+  son-gtklic:
+    image: registry.sonata-nfv.eu:5000/son-gtklic
+    links:
+     - postgres
+    ports:
+      - "5900"
+    restart: always
+    environment:
+     - POSTGRES_PASSWORD=sonata
+     - POSTGRES_USER=sonatatest
+     - RACK_ENV=integration
+     - DATABASE_HOST=postgres
+     - DATABASE_PORT=5432
+    depends_on:
+     - postgres
+    extra_hosts:
+      - "jenkins.sonata-nfv.eu:192.168.60.5"
+    logging:
+      driver: gelf
+      options:
+        gelf-address: "udp://logs.sonata-nfv.eu:12900"
+
+  son-gtkkpi:
+    image: registry.sonata-nfv.eu:5000/son-gtkkpi    
+    ports:
+      - "5400"
+    restart: always
+    environment:
+     - PUSHGATEWAY_HOST=prometheus
+     - PUSHGATEWAY_PORT=9091     
+     - POSTGRES_PASSWORD=sonata
+     - POSTGRES_USER=sonatatest
+     - RACK_ENV=integration
+     - DATABASE_HOST=postgres
+     - DATABASE_PORT=5432
+    depends_on:
+     - postgres
+    extra_hosts:
+      - "jenkins.sonata-nfv.eu:192.168.60.5"
+    logging:
+      driver: gelf
+      options:
+        gelf-address: "udp://logs.sonata-nfv.eu:12900"        
+
   postgres:
     image: ntboes/postgres-uuid
     ports:
@@ -127,3 +172,42 @@ services:
       driver: gelf
       options:
         gelf-address: "udp://logs.sonata-nfv.eu:12900"
+        
+  influx:
+   image: registry.sonata-nfv.eu:5000/son-monitor-influxdb
+   restart: always
+   ports:
+    - "8086:8086"
+
+  #mysql:
+  # image: registry.sonata-nfv.eu:5000/son-monitor-mysql
+  # restart: always
+  # ports:
+  #  - "3306:3306"
+  # environment:
+  #  - MYSQL_ROOT_PASSWORD=1234
+  #  - MYSQL_USER=monitoringuser
+  #  - MYSQL_PASSWORD=sonata
+  #  - MYSQL_DATABASE=monitoring
+
+  pushgateway:
+   image: registry.sonata-nfv.eu:5000/son-monitor-pushgateway
+   restart: always
+   ports:
+    - "9091:9091"
+
+  prometheus:
+   image: registry.sonata-nfv.eu:5000/son-monitor-prometheus
+   restart: always
+   volumes:
+    - /tmp/monitoring/prom/apache:/var/log/apache2
+   ports:
+    - "9090:9090"
+    - "9089:9089"
+   depends_on:
+    - pushgateway
+    - influx
+   environment:
+    - RABBIT_URL=sp.int.sonata-nfv.eu:5672
+    - EMAIL_PASS=czBuQHRAX21vbl9zeXNfMTY=
+

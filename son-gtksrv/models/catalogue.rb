@@ -69,16 +69,39 @@ class Catalogue
   end
   
   def find(params)
+    log_message="Catalogue.find"
     headers = JSON_HEADERS
     headers[:params] = params unless params.empty?
-    @logger.debug "Catalogue.find(#{params}): headers #{headers}"
+    @logger.debug(log_message) {"entered, with params #{params} and headers #{headers}"}
+    result={}
     begin
-      response = RestClient.get(@url, headers)
-      @logger.debug "Catalogue.find(#{params}): #{response}"      
-      JSON.parse response.body
+      # First fetch all records without any restriction
+      unrestricted = RestClient.get(@url, JSON_HEADERS)
+      @logger.debug(log_message) {"unrestricted #{unrestricted}"}
+      
+      json_unrestricted = JSON.parse unrestricted.body
+      @logger.debug(log_message) {"json_unrestricted #{json_unrestricted}"}
+
+      if json_unrestricted.empty?
+        @logger.debug(log_message) {"unrestricted has no records"}
+        result = {count: 0, items: {}}
+      elsif json_unrestricted.count == 1
+        # If there's only one, that's it
+        @logger.debug(log_message) {"unrestricted has only one record"}
+        result = {count: 1, items: json_unrestricted[0]}
+      else # Should have more than one record
+        @logger.debug(log_message) {"unrestricted has more than one record"}
+        result[:count] = json_unrestricted.count
+        
+        # Now fetch the real result
+        records = RestClient.get(@url, headers)
+        @logger.debug(log_message) {"records #{records}"}
+        result[:items] = JSON.parse records.body
+      end
+      result
     rescue => e
-      @logger.error format_error(e.backtrace)
-      e.to_json
+      @logger.error(log_message) {format_error(e.backtrace)}
+      []
     end
   end
   

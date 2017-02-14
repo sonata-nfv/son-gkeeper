@@ -35,11 +35,17 @@ ENV['RACK_ENV'] = 'test'
 
 require File.dirname(__FILE__) + '/../gtk_api.rb'
 
-RSpec.configure do |conf|
-  conf.include Rack::Test::Methods
-  conf.mock_with :rspec do |configuration|
+RSpec.configure do |config|
+  config.include Rack::Test::Methods
+  config.mock_with :rspec do |configuration|
     #configuration.syntax = [:expect, :should]
     #configuration.syntax = :should
     configuration.syntax = :expect
   end
+  config.order = 'random'
+  #config.color_enabled = true
+  config.tty = true
+  config.formatter = :documentation
 end
+
+WebMock.disable_net_connect!() #allow_localhost: true)

@@ -33,31 +33,31 @@ require 'addressable/uri'
 class GtkSrv < Sinatra::Base
 
   get '/services/?' do
-    logger.debug "GtkSrv: entered GET /services with params #{params}"
-    uri = Addressable::URI.new
+    log_message="GtkSrv::GET /services/?"
+    logger.debug(log_message) {"entered with params #{params}"}
 
     # Remove list of wanted fields from the query parameter list
     field_list = params.delete('fields')
-    uri.query_values = params
-    logger.debug 'GtkSrv: GET /services: uri.query='+uri.query
-    logger.debug "GtkSrv: GET /services: params=#{params}"
+
+    logger.debug(log_message) { 'query_string='+query_string}
+    logger.debug(log_message) { "params=#{params}"}
     
     services = NService.new(settings.services_catalogue, logger).find(params)
-    if services
-      logger.debug "GtkSrv: GET /services: #{services}"
-
+    logger.debug(log_message) { "services fetched: #{services}"}
+    unless services.empty?
       if field_list
         fields = field_list.split(',')
-        logger.debug "GtkSrv: GET /services: fields=#{fields}"
-        response = services.to_json(:only => fields)
+        logger.debug(log_message) { "fields=#{fields}"}
+        records = services[:items].to_json(:only => fields)
       else
-        response = services.to_json
+        records = services[:items].to_json
       end
-      logger.debug "GtkSrv: leaving GET /services?#{uri.query} with response="+response
-      halt 200, response
+      logger.debug(log_message) { "leaving with #{services[:count]}: #{records}"}
+      headers 'Record-Count' => services[:count].to_s
+      halt 200, records
     else
-      logger.debug "GtkSrv: leaving GET /services?#{uri.query} with \"No service with params #{uri.query} was found\""
-      json_error 404, "No service with params #{uri.query} was found"
+      logger.debug(log_message) { "leaving with \"No service with params #{query_string} was found\""}
+      json_error 404, "No service with params #{query_string} was found"
     end
   end
   
@@ -120,4 +120,15 @@ class GtkSrv < Sinatra::Base
     logger.debug "GtkSrv: entered GET /admin/logs"
     File.open('log/'+ENV['RACK_ENV']+'.log', 'r').read
   end  
+  
+  private 
+  def query_string
+    request.env['QUERY_STRING'].nil? ? '' : '?' + request.env['QUERY_STRING'].to_s
+  end
+
+  def request_url
+    log_message = 'GtkApi::request_url'
+    logger.debug(log_message) {"Schema=#{request.env['rack.url_scheme']}, host=#{request.env['HTTP_HOST']}, path=#{request.env['REQUEST_PATH']}"}
+    request.env['rack.url_scheme']+'://'+request.env['HTTP_HOST']+request.env['REQUEST_PATH']
+  end
 end

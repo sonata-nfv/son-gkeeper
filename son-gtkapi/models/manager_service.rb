@@ -27,8 +27,9 @@
 # encoding: utf-8
 class ManagerService
   
-  #JSON_HEADERS = { 'Accept'=> 'application/json', 'Content-Type'=>'application/json'}
+  JSON_HEADERS = { 'Accept'=> 'application/json', 'Content-Type'=>'application/json'}
   CLASS_NAME = self.name
+  LOG_MESSAGE = 'GtkApi::' + self.name
   
   def initialize(url, logger)
     method = 'GtkApi::' + CLASS_NAME + ".new(url=#{url}, logger=#{logger})"
@@ -37,36 +38,133 @@ class ManagerService
     @logger.debug(method) {'entered'}
   end
   
-  def get_log
-    method = 'GtkApi::' + CLASS_NAME + ".get_log()"
-    @logger.debug(method) {'entered'}
+  def self.getCurb(url:, params: {}, headers: {}, logger: nil)
+    log_message=LOG_MESSAGE+"##{__method__}"
+    logger.debug(log_message) {"entered with url=#{url}, params=#{params}, headers=#{headers}, logger=#{logger.inspect}"} if logger
+    complete_url = params.empty? ? url : url + '?' + Curl::postalize(params)
+    logger.debug(log_message) {"complete_url=#{complete_url}"} if logger
+    res=Curl.get(complete_url) do |req|
+      headers.each do |h|
+        logger.debug(log_message) {"header[#{h[0]}]: #{h[1]}"} if logger
+        req.headers[h[0]] = h[1]
+      end
+    end
+    logger.debug(log_message) {"header_str=#{res.header_str}"} if logger
+    logger.debug(log_message) {"response body=#{res.body}"} if logger
+    count = get_record_count_from_response_headers(res.header_str)
+    status = get_status_from_response_headers(res.header_str)
+    case status
+    when 200
+      begin
+        parsed_response = res.body.empty? ? {} : JSON.parse(res.body, symbolize_names: true)
+        logger.debug(log_message) {"parsed_response=#{parsed_response}"} if logger
+        {status: status, count: count, items: parsed_response, message: "OK"}
+      rescue => e
+        logger.error(log_message) {"Error during processing: #{$!}"} if logger
+        logger.error(log_message) {"Backtrace:\n\t#{e.backtrace.join("\n\t")}"} if logger
+        {status: nil, count: nil, items: nil, message: "Error processing #{$!}: \n\t#{e.backtrace.join("\n\t")}"}
+      end
+    when 400
+    when 404
+      logger.debug(log_message) {"Records not found for url=#{url}, params=#{params}, headers=#{headers}, logger=#{logger.inspect}"} if logger
+      {status: status, count: 0, items: [], message: "Not Found"}
+    else
+      {status: nil, count: nil, items: nil, message: "Status #{status} unprocessable"}
+    end
+  end
+  
+  def self.postCurb(url:, body:, headers: {}, logger: nil)
+    log_message=LOG_MESSAGE+"##{__method__}"
+    logger.debug(log_message) {"entered with url=#{url}, body=#{body}, logger=#{logger.inspect}"} if logger
+    res=Curl.post(url, body) do |req|
+      if headers.empty?
+        req.headers['Content-type'] = req.headers['Accept'] = 'application/json'
+      else
+        headers.each do |h|
+          logger.debug(log_message) {"header[#{h[0]}]: #{h[1]}"} if logger
+          req.headers[h[0]] = h[1]
+        end
+      end
+    end
+    logger.debug(log_message) {"response body=#{res.body}"} if logger
+    begin
+      parsed_response = JSON.parse(res.body, symbolize_names: true)
+      logger.debug(log_message) {"parsed_response=#{parsed_response}"} if logger
+      parsed_response
+    rescue => e
+      logger.error(log_message) {"Error during processing: #{$!}"} if logger
+      logger.error(log_message) {"Backtrace:\n\t#{e.backtrace.join("\n\t")}"} if logger
+      nil 
+    end
+  end
+  
+  private
+  
+  def self.format_error(backtrace)
+    first_line = backtrace[0].split(":")
+    "In "+first_line[0].split("/").last+", "+first_line.last+": "+first_line[1]
+  end
+    
+  def self.get_header_from_response_headers(header_str)
+    # From http://stackoverflow.com/questions/14345805/get-response-headers-from-curb
+    http_response, *http_headers = header_str.split(/[\r\n]+/).map(&:strip)
+    http_headers = Hash[http_headers.flat_map{ |s| s.scan(/^(\S+): (.+)/) }]
 
-    response=getCurb(url: @url+'/admin/logs', headers: {'Content-Type' => 'text/plain; charset=utf8', 'Location' => '/'})
-    @logger.debug(method) {'status=' + response.response_code.to_s}
+    #http_response # => "HTTP/1.1 200 OK"
+    #http_headers => { "Date" => "2013-01-10 09:07:42 -0700", "Content-Type" => "text/html", "Server" => "WEBrick/1.3.1 (Ruby/1.9.3/2012-11-10)",
+    #        "Content-Length" => "62164", "Connection" => "Keep-Alive"}
+  end
+
+  def self.get_status_from_response_headers(header_str)
+    # From http://stackoverflow.com/questions/14345805/get-response-headers-from-curb
+    #http_response # => "HTTP/1.1 200 OK"
+    http_status = header_str.split(/[\r\n]+/).map(&:strip)[0].split(" ")
+    http_status[1].to_i
+  end
+
+  def self.get_record_count_from_response_headers(header_str)
+    # From http://stackoverflow.com/questions/14345805/get-response-headers-from-curb
+    http_response, *http_headers = header_str.split(/[\r\n]+/).map(&:strip)
+    http_headers = Hash[http_headers.flat_map{ |s| s.scan(/^(\S+): (.+)/) }]
+
+    #http_response # => "HTTP/1.1 200 OK"
+    #http_headers => { "Date" => "2013-01-10 09:07:42 -0700", "Content-Type" => "text/html", "Server" => "WEBrick/1.3.1 (Ruby/1.9.3/2012-11-10)",
+    #        "Content-Length" => "62164", "Connection" => "Keep-Alive"}
+    http_headers['Record-Count'].to_i
+  end
+  
+  def self.get_log(url:, log_message:'', logger: nil)
+    logger.debug(log_message) {'entered'} if logger
+
+    response=Curl.get( url) do |req|
+      req.headers['Content-Type'] = 'text/plain; charset=utf8'
+      req.headers['Location'] = '/'
+    end    
+    
+    logger.debug(log_message) {'status=' + response.response_code.to_s} if logger
     case response.response_code
       when 200
         response.body
       else
-        @logger.error(method) {'status=' + response.response_code.to_s}
+        logger.error(log_message) {"Error during processing: #{$!}"} if logger
+        logger.error(log_message) {"Backtrace:\n\t#{e.backtrace.join("\n\t")}"} if logger
         nil
       end
   end
-  
-  def getCurb(url:, params: {}, headers: {})
-    Curl.get(params.empty? ? url : url + '?' + Curl::postalize(params)) do |req|
-      req.headers = headers
-    end
+
+  def self.find(url:, params: {}, headers: JSON_HEADERS, log_message:'', logger: nil)
+    logger.debug(log_message) {'entered'}
+    response = getCurb(url: url, params: params, headers: headers, logger: logger)
+    logger.debug(log_message) {"response=#{response}"} if logger
+    response
   end
   
-  def postCurb(url, body)
-    Curl.post(url, body) do |req|
-      req.headers['Content-type'] = 'application/json'
-      req.headers['Accept'] = 'application/json'
-    end
-  end
-  
-  def format_error(backtrace)
-    first_line = backtrace[0].split(":")
-    "In "+first_line[0].split("/").last+", "+first_line.last+": "+first_line[1]
+  def self.vectorize_hash(hash)
+    {
+      status: hash[:status], 
+      count: hash[:count], 
+      items: hash[:items].is_a?(Hash) ? [hash[:items]] : hash[:items], 
+      message: hash[:message]
+    }
   end
 end

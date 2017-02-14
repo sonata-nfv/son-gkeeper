@@ -81,7 +81,9 @@ class GtkRec < Sinatra::Base
   # "/records/vnfr/vnf-instances"
   if settings.repositories
     set :services_repository, Repository.new(settings.repositories+'/nsr/ns-instances', logger)
+    logger.debug(MODULE) {"Services repository: #{settings.services_repository.inspect}"}
     set :functions_repository, Repository.new(settings.repositories+'/vnfr/vnf-instances', logger)
+    logger.debug(MODULE) {"Functions repository: #{settings.functions_repository.inspect}"}
   else
     logger.error(MODULE) {'>>>Repository url not defined, application being terminated!!'}
     Process.kill('TERM', Process.pid)

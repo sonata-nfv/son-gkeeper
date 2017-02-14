@@ -33,8 +33,11 @@ class NService
   JSON_HEADERS = { 'Accept'=> 'application/json', 'Content-Type'=>'application/json'}
   
   def initialize(repository, logger)
+    raise ArgumentError.new('NService.initialize: repository can not be nil') if repository.nil?
+    raise ArgumentError.new('NService.initialize: logger can not be nil') if logger.nil?
     @repository = repository
     @logger = logger
+    @logger.debug "NService.new(repository=#{repository.inspect}, logger#{logger.inspect})"
   end
   
   def find(params)

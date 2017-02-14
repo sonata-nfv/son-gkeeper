@@ -28,7 +28,6 @@
 # encoding: utf-8
 require 'json' 
 require 'pp'
-require 'addressable/uri'
 require 'yaml'
 require 'bunny'
 
@@ -46,9 +45,8 @@ class GtkSrv < Sinatra::Base
   
   # GET many requests
   get '/requests/?' do
-    uri = Addressable::URI.new
-    uri.query_values = params
-    logger.info(MODULE) {" entered GET /requests?#{uri.query}"}
+
+    logger.info(MODULE) {" entered GET /requests#{query_string}"}
     logger.info(MODULE) {" params=#{params}"}
     
     # transform 'string' params Hash into keys
@@ -62,8 +60,11 @@ class GtkSrv < Sinatra::Base
     
     requests = Request.where(keyed_params).limit(params['limit'].to_i).offset(params['offset'].to_i)
     json_requests = json(requests, { root: false })
-    logger.info(MODULE) {" leaving GET /requests?#{uri.query} with "+json_requests}
-    halt 200, json_requests if json_requests
+    logger.info(MODULE) {" leaving GET /requests?#{query_string} with "+json_requests}
+    if json_requests
+      headers 'Record-Count'=>requests.size.to_s
+      halt 200, json_requests
+    end
     json_error 404, 'GtkSrv: No requests were found'
   end
 
@@ -136,4 +137,15 @@ class GtkSrv < Sinatra::Base
       json_error 400, 'GtkSrv: Not possible to update the request'
     end 
   end  
+
+  private 
+  def query_string
+    request.env['QUERY_STRING'].nil? ? '' : '?' + request.env['QUERY_STRING'].to_s
+  end
+
+  def request_url
+    log_message = 'GtkApi::request_url'
+    logger.debug(log_message) {"Schema=#{request.env['rack.url_scheme']}, host=#{request.env['HTTP_HOST']}, path=#{request.env['REQUEST_PATH']}"}
+    request.env['rack.url_scheme']+'://'+request.env['HTTP_HOST']+request.env['REQUEST_PATH']
+  end
 end

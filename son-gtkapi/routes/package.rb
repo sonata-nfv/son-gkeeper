@@ -25,165 +25,127 @@
 ## acknowledge the contributions of their colleagues of the SONATA 
 ## partner consortium (www.sonata-nfv.eu).
 # encoding: utf-8
-require 'addressable/uri'
-
+require 'sinatra/namespace'
 class GtkApi < Sinatra::Base
 
-  # buffer = StringIO.new
-  # buffer.set_encoding('ASCII-8BIT')
+  register Sinatra::Namespace
   
-  # POST of packages
-  post '/packages/?' do
-    log_message = 'GtkApi: POST /packages'
-    logger.info(log_message) {"entered with params=#{params}"}
+  namespace '/api/v2/packages' do
+    # POST of packages
+    post '/?' do
+      log_message = 'GtkApi::POST /api/v2/packages/?'
+      logger.info(log_message) {"entered with params=#{params}"}
     
-    unless params[:package].nil?
-      if params[:package][:tempfile]
-        package = settings.package_management.create(params)
-        logger.debug(log_message) {"package=#{package.inspect}"}
-        if package
-          if package.is_a?(Hash) && (package[:uuid] || package['uuid'])
-            logger.info "GtkApi: leaving POST /packages with package: #{package}"
-            headers = {'location'=> "#{settings.package_management.url}/packages/#{package[:uuid]}", 'Content-Type'=> 'application/json'}
-            halt 201, headers, package.to_json
-          elsif package.is_a?(Hash) && package.key?(:package)
-            #(package[:vendor] || package['vendor']) && (package[:version] || package['version']) && (package[:name] || package['name'])
-            logger.info "GtkApi: leaving POST /packages with duplicated package: #{package}"
-            headers = {'Content-Type'=> 'application/json'}
-            halt 409, headers, package[:package].to_json
+      unless params[:package].nil?
+        if params[:package][:tempfile]
+          package = PackageManagerService.create(params)
+          logger.debug(log_message) {"package=#{package.inspect}"}
+          if package
+            if package.is_a?(Hash) && (package[:uuid] || package['uuid'])
+              logger.info(log_message) {"leaving with package: #{package}"}
+              headers = {'location'=> PackageManagerService.url+"/packages/#{package[:uuid]}", 'Content-Type'=> 'application/json'}
+              halt 201, headers, package.to_json
+            elsif package.is_a?(Hash) && package.key?(:package)
+              #(package[:vendor] || package['vendor']) && (package[:version] || package['version']) && (package[:name] || package['name'])
+              logger.info(log_message) {"leaving with duplicated package: #{package}"}
+              headers = {'Content-Type'=> 'application/json'}
+              halt 409, headers, package[:package].to_json
+            else
+              json_error 400, 'No UUID given to package'
+            end
           else
-            json_error 400, 'No UUID given to package'
+            json_error 400, 'Package not created'
           end
         else
-          json_error 400, 'Package not created'
+          json_error 400, 'Temp file name not provided'
         end
-      else
-        json_error 400, 'Temp file name not provided'
       end
+      json_error 400, 'No package file specified'
     end
-    json_error 400, 'No package file specified'
-  end
-
 
   # GET a specific package
-=begin  
-  get '/packages/:uuid/?' do
-    unless params[:uuid].nil?
-      logger.debug "GtkApi: entered GET /packages/#{params[:uuid]}"
-      json_error 400, 'Invalid Package UUID' unless valid? params['uuid']
-      get_one_package params[:uuid]
+    get '/:uuid/?' do
+      log_message = 'GtkApi::GET /api/v2/packages/:uuid/?'
+      logger.debug(log_message) {'entered'}
+      unless params[:uuid].nil?
+        logger.debug(log_message) {"params[:uuid]=#{params[:uuid]}"}
+        json_error 400, 'Invalid Package UUID' unless valid? params['uuid']
+        package = settings.PackageManagementService.find_by_uuid(params[:uuid])
+        if package
+          logger.debug(log_message) {"leaving with package #{package}"}
+          halt 200, package
+        else
+          logger.debug(log_message) {"leaving with \"No package with UUID=#{params[:uuid]} was found\""}
+          json_error 404, "No package with UUID=#{params[:uuid]} was found"
+        end
+      end
+      logger.debug(log_message) {"leaving with \"No package UUID specified\""}
+      json_error 400, 'No package UUID specified'      
     end
-    logger.debug "GtkApi: leaving GET \"/packages/#{params[:uuid]}\" with \"No package UUID specified\""
-    json_error 400, 'No package UUID specified'
-  end
-=end
-
-  # GET a specific package descriptor
-  get '/packages/:uuid/?' do
-    unless params[:uuid].nil?
-      logger.debug "GtkApi: entered GET /packages/#{params[:uuid]}"
-      json_error 400, 'Invalid Package UUID' unless valid? params['uuid']
-      package = settings.package_management.find_by_uuid(params[:uuid])
-      if package
-        logger.debug "GtkApi: leaving GET /packages/#{params[:uuid]} with package #{package}"
-        halt 200, package
+  
+    # GET potentially many packages
+    get '/?' do
+      log_message = 'GtkApi::GET /api/v2/packages/?'
+      logger.debug(log_message) {'entered with '+query_string}
+    
+      @offset ||= params[:offset] ||= DEFAULT_OFFSET
+      @limit ||= params[:limit] ||= DEFAULT_LIMIT
+    
+      packages = PackageManagerService.find(params)
+      if packages
+        logger.debug(log_message) { "leaving with #{packages}"}
+        # TODO: total must be returned from the PackageManagement service
+        links = build_pagination_headers(url: request_url, limit: @limit.to_i, offset: @offset.to_i, total: packages.size)
+        [200, {'Link' => links}, packages]
       else
-        logger.debug "GtkApi: leaving GET \"/packages/#{params[:uuid]}\" with \"No package with UUID=#{params[:uuid]} was found\""
-        json_error 404, "No package with UUID=#{params[:uuid]} was found"
+        error_message = 'No package found with parameters '+query_string
+        logger.debug(log_message) {'leaving with "'+error_message+'"'}
+        json_error 404, error_message
       end
     end
-    logger.debug "GtkApi: leaving GET \"/packages/#{params[:uuid]}\" with \"No package UUID specified\""
-    json_error 400, 'No package UUID specified'      
-  end
-
-  # GET potentially many packages
-  get '/packages/?' do
-    uri = Addressable::URI.new
-    uri.query_values = params
-    logger.debug "GtkApi: entered GET /packages?#{uri.query}"
-    
-    @offset ||= params[:offset] ||= DEFAULT_OFFSET
-    @limit ||= params[:limit] ||= DEFAULT_LIMIT
-    
-    packages = settings.package_management.find(params)
-    if packages
-      #if packages.size == 1
-      #  logger.debug "GtkApi: leaving GET /packages?#{uri.query} with package #{packages[0]['uuid']}"
-      #  get_one_package( packages[0]['uuid'])
-      #else
-        logger.debug "GtkApi: leaving GET /packages?#{uri.query} with #{packages}"
-        halt 200, packages
-        #end
-    end
-    logger.debug "GtkApi: leaving GET /packages?#{uri.query} with \"No package found with parameters #{uri.query}\""
-    json_error 404, "No package found with parameters #{uri.query}"
-  end
-
-  # PUT 
-  put '/packages/?' do
-    unless params[:uuid].nil?
-      logger.info "GtkApi: entered PUT /packages/#{params[:uuid]}"
-      logger.info "GtkApi: leaving PUT /packages/#{params[:uuid]} with \"Not implemented yet\""
-    end
-    json_error 501, "Not implemented yet"
-  end
   
-  # DELETE
-  delete '/packages/:uuid/?' do
-    unless params[:uuid].nil?
-      logger.info "GtkApi: entered DELETE \"/packages/#{params[:uuid]}\""
-      logger.info "GtkApi: leaving DELETE \"/packages/#{params[:uuid]}\" with \"Not implemented yet\""
-    end
-    json_error 501, "Not implemented yet"
-  end
-  
-  get '/admin/packages/logs' do
-    logger.debug "GtkApi: entered GET /admin/packages/logs"
-    headers 'Content-Type' => 'text/plain; charset=utf8', 'Location' => '/'
-    log = settings.package_management.get_log
-    halt 200, log.to_s
-  end
-
-  # GET son-package by its uuid
-  get '/son-packages/:uuid/?' do
-    unless params[:uuid].nil?
-      logger.debug "GtkApi: entered GET /son-packages/#{params[:uuid]}"
-      json_error 400, 'Invalid Son-Package UUID' unless valid? params['uuid']
-      son_package = settings.son_package_management.find_by_uuid(params[:uuid])
-      if son_package
-        logger.debug "GtkApi: leaving GET /son-packages/#{params[:uuid]} with son-package with uuid=#{params[:uuid]}"
-        halt 200, son_package
-      else
-        logger.debug "GtkApi: leaving GET \"/son-packages/#{params[:uuid]}\" with \"No son-package with UUID=#{params[:uuid]} was found\""
-        json_error 404, "No son-package with UUID=#{params[:uuid]} was found"
+    # PUT 
+    put '/:uuid/?' do
+      # TODO
+      log_message = 'GtkApi::PUT /api/v2/packages/:uuid/?'
+      unless params[:uuid].nil?
+        logger.info(log_message) { "entered with package id #{params[:uuid]}"}
+        logger.info(log_message) { "leaving with \"Not implemented yet\""}
       end
+      json_error 501, "Not implemented yet"
     end
-    logger.debug "GtkApi: leaving GET \"/son-packages/#{params[:uuid]}\" with \"No son-package UUID specified\""
-    json_error 400, 'No son-package UUID specified'
+  
+    # DELETE
+    delete '/:uuid/?' do
+      # TODO
+      log_message = 'GtkApi::DELETE /api/v2/packages/:uuid/?'
+      unless params[:uuid].nil?
+        logger.info(log_message) { "entered with package id #{params[:uuid]}"}
+        logger.info(log_message) { "leaving with \"Not implemented yet\""}
+      end
+      json_error 501, "Not implemented yet"
+    end
   end
-
-
-  # DELETE son-package by uuid
-  delete '/son-packages/:uuid/?' do
-    unless params[:uuid].nil?
-      logger.info "GtkApi: entered DELETE \"/son-packages/#{params[:uuid]}\""
-      logger.info "GtkApi: leaving DELETE \"/son-packages/#{params[:uuid]}\" with \"Not implemented yet\""
+  
+  namespace '/api/v2/admin/packages' do
+    get '/logs/?' do
+      log_message = 'GtkApi::GET /api/v2/admin/packages/logs'
+      logger.debug(log_message) {'entered'}
+      headers 'Content-Type' => 'text/plain; charset=utf8', 'Location' => '/'
+      log = PackageManagerService.get_log(url:PackageManagerService.url+'/admin/logs', log_message:log_message, logger: logger)
+      logger.debug(log_message) {'leaving with log='+log}
+      halt 200, log #.to_s
     end
-    json_error 501, "Not implemented yet"
   end
   
   private
-  
-  def get_one_package(uuid)
-    package_file_path = settings.package_management.find_by_uuid(uuid)
-    logger.debug "GtkApi: package_file_path #{package_file_path}"
-    if package_file_path
-      logger.debug "GtkApi: leaving GET /packages/#{params[:uuid]} with package #{package_file_path}"
-      send_file package_file_path
-    else
-      logger.debug "GtkApi: leaving GET \"/packages/#{params[:uuid]}\" with \"No package with UUID=#{params[:uuid]} was found\""
-      json_error 404, "No package with UUID=#{params[:uuid]} was found"
-    end
+    
+  def query_string
+    request.env['QUERY_STRING'].empty? ? '' : '?' + request.env['QUERY_STRING'].to_s
+  end
+
+  def request_url
+    request.env['rack.url_scheme']+'://'+request.env['HTTP_HOST']+request.env['REQUEST_PATH']
   end
 end
 

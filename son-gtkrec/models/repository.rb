@@ -53,17 +53,27 @@ class Repository
   def find(params)
     headers = JSON_HEADERS
     headers[:params] = params unless params.empty?
-    method = "Repository.find(#{params}): "
+    method = "Repository.find(#{params})"
     @logger.debug(method) {"headers #{headers}"}
     @logger.debug(method) {"calling #{@url}"}
     
     begin
       response = RestClient.get(@url, headers)
       @logger.debug(method) {"response=#{response}"}  
-      JSON.parse response.body
+      services_or_functions = JSON.parse(response.body)
+      case response.code.to_i
+      when 200
+        {status: 200, count: services_or_functions.count, items: services_or_functions, message:"OK"}
+      when 400
+      when 404
+        {status: 200, count: 0, items: [], message:"OK"}
+      else
+        {status: 500, count: 0, items: [], message:"Internal Error"}
+      end
     rescue => e
-      @logger.error(method) {format_error(e.backtrace)}
-      e.to_json
+      @logger.error(method) {"response=#{response}"}  
+      @logger.error(method) {e.backtrace.each {|l| puts l}} #format_error(e.backtrace)
+      {status: 500, count: 0, items: [], message: "#{e.backtrace.join("\n\t")}"}
     end
   end
   

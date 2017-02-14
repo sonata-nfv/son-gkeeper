@@ -28,7 +28,6 @@
 # encoding: utf-8
 require 'json' 
 require 'pp'
-require 'addressable/uri'
 
 class GtkRec < Sinatra::Base
 
@@ -36,29 +35,33 @@ class GtkRec < Sinatra::Base
     method = MODULE + ' GET /services'
     logger.debug(method) {"entered with params #{params}"}
 
-    uri = Addressable::URI.new
-
     # Remove list of wanted fields from the query parameter list
     field_list = params.delete('fields')
-    uri.query_values = params
-    logger.debug(method) {'uri.query='+uri.query}
+    logger.debug(method) {'query_string='+query_string}
     
     services = NService.new(settings.services_repository, logger).find(params)
-    if services
+    case services[:status]
+    when 200
       logger.debug(method) { "services=#{services}"}
 
       if field_list
         fields = field_list.split(',')
         logger.debug(method) {"fields=#{fields}"}
-        response = services.to_json(:only => fields)
+        response = services[:items].to_json(:only => fields)
       else
-        response = services.to_json
+        response = services[:items].to_json
       end
-      logger.debug(method) {'leaving with response='+response}
+      logger.debug(method) {"leaving with response=#{response}"}
+      headers 'Record-Count'=>services[:count].to_s
       halt 200, response
+    when 400
+    when 404
+      logger.debug(method) {"leaving with \"No service with params #{query_string} was found\""}
+      headers 'Record-Count'=>'0'
+      halt 200, '[]'
     else
-      logger.debug(method) {"leaving with \"No service with params #{uri.query} was found\""}
-      json_error 404, "No service with params #{uri.query} was found"
+      logger.debug(method) {"leaving with \"Serious error while fetching services\""}
+      halt 500, "Serious error while fetching services"
     end
   end
   
@@ -67,7 +70,8 @@ class GtkRec < Sinatra::Base
     logger.debug(method) {"entered with :uuid=#{params[:uuid]}"}
     
     service = NService.new(settings.services_repository, logger).find_by_uuid(params[:uuid])
-    if service
+    case service[:status]
+    when 200
       logger.debug(method) {"service: #{service}"}
       response = service.to_json
       logger.debug(method) {"leaving with response="+response}
@@ -79,8 +83,18 @@ class GtkRec < Sinatra::Base
   end
 
   get '/admin/logs' do
-    method = MODULE + ' GET /admin/logs'
-    logger.debug(method) {'entered'}
+    logger.debug "GtkRec: entered GET /admin/logs"
     File.open('log/'+ENV['RACK_ENV']+'.log', 'r').read
   end  
+  
+  private 
+  def query_string
+    request.env['QUERY_STRING'].nil? ? '' : '?' + request.env['QUERY_STRING'].to_s
+  end
+
+  def request_url
+    log_message = 'GtkApi::request_url'
+    logger.debug(log_message) {"Schema=#{request.env['rack.url_scheme']}, host=#{request.env['HTTP_HOST']}, path=#{request.env['REQUEST_PATH']}"}
+    request.env['rack.url_scheme']+'://'+request.env['HTTP_HOST']+request.env['REQUEST_PATH']
+  end
 end

@@ -6,7 +6,7 @@ from datetime import datetime, timedelta
 from flask_restful import Resource
 from flask import request
 
-from models import License, Type, Service
+from models import License, Type
 from app import db, build_response
 
 class LicensesList(Resource):
@@ -21,21 +21,22 @@ class LicensesList(Resource):
 
     def post(self):
         try:
-            license = License.query.filter_by(user_uuid=request.form['user_uuid'], service_uuid=request.form['service_uuid'], type_uuid=request.form['type_uuid']).first()
+            service_uuid=request.form['service_uuid']
+            user_uuid = request.form['user_uuid']
+            type_uuid=request.form['type_uuid']
+
+            license = License.query.filter_by(  user_uuid=user_uuid,
+                                                service_uuid=service_uuid,
+                                                type_uuid=type_uuid
+                                              ).first()
             if license != None:
                 return build_response(status_code=304, error="Already exists", description="License for that user to that service of this type already exists", data=license.serialize)
 
             license_type = Type.query.filter_by(type_uuid=request.form['type_uuid']).first()
             if license_type is None:
                 return build_response(status_code=404, error="Not Found", description="License type provided does not exist")
-            if license_type.active == False:
-                return build_response(status_code=400, error="Not Active", description="License type required exists but is not active")
-
-            service = Service.query.filter_by(service_uuid=request.form['service_uuid']).first()
-            if service is None:
-                return build_response(status_code=404, error="Not Found", description="Service provided does not exist")
-            if service.active == False:
-                return build_response(status_code=400, error="Not Active", description="Service required exists but is not active")
+            if license_type.status == "SUSPENDED":
+                return build_response(status_code=400, error="Suspended", description="License type required exists but is not active")
 
             startingDate = datetime.now()
             if not (request.form.get('startingDate') is None):
@@ -43,18 +44,20 @@ class LicensesList(Resource):
 
             expiringDate = startingDate + timedelta(days=license_type.duration)
 
-            if expiringDate > service.expiringDate:
-                return build_response(status_code=403, error="Not Allowed", description="License expiring date is longer than the service availability")
+            status = "ACTIVE"
+            if 'status' in request.form:
+                if request.form["status"].upper() in License.valid_status:
+                    status = request.form["status"].upper()
+                else:
+                    return build_response(status_code=400, error="Invalid field", description="Status parameter was invalid")
 
-            active = True
-            if 'active' in request.form:
-                try:
-                    active = ast.literal_eval(request.form.get('active'))
-                except:
-                    return build_response(status_code=400, error="Invalid field", description="Active parameter was not a boolean")
-
-            new_license = License(license_type.type_uuid, service.service_uuid, request.form['user_uuid'],
-                                  request.form.get('description'), startingDate, expiringDate, suspended=(not active))
+            new_license = License(  license_type.type_uuid,
+                                    service_uuid,
+                                    request.form['user_uuid'],
+                                    request.form.get('description'),
+                                    startingDate,
+                                    expiringDate,
+                                    status)
 
         except:
             return build_response(status_code=400, error="Missing fields", description="Missing type_uuid, service_uuid or user_uuid argument")
@@ -71,10 +74,7 @@ class Licenses(Resource):
         if license is None:
             return build_response(status_code=404, error="Not Found", description="License does not exist")
 
-        if not license.active:
-            return build_response(status_code=400, data="", error="License is not valid")
-
-        if license.suspended:
+        if not license.status == "ACTIVE":
             return build_response(status_code=400, data="", error="License is not valid")
 
         if license.startingDate > datetime.now():
@@ -86,22 +86,18 @@ class Licenses(Resource):
         return build_response(status_code=200, data="", description="License is valid")
 
     def get(self, licenseID):
-
         license = License.query.get(licenseID)
         if license is None:
             return build_response(status_code=404, error="Not Found", description="License does not exist")
 
-        if not license.active:
-            return build_response(status_code=400, data=license.serialize, error="License is not valid")
-
-        if license.suspended:
-            return build_response(status_code=400, data=license.serialize, error="License is not valid")
+        if not license.status == "ACTIVE":
+            return build_response(status_code=400, data="", error="License is not valid")
 
         if license.startingDate > datetime.now():
-            return build_response(status_code=400, data=license.serialize, error="License is not valid")
+            build_response(status_code=400, data="", error="License is not valid")
 
         if license.expiringDate < datetime.now():
-            return build_response(status_code=400, data=license.serialize, error="License is not valid")
+            build_response(status_code=400, data="", error="License is not valid")
 
         return build_response(status_code=200, data=license.serialize, description="License is valid")
 
@@ -124,17 +120,11 @@ class Licenses(Resource):
                     return build_response(status_code=404, error="Invalid License Type", description="License type provided to change does not exist")
                 license.type_uuid = license_type.type_uuid
 
-            license_service = Service.query.get(license.service_uuid)
-
             baseExpiringDate = license.expiringDate
             if license.expiringDate < datetime.now():
                 baseExpiringDate = datetime.now()
 
-            new_date = baseExpiringDate + timedelta(days=license_type.duration)
-
-            if new_date > license_service.expiringDate:
-                return build_response(status_code=400, error="Invalid date", description="Service no longer available for the license period")
-            license.expiringDate = new_date
+            license.expiringDate = baseExpiringDate + timedelta(days=license_type.duration)
 
         except:
             return build_response(status_code=400, error="Invalid arguments", description="Arguments provided were invalid")
@@ -148,13 +138,10 @@ class Licenses(Resource):
         if license is None:
             return build_response(status_code=404, error="Not Found", description="License ID provided does not exist")
 
-        if not license.active:
-            return build_response(status_code=400, error="Not Valid", description="License ID provided is cancelled")
+        if not license.status == "ACTIVE":
+            return build_response(status_code=400, error="Not Valid", description="License ID provided is not active")
 
-        if license.suspended:
-            return build_response(status_code=304, error="Already Suspended", description="License ID provided is already suspended")
-
-        license.suspended = True
+        license.status = "SUSPENDED"
         db.session.commit()
 
         return build_response(status_code=200, data=license.serialize, description="License successfully suspended")
@@ -164,10 +151,10 @@ class Licenses(Resource):
         if license is None:
             return build_response(status_code=404, error="Not Found", description="License ID provided does not exist")
 
-        if not license.active:
+        if not license.status == "ACTIVE":
             return build_response(status_code=304, error="Not Valid", description="License ID provided is already cancelled")
 
-        license.active = False
+        license.status = "INACTIVE"
         db.session.commit()
 
         return build_response(status_code=200, data=license.serialize, description="License successfully cancelled")

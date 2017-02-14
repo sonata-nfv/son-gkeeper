@@ -32,53 +32,56 @@ class VimManagerService < ManagerService
   JSON_HEADERS = { 'Accept'=> 'application/json', 'Content-Type'=>'application/json'}
   LOG_MESSAGE = 'GtkApi::' + self.name
   
-  def initialize(url, logger)
-    method = LOG_MESSAGE + ".new(url=#{url}, logger=#{logger})"
-    #@url = url
-    #@logger = logger
-    super
-    @logger.debug(method) {'entered'}
+  def self.config(url:, logger:)
+    method = LOG_MESSAGE + "##{__method__}(url=#{url}, logger=#{logger})"
+    raise ArgumentError.new('VimManagerService can not be configured with nil url') if url.nil?
+    raise ArgumentError.new('VimManagerService can not be configured with empty url') if url.empty?
+    raise ArgumentError.new('VimManagerService can not be configured with nil logger') if logger.nil?
+    @@url = url
+    @@logger = logger
+    @@logger.debug(method) {'entered'}
   end
     
-  def find_vims(params)
-    method = LOG_MESSAGE + ".find_vims(#{params})"
-    @logger.debug(method) {'entered'}    
+  def self.find_vims(params)
+    method = LOG_MESSAGE + "##{__method__}(#{params})"
+    @@logger.debug(method) {'entered'}    
     begin
       response = getCurb(url:url, headers:JSON_HEADERS) 
-      @logger.debug(method) {'response='+response.body}
+      @@logger.debug(method) {'response='+response.body}
       JSON.parse response.body
     rescue => e
-      @logger.error(method) {"e=#{format_error(e.backtrace)}"}
+      @@logger.error(method) {"Error during processing: #{$!}"}
+      @@logger.error(method) {"Backtrace:\n\t#{e.backtrace.join("\n\t")}"}
       nil 
     end
   end
   
-  def create_vim(params)
-    method = LOG_MESSAGE + ".create_vim(#{params})"
-    @logger.debug(method) {"entered"}
+  def self.create_vim(params)
+    method = LOG_MESSAGE + "##{__method__}(#{params})"
+    @@logger.debug(method) {"entered"}
     
     begin
-      @logger.debug(method) {"@url = "+@url}
+      @@logger.debug(method) {"@url = "+@url}
       #response = RestClient.post(@url+'/vim', params.to_json, content_type: :json, accept: :json) 
-      response = postCurb(@url+'/vim', params.to_json) 
-      @logger.debug(method) {"response="+response}
-      parsed_response = JSON.parse(response)
-      @logger.debug(method) {"parsed_response=#{parsed_response}"}
-      parsed_response
+      response = postCurb(url: @@url+'/vim', body: params.to_json) 
+      @@logger.debug(method) {"response="+response}
+      response
     rescue => e
-      @logger.error(method) {"#{e.message} - #{format_error(e.backtrace)}"}
+      @@logger.error(method) {"Error during processing: #{$!}"}
+      @@logger.error(method) {"Backtrace:\n\t#{e.backtrace.join("\n\t")}"}
       nil 
     end      
   end
   
-  def find_vim_request_by_uuid(uuid)
-    method = LOG_MESSAGE + ".find_vim_request_by_uuid(#{uuid})"
-    @logger.debug(method) {'entered'}
+  def self.find_vim_request_by_uuid(uuid)
+    method = LOG_MESSAGE + "##{__method__}(#{uuid})"
+    @@logger.debug(method) {'entered'}
     begin
-      response = getCurb(url:@url+'/vim_request/'+uuid, headers: JSON_HEADERS) 
+      response = getCurb(url:@@url+'/vim_request/'+uuid, headers: JSON_HEADERS) 
       JSON.parse response.body
     rescue => e
-      @logger.error(method) {"#{e.message} - #{format_error(e.backtrace)}"}
+      @@logger.error(method) {"Error during processing: #{$!}"}
+      @@logger.error(method) {"Backtrace:\n\t#{e.backtrace.join("\n\t")}"}
       nil 
     end
   end

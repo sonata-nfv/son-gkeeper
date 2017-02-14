@@ -32,41 +32,29 @@ class RecordManagerService < ManagerService
   JSON_HEADERS = { 'Accept'=> 'application/json', 'Content-Type'=>'application/json'}
   LOG_MESSAGE = 'GtkApi::' + self.name
   
-  def initialize(url, logger)
-    method = LOG_MESSAGE + ".new(url=#{url}, logger=#{logger})"
-    #@url = url
-    #@logger = logger
-    super
-    @logger.debug(method) {'entered'}
-  end
-    
-  def find_records(params)
-    method = LOG_MESSAGE + ".find_records(#{params})"
-    @logger.debug(method) {'entered'}
-    kind = params['kind']
-    params.delete('kind')
-
-    begin
-      @logger.debug(method) {'getting '+kind+' from '+@url}
-      response = getCurb(url: @url + '/' + kind, params: params, headers: JSON_HEADERS) 
-      @logger.debug(method) {'response=' + response.body}
-      JSON.parse response.body
-    rescue => e
-      @logger.error(method) {"#{e.message} - #{format_error(e.backtrace)}"}
-      nil 
-    end
+  def self.config(url:, logger:)
+    method = LOG_MESSAGE + "##{__method__}(url=#{url}, logger=#{logger})"
+    raise ArgumentError.new('RecordManagerService can not be configured with nil url') if url.nil?
+    raise ArgumentError.new('RecordManagerService can not be configured with empty url') if url.empty?
+    raise ArgumentError.new('RecordManagerService can not be configured with nil logger') if logger.nil?
+    @@url = url
+    @@logger = logger
+    @@logger.debug(method) {'entered'}
   end
   
-  def find_service_by_uuid(uuid)
-    method = LOG_MESSAGE + ".find_service_by_uuid(#{uuid})"
-    @logger.debug(method) {'entered'}
-    begin
-      response = getCurb(url: @url+'/services/'+uuid, headers: JSON_HEADERS) 
-      @logger.debug(method) {'response='+response.body}
-      JSON.parse response.body
-    rescue => e
-      @logger.error(method) {"#{e.message} - #{format_error(e.backtrace)}"}
-      nil 
-    end
+  def self.find_records(params)
+    #params['kind']
+    kind = params.delete('kind')
+    records= find(url: @@url + '/' + kind, params: params, log_message: LOG_MESSAGE + "##{__method__}(#{params})", logger: @@logger)
+    vectorize_hash records
+  end
+  
+  def self.find_record_by_uuid(uuid)
+    find(url: @@url + '/' + kind + '/' + uuid, log_message: LOG_MESSAGE + "##{__method__}(#{uuid})", logger: @@logger) #+ '/records/' 
+  end
+  
+  def self.url
+    @@logger.debug(LOG_MESSAGE + "#url") {'@@url='+@@url}
+    @@url
   end
 end

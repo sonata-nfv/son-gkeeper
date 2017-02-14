@@ -25,77 +25,97 @@
 ## acknowledge the contributions of their colleagues of the SONATA 
 ## partner consortium (www.sonata-nfv.eu).
 # encoding: utf-8
-require 'addressable/uri'
-
+require 'sinatra/namespace'
 class GtkApi < Sinatra::Base
+
+  register Sinatra::Namespace
   
-  before do
-    if request.request_method == 'OPTIONS'
-      response.headers['Access-Control-Allow-Origin'] = '*'
-      response.headers['Access-Control-Allow-Methods'] = 'POST,PUT'      
-      response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Access-Control-Allow-Headers, Authorization, X-Requested-With'
-      halt 200
-    end
-  end
-  
-  # POST a request
-  post '/requests/?' do
-    params = JSON.parse(request.body.read)
-    unless params.nil?
-      logger.debug "GtkApi: POST /requests with params=#{params}"
-      new_request = settings.service_management.create_service_intantiation_request(params)
-      if new_request
-        logger.debug "GtkApi: POST /requests: new_request =#{new_request}"
-        halt 201, new_request.to_json
-      else
-        logger.debug "GtkApi: leaving POST /requests with 'No request was created'"
-        json_error 400, 'No request was created'
+  namespace '/api/v2/requests' do  
+    before do
+      if request.request_method == 'OPTIONS'
+        response.headers['Access-Control-Allow-Origin'] = '*'
+        response.headers['Access-Control-Allow-Methods'] = 'POST,PUT'      
+        response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Access-Control-Allow-Headers, Authorization, X-Requested-With'
+        halt 200
       end
     end
-    logger.debug "GtkApi: leaving POST /requests with 'No service id specified for the request'"
-    json_error 400, 'No service id specified for the request'
+  
+    # POST a request
+    post '/?' do
+      MESSAGE = 'GtkApi::POST /api/v2/requests/'
+      params = JSON.parse(request.body.read)
+      unless params.nil?
+        logger.debug(MESSAGE) {"entered with params=#{params}"}
+        new_request = ServiceManagerService.create_service_intantiation_request(params)
+        if new_request
+          logger.debug(MESSAGE) { "new_request =#{new_request}"}
+          halt 201, new_request.to_json
+        else
+          logger.debug(MESSAGE) { "leaving with 'No request was created'"}
+          json_error 400, 'No request was created'
+        end
+      end
+      logger.debug(MESSAGE) { "leaving with 'No service id specified for the request'"}
+      json_error 400, 'No service id specified for the request'
+    end
+
+    # GET many requests
+    get '/?' do
+      MESSAGE = 'GtkApi::GET /api/v2/requests/'
+    
+      @offset ||= params['offset'] ||= DEFAULT_OFFSET 
+      @limit ||= params['limit'] ||= DEFAULT_LIMIT
+
+      logger.info(MESSAGE) {'entered with '+query_string}
+      requests = ServiceManagerService.find_requests(params)
+      logger.debug(MESSAGE) {"requests = #{requests}"}
+      if requests
+        links = build_pagination_headers(url: request_url, limit: @limit.to_i, offset: @offset.to_i, total: requests[:count])
+        headers 'Link' => links, 'Record-Count' => requests[:count].to_s
+        halt 200, requests[:items].to_json
+      else
+        ERROR_MESSAGE = 'No requests with '+query_string+' were found'
+        logger.info(MESSAGE) {"leaving with '"+ERROR_MESSAGE+"'"}
+        json_error 400, ERROR_MESSAGE
+      end
+    end
+  
+    # GET one specific request
+    get '/:uuid/?' do
+      METHOD = "GtkApi::GET /api/v2/requests/:uuid/?"
+      unless params[:uuid].nil?
+        logger.debug(METHOD) {"entered"}
+        json_error 400, 'Invalid request UUID' unless valid? params[:uuid]
+      
+        request = ServiceManagerService.find_requests_by_uuid(params['uuid'])
+        json_error 404, "The request UUID #{params[:uuid]} does not exist" unless request
+
+        logger.debug(METHOD) {"leaving with request #{request}"}
+        halt 200, request.to_json
+      end
+      logger.debug(METHOD) { "leaving with 'No requests UUID specified'"}
+      json_error 400, 'No requests UUID specified'
+    end
   end
 
-  # GET many requests
-  get '/requests/?' do
-    uri = Addressable::URI.new
-    params['offset'] ||= DEFAULT_OFFSET 
-    params['limit'] ||= DEFAULT_LIMIT
-    uri.query_values = params
-    logger.info "GtkApi: entered GET /requests?#{uri.query}"
-    requests = settings.service_management.find_requests(params)
-    logger.debug "GtkApi: GET /requests?#{uri.query} gave #{requests}"
-    if requests && requests.is_a?(Array)
-      logger.info "GtkApi: leaving GET /requests?#{uri.query} with #{requests}"
-      halt 200, requests.to_json
-    else
-      logger.info "GtkApi: leaving GET /requests?#{uri.query} with 'No requests were found'"
-      json_error 400, 'No requests were found'
+  namespace '/api/v2/admin/requests' do
+    # GET module's logs
+    get '/logs/?' do
+      log_message = "GtkApi::GET /api/v2/admin/requests/logs"
+      logger.debug(log_message) {"entered"}
+      headers 'Content-Type' => 'text/plain; charset=utf8', 'Location' => '/api/v2/admin/requests/logs'
+      log = ServiceManagerService.get_log(url:ServiceManagerService.url+'/admin/logs', log_message:log_message, logger: logger)
+      logger.debug(log_message) {'leaving with log='+log}
+      halt 200, log
     end
   end
   
-  # GET one specific request
-  get '/requests/:uuid/?' do
-    unless params[:uuid].nil?
-      logger.debug "GtkApi: GET /requests/#{params[:uuid]}"
-      json_error 400, 'Invalid request UUID' unless valid? params[:uuid]
-      
-      request = settings.service_management.find_requests_by_uuid(params['uuid'])
-      json_error 404, "The request UUID #{params[:uuid]} does not exist" unless request
-
-      logger.debug "GtkApi: leaving GET /requests/#{params[:uuid]}\" with request #{request}"
-      halt 200, request.to_json
-    end
-    logger.debug "GtkApi: leaving GET /requests/#{params[:uuid]} with 'No requests UUID specified'"
-    json_error 400, 'No requests UUID specified'
+  private 
+  def query_string
+    request.env['QUERY_STRING'].empty? ? '' : '?' + request.env['QUERY_STRING'].to_s
   end
 
-  # GET module's logs
-  get '/admin/requests/logs' do
-    method = MODULE + "GET /admin/requests/logs"
-    logger.debug(method) {"entered"}
-    headers 'Content-Type' => 'text/plain; charset=utf8', 'Location' => '/'
-    log = settings.service_management.get_log
-    halt 200, log #.to_s
+  def request_url
+    request.env['rack.url_scheme']+'://'+request.env['HTTP_HOST']+request.env['REQUEST_PATH']
   end
 end

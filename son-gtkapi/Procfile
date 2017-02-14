@@ -1,1 +1,2 @@
 web: bundle exec rackup -p $PORT --host 0.0.0.0
+#web: bundle exec puma -b 'ssl://0.0.0.0:$PORT?key=./config/cert/sonata.key&cert=./config/cert/sonata.crt'

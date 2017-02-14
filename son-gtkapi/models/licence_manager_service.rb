@@ -31,44 +31,130 @@ class LicenceManagerService < ManagerService
   
   JSON_HEADERS = { 'Accept'=> 'application/json', 'Content-Type'=>'application/json'}
   LOG_MESSAGE = 'GtkApi::' + self.name
+  LICENCE_TYPES_URL = '/api/v1/types/'
+  LICENCES_URL = '/api/v1/licences/'
   
-  def initialize(url, logger)
-    method = LOG_MESSAGE + ".new(url=#{url}, logger=#{logger})"
-    #@url = url
-    #@logger = logger
-    super
-    @logger.debug(method) {'entered'}
+  def self.config(url:, logger:)
+    method = LOG_MESSAGE + "#config(url=#{url}, logger=#{logger})"
+    raise ArgumentError.new('LicenceManagerService can not be configured with nil url') if url.nil?
+    raise ArgumentError.new('LicenceManagerService can not be configured with empty url') if url.empty?
+    raise ArgumentError.new('LicenceManagerService can not be configured with nil logger') if logger.nil?
+    @@url = url
+    @@logger = logger
+    @@logger.debug(method) {'entered'}
   end
 
-  # TODO
-  def find_functions_by_uuid(uuid)
-    method = LOG_MESSAGE + ".find_functions_by_uuid(#{uuid})"
-    @logger.debug(method) {'entered'}
-    headers = JSON_HEADERS
-    headers[:params] = uuid
+  def self.create_type(params)
+    method = LOG_MESSAGE + "##{__method__}(#{params})"
+    @@logger.debug(method) {'entered'}
+    headers = {'Content-Type'=>'application/x-www-form-urlencoded'}
     begin
-      response = getCurb(url: @url + "/functions/#{uuid}", headers: headers)
-      # Shouldn't we parse before returning?
-      #JSON.parse response.body
-    rescue => e
-      @logger.error(method) {"e=#{e.backtrace}"}
-      nil 
+      licence_type = postCurb(url: @@url+LICENCE_TYPES_URL, body: params, headers: headers, logger: @@logger)
+      # {"status_code:": 200, "data": {"duration": 10, "status": "ACTIVE", "type": "Private", "type_uuid": "a592eb72-4e84-4aae-bb38-5014d731cf65"}, "description": "Type successfully created", "error": ""}
+      if licence_type && licence_type['data']
+        @@logger.debug(method) {"licence_type=#{licence_type['data']}"}
+        licence_type['data']
+      else
+        @@logger.error(method) {"No licence_type with params=#{params} has been created"}
+        {}
+      end
+    rescue  => e #RestClient::Conflict
+      @@logger.error(method) {"Error during processing: #{$!}"}
+      @@logger.error(method) {"Backtrace:\n\t#{e.backtrace.join("\n\t")}"}
+      {error: 'Licence type not created', licence_type: e.backtrace}
     end
   end
   
-  def find_functions(params)
-    method = LOG_MESSAGE + ".find_functions(#{params})"
-    @logger.debug(method) {'entered'}
-    headers = JSON_HEADERS
-    headers[:params] = params unless params.empty?
-    @logger.debug(method) {"headers=#{headers}"}
+  def self.valid?(params)
+    method = LOG_MESSAGE + "##{__method__}(#{params})"
+    @@logger.debug(method) {'entered'}
+    headers = {'Content-Type'=>'application/x-www-form-urlencoded'}
     begin
-      response = getCurb(urb: @url + '/functions', headers: headers) 
-      @logger.debug(method) {"response=#{response}"}
-      JSON.parse response.body
-    rescue => e
-      @logger.error(method) {"e=#{e.backtrace}"}
-      nil 
+      licence = postCurb(url: @@url+LICENCES_URL, body: params, headers: headers, logger: @@logger)
+      @@logger.debug(method) {"licence=#{licence.body}"}
+      JSON.parse licence.body
+    rescue  => e #RestClient::Conflict
+      @@logger.error(method) {"Error during processing: #{$!}"}
+      @@logger.error(method) {"Backtrace:\n\t#{e.backtrace.join("\n\t")}"}
+      {error: 'Licence type not created', licence: e.backtrace}
     end
   end
+  
+  def self.create_licence(params)
+    method = LOG_MESSAGE + "##{__method__}(#{params})"
+    @@logger.debug(method) {'entered'}
+    headers = {'Content-Type'=>'application/x-www-form-urlencoded'}
+    begin
+      licence = postCurb(url: @@url+LICENCES_URL, body: params, headers: headers, logger: @@logger)
+      @@logger.debug(method) {"licence=#{licence.body}"}
+      JSON.parse licence.body
+    rescue  => e #RestClient::Conflict
+      @@logger.error(method) {"Error during processing: #{$!}"}
+      @@logger.error(method) {"Backtrace:\n\t#{e.backtrace.join("\n\t")}"}
+      {error: 'Licence type not created', licence: e.backtrace}
+    end
+  end
+
+  def self.find_licence_type_by_uuid(uuid)
+    licence_type=find(url: @@url + LICENCE_TYPES_URL + uuid + '/', log_message: LOG_MESSAGE + "##{__method__}(#{uuid})", logger: @@logger)
+      #{"status_code:": 200, "data": {"duration": 10, "status": "ACTIVE", "type": "Private", "type_uuid": "9e0dffc3-707e-41b6-81d1-79196cfe88a9"}, "description": "Type successfully retrieved", "error": ""}
+    licence_type['data'] if licence_type
+  end
+
+  def self.find_licence_by_uuid(uuid)
+    find(url: @@url + LICENCES_URL + uuid + '/', log_message: LOG_MESSAGE + "##{__method__}(#{uuid})", logger: @@logger)
+    licence['data'] if licence_type
+  end
+  
+  def self.find_licence_types(params)
+    licence_types=find(url: @@url + LICENCE_TYPES_URL, params: params, log_message: LOG_MESSAGE + "##{__method__}(#{params})", logger: @@logger)
+      #{"status_code:"=>200, "data"=>{"types"=>[{"duration"=>1000, "status"=>"ACTIVE", "type"=>"Public", "type_uuid"=>"21cf0db6-f96b-4659-a463-05d5c3413141"}, {"duration"=>10, "status"=>"ACTIVE", "type"=>"Private", "type_uuid"=>"9e0dffc3-707e-41b6-81d1-79196cfe88a9"}]}, "description"=>"Types list successfully retrieved", "error"=>""}
+    licence_types[:items][:data][:types] if licence_types
+  end
+  
+  def self.find_licences(params)
+    method = LOG_MESSAGE + "##{__method__}(#{params})"
+    #licences = find(url: @@url + LICENCES_URL, params: params, log_message: LOG_MESSAGE + "##{__method__}(#{params})", logger: @@logger)
+    #@@logger.debug(method) {"licences=#{licences}"}
+    #case licences[:status]
+    #when 200
+    #  {status: 200, count: licences[:items][:data][:licences].count, items: licences[:items][:data][:licences], message: "OK"}
+    #when 400
+    #when 404
+      {status: 200, count: 0, items: [], message: "OK"}
+    #else
+    #  {status: licences[:status], count: 0, items: [], message: "Error"}
+    #end
+  end
+  
+  def self.url
+    @@logger.debug(LOG_MESSAGE + "#url") {'@@url='+@@url}
+    @@url
+  end
+  
+  #def user
+  #  @user ||= User.find(params[:user_id]) || halt(404)
+  #end
+
+  #def service
+   # @service ||= user.services.find(params[:service_id]) || halt(404)
+  #end
+
+  #def task_date
+  #  @task_date ||= Date.iso8601(params[:task_date])
+  #rescue ArgumentError
+  #  halt 400
+  #end
+
+  #def tasks
+  #  @tasks ||= project.tasks_due_on(task_date)
+  #end
+  
+  # now use this with
+  #get '/users/:user_id/projects/:project_id/tasks-due-on/:task_date' do
+  #  tasks.to_json
+  #end
+  
+  
+  
 end
