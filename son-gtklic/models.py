@@ -4,7 +4,7 @@ import uuid
 import datetime
 
 class License(db.Model):
-    valid_status = ["ACTIVE", "SUSPENDED", "INACTIVE"]
+    valid_status = ["ACTIVE", "INACTIVE"]
     license_types = ["PUBLIC", "PRIVATE"]
 
     service_uuid = db.Column(db.String, nullable=False)
@@ -17,6 +17,7 @@ class License(db.Model):
     status = db.Column(db.String, nullable=False, default="ACTIVE")
 
     def __init__(self, service_uuid, user_uuid, description, validation_url=None, status="ACTIVE", license_type="PUBLIC"):
+        self.license_uuid = str(uuid.uuid4())
         self.service_uuid = service_uuid
         self.user_uuid = user_uuid
         self.description = description

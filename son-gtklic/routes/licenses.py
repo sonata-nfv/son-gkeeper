@@ -8,7 +8,7 @@ from flask_restful import Resource
 from flask import request
 
 from models import License
-from app import db, build_response
+from app import db, build_response, app
 
 class LicensesList(Resource):
 
@@ -56,7 +56,8 @@ class LicensesList(Resource):
                                     user_uuid,
                                     request.form.get('description'),
                                     validation_url,
-                                    status)
+                                    status,
+                                    license_type)
 
         except:
             return build_response(status_code=400, error="Missing fields", description="Missing service_uuid or user_uuid argument")
@@ -73,7 +74,7 @@ class Licenses(Resource):
         if license is None:
             return build_response(status_code=404, error="Not Found", description="License does not exist")
 
-        if validate_license(licenseID):
+        if validate_license(license):
             return build_response(status_code=200, data="", description="License is valid")
         else:
             return build_response(status_code=400, data="", error="License is not valid")
@@ -83,30 +84,11 @@ class Licenses(Resource):
         if license is None:
             return build_response(status_code=404, error="Not Found", description="License does not exist")
 
-        if validate_license(licenseID):
+        if validate_license(license):
             return build_response(status_code=200, data=license.serialize, description="License is valid")
         else:
             return build_response(status_code=400, data="", error="License is not valid")
 
-    def post(self, licenseID):
-        # Sould licenses be renewable?
-        pass
-
-    def put(self, licenseID):
-        license = License.query.filter_by(license_uuid=licenseID).first()
-        if license is None:
-            return build_response(status_code=404, error="Not Found", description="License ID provided does not exist")
-
-        if license.status == "INACTIVE":
-            return build_response(status_code=400, error="Not Valid", description="License ID provided is not active")
-
-        if license.status == "SUSPENDED":
-            return build_response(status_code=304, error="Not Modified", description="License ID provided is already suspended")
-
-        license.status = "SUSPENDED"
-        db.session.commit()
-
-        return build_response(status_code=200, data=license.serialize, description="License successfully suspended")
 
     def delete(self, licenseID):
         license = License.query.filter_by(license_uuid=licenseID).first()
@@ -117,6 +99,11 @@ class Licenses(Resource):
             return build_response(status_code=304, error="Not Modified", description="License ID provided is already cancelled")
 
         license.status = "INACTIVE"
+        if license.license_type == "PRIVATE":
+            response = requests.delete(license.validation_url, timeout=app.config["TIMEOUT"])
+            if not response.status_code == 200:
+                return build_response(status_code=400, error="Not Allowd", description="Validate URL failed to cancel the license")
+
         db.session.commit()
 
         return build_response(status_code=200, data=license.serialize, description="License successfully cancelled")
