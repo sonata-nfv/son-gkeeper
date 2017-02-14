@@ -73,6 +73,7 @@ class GtkPkg < Sinatra::Base
   enable :cross_origin
 
   if GtkPkg.settings.catalogues
+   set :son_packages_catalogue, Catalogue.new(GtkPkg.settings.catalogues+'/son-packages', logger)
    set :packages_catalogue, Catalogue.new(GtkPkg.settings.catalogues+'/packages', logger)
    set :services_catalogue, Catalogue.new(GtkPkg.settings.catalogues+'/network-services', logger)
    set :functions_catalogue, Catalogue.new(GtkPkg.settings.catalogues+'/vnfs', logger)

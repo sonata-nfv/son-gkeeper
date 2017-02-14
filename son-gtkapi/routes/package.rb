@@ -63,39 +63,34 @@ class GtkApi < Sinatra::Base
       json_error 400, 'No package file specified'
     end
 
-    # GET a specific package
+  # GET a specific package
     get '/:uuid/?' do
-      log_message = 'GtkApi::GET /api/v2/packages/:uuid'
-      
+      log_message = 'GtkApi::GET /api/v2/packages/:uuid/?'
+      logger.debug(log_message) {'entered'}
       unless params[:uuid].nil?
-        logger.debug(log_message) { "entered package id #{params[:uuid]}"}
+        logger.debug(log_message) {"params[:uuid]=#{params[:uuid]}"}
         json_error 400, 'Invalid Package UUID' unless valid? params['uuid']
-      
-        package_file_path = PackageManagerService.find_by_uuid(params[:uuid])
-        logger.debug(log_message) {"package_file_path #{package_file_path}"}
-        if package_file_path
-          logger.debug(log_message) {"leaving with package #{package_file_path}"}
-          send_file package_file_path
+        package = settings.PackageManagementService.find_by_uuid(params[:uuid])
+        if package
+          logger.debug(log_message) {"leaving with package #{package}"}
+          halt 200, package
         else
-          logger.debug(log_message) { "leaving with \"No package with UUID=#{params[:uuid]} was found\""}
+          logger.debug(log_message) {"leaving with \"No package with UUID=#{params[:uuid]} was found\""}
           json_error 404, "No package with UUID=#{params[:uuid]} was found"
         end
-
       end
       logger.debug(log_message) {"leaving with \"No package UUID specified\""}
-      json_error 400, 'No package UUID specified'
+      json_error 400, 'No package UUID specified'      
     end
   
     # GET potentially many packages
     get '/?' do
       log_message = 'GtkApi::GET /api/v2/packages/?'
-    
       logger.debug(log_message) {'entered with '+query_string}
     
       @offset ||= params[:offset] ||= DEFAULT_OFFSET
       @limit ||= params[:limit] ||= DEFAULT_LIMIT
     
-      #packages = settings.package_management.find(params)
       packages = PackageManagerService.find(params)
       if packages
         logger.debug(log_message) { "leaving with #{packages}"}

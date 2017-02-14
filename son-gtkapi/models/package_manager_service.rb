@@ -62,30 +62,19 @@ class PackageManagerService < ManagerService
       @@logger.error(method) {"Backtrace:\n\t#{e.backtrace.join("\n\t")}"}
       {error: 'Package is duplicated', package: e.response}
     end    
-  end    
+  end
 
   def self.find_by_uuid(uuid)
     method = LOG_MESSAGE + ".find_by_uuid(#{uuid})"
-    @@logger.debug(method) {'entered'}
+    @logger.debug(method) {'entered'}
     headers = { 'Accept'=> '*/*', 'Content-Type'=>'application/json'}
     headers[:params] = uuid
     begin
       # Get the meta-data first
-      response = RestClient.get(@@url+"/packages/#{uuid}", headers)
-      filename = JSON.parse(response)['filepath']
-      @@logger.debug(method) {"filename='"+filename+"'"}
-      path = File.join('public','packages',uuid)
-      FileUtils.mkdir_p path unless File.exists? path
-      
-      # Get the package it self
-      package = RestClient.get(@@url+"/packages/#{uuid}/package")
-      File.open(filename, 'wb') do |f|
-        f.write package
-      end
-      filename
+      response = RestClient.get(@url+"/packages/#{uuid}", headers)
+      @logger.debug(method) {"response #{response}"}
+      response
     rescue => e
-      @@logger.error(method) {"Error during processing: #{$!}"}
-      @@logger.error(method) {"Backtrace:\n\t#{e.backtrace.join("\n\t")}"}
       e.to_json
     end
   end

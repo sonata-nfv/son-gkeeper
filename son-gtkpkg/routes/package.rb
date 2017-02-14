@@ -53,7 +53,6 @@ class GtkPkg < Sinatra::Base
   post '/packages/?' do
     log_message = LOG_MESSAGE + ' POST /packages'
     logger.info(log_message) {"params = #{params}"}
-    
     package = Package.new(catalogue: settings.packages_catalogue, logger: logger, params: {io: params[:package][:tempfile][:tempfile]})
     if package 
       logger.debug(log_message) {"package=#{package.inspect}"}
@@ -61,8 +60,27 @@ class GtkPkg < Sinatra::Base
       logger.info(log_message) {"descriptor is #{descriptor}"}
       if descriptor
         if descriptor.key?('uuid')
-          logger.info(log_message) {"leaving with package #{descriptor.to_json}"}
-          halt 201, {'Location' => "/packages/#{descriptor['uuid']}"}, descriptor.to_json
+          logger.info("Storing son-package in catalogue")
+          son_package = Package.new(catalogue: settings.son_packages_catalogue, logger: logger, params: {io: params[:package][:tempfile][:tempfile]})
+          son_package = son_package.store_zip()
+          if son_package && son_package['uuid']
+            package = Package.new(catalogue: settings.packages_catalogue, logger: logger, params: {io: params[:package][:tempfile][:tempfile]})
+            response = package.add_sonpackage_id(descriptor['uuid'], son_package['uuid'])
+            if response.nil?
+              descriptor.store("son-package-uuid", son_package['uuid'])
+              logger.info(log_message) {"leaving with package #{descriptor.to_json}"}
+              #halt 201, {'Location' => "/packages/#{descriptor['uuid']}"}, descriptor.to_json
+              halt 201, {'Location' => "/son-packages/#{descriptor['son-package-uuid']}"}, descriptor.to_json
+            else
+              error_message = "Error storing son-package-uuid in descriptor: " + response
+              logger.error(log_message) {"leaving with #{error_message}"}
+              json_error 400, error_message
+            end
+          else
+            error_message = 'Error storing son-package.'
+            logger.error(log_message) {"leaving with #{error_message}"}
+            json_error 400, error_message            
+          end
         elsif descriptor.key?('name') && descriptor.key?('vendor') && descriptor.key?('version')
           error_message = "Version #{descriptor['version']} of package '#{descriptor['name']}' from vendor '#{descriptor['vendor']}' already exists"
           logger.info(log_message) {"leaving with #{error_message}"}
@@ -83,7 +101,8 @@ class GtkPkg < Sinatra::Base
       json_error 400, error_message
     end
   end
-  
+ 
+=begin  
   get '/packages/:uuid' do
     unless params[:uuid].nil?
       logger.info('GtkPkg.get') { "GtkPkg: entered GET \"/packages/#{params[:uuid]}\""}
@@ -107,6 +126,23 @@ class GtkPkg < Sinatra::Base
     logger.error "GtkPkg: leaving GET \"/packages/#{params[:uuid]}\" with \"No package UUID specified\""
     json_error 400, 'No package UUID specified'
   end
+=end
+  # GET package descriptor
+  get '/packages/:uuid' do
+    unless params[:uuid].nil?
+      logger.info('GtkPkg.get') { "GtkPkg: entered GET \"/packages/#{params[:uuid]}\""}
+      package = settings.packages_catalogue.find_by_uuid( params[:uuid])
+      if package && package.is_a?(Hash) && package['uuid']
+        logger.info "GtkPkg: leaving GET /packages/#{params[:uuid]} with package found. Package: #{package}"
+        halt 200, package.to_json
+      else
+        logger.error "GtkPkg: leaving GET \"/packages/#{params[:uuid]}\" with \"No package with UUID=#{params[:uuid]} was found\""
+        json_error 400, "No package with UUID=#{params[:uuid]} was found"       
+      end
+    end
+    logger.error "GtkPkg: leaving GET \"/packages/#{params[:uuid]}\" with \"No package UUID specified\""
+    json_error 400, 'No package UUID specified'    
+  end
   
   get '/packages/:uuid/package?' do
     unless params[:uuid].nil?
@@ -118,6 +154,21 @@ class GtkPkg < Sinatra::Base
     end
     logger.info "GtkPkg: leaving GET /packages/#{params[:uuid]}/package with \"No package UUID specified\""
     json_error 400, 'No package UUID specified'
+  end
+
+  get '/son-packages/:uuid/?' do
+    unless params[:uuid].nil?
+      package = settings.son_packages_catalogue.find_by_uuid(params[:uuid])
+      if package
+        logger.info "GtkPkg: leaving GET /son-packages/#{params[:uuid]} with son-package found, UUID=#{params[:uuid]}"
+        halt 200, package        
+      else
+        logger.error "GtkPkg: leaving GET \"/son-packages/#{params[:uuid]}\" with \"No son-package with UUID=#{params[:uuid]} was found\""
+        json_error 400, "No son-package with UUID=#{params[:uuid]} was found"       
+      end  
+    end
+    logger.error "GtkPkg: leaving GET \"/son-packages/#{params[:uuid]}\" with \"No son-package UUID specified\""
+    json_error 400, 'No package UUID specified' 
   end
 
   get '/packages/?' do
