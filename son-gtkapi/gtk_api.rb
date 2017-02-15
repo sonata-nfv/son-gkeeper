@@ -36,6 +36,7 @@ require 'sinatra/reloader'
 require 'zip'
 require 'sinatra/logger'
 require 'sinatra/namespace'
+#require 'active_support/all'
 
 # Require the bundler gem and then call Bundler.require to load in all gems listed in Gemfile.
 require 'bundler'
@@ -94,4 +95,16 @@ class GtkApi < Sinatra::Base
   end
   MODULE = 'GtkApi'
   logger.info(MODULE) {"Started at #{settings.time_at_startup}"}
+  
+  def query_string
+    log_message = 'GtkApi::query_string'
+    logger.debug(log_message) {"query_string=#{request.env['QUERY_STRING']}"}
+    request.env['QUERY_STRING'].empty? ? '' : '?' + request.env['QUERY_STRING'].to_s
+  end
+
+  def request_url
+    log_message = 'GtkApi::request_url'
+    logger.debug(log_message) {"Schema=#{request.env['rack.url_scheme']}, host=#{request.env['HTTP_HOST']}, path=#{request.env['REQUEST_PATH']}"}
+    request.env['rack.url_scheme']+'://'+request.env['HTTP_HOST']+request.env['REQUEST_PATH']
+  end
 end

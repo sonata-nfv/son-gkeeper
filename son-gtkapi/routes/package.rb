@@ -70,7 +70,7 @@ class GtkApi < Sinatra::Base
       unless params[:uuid].nil?
         logger.debug(log_message) {"params[:uuid]=#{params[:uuid]}"}
         json_error 400, 'Invalid Package UUID' unless valid? params['uuid']
-        package = settings.PackageManagementService.find_by_uuid(params[:uuid])
+        package = PackageManagerService.find_by_uuid(params[:uuid])
         if package
           logger.debug(log_message) {"leaving with package #{package}"}
           halt 200, package
@@ -136,16 +136,6 @@ class GtkApi < Sinatra::Base
       logger.debug(log_message) {'leaving with log='+log}
       halt 200, log #.to_s
     end
-  end
-  
-  private
-    
-  def query_string
-    request.env['QUERY_STRING'].empty? ? '' : '?' + request.env['QUERY_STRING'].to_s
-  end
-
-  def request_url
-    request.env['rack.url_scheme']+'://'+request.env['HTTP_HOST']+request.env['REQUEST_PATH']
   end
 end
 
