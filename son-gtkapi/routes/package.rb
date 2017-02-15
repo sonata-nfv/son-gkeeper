@@ -70,7 +70,7 @@ class GtkApi < Sinatra::Base
       unless params[:uuid].nil?
         logger.debug(log_message) {"params[:uuid]=#{params[:uuid]}"}
         json_error 400, 'Invalid Package UUID' unless valid? params['uuid']
-        package = settings.PackageManagementService.find_by_uuid(params[:uuid])
+        package = PackageManagerService.find_by_uuid(params[:uuid])
         if package
           logger.debug(log_message) {"leaving with package #{package}"}
           halt 200, package
