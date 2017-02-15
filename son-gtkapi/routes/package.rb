@@ -137,16 +137,6 @@ class GtkApi < Sinatra::Base
       halt 200, log #.to_s
     end
   end
-  
-  private
-    
-  def query_string
-    request.env['QUERY_STRING'].empty? ? '' : '?' + request.env['QUERY_STRING'].to_s
-  end
-
-  def request_url
-    request.env['rack.url_scheme']+'://'+request.env['HTTP_HOST']+request.env['REQUEST_PATH']
-  end
 end
 
 #get '/downloads/:filename' do

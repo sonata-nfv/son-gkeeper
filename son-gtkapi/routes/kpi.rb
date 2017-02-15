@@ -59,13 +59,4 @@ class GtkApi < Sinatra::Base
       json_error 400, 'No params specified for the create request'
     end
   end
-  
-  private 
-  def query_string
-    request.env['QUERY_STRING'].empty? ? '' : '?' + request.env['QUERY_STRING'].to_s
-  end
-
-  def request_url
-    request.env['rack.url_scheme']+'://'+request.env['HTTP_HOST']+request.env['REQUEST_PATH']
-  end
 end
