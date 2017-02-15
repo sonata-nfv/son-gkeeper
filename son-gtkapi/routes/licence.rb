@@ -154,7 +154,11 @@ class GtkApi < Sinatra::Base
     post '/licences/?' do
       log_message = 'GtkApi::POST /licences/?'
       body = request.body.read
-      raise ArgumentError.new('Licences have to have parameters') if (body && body.empty?)
+      
+      # Don't raise exception here, return HTTP error
+      #raise ArgumentError.new('Licences have to have parameters') if (body && body.empty?)
+      
+      
       logger.debug(log_message) {"body=#{body}"}
       # 'type_uuid', String *
       # 'service_uuid', String *
@@ -167,26 +171,22 @@ class GtkApi < Sinatra::Base
       
       params = JSON.parse(body, symbolize_names: true)
       logger.debug(log_message) {"entered with params=#{params}"}
-      
-      if LicenceManagerService.valid? params
-    
-        # description, duration, status
-        licence = LicenceManagerService.create_licence(params)
-        logger.debug(log_message) {"licence=#{licence.inspect}"}
-        if licence
-          if licence.is_a?(Hash) && (licence[:uuid] || licence['uuid'])
-            logger.info(log_message) {"leaving with licence: #{licence}"}
-            headers 'Location'=> LicenceManagerService.url+"/licences/#{licence[:uuid]}", 'Content-Type'=> 'application/json'
-            halt 201, licence.to_json
-          else
-            json_error 400, 'No UUID given to licence'
-          end
-        else
-          json_error 400, 'Licence not created'
-        end
+
+      licence = LicenceManagerService.create(body)
+      logger.debug(log_message) {"licence=#{licence.inspect}"}
+      case licence[:status]
+      when 201
+        logger.info(log_message) {"leaving with licence: #{licence[:items]}"}
+        headers 'Location'=> LicenceManagerService.url+"/licences/#{licence[:uuid]}", 'Content-Type'=> 'application/json'
+        halt 201, licence.to_json
+      when 422
+        logger.info(log_message) {"Unprocessable entity"}
+        headers 'Content-Type'=> 'application/json'
+        halt 422, '{}'
       else
-        # :unprocessable_entity
-        json_error 422, "Invalid parameters: #{params}"
+        logger.info(log_message) {"Internal error while trying to create a licence #{body}"}
+        headers 'Content-Type'=> 'application/json'
+        halt 500, 'Internal error while trying to create a licence'
       end
     end
   end
