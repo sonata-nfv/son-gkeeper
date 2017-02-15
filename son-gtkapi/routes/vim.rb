@@ -99,7 +99,7 @@ class GtkApi < Sinatra::Base
       log_message = 'GtkApi::GET /api/v2/admin/vims/logs'
       logger.debug(log_message) {'entered'}
       headers 'Content-Type' => 'text/plain; charset=utf8', 'Location' => '/'
-      log = VimManagerService.get_log(url:'/admin/logs', log_message:log_message, logger: logger)
+      log = VimManagerService.get_log(url:VimManagerService.url+'/admin/logs', log_message:log_message, logger: logger)
       logger.debug(log_message) {'leaving with log='+log}
       halt 200, log
     end

@@ -29,6 +29,8 @@ require './models/manager_service.rb'
 
 class VimManagerService < ManagerService
   
+  cattr_accessor :url, :logger
+  
   JSON_HEADERS = { 'Accept'=> 'application/json', 'Content-Type'=>'application/json'}
   LOG_MESSAGE = 'GtkApi::' + self.name
   
