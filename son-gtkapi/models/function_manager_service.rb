@@ -45,6 +45,11 @@ class FunctionManagerService < ManagerService
     @@logger.debug(method) {'entered'}
   end
 
+  def self.url
+    @@logger.debug(LOG_MESSAGE + "#url") {'@@url='+@@url}
+    @@url
+  end
+
   def self.find_function_by_uuid(uuid)
     find(url: @@url + '/functions/' + uuid, log_message: LOG_MESSAGE + "##{__method__}(#{uuid})", logger: @@logger)
   end

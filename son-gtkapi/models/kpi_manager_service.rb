@@ -42,6 +42,11 @@ class KpiManagerService < ManagerService
     @@logger.debug(method) {'entered'}
   end
 
+  def self.url
+    @@logger.debug(LOG_MESSAGE + "#url") {'@@url='+@@url}
+    @@url
+  end
+
   def self.increase_metric(params)
     method = LOG_MESSAGE + "##{__method__}(#{params})"
     @@logger.debug(method) {"entered"}

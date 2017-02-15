@@ -31,18 +31,6 @@ class ManagerService
   CLASS_NAME = self.name
   LOG_MESSAGE = 'GtkApi::' + CLASS_NAME
   
-  def self.config(url:, logger:)
-    method = LOG_MESSAGE + "##{__method__}(url=#{url}, logger=#{logger})"
-    raise ArgumentError, CLASS_NAME+' can not be configured with nil url' if url.nil?
-    raise ArgumentError, CLASS_NAME+' can not be configured with empty url' if url.empty?
-    raise ArgumentError, CLASS_NAME+' can not be configured with nil logger' if logger.nil?
-    @@url = url
-    @@logger = logger
-    @@logger.debug(method) {'entered'}
-  end
-    
-  def self.url() @@url; end
-  
   def initialize(url, logger)
     method = 'GtkApi::' + CLASS_NAME + ".new(url=#{url}, logger=#{logger})"
     @url = url
@@ -108,11 +96,6 @@ class ManagerService
       logger.error(log_message) {"Backtrace:\n\t#{e.backtrace.join("\n\t")}"} if logger
       nil 
     end
-  end
-  
-  def self.url
-    @@logger.debug(LOG_MESSAGE + "#url") {'@@url='+@@url}
-    @@url
   end
   
   private
