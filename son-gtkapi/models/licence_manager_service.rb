@@ -25,8 +25,6 @@
 ## acknowledge the contributions of their colleagues of the SONATA 
 ## partner consortium (www.sonata-nfv.eu).
 # encoding: utf-8
-require './models/manager_service.rb'
-
 class LicenceManagerService < ManagerService
   
   JSON_HEADERS = { 'Accept'=> 'application/json', 'Content-Type'=>'application/json'}
@@ -68,27 +66,31 @@ class LicenceManagerService < ManagerService
   def self.valid?(params)
     method = LOG_MESSAGE + "##{__method__}(#{params})"
     @@logger.debug(method) {'entered'}
-    headers = {'Content-Type'=>'application/x-www-form-urlencoded'}
-    begin
-      licence = postCurb(url: @@url+LICENCES_URL, body: params, headers: headers, logger: @@logger)
-      @@logger.debug(method) {"licence=#{licence.body}"}
-      JSON.parse licence.body
-    rescue  => e #RestClient::Conflict
-      @@logger.error(method) {"Error during processing: #{$!}"}
-      @@logger.error(method) {"Backtrace:\n\t#{e.backtrace.join("\n\t")}"}
-      {error: 'Licence type not created', licence: e.backtrace}
-    end
+    raise ArgumentError, 'User must be valid' unless User.valid? params[:user_uuid]
+    raise ArgumentError, 'Service must be valid' unless ServiceManagementService.valid? params[:service_uuid]
+    @@logger.debug(method) {'Leaving with valid licence data'}
+    true
   end
   
-  def self.create_licence(params)
+  def self.create(params)
     method = LOG_MESSAGE + "##{__method__}(#{params})"
     @@logger.debug(method) {'entered'}
     headers = {'Content-Type'=>'application/x-www-form-urlencoded'}
+
     begin
+      self.valid?(params)
       licence = postCurb(url: @@url+LICENCES_URL, body: params, headers: headers, logger: @@logger)
       @@logger.debug(method) {"licence=#{licence.body}"}
-      JSON.parse licence.body
-    rescue  => e #RestClient::Conflict
+      parsed_licence=JSON.parse(licence.body)
+      case parsed_licence[:status_code]
+      when 201
+        {status: 201, count: 1, items: parsed_licence[:data], message: 'Created'}
+      else
+        {status: parsed_licence[:status_code], count: 0, items: [], message: parsed_licence[:error]}
+      end
+    rescue  ArgumentError => ae
+      {status: 422, count: 0, items:[], message: 'Unprocessable Entity'}
+    rescue => e
       @@logger.error(method) {"Error during processing: #{$!}"}
       @@logger.error(method) {"Backtrace:\n\t#{e.backtrace.join("\n\t")}"}
       {error: 'Licence type not created', licence: e.backtrace}
@@ -102,8 +104,8 @@ class LicenceManagerService < ManagerService
   end
 
   def self.find_licence_by_uuid(uuid)
-    find(url: @@url + LICENCES_URL + uuid + '/', log_message: LOG_MESSAGE + "##{__method__}(#{uuid})", logger: @@logger)
-    licence['data'] if licence_type
+    licence=find(url: @@url + LICENCES_URL + uuid + '/', log_message: LOG_MESSAGE + "##{__method__}(#{uuid})", logger: @@logger)
+    licence['data'] if licence
   end
   
   def self.find_licence_types(params)
