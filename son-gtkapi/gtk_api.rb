@@ -80,6 +80,7 @@ class GtkApi < Sinatra::Base
   enable :cross_origin
 
   # TODO: make this relationship loosely coupled
+  # TODO: logger could be a global variable
   PackageManagerService.config(url: settings.pkgmgmt, logger: logger)
   ServiceManagerService.config(url: settings.srvmgmt, logger: logger)
   FunctionManagerService.config(url: settings.fnctmgmt, logger: logger)

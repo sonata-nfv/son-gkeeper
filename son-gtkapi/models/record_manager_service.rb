@@ -42,6 +42,11 @@ class RecordManagerService < ManagerService
     @@logger.debug(method) {'entered'}
   end
   
+  def self.url
+    @@logger.debug(LOG_MESSAGE + "#url") {'@@url='+@@url}
+    @@url
+  end
+  
   def self.find_records(params)
     #params['kind']
     kind = params.delete('kind')
@@ -51,10 +56,5 @@ class RecordManagerService < ManagerService
   
   def self.find_record_by_uuid(uuid)
     find(url: @@url + '/' + kind + '/' + uuid, log_message: LOG_MESSAGE + "##{__method__}(#{uuid})", logger: @@logger) #+ '/records/' 
-  end
-  
-  def self.url
-    @@logger.debug(LOG_MESSAGE + "#url") {'@@url='+@@url}
-    @@url
   end
 end

@@ -29,7 +29,7 @@ class ManagerService
   
   JSON_HEADERS = { 'Accept'=> 'application/json', 'Content-Type'=>'application/json'}
   CLASS_NAME = self.name
-  LOG_MESSAGE = 'GtkApi::' + self.name
+  LOG_MESSAGE = 'GtkApi::' + CLASS_NAME
   
   def initialize(url, logger)
     method = 'GtkApi::' + CLASS_NAME + ".new(url=#{url}, logger=#{logger})"

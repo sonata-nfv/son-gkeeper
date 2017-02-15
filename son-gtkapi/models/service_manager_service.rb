@@ -42,6 +42,11 @@ class ServiceManagerService < ManagerService
     @@logger.debug(method) {'entered'}
   end
 
+  def self.url
+    @@logger.debug(LOG_MESSAGE + "#url") {'@@url='+@@url}
+    @@url
+  end
+
   def self.find_service_by_uuid(uuid:, params: {})
     find(url: @@url + '/services/' + uuid, params: params, log_message: LOG_MESSAGE + "##{__method__}(#{uuid})", logger: @@logger)
   end
@@ -97,10 +102,5 @@ class ServiceManagerService < ManagerService
       @@logger.error(method) {"Backtrace:\n\t#{e.backtrace.join("\n\t")}"}
       nil 
     end      
-  end
-  
-  def self.url
-    @@logger.debug(LOG_MESSAGE + "#url") {'@@url='+@@url}
-    @@url
   end
 end
