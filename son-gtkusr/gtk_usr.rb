@@ -31,11 +31,14 @@ ENV['RACK_ENV'] ||= 'development'
 require 'sinatra'
 require 'sinatra/base'
 require 'sinatra/config_file'
+#require 'sinatra/logger'
 require 'json'
 require 'yaml'
 require 'jwt'
+
 require_relative 'helpers/init'
 require_relative 'routes/init'
+# require_relative 'models/init'
 
 # Require the bundler gem and then call Bundler.require to load in all gems
 # listed in Gemfile.

@@ -425,6 +425,16 @@ def set_Keycloak_config()
   File.open('../config/keycloak.yml', 'w') {|f| f.write conf.to_yaml } #Store
 end
 
+def get_client_secret()
+  #Get the client secret
+  #GET /admin/realms/{realm}/clients/{id}/client-secret
+end
+
+def regenerate_client_secret()
+  #Generate a new secret for the client
+  #POST /admin/realms/{realm}/clients/{id}/client-secret
+end
+
 =begin
 "grant_types_supported":["authorization_code","implicit","refresh_token","password","client_credentials"]
 "response_types_supported":["code","none","id_token","token","id_token token","code id_token","code token","code id_token token"]
@@ -463,7 +473,8 @@ end
 #sleep(2)
 #token_validation(token2)
 #register_user(token)
-set_Keycloak_config
+#set_Keycloak_config
+get_inst_file
 
 =begin
     "software_version",
