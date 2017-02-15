@@ -28,22 +28,10 @@
 require './models/manager_service.rb'
 
 class VimManagerService < ManagerService
-  
-  cattr_accessor :url, :logger
-  
+    
   JSON_HEADERS = { 'Accept'=> 'application/json', 'Content-Type'=>'application/json'}
   LOG_MESSAGE = 'GtkApi::' + self.name
   
-  def self.config(url:, logger:)
-    method = LOG_MESSAGE + "##{__method__}(url=#{url}, logger=#{logger})"
-    raise ArgumentError.new('VimManagerService can not be configured with nil url') if url.nil?
-    raise ArgumentError.new('VimManagerService can not be configured with empty url') if url.empty?
-    raise ArgumentError.new('VimManagerService can not be configured with nil logger') if logger.nil?
-    @@url = url
-    @@logger = logger
-    @@logger.debug(method) {'entered'}
-  end
-    
   def self.find_vims(params)
     method = LOG_MESSAGE + "##{__method__}(#{params})"
     @@logger.debug(method) {'entered'}    
