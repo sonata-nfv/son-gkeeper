@@ -53,6 +53,16 @@ configure do
   log_file.sync = true
   use Rack::CommonLogger, log_file
 
+  class Keycloak < Sinatra::Application
+    register Sinatra::ConfigFile
+    # Load configurations
+    config_file 'config/keycloak.yml'
+
+    self.get_oidc_endpoints
+    self.get_adapter_install_json
+    @@access_token = self.get_adapter_token
+  end
+
   # turn keycloak realm pub key into an actual openssl compat pub key.
   keycloak_config = JSON.parse(File.read('config/keycloak.json'))
   @s = "-----BEGIN PUBLIC KEY-----\n"
@@ -82,12 +92,6 @@ class Adapter < Sinatra::Application
   register Sinatra::ConfigFile
   # Load configurations
   config_file 'config/config.yml'
-end
-
-class Keycloak < Sinatra::Application
-  register Sinatra::ConfigFile
-  # Load configurations
-  config_file 'config/keycloak.yml'
 end
 
 # DEPRECATED API - only to apply testings

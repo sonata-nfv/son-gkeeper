@@ -73,7 +73,7 @@ class Adapter < Sinatra::Application
 
       parsed_res, code = parse_json(res.body)
       @access_token = parsed_res['access_token']
-      puts "ACCESS_TOKEN RECEIVED"# , parsed_res['access_token']
+      puts "ACCESS_TOKEN RECEIVED -> FAKE"# , parsed_res['access_token']
     else
       halt 401, "ERROR: ACCESS DENIED!"
     end
