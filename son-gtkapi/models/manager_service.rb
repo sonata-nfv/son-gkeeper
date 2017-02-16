@@ -55,6 +55,7 @@ class ManagerService
     status = get_status_from_response_headers(res.header_str)
     case status
     when 200
+    when 202
       begin
         parsed_response = res.body.empty? ? {} : JSON.parse(res.body, symbolize_names: true)
         logger.debug(log_message) {"parsed_response=#{parsed_response}"} if logger
