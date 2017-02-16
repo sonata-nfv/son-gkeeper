@@ -54,7 +54,7 @@ class ManagerService
     count = get_record_count_from_response_headers(res.header_str)
     status = get_status_from_response_headers(res.header_str)
     case status
-    when 200
+    when 200..202
       begin
         parsed_response = res.body.empty? ? {} : JSON.parse(res.body, symbolize_names: true)
         logger.debug(log_message) {"parsed_response=#{parsed_response}"} if logger
@@ -69,6 +69,7 @@ class ManagerService
       logger.debug(log_message) {"Records not found for url=#{url}, params=#{params}, headers=#{headers}, logger=#{logger.inspect}"} if logger
       {status: status, count: 0, items: [], message: "Not Found"}
     else
+      logger.debug(log_message) {"Unexpected status code received: #{status}"}
       {status: nil, count: nil, items: nil, message: "Status #{status} unprocessable"}
     end
   end
