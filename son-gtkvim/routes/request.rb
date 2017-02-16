@@ -36,7 +36,7 @@ class GtkVim < Sinatra::Base
 
 
   # GETs a vim_request, given an uuid
-  get '/vim_request/:uuid/?' do
+  get '/vim_requests/:uuid/?' do
     begin
       logger.debug "GtkVim: entered GET /vim_requests/#{params[:uuid]}"
       request = VimsRequest.find(params[:uuid])
