@@ -67,7 +67,8 @@ class VimManagerService < ManagerService
     @@logger.debug(method) {"entered"}
 
     begin
-      @@logger.debug(method) {"@url = " + self.url}      response = postCurb(url:self..url+'/vim', body: params.to_json)
+      @@logger.debug(method) {"@url = " + self.url}
+      response = postCurb(url:self..url+'/vim', body: params.to_json)
       @@logger.debug(method) {"response="+response}
       response
     rescue => e
