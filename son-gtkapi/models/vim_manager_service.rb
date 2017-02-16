@@ -52,7 +52,7 @@ class VimManagerService < ManagerService
     method = LOG_MESSAGE + "##{__method__}(#{params})"
     @@logger.debug(method) {'entered'}
     begin
-      response = getCurb(url:self.class.url+'/vim', headers:JSON_HEADERS, logger:@@logger)
+      response = getCurb(url:self.url+'/vim', headers:JSON_HEADERS, logger:@@logger)
       @@logger.debug(method) {'response='+response.body}
       JSON.parse response.body
     rescue => e
@@ -67,8 +67,7 @@ class VimManagerService < ManagerService
     @@logger.debug(method) {"entered"}
 
     begin
-      @@logger.debug(method) {"@url = " + self.class.url}
-      response = postCurb(url:self.class.url+'/vim', body: params.to_json)
+      @@logger.debug(method) {"@url = " + self.url}      response = postCurb(url:self..url+'/vim', body: params.to_json)
       @@logger.debug(method) {"response="+response}
       response
     rescue => e
@@ -82,7 +81,7 @@ class VimManagerService < ManagerService
     method = LOG_MESSAGE + "##{__method__}(#{uuid})"
     @@logger.debug(method) {'entered'}
     begin
-      response = getCurb(url:self.class.url+'/vim_request/'+uuid, headers: JSON_HEADERS)
+      response = getCurb(url:self.url+'/vim_request/'+uuid, headers: JSON_HEADERS)
       @@logger.debug(method) {"Got response: #{response}"}
       query_response = response[:items][:query_response]
       if query_response
