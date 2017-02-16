@@ -53,8 +53,8 @@ class VimManagerService < ManagerService
     @@logger.debug(method) {'entered'}
     begin
       response = getCurb(url:self.url+'/vim', headers:JSON_HEADERS, logger:@@logger)
-      @@logger.debug(method) {'response='+response.body}
-      JSON.parse response.body
+      @@logger.debug(method) {'response='+response.to_s}
+      response
     rescue => e
       @@logger.error(method) {"Error during processing: #{$!}"}
       @@logger.error(method) {"Backtrace:\n\t#{e.backtrace.join("\n\t")}"}
