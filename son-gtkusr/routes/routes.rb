@@ -27,12 +27,12 @@
 
 require 'json'
 require 'sinatra'
+require 'net/http'
 require_relative '../helpers/init'
 
 
 # Adapter class
 class Adapter < Sinatra::Application
-
   # @method get_root
   # @overload get '/'
   # Get all available interfaces
@@ -48,8 +48,8 @@ class Adapter < Sinatra::Application
   # Management method to get log file of adapter remotely
   get '/log' do
     headers 'Content-Type' => 'text/plain; charset=utf8'
-    # filename = 'log/development.log'
-    filename = 'log/production.log'
+    filename = 'log/development.log'
+    # filename = 'log/production.log'
 
     # For testing purposes only
     begin
@@ -64,18 +64,46 @@ class Adapter < Sinatra::Application
   end
 end
 
-# Keycloak class
+# Adapter-Keycloak API class
 class Keycloak < Sinatra::Application
   post '/register' do
-    registration
+    # Return if content-type is not valid
+    logger.info "Content-Type is " + request.media_type
+    halt 415 unless (request.content_type == 'application/x-www-form-urlencoded' or request.content_type == 'application/json')
+    #payload?={"id":"123123","auth_code":"191331","required_amount":101,"timestamp":1407775713,"status":"completed","total_amount":101}
+
+    # Compatibility support for YAML content-type
+    case request.content_type
+      when 'application/x-www-form-urlencoded'
+        # Validate format
+        form_encoded, errors = request.body.read
+        halt 400, errors.to_json if errors
+
+        p "FORM PARAMS", form_encoded
+        form = Hash[URI.decode_www_form(form_encoded)]
+
+        # Validate Hash format
+        #form, errors = validate_form(form)
+        #halt 400, errors.to_json if errors
+
+      else
+        # Compatibility support for JSON content-type
+        # Parses and validates JSON format
+        form, errors = parse_json(request.body.read)
+        halt 400, errors.to_json if errors
+    end
+    register_user(@access_token, form) # user_params)
   end
 
   post '/login' do
+    #p "@client_name", self.client_name
+    #p "@client_secret", self.client_secret
+
     username = params[:username]
     password = params[:password]
 
     credentials = {"type" => "password", "value" => password.to_s}
-    login(username, credentials)
+    login_user(@access_token, username, credentials)
   end
 
   post '/authenticate' do
@@ -91,7 +119,8 @@ class Keycloak < Sinatra::Application
   end
 
   post '/logout' do
-    logout
+    token = @@access_token
+    logout(token, user=nil, realm=nil)
   end
 end
 

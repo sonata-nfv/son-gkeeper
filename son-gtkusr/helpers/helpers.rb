@@ -64,7 +64,6 @@ class Adapter < Sinatra::Application
                               'grant_type' => grt_type)
     #puts "RES.BODY: ", res.body
 
-
     if res.body['access_token']
       #if env['HTTP_AUTHORIZATION']
       # puts "env: ", env['HTTP_AUTHORIZATION']
@@ -74,7 +73,7 @@ class Adapter < Sinatra::Application
 
       parsed_res, code = parse_json(res.body)
       @access_token = parsed_res['access_token']
-      puts "ACCESS_TOKEN RECEIVED"# , parsed_res['access_token']
+      puts "ACCESS_TOKEN RECEIVED -> FAKE"# , parsed_res['access_token']
     else
       halt 401, "ERROR: ACCESS DENIED!"
     end
@@ -133,27 +132,52 @@ class Adapter < Sinatra::Application
     #TODO: Implement
     #Requirement: pre-defined SONATA Realm json template:
     # ./standalone.sh -Dkeycloak.migration.action=export -Dkeycloak.migration.provider=singleFile -Dkeycloak.migration.file=</path/to/template.json>
-    #Then, import template into Keycloak thorugh REST API
-
+    #Then, import template into Keycloak thorugh REST API:
+    #Imports a realm from a full representation of that realm.
+    #POST /admin/realms
+    #BodyParameter = JSON representation of the realm
   end
 
   def set_adapter_client()
     #TODO: Implement
     #Create a new client
 
-    #Client's client_id must be unique!
+    # set Client's client_id must be unique!
+    # generate uuid client secret -> call set_adapter_client_credentials()
+    #import pre-made Adapter client template
+    # set client secret in template
     #POST /admin/realms/{realm}/clients
     #BodyParameter = ClientRepresentation
     #realm = realm name (not id!)
-
   end
 
   def set_adapter_client_credentials()
     #TODO: Implement
+    #generate uuid
+    #save generated uuid secret in config/keycloak.yml
+    conf = YAML::load_file('../config/keycloak.yml') #Load
+    conf['client'] = 'adapter' #Modify
+    conf['secret'] = '' #Modify
+    # conf['secret'] = ''
+    File.open('../config/keycloak.yml', 'w') {|f| f.write conf.to_yaml } #Store
+    #client: adapter
+    #secret: <generated uuid>
+    # return uuid to set_adapter_client()
+  end
+
+  def get_client_secret()
+    #Get the client secret
+    #GET /admin/realms/{realm}/clients/{id}/client-secret
+  end
+
+  def regenerate_client_secret()
+    #Generate a new secret for the client
+    #POST /admin/realms/{realm}/clients/{id}/client-secret
   end
 
   def set_keycloak_credentials()
     #TODO: Implement
+    #Other Keycloak credentials that might be configured
   end
 
 

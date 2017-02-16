@@ -31,11 +31,14 @@ ENV['RACK_ENV'] ||= 'development'
 require 'sinatra'
 require 'sinatra/base'
 require 'sinatra/config_file'
+#require 'sinatra/logger'
 require 'json'
 require 'yaml'
 require 'jwt'
+
 require_relative 'helpers/init'
 require_relative 'routes/init'
+# require_relative 'models/init'
 
 # Require the bundler gem and then call Bundler.require to load in all gems
 # listed in Gemfile.
@@ -49,6 +52,16 @@ configure do
   log_file = File.new("#{settings.root}/log/#{settings.environment}.log", 'a+')
   log_file.sync = true
   use Rack::CommonLogger, log_file
+
+  class Keycloak < Sinatra::Application
+    register Sinatra::ConfigFile
+    # Load configurations
+    config_file 'config/keycloak.yml'
+
+    self.get_oidc_endpoints
+    self.get_adapter_install_json
+    @@access_token = self.get_adapter_token
+  end
 
   # turn keycloak realm pub key into an actual openssl compat pub key.
   keycloak_config = JSON.parse(File.read('config/keycloak.json'))
@@ -79,12 +92,6 @@ class Adapter < Sinatra::Application
   register Sinatra::ConfigFile
   # Load configurations
   config_file 'config/config.yml'
-end
-
-class Keycloak < Sinatra::Application
-  register Sinatra::ConfigFile
-  # Load configurations
-  config_file 'config/keycloak.yml'
 end
 
 # DEPRECATED API - only to apply testings
