@@ -33,6 +33,7 @@ development: &common_settings
   recmgmt: <%= ENV['RECORD_MANAGEMENT_URL'] %>
   licmgmt: <%= ENV['LICENCE_MANAGEMENT_URL'] %>
   kpimgmt: <%= ENV['KPI_MANAGEMENT_URL'] %>
+  logger_level: <%= (ENV['LOGGER_LEVEL'] ||= 'debug').to_sym %> # can be :debug, :fatal, :error, :warn, or :info
 
 test:
   <<: *common_settings

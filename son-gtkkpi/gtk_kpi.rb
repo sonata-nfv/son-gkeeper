@@ -53,7 +53,6 @@ class GtkKpi < Sinatra::Base
   register Sinatra::Reloader
   register Sinatra::ActiveRecordExtension
   register Sinatra::Logger
-  set :logger_level, :debug # or :fatal, :error, :warn, :info
   
   helpers GtkKpiHelper
   
@@ -69,12 +68,17 @@ class GtkKpi < Sinatra::Base
   use Rack::Session::Cookie, :key => 'rack.session', :domain => 'foo.com', :path => '/', :expire_after => 2592000, :secret => '$0nata'
   
   # Logging
+  MODULE='GtkKpi'
 	enable :logging
-  set :logger_level, :debug # or :fatal, :error, :warn, :info
+  set :logger_level, (ENV['LOGGER_LEVEL'] ||= 'debug').to_sym # can be :debug, :fatal, :error, :warn, or :info
+
   FileUtils.mkdir(File.join(settings.root, 'log')) unless File.exists? File.join(settings.root, 'log')
   logfile = File.open(File.join('log', ENV['RACK_ENV'])+'.log', 'a+')
   logfile.sync = true
   logger = Logger.new(logfile)
+  set :logger_level, settings.logger_level
+  logger.info(MODULE) {"Started at #{settings.time_at_startup}"}
+  logger.info(MODULE) {"Logger level at :#{settings.logger_level}"}
     
   enable :cross_origin
 
