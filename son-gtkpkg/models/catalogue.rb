@@ -86,7 +86,7 @@ class Catalogue
   end
   
   def find(params)
-    method = 'Catalogue.find: '
+    method = 'Catalogue.find'
     headers = {'Accept'=>'application/json', 'Content-Type'=>'application/json'}
     headers[:params] = params unless params.empty?
     @logger.debug(method) {"params=#{params}, headers=#{headers}"}
