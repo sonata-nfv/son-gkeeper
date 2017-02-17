@@ -142,15 +142,18 @@ class Keycloak < Sinatra::Application
   end
 
   # "userinfo_endpoint":"http://localhost:8081/auth/realms/master/protocol/openid-connect/userinfo"
-  def userinfo(token, realm=nil)
-    http_path = "http://localhost:8081/auth/realms/master/protocol/openid-connect/userinfo"
+  def userinfo(token)
+    # token = @@access_token
+    puts "TOKEN_CONTENT", token
+    http_path = "http://#{@@address.to_s}:#{@@port.to_s}/#{@@uri.to_s}/realms/#{@@realm_name}/protocol/openid-connect/userinfo"
     url = URI(http_path)
     http = Net::HTTP.new(url.host, url.port)
     request = Net::HTTP::Get.new(url.to_s)
     request["authorization"] = 'bearer ' + token
     response = http.request(request)
     puts "RESPONSE", response.read_body
-    response_json = parse_json(response.read_body)[0]
+    # response_json = parse_json(response.read_body)[0]
+    response.body
   end
 
   # Token Validation Endpoint
@@ -175,8 +178,10 @@ class Keycloak < Sinatra::Application
                               'grant_type' => 'client_credentials', 'token' => token)
 
     puts "RESPONSE_INTROSPECT", res.read_body
+    puts "CODE_INTROSPECT", res.code
     # RESPONSE_INTROSPECT:
     # {"jti":"bc1200e5-3b6d-43f2-a125-dc4ed45c7ced","exp":1486105972,"nbf":0,"iat":1486051972,"iss":"http://localhost:8081/auth/realms/master","aud":"adapter","sub":"67cdf213-349b-4539-bdb2-43351bf3f56e","typ":"Bearer","azp":"adapter","auth_time":0,"session_state":"608a2a72-198d-440b-986f-ddf37883c802","name":"","preferred_username":"service-account-adapter","email":"service-account-adapter@placeholder.org","acr":"1","client_session":"2c31bbd9-c13d-43f1-bb30-d9bd46e3c0ab","allowed-origins":[],"realm_access":{"roles":["create-realm","admin","uma_authorization"]},"resource_access":{"adapter":{"roles":["uma_protection"]},"master-realm":{"roles":["view-identity-providers","view-realm","manage-identity-providers","impersonation","create-client","manage-users","view-authorization","manage-events","manage-realm","view-events","view-users","view-clients","manage-authorization","manage-clients"]},"account":{"roles":["manage-account","view-profile"]}},"clientHost":"127.0.0.1","clientId":"adapter","clientAddress":"127.0.0.1","client_id":"adapter","username":"service-account-adapter","active":true}
+    return res.body, res.code
   end
 
   def register_user(token, user_form) #, username,firstname, lastname, email, credentials)
@@ -362,13 +367,11 @@ class Keycloak < Sinatra::Application
     end
   end
 
-  def login_user (token, username=nil, credentials=nil)
-    token = @@access_token
-
+  def login_user (username=nil, credentials=nil)
     url = URI("http://#{@@address.to_s}:#{@@port.to_s}/#{@@uri.to_s}/realms/#{@@realm_name}/protocol/openid-connect/token")
     http = Net::HTTP.new(url.host, url.port)
     request = Net::HTTP::Post.new(url.to_s)
-    request["authorization"] = 'Bearer ' + token
+    request["authorization"] = 'Bearer ' + @@access_token
     request["content-type"] = 'application/x-www-form-urlencoded'
 
     p "@client_name", @@client_name
@@ -383,8 +386,12 @@ class Keycloak < Sinatra::Application
     response = http.request(request)
     puts "LOG CODE", response.code
     puts "LOG BODY", response.body
-    #puts "USER ACCESS TOKEN RECEIVED: ", response.read_body
-    parsed_res, code = parse_json(response.body)
+
+    unless response.code == '200'
+      halt response.code.to_i, response.body
+    end
+
+    parsed_res = parse_json(response.body)
     puts "USER ACCESS TOKEN RECEIVED: ", parsed_res['access_token']
     halt 200, parsed_res['access_token'].to_json
   end
@@ -447,19 +454,17 @@ class Keycloak < Sinatra::Application
   end
 
   # "end_session_endpoint":"http://localhost:8081/auth/realms/master/protocol/openid-connect/logout"
-  def logout(token, user=nil, realm=nil)
+  def logout(user_token, user=nil, realm=nil)
     # user = token['sub']#'971fc827-6401-434e-8ea0-5b0f6d33cb41'
-    token = 'eyJhbGciOiJSUzI1NiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICJqZjQ3WXlHSzQ3VUprLXJ1cUk5RV9IaDhsNS1heHFrMzkxX0NpUUhmTm9nIn0.eyJqdGkiOiJhNDQ4MzU4My0wNzZjLTQyNzYtOTU0Zi1hODU4NDhkMjhjYmMiLCJleHAiOjE0ODcyMjg5NTAsIm5iZiI6MCwiaWF0IjoxNDg3MTc0OTUwLCJpc3MiOiJodHRwOi8vbG9jYWxob3N0OjgwODEvYXV0aC9yZWFsbXMvbWFzdGVyIiwiYXVkIjoiYWRhcHRlciIsInN1YiI6Ijk3MWZjODI3LTY0MDEtNDM0ZS04ZWEwLTViMGY2ZDMzY2I0MSIsInR5cCI6IkJlYXJlciIsImF6cCI6ImFkYXB0ZXIiLCJhdXRoX3RpbWUiOjAsInNlc3Npb25fc3RhdGUiOiIxZWRkZDEzMy02NzAyLTRmNGQtODhhYS0zZTk3ZmRmNzA5Y2QiLCJhY3IiOiIxIiwiY2xpZW50X3Nlc3Npb24iOiJhNjA3NDIyYy01OGExLTQzYzMtYjMyYS05MGY0Y2UzYTE2YzAiLCJhbGxvd2VkLW9yaWdpbnMiOltdLCJyZWFsbV9hY2Nlc3MiOnsicm9sZXMiOlsiY3JlYXRlLXJlYWxtIiwiYWRtaW4iLCJ1bWFfYXV0aG9yaXphdGlvbiJdfSwicmVzb3VyY2VfYWNjZXNzIjp7ImFkYXB0ZXIiOnsicm9sZXMiOlsidW1hX3Byb3RlY3Rpb24iXX0sIm1hc3Rlci1yZWFsbSI6eyJyb2xlcyI6WyJ2aWV3LWlkZW50aXR5LXByb3ZpZGVycyIsInZpZXctcmVhbG0iLCJtYW5hZ2UtaWRlbnRpdHktcHJvdmlkZXJzIiwiaW1wZXJzb25hdGlvbiIsImNyZWF0ZS1jbGllbnQiLCJtYW5hZ2UtdXNlcnMiLCJ2aWV3LWF1dGhvcml6YXRpb24iLCJtYW5hZ2UtZXZlbnRzIiwibWFuYWdlLXJlYWxtIiwidmlldy1ldmVudHMiLCJ2aWV3LXVzZXJzIiwidmlldy1jbGllbnRzIiwibWFuYWdlLWF1dGhvcml6YXRpb24iLCJtYW5hZ2UtY2xpZW50cyJdfSwiYWNjb3VudCI6eyJyb2xlcyI6WyJtYW5hZ2UtYWNjb3VudCIsInZpZXctcHJvZmlsZSJdfX0sIm5hbWUiOiJuYW1lIGxhc3QiLCJwcmVmZXJyZWRfdXNlcm5hbWUiOiJ1c2VyIiwiZ2l2ZW5fbmFtZSI6Im5hbWUiLCJmYW1pbHlfbmFtZSI6Imxhc3QiLCJlbWFpbCI6InVzZXJAbWFpbC5uZXQifQ.G6ULNKWz-2_wYe7CrscmvYhXA3g7fr1Acf6EwDhWc58mzw8bzJy0c2_FAO7-zLaZZvTn081OmNaZ_dUtwrR0CZwsmv1NXziOtT5A9Ix575rgXpLFXjjCaaiLYLfdHcVZJhSaDc0rhglW0yp0BDDp3Xj58ICRXNfnx2psCp3ES-V2Ug2aMYHvDN9ppTtipp9DQnT_eD9PFjq_PHN0QIJaXK3IZ_dn9dP6c8m1MPkdr_YYhOYmZ6O1E1ZXQMU1A-NtAGHKoUsE5tEY2fxW0YE1vGmH-G7X3tfKCc3H9LuZUBdMU0s2rks8wQgqKiA6x8R-wLn92rNZGm6dWtR8fk-0nw'
-
-    user = userinfo(token)["sub"]
-    p "SUB", user
+    user = parse_json(userinfo(user_token))[0]
+    p "SUB[0]", user['sub']
     # http_path = "http://localhost:8081/auth/realms/master/protocol/openid-connect/logout"
-    http_path ="http://localhost:8081/auth/admin/realms/master/users/#{user}/logout"
+    http_path ="http://localhost:8081/auth/admin/realms/master/users/#{user['sub']}/logout"
     url = URI(http_path)
     http = Net::HTTP.new(url.host, url.port)
     # request = Net::HTTP::Post.new(url.to_s)
     request = Net::HTTP::Post.new(url.to_s)
-    request["authorization"] = 'bearer ' + token
+    request["authorization"] = 'bearer ' + @@access_token
     request["content-type"] = 'application/x-www-form-urlencoded'
     #request["content-type"] = 'application/json'
 
@@ -478,6 +483,7 @@ class Keycloak < Sinatra::Application
     puts "RESPONSE CODE", response.code
     # puts "RESPONSE BODY", response.body
     #response_json = parse_json(response.read_body)[0]
+    halt response.code.to_i
   end
 
   def authenticate
@@ -508,7 +514,7 @@ class Keycloak < Sinatra::Application
     end
   end
 
-  def authorize
+  def authorize?
     ###
     #TODO: Implement
     #=> Check token!
@@ -534,6 +540,18 @@ class Keycloak < Sinatra::Application
 
   end
 
-
+  def is_active?(introspect_res)
+    puts "JSON PARSING"
+    token_evaluation = JSON.parse(introspect_res)
+    puts "token_evaluation", token_evaluation.to_s
+    case token_evaluation['active']
+      when true
+        p "ACTIVE CONTENTS TRUE", token_evaluation['active']
+        true
+      else
+        p "ACTIVE CONTENTS FALSE", token_evaluation['active']
+        false
+    end
+  end
 
 end

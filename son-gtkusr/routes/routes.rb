@@ -96,31 +96,109 @@ class Keycloak < Sinatra::Application
   end
 
   post '/login' do
+    logger.debug 'Adapter: entered POST /login'
+    # Return if Authorization is invalid
+    halt 400 unless request.env["HTTP_AUTHORIZATION"]
+
+    # READ FROM AUTH ENV
     #p "@client_name", self.client_name
     #p "@client_secret", self.client_secret
+    user_pass = request.env["HTTP_AUTHORIZATION"].split(' ').last
+    plain_user_pass  = Base64.decode64(user_pass)
 
-    username = params[:username]
-    password = params[:password]
+
+    # puts "USER_PASS", user_pass
+    # puts  "PLAIN", plain_user_pass.split(':').first
+    # puts  "PLAIN", plain_user_pass.split(':').last
+    username = plain_user_pass.split(':').first # params[:username]
+    password = plain_user_pass.split(':').last # params[:password]
 
     credentials = {"type" => "password", "value" => password.to_s}
-    login_user(@access_token, username, credentials)
+    login_user(username, credentials)
   end
 
   post '/authenticate' do
+    logger.debug 'Adapter: entered POST /authenticate'
+    # Return if Authorization is invalid
+    halt 400 unless request.env["HTTP_AUTHORIZATION"]
     auth
   end
 
   post '/authorize' do
+    logger.debug 'Adapter: entered POST /authorize'
+    # Return if Authorization is invalid
+    halt 400 unless request.env["HTTP_AUTHORIZATION"]
     authorize
   end
 
   post '/userinfo' do
-    userinfo
+    logger.debug 'Adapter: entered POST /userinfo'
+    # Return if Authorization is invalid
+    halt 400 unless request.env["HTTP_AUTHORIZATION"]
+
+    user_token = request.env["HTTP_AUTHORIZATION"].split(' ').last
+    unless user_token
+      error = {"ERROR" => "Access token is not provided"}
+      halt 400, error.to_json
+    end
+
+    # Validate token
+    res, code = token_validation(user_token)
+
+    if code == '200'
+      result = is_active?(res)
+      puts "RESULT", result
+      case result
+        when true
+          # continue
+        else
+          halt 400, res
+      end
+    else
+      halt 400, res
+    end
+
+    puts "RESULT", user_token
+    user_info = userinfo(user_token)
+    halt 200, user_info
   end
 
   post '/logout' do
-    token = @@access_token
-    logout(token, user=nil, realm=nil)
+    logger.debug 'Adapter: entered POST /logout'
+    # Return if Authorization is invalid
+    halt 400 unless request.env["HTTP_AUTHORIZATION"]
+
+    user_token = request.env["HTTP_AUTHORIZATION"].split(' ').last
+    # puts "headers", request.env["HTTP_AUTHORIZATION"]
+
+    unless user_token
+      error = {"ERROR" => "Access token is not provided"}
+      halt 400, error.to_json
+    end
+
+    # Validate token
+    res, code = token_validation(user_token)
+    # p "res,code", res, code
+
+    if code == '200'
+      result = is_active?(res)
+      puts "RESULT", result
+      case result
+        when true
+          # continue
+        else
+          halt 400, res
+      end
+    else
+      halt 400, res
+    end
+
+    #if headers['Authorization']
+    #  puts "AUTHORIZATION", headers['Authorization'].split(' ').last
+    #end
+    puts "RESULT", user_token
+
+    logout(user_token, user=nil, realm=nil)
   end
 end
 

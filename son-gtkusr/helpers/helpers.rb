@@ -103,11 +103,11 @@ class Adapter < Sinatra::Application
     puts "USER_ROLES?", @decoded_user_roles
 
 
-    # teacher_results = Clever::Teacher.find(nil, filters = {:where => "{\"email\":\"#{@email}\"}" })
-    # puts "TEACHER?", teacher_results.count
-    # halt 401, "Your email address is not unique. Exploding into a million pieces!" if teacher_results.count != 1
-    # halt 401, "Your email address is not unique. Exploding into a million pieces!" if teacher_results.count != 1
-    # @teacher = teacher_results.first
+    # user_results = User.find(nil, filters = {:where => "{\"email\":\"#{@email}\"}" })
+    # puts "USER?", user_results.count
+    # halt 401, "Your email address is not unique. Exploding into a million pieces!" if user_results.count != 1
+    # halt 401, "Your email address is not unique. Exploding into a million pieces!" if user_results.count != 1
+    # @user = user_results.first
     # array = []
     # array << { :name => 'test01', :id => 'test', :email => @email }
     @sections = [Sections.new(@usrname, @id, @email)]
@@ -166,8 +166,18 @@ class Adapter < Sinatra::Application
   end
 
   def get_client_secret()
+    realm = "master"
+    id = "adapter"
     #Get the client secret
-    #GET /admin/realms/{realm}/clients/{id}/client-secret
+    url = URI("http://localhost:8081/auth/admin/realms/#{realm}/clients/#{id}/client-secret")
+    http = Net::HTTP.new(url.host, url.port)
+    request = Net::HTTP::Get.new(url.to_s)
+    request.basic_auth("admin", "admin") # <--- Needs bearer token
+    request["content-type"] = 'application/json'
+
+    response = http.request(request)
+    p "RESPONSE", response
+    p "RESPONSE.read_body222", response.read_body
   end
 
   def regenerate_client_secret()

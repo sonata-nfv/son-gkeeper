@@ -16,14 +16,14 @@ end
 
 # "token_endpoint":"http://localhost:8081/auth/realms/master/protocol/openid-connect/token"
 def adminbased()
-  @address = 'localhost'
+  @@address = 'localhost'
   @port = '8081'
   @uri = 'auth'
   @client_name = 'adapter'
   @client_secret = 'df7e816d-0337-4fbe-a3f4-7b5263eaba9f'
   @access_token = nil
 
-  url = URI('http://' + @address.to_s + ':' + @port.to_s + '/' + @uri.to_s + '/realms/master/protocol/openid-connect/token')
+  url = URI('http://' + @@address.to_s + ':' + @port.to_s + '/' + @uri.to_s + '/realms/master/protocol/openid-connect/token')
 
   res = Net::HTTP.post_form(url, 'client_id' => @client_name, 'client_secret' => @client_secret,
 #                            'username' => "user",
@@ -426,14 +426,45 @@ def set_Keycloak_config()
 end
 
 def get_client_secret()
+  realm = "master"
+  id = "adapter"
   #Get the client secret
-  #GET /admin/realms/{realm}/clients/{id}/client-secret
+  url = URI("http://localhost:8081/auth/admin/realms/#{realm}/clients/#{id}/client-secret")
+  http = Net::HTTP.new(url.host, url.port)
+  request = Net::HTTP::Get.new(url.to_s)
+  request.basic_auth("admin", "admin")
+  request["content-type"] = 'application/json'
+
+  response = http.request(request)
+  p "RESPONSE", response
+  p "RESPONSE.read_body222", response.read_body
+  p "CODE", response.code
 end
 
 def regenerate_client_secret()
   #Generate a new secret for the client
   #POST /admin/realms/{realm}/clients/{id}/client-secret
 end
+
+jwt = {"access_token":"eyJhbGciOiJSUzI1NiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICJqZjQ3WXlHSzQ3VUprLXJ1cUk5RV9IaDhsNS1heHFrMzkxX0NpUUhmTm9nIn0.eyJqdGkiOiIxYzBjNmE3OC1lOGFhLTRlYzQtODViMy1lYzA4NGFlMzc3NGYiLCJleHAiOjE0ODczOTI0MTgsIm5iZiI6MCwiaWF0IjoxNDg3MzM4NDE4LCJpc3MiOiJodHRwOi8vbG9jYWxob3N0OjgwODEvYXV0aC9yZWFsbXMvbWFzdGVyIiwiYXVkIjoiYWRhcHRlciIsInN1YiI6IjZlNWZkZTRjLWI0MWItNDYyNi04NTMwLTcxZGJjYzU1ZDNlMiIsInR5cCI6IkJlYXJlciIsImF6cCI6ImFkYXB0ZXIiLCJhdXRoX3RpbWUiOjAsInNlc3Npb25fc3RhdGUiOiIwNDkwNGRjYS05Y2UzLTRjNGEtYWRiNi0wOTAxYzBhNzU3N2MiLCJhY3IiOiIxIiwiY2xpZW50X3Nlc3Npb24iOiJhMDllZmZlZi1mNWI2LTRkYmQtYWFiYi0wYmRhNzk3ODlhZjQiLCJhbGxvd2VkLW9yaWdpbnMiOltdLCJyZXNvdXJjZV9hY2Nlc3MiOnt9LCJuYW1lIjoiIiwicHJlZmVycmVkX3VzZXJuYW1lIjoidmlzaXRvciJ9.HphbpQ_mwT0nPh7txvJ-PLQooLF9HKRBmiaghnVrN4Zl7P0RE1X6p7mc-KXdhiJRvlyM4Kyz_zp7PDOXmRuHtWJuj4p5b5isoBtAvskmZySRFXYVqMGxtDnk8LcHhM7ki9iJHzX9Eayt89VgxcLeSFKFsrIT_d8y_PCFaYL6E4tgRH0wFzziIG_tmQg3hLsryxrSbWeVK84C4i7Sah2ySOHoRqDSzrfx9Y7Zdmu5-cjN8B191ozOKMjcwC7bEsptRrrQyY8GobHf_6GG609VfxnWo1wAT4p4u94MxB6fRhmeZ1fr-aeUT_wpunmQHAz3ZMn_Hh-qC4b-WxZBk5qAxw","expires_in":54000,"refresh_expires_in":1800,"refresh_token":"eyJhbGciOiJSUzI1NiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICJqZjQ3WXlHSzQ3VUprLXJ1cUk5RV9IaDhsNS1heHFrMzkxX0NpUUhmTm9nIn0.eyJqdGkiOiI2YmM2ZGNlMC1lYzM4LTQ4ZTYtODFhYS00MjliNWY2OWMyYjgiLCJleHAiOjE0ODczNDAyMTgsIm5iZiI6MCwiaWF0IjoxNDg3MzM4NDE4LCJpc3MiOiJodHRwOi8vbG9jYWxob3N0OjgwODEvYXV0aC9yZWFsbXMvbWFzdGVyIiwiYXVkIjoiYWRhcHRlciIsInN1YiI6IjZlNWZkZTRjLWI0MWItNDYyNi04NTMwLTcxZGJjYzU1ZDNlMiIsInR5cCI6IlJlZnJlc2giLCJhenAiOiJhZGFwdGVyIiwiYXV0aF90aW1lIjowLCJzZXNzaW9uX3N0YXRlIjoiMDQ5MDRkY2EtOWNlMy00YzRhLWFkYjYtMDkwMWMwYTc1NzdjIiwiY2xpZW50X3Nlc3Npb24iOiJhMDllZmZlZi1mNWI2LTRkYmQtYWFiYi0wYmRhNzk3ODlhZjQiLCJyZXNvdXJjZV9hY2Nlc3MiOnt9fQ.WnKdbged_jvrjF5VoM1V82g3JxaOtjMq8bBOWR1MQFe7B4jccODWOKsrbWysYVwkAo-0Mhfdh7gyBMBcyKFK7rCsx7FUWPxGSjDcZToC0Ajh71DYDHeBAzTxY0Vt6mNzoL6q0sa_GwwysxRqYvAPvg5vZ9idnEY7lkCJKak8j6Ak918SWDQ30WAsgK8_e6fg53Fv6cBehmzIoajTLiKDb-dRsjGfjg673MHh-bzQqu4L-NvVV6nResCyAMf-RV2GW0oeWru1UmsgYfsC_gZzobrkB9ylyTivnHTznN8PU3i4aMQ6XiLB7dJCOtYBXVRVzq1phUmYs71SJ4hv0y8mDA","token_type":"bearer","id_token":"eyJhbGciOiJSUzI1NiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICJqZjQ3WXlHSzQ3VUprLXJ1cUk5RV9IaDhsNS1heHFrMzkxX0NpUUhmTm9nIn0.eyJqdGkiOiIyOTNhZmM0MS1jMTQwLTQ5ZTQtYmQ0OS1hYTEzMmFjM2ZhNzEiLCJleHAiOjE0ODczOTI0MTgsIm5iZiI6MCwiaWF0IjoxNDg3MzM4NDE4LCJpc3MiOiJodHRwOi8vbG9jYWxob3N0OjgwODEvYXV0aC9yZWFsbXMvbWFzdGVyIiwiYXVkIjoiYWRhcHRlciIsInN1YiI6IjZlNWZkZTRjLWI0MWItNDYyNi04NTMwLTcxZGJjYzU1ZDNlMiIsInR5cCI6IklEIiwiYXpwIjoiYWRhcHRlciIsImF1dGhfdGltZSI6MCwic2Vzc2lvbl9zdGF0ZSI6IjA0OTA0ZGNhLTljZTMtNGM0YS1hZGI2LTA5MDFjMGE3NTc3YyIsImFjciI6IjEiLCJuYW1lIjoiIiwicHJlZmVycmVkX3VzZXJuYW1lIjoidmlzaXRvciJ9.RFGIfua4n746xGIrbjeEr-ic7IyJbMs6F3u4GyILrWDOz-3Je7lajnFjX6dLIGdXjxVl8qGGXPLvi6siP9C1UDp8gnnDSaQbL30jAmnYhvLiDG3IpORwFo-nES-bxgJa7tPteAgbDcS2kuaCvzrG_IkuZu8gWGBrpugQVKlFklYXMFTQ21eNNQOROf8PkqDOmILu59jGlxrC4pjRR8b1uhxT8qXDbjgSgKIevBgTe4XfjGYhOF2jFUq8Q4ifEVIxIEovHrT2keiwHoeZuTHf24fLRr56vpcyRpJo02ODT5vWEukgmnQeI6ZhW-6G0avPeW9G3c3G7yEakHEuEpo2Hw","not-before-policy":1487259727,"session_state":"04904dca-9ce3-4c4a-adb6-0901c0a7577c"}
+
+keycloak_config = JSON.parse(File.read('../config/keycloak.json'))
+@s = "-----BEGIN PUBLIC KEY-----\n"
+@s += keycloak_config['realm-public-key'].scan(/.{1,64}/).join("\n")
+@s += "\n-----END PUBLIC KEY-----\n"
+key = OpenSSL::PKey::RSA.new @s
+keycloak_pub_key = key
+
+jwt.each { |k, v|
+  puts "k, v", k, v
+  unless k == :'expires_in' or k == :'refresh_expires_in' or k == :'token_type' or k == :'not-before-policy' or k == :'session_state'
+    decoded_payload, decoded_header = JWT.decode v, keycloak_pub_key, true, { :algorithm => 'RS256' }
+    # puts "DECODED_TOKEN: ", @decoded_token
+    puts "DECODED_HEADER: ", decoded_header
+    puts "DECODED_PAYLOAD: ", decoded_payload
+  end
+}
+
 
 =begin
 "grant_types_supported":["authorization_code","implicit","refresh_token","password","client_credentials"]
@@ -474,7 +505,15 @@ end
 #token_validation(token2)
 #register_user(token)
 #set_Keycloak_config
-get_inst_file
+#get_inst_file
+#get_client_secret
+
+
+
+
+
+
+
 
 =begin
     "software_version",
