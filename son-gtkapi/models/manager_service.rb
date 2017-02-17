@@ -70,7 +70,7 @@ class ManagerService
       {status: status, count: 0, items: [], message: "Not Found"}
     else
       logger.debug(log_message) {"Unexpected status code received: #{status}"}
-      {status: nil, count: nil, items: nil, message: "Status #{status} unprocessable"}
+      {status: status, count: nil, items: nil, message: "Status #{status} unprocessable"}
     end
   end
   
@@ -88,16 +88,22 @@ class ManagerService
       end
     end
     logger.debug(log_message) {"response body=#{res.body}"} if logger
-    begin
-      parsed_response = JSON.parse(res.body, symbolize_names: true)
-      logger.debug(log_message) {"parsed_response=#{parsed_response}"} if logger
-      parsed_response
-    rescue => e
-      logger.error(log_message) {"Error during processing: #{$!}"} if logger
-      logger.error(log_message) {"Backtrace:\n\t#{e.backtrace.join("\n\t")}"} if logger
-      nil 
+    status = get_status_from_response_headers(res.header_str)
+    case status
+    when 200..202
+      begin
+        parsed_response = JSON.parse(res.body, symbolize_names: true)
+        logger.debug(log_message) {"parsed_response=#{parsed_response}"} if logger
+        {status: status, count: 1, items: parsed_response, message: "OK"}
+      rescue => e
+        logger.error(log_message) {"Error during processing: #{$!}"} if logger
+        logger.error(log_message) {"Backtrace:\n\t#{e.backtrace.join("\n\t")}"} if logger
+        {status: nil, count: nil, items: nil, message: "Error processing #{$!}: \n\t#{e.backtrace.join("\n\t")}"}
+      end
+    else
+      {status: status, count: nil, items: nil, message: "Status #{status} unprocessable"}
     end
-  end
+  end  
   
   private
   

@@ -38,29 +38,32 @@ class GtkApi < Sinatra::Base
     
       unless params[:package].nil?
         if params[:package][:tempfile]
-          package = PackageManagerService.create(params)
-          logger.debug(log_message) {"package=#{package.inspect}"}
-          if package
-            if package.is_a?(Hash) && (package[:uuid] || package['uuid'])
-              logger.info(log_message) {"leaving with package: #{package}"}
-              headers = {'location'=> PackageManagerService.url+"/packages/#{package[:uuid]}", 'Content-Type'=> 'application/json'}
-              halt 201, headers, package.to_json
-            elsif package.is_a?(Hash) && package.key?(:package)
-              #(package[:vendor] || package['vendor']) && (package[:version] || package['version']) && (package[:name] || package['name'])
-              logger.info(log_message) {"leaving with duplicated package: #{package}"}
-              headers = {'Content-Type'=> 'application/json'}
-              halt 409, headers, package[:package].to_json
-            else
-              json_error 400, 'No UUID given to package'
-            end
+          resp = PackageManagerService.create(params)
+          logger.debug(log_message) {"resp=#{resp.inspect}"}
+          case resp[:status]
+          when 201
+            logger.info(log_message) {"leaving with package: #{resp[:data][:uuid]}"}
+            headers 'Location'=> PackageManagerService.url+"/packages/#{resp[:data][:uuid]}", 'Content-Type'=> 'application/json'
+            halt 201, resp[:data].to_json
+          when 409
+            logger.error(log_message) {"leaving with duplicated package: #{resp[:data]}"}
+            headers 'Content-Type'=> 'application/json'
+            halt 409, resp[:data].to_json
+          when 400
+            message = "Error creating package #{params}"
+            logger.error(log_message) {message}
+            headers 'Content-Type'=> 'application/json'
+            json_error 400, message
           else
-            json_error 400, 'Package not created'
+            message = "Unknown status: #{resp[:status]} for package #{params}"
+            logger.error(log_message) {message}
+            json_error resp[:status], message
           end
         else
           json_error 400, 'Temp file name not provided'
         end
       end
-      json_error 400, 'No package file specified'
+      json_error 400, "No package file specified: #{params}"
     end
 
   # GET a specific package

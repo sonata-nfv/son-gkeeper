@@ -45,22 +45,32 @@ class PackageManagerService < ManagerService
   end
 
   def self.create(params)
-    method = LOG_MESSAGE + ".create(#{params})"
+    method = LOG_MESSAGE + ".create"
     @@logger.debug(method) {'entered'}
 
-    @@logger.debug(method) {"params=#{params}"}
     tmpfile = params[:package][:tempfile]
     uri = @@url+'/packages'
-    @@logger.debug(method) {"uri="+uri}
+    @@logger.debug(method) {"POSTing to "+uri+ "#{params}"}
     begin
-      response = RestClient.post(uri, params)
-      @@logger.debug(method) {"response.class=#{response.class}"}
-      @@logger.debug(method) {"response=#{response}"}
-      JSON.parse response
+      #response = RestClient.post(uri, params)
+      # from http://www.rubydoc.info/gems/rest-client/1.6.7/frames#Result_handling
+      RestClient.post(uri, params){ |response, request, result, &block|
+        @@logger.debug(method) {"response=#{response.inspect}"}
+        case response.code
+        when 201
+          { status: 201, count: 1, data: JSON.parse(response.body), message: 'Created'}
+        when 409
+          { status: 409, count: 0, data: JSON.parse(response.body), message: 'Conflict'}
+        when 400
+          { status: 400, count: 0, data: {}, message: "Bad Request: #{params}"}
+        else
+          { status: response.code, count: 0, data: {}, message: 'Unexpected code'}
+        end
+      }
     rescue  => e #RestClient::Conflict
       @@logger.error(method) {"Error during processing: #{$!}"}
       @@logger.error(method) {"Backtrace:\n\t#{e.backtrace.join("\n\t")}"}
-      {error: 'Package is duplicated', package: e.response}
+      { status: 500, count: 0, data: {}, message: e.backtrace.join("\n\t")}
     end    
   end
 
