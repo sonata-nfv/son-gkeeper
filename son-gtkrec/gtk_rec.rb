@@ -68,12 +68,16 @@ class GtkRec < Sinatra::Base
   use Rack::Session::Cookie, :key => 'rack.session', :domain => 'foo.com', :path => '/', :expire_after => 2592000, :secret => '$0nata'
   
   # Logging
+  MODULE='GtkRec'
 	enable :logging
-  set :logger_level, :debug # or :fatal, :error, :warn, :info
+  set :logger_level, settings.logger_level
   FileUtils.mkdir(File.join(settings.root, 'log')) unless File.exists? File.join(settings.root, 'log')
   logfile = File.open(File.join('log', ENV['RACK_ENV'])+'.log', 'a+')
   logfile.sync = true
   logger = Logger.new(logfile)
+  set :logger_level, settings.logger_level
+  logger.info(MODULE) {"Started at #{settings.time_at_startup}"}
+  logger.info(MODULE) {"Logger level at :#{settings.logger_level}"}
     
   enable :cross_origin
 

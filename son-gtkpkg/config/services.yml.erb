@@ -2,6 +2,7 @@
 development: &common_settings
   catalogues: <%= ENV['CATALOGUES_URL'] %>
   manifest_schema: 'assets/schemas/manifest.json'
+  logger_level: <%= (ENV['LOGGER_LEVEL'] ||= 'debug').to_sym %> # can be :debug, :fatal, :error, :warn, or :info
 
 test:
   <<: *common_settings
