@@ -62,7 +62,7 @@ class VimManagerService < ManagerService
     begin
       GtkApi.logger.debug(method) {"@url = " + @@url}
       response = postCurb(url:@@url+'/vim', body: params.to_json)
-      GtkApi.logger.debug(method) {"response="+response}
+      GtkApi.logger.debug(method) {"response="+response.to_s}
       response
     rescue => e
       GtkApi.logger.error(method) {"Error during processing: #{$!}"}
@@ -79,7 +79,7 @@ class VimManagerService < ManagerService
       GtkApi.logger.debug(method) {"Got response: #{response}"}
       query_response = response[:items][:query_response]
       if query_response
-        JSON.parse  query_response
+        query_response
       else
         {}
       end

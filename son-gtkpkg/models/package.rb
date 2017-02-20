@@ -345,7 +345,7 @@ class Package
       saved_descriptor=store()
       if saved_descriptor
         @logger.debug "Package.store_package_service_and_functions: stored package #{saved_descriptor}"
-        if @service
+        if @service.size > 0
           @logger.debug "Package.store_package_service_and_functions: service is #{@service}"
           stored_service = @service.store()
           if stored_service
@@ -356,7 +356,7 @@ class Package
             @logger.debug "Package.store_package_service_and_functions: service and package rollback should happen here"
           end
         end
-        if @functions.size
+        if @functions.size > 0
           @functions.each do |vf|
             @logger.debug "Package.store_package_service_and_functions: vf = #{vf}"
             function = vf.store()
