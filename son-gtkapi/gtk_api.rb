@@ -78,8 +78,7 @@ class GtkApi < Sinatra::Base
   logfile.sync = true
   set :logger, Logger.new(logfile)
   raise 'Can not proceed without a logger file' if settings.logger.nil?
-  set :logger_level, settings.logger_level.to_sym unless (settings.logger_level.nil? || settings.logger_level.empty?)
-  
+  set :logger_level, (settings.logger_level ||= 'debug').to_sym # can be debug, fatal, error, warn, or info
   settings.logger.info(MODULE) {"Started at #{settings.time_at_startup}"}
   settings.logger.info(MODULE) {"Logger level at :#{settings.logger_level} level"}
   
