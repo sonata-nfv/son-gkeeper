@@ -31,6 +31,20 @@ require 'net/http'
 require_relative '../helpers/init'
 
 
+#Adapter Config class
+class KeyCloakListener < Sinatra::Application
+
+  post '/' do
+    if defined? $secret_key
+      halt 409, "Secret key is already defined."
+      # what if we check here the source ip and compare it with the ENV variable?
+    end
+    $secret_key = params['secret']
+    
+    halt 200
+  end
+end
+
 # Adapter class
 class Adapter < Sinatra::Application
   # @method get_root
@@ -66,6 +80,7 @@ end
 
 # Adapter-Keycloak API class
 class Keycloak < Sinatra::Application
+
   post '/register' do
     # Return if content-type is not valid
     logger.info "Content-Type is " + request.media_type

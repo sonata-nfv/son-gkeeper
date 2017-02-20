@@ -8,7 +8,10 @@ COPY Gemfile /app/
 WORKDIR /app
 RUN bundle install
 COPY . /app
-RUN rake yard
+ENV KEYCLOAK_ADDRESS sonata.i2cat.net
+ENV KEYCLOAK_PORT 8080
+ENV KEYCLOAK_PATH auth
+#RUN rake yard
 ENV PORT 5000
 EXPOSE 5000
 WORKDIR /app
