@@ -1,6 +1,7 @@
 #Folders
 .idea/*
 test-reports/*
+log/*
 
 #Files
 *.pyc
