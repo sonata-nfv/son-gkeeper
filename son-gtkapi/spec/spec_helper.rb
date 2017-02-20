@@ -46,6 +46,7 @@ RSpec.configure do |config|
   #config.color_enabled = true
   config.tty = true
   config.formatter = :documentation
+  config.profile_examples = 3
 end
 
 WebMock.disable_net_connect!() #allow_localhost: true)

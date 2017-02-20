@@ -78,9 +78,10 @@ class GtkApi < Sinatra::Base
     get '/logs/?' do
       log_message = 'GtkApi::GET /admin/functions/logs'
       logger.debug(log_message) {'entered'}
-      headers 'Content-Type' => 'text/plain; charset=utf8', 'Location' => '/'
-      log = FunctionManagerService.get_log(url:FunctionManagerService.url+'/admin/logs', log_message:log_message, logger: logger)
+      url = FunctionManagerService.class_variable_get(:@@url)+'/admin/logs'
+      log = FunctionManagerService.get_log(url: url, log_message:log_message, logger: logger)
       logger.debug(log_message) {'leaving with log='+log}
+      headers 'Content-Type' => 'text/plain; charset=utf8', 'Location' => '/'
       halt 200, log
     end
   end

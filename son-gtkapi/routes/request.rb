@@ -103,9 +103,10 @@ class GtkApi < Sinatra::Base
     get '/logs/?' do
       log_message = "GtkApi::GET /api/v2/admin/requests/logs"
       logger.debug(log_message) {"entered"}
-      headers 'Content-Type' => 'text/plain; charset=utf8', 'Location' => '/api/v2/admin/requests/logs'
-      log = ServiceManagerService.get_log(url:ServiceManagerService.url+'/admin/logs', log_message:log_message, logger: logger)
+      url = ServiceManagerService.class_variable_get(:@@url)+'/admin/logs'
+      log = ServiceManagerService.get_log(url: url, log_message:log_message, logger: logger)
       logger.debug(log_message) {'leaving with log='+log}
+      headers 'Content-Type' => 'text/plain; charset=utf8', 'Location' => '/api/v2/admin/requests/logs'
       halt 200, log
     end
   end
