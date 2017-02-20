@@ -28,7 +28,7 @@ class TestCase(unittest.TestCase):
         db.session.remove()
         db.drop_all()
 
-    def test_add_license(self):
+    def test_add_private_license(self):
         # Test adding a license
         service_uuid = uuid.uuid4()
         user_uuid = uuid.uuid4()
@@ -53,6 +53,22 @@ class TestCase(unittest.TestCase):
         self.assertEqual(status, "ACTIVE")
         self.assertEqual(license_type, "PRIVATE")
 
+    def test_add_same_license(self):
+
+        # Test adding a license
+        service_uuid = uuid.uuid4()
+        user_uuid = uuid.uuid4()
+
+        # Adding active License
+        response = self.app.post("/api/v1/licenses/", data=dict(
+                                                        service_uuid=service_uuid,
+                                                        user_uuid=user_uuid,
+                                                        description="Test",
+                                                        license_type="private",
+                                                        validation_url=validation_url,
+                                                        status="active"))
+        self.assertEqual(response.status_code, 200)
+
         # Testing adding a license that the same user already has for a service of that type
         response = self.app.post("/api/v1/licenses/", data=dict(
                                                         service_uuid=service_uuid,
@@ -63,10 +79,14 @@ class TestCase(unittest.TestCase):
                                                         status="active"))
         self.assertEqual(response.status_code, 400)
 
-        # New user for Testing
-        user_uuid = uuid.uuid4()
+
+    def test_add_public_license(self):
 
         # Adding active public License
+
+        service_uuid = uuid.uuid4()
+        user_uuid = uuid.uuid4()
+
         response = self.app.post("/api/v1/licenses/", data=dict(
                                                         service_uuid=service_uuid,
                                                         user_uuid=user_uuid,
