@@ -51,8 +51,8 @@ class ManagerService
     end
     GtkApi.logger.debug(log_message) {"header_str=#{res.header_str}"}
     GtkApi.logger.debug(log_message) {"response body=#{res.body}"}
-    count = get_record_count_from_response_headers(res.header_str)
-    status = get_status_from_response_headers(res.header_str)
+    count = record_count_from_response_headers(res.header_str)
+    status = status_from_response_headers(res.header_str)
     case status
     when 200..202
       begin
@@ -88,7 +88,7 @@ class ManagerService
       end
     end
     GtkApi.logger.debug(log_message) {"response body=#{res.body}"}
-    status = get_status_from_response_headers(res.header_str)
+    status = status_from_response_headers(res.header_str)
     case status
     when 200..202
       begin
@@ -112,7 +112,7 @@ class ManagerService
     "In "+first_line[0].split("/").last+", "+first_line.last+": "+first_line[1]
   end
     
-  def self.get_header_from_response_headers(header_str)
+  def self.header_from_response_headers(header_str)
     # From http://stackoverflow.com/questions/14345805/get-response-headers-from-curb
     http_response, *http_headers = header_str.split(/[\r\n]+/).map(&:strip)
     http_headers = Hash[http_headers.flat_map{ |s| s.scan(/^(\S+): (.+)/) }]
@@ -122,14 +122,14 @@ class ManagerService
     #        "Content-Length" => "62164", "Connection" => "Keep-Alive"}
   end
 
-  def self.get_status_from_response_headers(header_str)
+  def self.status_from_response_headers(header_str)
     # From http://stackoverflow.com/questions/14345805/get-response-headers-from-curb
     #http_response # => "HTTP/1.1 200 OK"
     http_status = header_str.split(/[\r\n]+/).map(&:strip)[0].split(" ")
     http_status[1].to_i
   end
 
-  def self.get_record_count_from_response_headers(header_str)
+  def self.record_count_from_response_headers(header_str)
     # From http://stackoverflow.com/questions/14345805/get-response-headers-from-curb
     http_response, *http_headers = header_str.split(/[\r\n]+/).map(&:strip)
     http_headers = Hash[http_headers.flat_map{ |s| s.scan(/^(\S+): (.+)/) }]
@@ -143,15 +143,16 @@ class ManagerService
   def self.get_log(url:, log_message:'', logger: nil)
     GtkApi.logger.debug(log_message) {'entered'}
 
-    response=Curl.get( url) do |req|
+    res=Curl.get( url) do |req|
       req.headers['Content-Type'] = 'text/plain; charset=utf8'
       req.headers['Location'] = '/'
     end    
+    status = status_from_response_headers(res.header_str)
     
-    GtkApi.logger.debug(log_message) {'status=' + response.response_code.to_s}
-    case response.response_code
+    GtkApi.logger.debug(log_message) {"status=#{status}"}
+    case status
       when 200
-        response.body
+        res.body
       else
         GtkApi.logger.error(log_message) {"Error during processing: #{$!}"}
         GtkApi.logger.error(log_message) {"Backtrace:\n\t#{e.backtrace.join("\n\t")}"}
