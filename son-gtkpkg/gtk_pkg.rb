@@ -65,12 +65,12 @@ class GtkPkg < Sinatra::Base
   # Logging
   MODULE='GtkPkg'
 	enable :logging
-  set :logger_level, settings.logger_level
   FileUtils.mkdir(File.join(settings.root, 'log')) unless File.exists? File.join(settings.root, 'log')
   logfile = File.open(File.join('log', ENV['RACK_ENV'])+'.log', 'a+')
   logfile.sync = true
-  logger = Logger.new(logfile)
-  set :logger_level, settings.logger_level
+  set :logger, Logger.new(logfile)
+  raise 'Can not proceed without a logger file' if settings.logger.nil?
+  set :logger_level, (settings.logger_level ||= 'debug').to_sym # can be debug, fatal, error, warn, or info
   logger.info(MODULE) {"Started at #{settings.time_at_startup}"}
   logger.info(MODULE) {"Logger level at :#{settings.logger_level}"}
     

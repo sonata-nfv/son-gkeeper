@@ -28,7 +28,7 @@
 ---
 development: &common_settings
   mqserver_url: <%= ENV['MQSERVER'] %>
-  logger_level: <%= (ENV['LOGGER_LEVEL'] ||= 'debug').to_sym %> # can be :debug, :fatal, :error, :warn, or :info
+  logger_level: <%= ENV['LOGGER_LEVEL'] %> 
 
 test:
   <<: *common_settings
