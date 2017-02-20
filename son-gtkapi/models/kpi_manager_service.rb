@@ -32,34 +32,27 @@ class KpiManagerService < ManagerService
   JSON_HEADERS = { 'Accept'=> 'application/json', 'Content-Type'=>'application/json'}
   LOG_MESSAGE = 'GtkApi::' + self.name
   
-  def self.config(url:, logger:)
-    method = LOG_MESSAGE + "##{__method__}(url=#{url}, logger=#{logger})"
+  def self.config(url:)
+    method = LOG_MESSAGE + "##{__method__}(url=#{url})"
     raise ArgumentError.new('KpiManagerService can not be configured with nil url') if url.nil?
     raise ArgumentError.new('KpiManagerService can not be configured with empty url') if url.empty?
-    raise ArgumentError.new('KpiManagerService can not be configured with nil logger') if logger.nil?
     @@url = url
-    @@logger = logger
-    @@logger.debug(method) {'entered'}
-  end
-
-  def self.url
-    @@logger.debug(LOG_MESSAGE + "#url") {'@@url='+@@url}
-    @@url
+    GtkApi.logger.debug(method) {'entered'}
   end
 
   def self.increase_metric(params)
     method = LOG_MESSAGE + "##{__method__}(#{params})"
-    @@logger.debug(method) {"entered"}
+    GtkApi.logger.debug(method) {"entered"}
     
     begin
-      @@logger.debug(method) {"@@url = "+@@url}
+      GtkApi.logger.debug(method) {"@@url = "+@@url}
       #response = RestClient.post(@url+'/kpi', params.to_json, content_type: :json, accept: :json) 
       response = postCurb(url: @@url+'/kpi', body: params, logger: @@logger)
-      @logger.debug(method) {"response="+response}
+      GtkApi.logger.debug(method) {"response="+response}
       response
     rescue => e
-      @@logger.error(method) {"Error during processing: #{$!}"}
-      @@logger.error(method) {"Backtrace:\n\t#{e.backtrace.join("\n\t")}"}
+      GtkApi.logger.error(method) {"Error during processing: #{$!}"}
+      GtkApi.logger.error(method) {"Backtrace:\n\t#{e.backtrace.join("\n\t")}"}
       nil 
     end      
   end

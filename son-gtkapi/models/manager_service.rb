@@ -38,66 +38,66 @@ class ManagerService
     @logger.debug(method) {'entered'}
   end
   
-  def self.getCurb(url:, params: {}, headers: {}, logger: nil)
+  def self.getCurb(url:, params: {}, headers: {})
     log_message=LOG_MESSAGE+"##{__method__}"
-    logger.debug(log_message) {"entered with url=#{url}, params=#{params}, headers=#{headers}, logger=#{logger.inspect}"} if logger
+    GtkApi.logger.debug(log_message) {"entered with url=#{url}, params=#{params}, headers=#{headers}"}
     complete_url = params.empty? ? url : url + '?' + Curl::postalize(params)
-    logger.debug(log_message) {"complete_url=#{complete_url}"} if logger
+    GtkApi.logger.debug(log_message) {"complete_url=#{complete_url}"} 
     res=Curl.get(complete_url) do |req|
       headers.each do |h|
-        logger.debug(log_message) {"header[#{h[0]}]: #{h[1]}"} if logger
+        GtkApi.logger.debug(log_message) {"header[#{h[0]}]: #{h[1]}"}
         req.headers[h[0]] = h[1]
       end
     end
-    logger.debug(log_message) {"header_str=#{res.header_str}"} if logger
-    logger.debug(log_message) {"response body=#{res.body}"} if logger
+    GtkApi.logger.debug(log_message) {"header_str=#{res.header_str}"}
+    GtkApi.logger.debug(log_message) {"response body=#{res.body}"}
     count = get_record_count_from_response_headers(res.header_str)
     status = get_status_from_response_headers(res.header_str)
     case status
     when 200..202
       begin
         parsed_response = res.body.empty? ? {} : JSON.parse(res.body, symbolize_names: true)
-        logger.debug(log_message) {"parsed_response=#{parsed_response}"} if logger
+        GtkApi.logger.debug(log_message) {"parsed_response=#{parsed_response}"}
         {status: status, count: count, items: parsed_response, message: "OK"}
       rescue => e
-        logger.error(log_message) {"Error during processing: #{$!}"} if logger
-        logger.error(log_message) {"Backtrace:\n\t#{e.backtrace.join("\n\t")}"} if logger
+        GtkApi.logger.error(log_message) {"Error during processing: #{$!}"}
+        GtkApi.logger.error(log_message) {"Backtrace:\n\t#{e.backtrace.join("\n\t")}"}
         {status: nil, count: nil, items: nil, message: "Error processing #{$!}: \n\t#{e.backtrace.join("\n\t")}"}
       end
     when 400
     when 404
-      logger.debug(log_message) {"Records not found for url=#{url}, params=#{params}, headers=#{headers}, logger=#{logger.inspect}"} if logger
+      GtkApi.logger.debug(log_message) {"Records not found for url=#{url}, params=#{params}, headers=#{headers}"}
       {status: status, count: 0, items: [], message: "Not Found"}
     else
-      logger.debug(log_message) {"Unexpected status code received: #{status}"}
+      GtkApi.logger.debug(log_message) {"Unexpected status code received: #{status}"}
       {status: status, count: nil, items: nil, message: "Status #{status} unprocessable"}
     end
   end
   
-  def self.postCurb(url:, body:, headers: {}, logger: nil)
+  def self.postCurb(url:, body:, headers: {})
     log_message=LOG_MESSAGE+"##{__method__}"
-    logger.debug(log_message) {"entered with url=#{url}, body=#{body}, logger=#{logger.inspect}"} if logger
+    GtkApi.logger.debug(log_message) {"entered with url=#{url}, body=#{body}"}
     res=Curl.post(url, body) do |req|
       if headers.empty?
         req.headers['Content-type'] = req.headers['Accept'] = 'application/json'
       else
         headers.each do |h|
-          logger.debug(log_message) {"header[#{h[0]}]: #{h[1]}"} if logger
+          GtkApi.logger.debug(log_message) {"header[#{h[0]}]: #{h[1]}"}
           req.headers[h[0]] = h[1]
         end
       end
     end
-    logger.debug(log_message) {"response body=#{res.body}"} if logger
+    GtkApi.logger.debug(log_message) {"response body=#{res.body}"}
     status = get_status_from_response_headers(res.header_str)
     case status
     when 200..202
       begin
         parsed_response = JSON.parse(res.body, symbolize_names: true)
-        logger.debug(log_message) {"parsed_response=#{parsed_response}"} if logger
+        GtkApi.logger.debug(log_message) {"parsed_response=#{parsed_response}"}
         {status: status, count: 1, items: parsed_response, message: "OK"}
       rescue => e
-        logger.error(log_message) {"Error during processing: #{$!}"} if logger
-        logger.error(log_message) {"Backtrace:\n\t#{e.backtrace.join("\n\t")}"} if logger
+        GtkApi.logger.error(log_message) {"Error during processing: #{$!}"} 
+        GtkApi.logger.error(log_message) {"Backtrace:\n\t#{e.backtrace.join("\n\t")}"}
         {status: nil, count: nil, items: nil, message: "Error processing #{$!}: \n\t#{e.backtrace.join("\n\t")}"}
       end
     else
@@ -141,28 +141,28 @@ class ManagerService
   end
   
   def self.get_log(url:, log_message:'', logger: nil)
-    logger.debug(log_message) {'entered'} if logger
+    GtkApi.logger.debug(log_message) {'entered'}
 
     response=Curl.get( url) do |req|
       req.headers['Content-Type'] = 'text/plain; charset=utf8'
       req.headers['Location'] = '/'
     end    
     
-    logger.debug(log_message) {'status=' + response.response_code.to_s} if logger
+    GtkApi.logger.debug(log_message) {'status=' + response.response_code.to_s}
     case response.response_code
       when 200
         response.body
       else
-        logger.error(log_message) {"Error during processing: #{$!}"} if logger
-        logger.error(log_message) {"Backtrace:\n\t#{e.backtrace.join("\n\t")}"} if logger
+        GtkApi.logger.error(log_message) {"Error during processing: #{$!}"}
+        GtkApi.logger.error(log_message) {"Backtrace:\n\t#{e.backtrace.join("\n\t")}"}
         nil
       end
   end
 
-  def self.find(url:, params: {}, headers: JSON_HEADERS, log_message:'', logger: nil)
-    logger.debug(log_message) {'entered'}
-    response = getCurb(url: url, params: params, headers: headers, logger: logger)
-    logger.debug(log_message) {"response=#{response}"} if logger
+  def self.find(url:, params: {}, headers: JSON_HEADERS, log_message:'')
+    GtkApi.logger.debug(log_message) {'entered'}
+    response = getCurb(url: url, params: params, headers: headers)
+    GtkApi.logger.debug(log_message) {"response=#{response}"}
     response
   end
   

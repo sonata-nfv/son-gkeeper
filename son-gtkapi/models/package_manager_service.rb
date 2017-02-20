@@ -34,28 +34,26 @@ class PackageManagerService < ManagerService
   
   LOG_MESSAGE = 'GtkApi::' + self.name
   
-  def self.config(url:, logger:)
-    method = LOG_MESSAGE + "#config(url=#{url}, logger=#{logger})"
+  def self.config(url:)
+    method = LOG_MESSAGE + "#config(url=#{url})"
     raise ArgumentError.new('PackageManagerService can not be configured with nil url') if url.nil?
     raise ArgumentError.new('PackageManagerService can not be configured with empty url') if url.empty?
-    raise ArgumentError.new('PackageManagerService can not be configured with nil logger') if logger.nil?
     @@url = url
-    @@logger = logger
-    @@logger.debug(method) {'entered'}
+    GtkApi.logger.debug(method) {'entered'}
   end
 
   def self.create(params)
     method = LOG_MESSAGE + ".create"
-    @@logger.debug(method) {'entered'}
+    GtkApi.logger.debug(method) {'entered'}
 
     tmpfile = params[:package][:tempfile]
     uri = @@url+'/packages'
-    @@logger.debug(method) {"POSTing to "+uri+ "#{params}"}
+    GtkApi.logger.debug(method) {"POSTing to "+uri+ "#{params}"}
     begin
       #response = RestClient.post(uri, params)
       # from http://www.rubydoc.info/gems/rest-client/1.6.7/frames#Result_handling
       RestClient.post(uri, params){ |response, request, result, &block|
-        @@logger.debug(method) {"response=#{response.inspect}"}
+        GtkApi.logger.debug(method) {"response=#{response.inspect}"}
         case response.code
         when 201
           { status: 201, count: 1, data: JSON.parse(response.body), message: 'Created'}
@@ -68,20 +66,20 @@ class PackageManagerService < ManagerService
         end
       }
     rescue  => e #RestClient::Conflict
-      @@logger.error(method) {"Error during processing: #{$!}"}
-      @@logger.error(method) {"Backtrace:\n\t#{e.backtrace.join("\n\t")}"}
+      GtkApi.logger.error(method) {"Error during processing: #{$!}"}
+      GtkApi.logger.error(method) {"Backtrace:\n\t#{e.backtrace.join("\n\t")}"}
       { status: 500, count: 0, data: {}, message: e.backtrace.join("\n\t")}
     end    
   end
 
   def self.find_by_uuid(uuid)
     method = LOG_MESSAGE + ".find_by_uuid(#{uuid})"
-    @@logger.debug(method) {'entered'}
+    GtkApi.logger.debug(method) {'entered'}
     headers = { 'Accept'=> '*/*', 'Content-Type'=>'application/json'}
     headers[:params] = uuid
     begin
       response = RestClient.get(@@url+"/packages/#{uuid}", headers)
-      @@logger.debug(method) {"response #{response}"}
+      GtkApi.logger.debug(method) {"response #{response}"}
       response
     rescue => e
       e.to_json
@@ -90,22 +88,17 @@ class PackageManagerService < ManagerService
   
   def self.find(params)
     method = LOG_MESSAGE + ".find(#{params})"
-    @@logger.debug(method) {'entered'}
+    GtkApi.logger.debug(method) {'entered'}
     headers = { 'Accept'=> 'application/json', 'Content-Type'=>'application/json'}
     headers[:params] = params
     begin
       response = RestClient.get(@@url+'/packages', headers)
-      @@logger.debug(method) {"response #{response}"}
+      GtkApi.logger.debug(method) {"response #{response}"}
       response
     rescue => e
-      @@logger.error(method) {"Error during processing: #{$!}"}
-      @@logger.error(method) {"Backtrace:\n\t#{e.backtrace.join("\n\t")}"}
+      GtkApi.logger.error(method) {"Error during processing: #{$!}"}
+      GtkApi.logger.error(method) {"Backtrace:\n\t#{e.backtrace.join("\n\t")}"}
       nil
     end
-  end
-    
-  def self.url
-    @@logger.debug(LOG_MESSAGE + "#url") {'@@url='+@@url}
-    @@url
   end
 end

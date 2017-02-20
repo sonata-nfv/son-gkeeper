@@ -73,25 +73,27 @@ class GtkApi < Sinatra::Base
   MODULE = 'GtkApi'
 
 	enable :logging
-  set :logger_level, settings.logger_level
   FileUtils.mkdir(File.join(settings.root, 'log')) unless File.exists? File.join(settings.root, 'log')
   logfile = File.open(File.join('log', ENV['RACK_ENV'])+'.log', 'a+')
   logfile.sync = true
-  logger = Logger.new(logfile)
-  logger.info(MODULE) {"Started at #{settings.time_at_startup}"}
-  logger.info(MODULE) {"Logger level at :#{settings.logger_level}"}
+  set :logger, Logger.new(logfile)
+  raise 'Can not proceed without a logger file' if settings.logger.nil?
+  set :logger_level, settings.logger_level.to_sym unless (settings.logger_level.nil? || settings.logger_level.empty?)
+  
+  settings.logger.info(MODULE) {"Started at #{settings.time_at_startup}"}
+  settings.logger.info(MODULE) {"Logger level at :#{settings.logger_level} level"}
   
   enable :cross_origin
 
   # TODO: make this relationship loosely coupled
   # TODO: logger could be a global variable
-  PackageManagerService.config(url: settings.pkgmgmt, logger: logger)
-  ServiceManagerService.config(url: settings.srvmgmt, logger: logger)
-  FunctionManagerService.config(url: settings.fnctmgmt, logger: logger)
-  RecordManagerService.config(url: settings.recmgmt, logger: logger)
-  LicenceManagerService.config(url: settings.licmgmt, logger: logger)
-  VimManagerService.config(url: settings.vimmgmt, logger: logger)
-  KpiManagerService.config(url: settings.kpimgmt, logger: logger)
+  PackageManagerService.config(url: settings.pkgmgmt)
+  ServiceManagerService.config(url: settings.srvmgmt)
+  FunctionManagerService.config(url: settings.fnctmgmt)
+  RecordManagerService.config(url: settings.recmgmt)
+  LicenceManagerService.config(url: settings.licmgmt)
+  VimManagerService.config(url: settings.vimmgmt)
+  KpiManagerService.config(url: settings.kpimgmt)
   
   Zip.setup do |c|
     c.unicode_names = true
@@ -101,13 +103,13 @@ class GtkApi < Sinatra::Base
   
   def query_string
     log_message = 'GtkApi::query_string'
-    logger.debug(log_message) {"query_string=#{request.env['QUERY_STRING']}"}
+    settings.logger.debug(log_message) {"query_string=#{request.env['QUERY_STRING']}"}
     request.env['QUERY_STRING'].empty? ? '' : '?' + request.env['QUERY_STRING'].to_s
   end
 
   def request_url
     log_message = 'GtkApi::request_url'
-    logger.debug(log_message) {"Schema=#{request.env['rack.url_scheme']}, host=#{request.env['HTTP_HOST']}, path=#{request.env['REQUEST_PATH']}"}
+    settings.logger.debug(log_message) {"Schema=#{request.env['rack.url_scheme']}, host=#{request.env['HTTP_HOST']}, path=#{request.env['REQUEST_PATH']}"}
     request.env['rack.url_scheme']+'://'+request.env['HTTP_HOST']+request.env['REQUEST_PATH']
   end
 end
