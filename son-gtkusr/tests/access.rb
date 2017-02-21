@@ -153,7 +153,7 @@ def authorize_browser(token=nil)
   pwd = "1234"
   grt_type = "password"
 
-  query = "response_type=code&scope=openid%20profile&client_id=adapter&redirect_uri=http://127.0.0.1/"
+  query = "response_type=code&scope=openid%20profile&client_id=adapter&redirect_uri=http://127.0.0.1:8081/auth"
   http_path = "http://localhost:8081/auth/realms/master/protocol/openid-connect/auth" + "?" + query
   url = URI(http_path)
   http = Net::HTTP.new(url.host, url.port)
@@ -167,6 +167,42 @@ def authorize_browser(token=nil)
     f.puts response.read_body
   end
 end
+
+
+def authorize(token=nil)
+# NOT WORKING
+=begin
+  http_path = "http://localhost:8081//auth/realms/master/authz/protection/permission"
+  url = URI(http_path)
+  http = Net::HTTP.new(url.host, url.port)
+  request = Net::HTTP::Get.new(url.to_s)
+  request["authorization"] = 'bearer ' + token
+  #body = {"ticket" : ${PERMISSION_TICKET}}
+  #request.body = body.to_json
+
+  response = http.request(request)
+  p "PERM_CODE", response.code
+  p "PERM_BODY", response.body
+=end
+
+
+  http_path = "http://localhost:8081/auth/realms/master/authz/authorize"
+  # query = "response_type=code&scope=openid%20profile&client_id=adapter&redirect_uri=http://127.0.0.1:8081/auth"
+  # http_path = "http://localhost:8081/auth/realms/master/protocol/openid-connect/auth" + "?" + query
+  url = URI(http_path)
+  http = Net::HTTP.new(url.host, url.port)
+  request = Net::HTTP::Post.new(url.to_s)
+  request["authorization"] = 'bearer ' + token
+  request["content-type"] = 'application/json'
+  body = {"ticket" => "None"}
+  request.body = body.to_json
+
+  response = http.request(request)
+  p "AUTHZ_CODE", response.code
+  p "AUTHZ_BODY", response.body
+end
+
+
 
 # "userinfo_endpoint":"http://localhost:8081/auth/realms/master/protocol/openid-connect/userinfo"
 def userinfo(token)
@@ -446,24 +482,56 @@ def regenerate_client_secret()
   #POST /admin/realms/{realm}/clients/{id}/client-secret
 end
 
-jwt = {"access_token":"eyJhbGciOiJSUzI1NiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICJqZjQ3WXlHSzQ3VUprLXJ1cUk5RV9IaDhsNS1heHFrMzkxX0NpUUhmTm9nIn0.eyJqdGkiOiIxYzBjNmE3OC1lOGFhLTRlYzQtODViMy1lYzA4NGFlMzc3NGYiLCJleHAiOjE0ODczOTI0MTgsIm5iZiI6MCwiaWF0IjoxNDg3MzM4NDE4LCJpc3MiOiJodHRwOi8vbG9jYWxob3N0OjgwODEvYXV0aC9yZWFsbXMvbWFzdGVyIiwiYXVkIjoiYWRhcHRlciIsInN1YiI6IjZlNWZkZTRjLWI0MWItNDYyNi04NTMwLTcxZGJjYzU1ZDNlMiIsInR5cCI6IkJlYXJlciIsImF6cCI6ImFkYXB0ZXIiLCJhdXRoX3RpbWUiOjAsInNlc3Npb25fc3RhdGUiOiIwNDkwNGRjYS05Y2UzLTRjNGEtYWRiNi0wOTAxYzBhNzU3N2MiLCJhY3IiOiIxIiwiY2xpZW50X3Nlc3Npb24iOiJhMDllZmZlZi1mNWI2LTRkYmQtYWFiYi0wYmRhNzk3ODlhZjQiLCJhbGxvd2VkLW9yaWdpbnMiOltdLCJyZXNvdXJjZV9hY2Nlc3MiOnt9LCJuYW1lIjoiIiwicHJlZmVycmVkX3VzZXJuYW1lIjoidmlzaXRvciJ9.HphbpQ_mwT0nPh7txvJ-PLQooLF9HKRBmiaghnVrN4Zl7P0RE1X6p7mc-KXdhiJRvlyM4Kyz_zp7PDOXmRuHtWJuj4p5b5isoBtAvskmZySRFXYVqMGxtDnk8LcHhM7ki9iJHzX9Eayt89VgxcLeSFKFsrIT_d8y_PCFaYL6E4tgRH0wFzziIG_tmQg3hLsryxrSbWeVK84C4i7Sah2ySOHoRqDSzrfx9Y7Zdmu5-cjN8B191ozOKMjcwC7bEsptRrrQyY8GobHf_6GG609VfxnWo1wAT4p4u94MxB6fRhmeZ1fr-aeUT_wpunmQHAz3ZMn_Hh-qC4b-WxZBk5qAxw","expires_in":54000,"refresh_expires_in":1800,"refresh_token":"eyJhbGciOiJSUzI1NiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICJqZjQ3WXlHSzQ3VUprLXJ1cUk5RV9IaDhsNS1heHFrMzkxX0NpUUhmTm9nIn0.eyJqdGkiOiI2YmM2ZGNlMC1lYzM4LTQ4ZTYtODFhYS00MjliNWY2OWMyYjgiLCJleHAiOjE0ODczNDAyMTgsIm5iZiI6MCwiaWF0IjoxNDg3MzM4NDE4LCJpc3MiOiJodHRwOi8vbG9jYWxob3N0OjgwODEvYXV0aC9yZWFsbXMvbWFzdGVyIiwiYXVkIjoiYWRhcHRlciIsInN1YiI6IjZlNWZkZTRjLWI0MWItNDYyNi04NTMwLTcxZGJjYzU1ZDNlMiIsInR5cCI6IlJlZnJlc2giLCJhenAiOiJhZGFwdGVyIiwiYXV0aF90aW1lIjowLCJzZXNzaW9uX3N0YXRlIjoiMDQ5MDRkY2EtOWNlMy00YzRhLWFkYjYtMDkwMWMwYTc1NzdjIiwiY2xpZW50X3Nlc3Npb24iOiJhMDllZmZlZi1mNWI2LTRkYmQtYWFiYi0wYmRhNzk3ODlhZjQiLCJyZXNvdXJjZV9hY2Nlc3MiOnt9fQ.WnKdbged_jvrjF5VoM1V82g3JxaOtjMq8bBOWR1MQFe7B4jccODWOKsrbWysYVwkAo-0Mhfdh7gyBMBcyKFK7rCsx7FUWPxGSjDcZToC0Ajh71DYDHeBAzTxY0Vt6mNzoL6q0sa_GwwysxRqYvAPvg5vZ9idnEY7lkCJKak8j6Ak918SWDQ30WAsgK8_e6fg53Fv6cBehmzIoajTLiKDb-dRsjGfjg673MHh-bzQqu4L-NvVV6nResCyAMf-RV2GW0oeWru1UmsgYfsC_gZzobrkB9ylyTivnHTznN8PU3i4aMQ6XiLB7dJCOtYBXVRVzq1phUmYs71SJ4hv0y8mDA","token_type":"bearer","id_token":"eyJhbGciOiJSUzI1NiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICJqZjQ3WXlHSzQ3VUprLXJ1cUk5RV9IaDhsNS1heHFrMzkxX0NpUUhmTm9nIn0.eyJqdGkiOiIyOTNhZmM0MS1jMTQwLTQ5ZTQtYmQ0OS1hYTEzMmFjM2ZhNzEiLCJleHAiOjE0ODczOTI0MTgsIm5iZiI6MCwiaWF0IjoxNDg3MzM4NDE4LCJpc3MiOiJodHRwOi8vbG9jYWxob3N0OjgwODEvYXV0aC9yZWFsbXMvbWFzdGVyIiwiYXVkIjoiYWRhcHRlciIsInN1YiI6IjZlNWZkZTRjLWI0MWItNDYyNi04NTMwLTcxZGJjYzU1ZDNlMiIsInR5cCI6IklEIiwiYXpwIjoiYWRhcHRlciIsImF1dGhfdGltZSI6MCwic2Vzc2lvbl9zdGF0ZSI6IjA0OTA0ZGNhLTljZTMtNGM0YS1hZGI2LTA5MDFjMGE3NTc3YyIsImFjciI6IjEiLCJuYW1lIjoiIiwicHJlZmVycmVkX3VzZXJuYW1lIjoidmlzaXRvciJ9.RFGIfua4n746xGIrbjeEr-ic7IyJbMs6F3u4GyILrWDOz-3Je7lajnFjX6dLIGdXjxVl8qGGXPLvi6siP9C1UDp8gnnDSaQbL30jAmnYhvLiDG3IpORwFo-nES-bxgJa7tPteAgbDcS2kuaCvzrG_IkuZu8gWGBrpugQVKlFklYXMFTQ21eNNQOROf8PkqDOmILu59jGlxrC4pjRR8b1uhxT8qXDbjgSgKIevBgTe4XfjGYhOF2jFUq8Q4ifEVIxIEovHrT2keiwHoeZuTHf24fLRr56vpcyRpJo02ODT5vWEukgmnQeI6ZhW-6G0avPeW9G3c3G7yEakHEuEpo2Hw","not-before-policy":1487259727,"session_state":"04904dca-9ce3-4c4a-adb6-0901c0a7577c"}
+def full_token()
+  jwt = {"access_token": "eyJhbGciOiJSUzI1NiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICJqZjQ3WXlHSzQ3VUprLXJ1cUk5RV9IaDhsNS1heHFrMzkxX0NpUUhmTm9nIn0.eyJqdGkiOiJjNzVhNDRjZi0yYTY3LTQwOTAtOWEyNC0zYWMxOWI2YWZlMDIiLCJleHAiOjE0ODc2NTM4MzUsIm5iZiI6MCwiaWF0IjoxNDg3NTk5ODM1LCJpc3MiOiJodHRwOi8vbG9jYWxob3N0OjgwODEvYXV0aC9yZWFsbXMvbWFzdGVyIiwiYXVkIjoiYWRhcHRlciIsInN1YiI6IjZlNWZkZTRjLWI0MWItNDYyNi04NTMwLTcxZGJjYzU1ZDNlMiIsInR5cCI6IkJlYXJlciIsImF6cCI6ImFkYXB0ZXIiLCJhdXRoX3RpbWUiOjAsInNlc3Npb25fc3RhdGUiOiJlNTVkZjA1Ni1iZjI0LTRiOWMtYTA1Yy0wZDIxMDVlYzAyYzciLCJhY3IiOiIxIiwiY2xpZW50X3Nlc3Npb24iOiIyNTQ2N2EzOC0xNmZiLTQ0NjEtYjIzZi1iMGYyMTZjZGQxYmMiLCJhbGxvd2VkLW9yaWdpbnMiOltdLCJyZXNvdXJjZV9hY2Nlc3MiOnt9LCJuYW1lIjoiIiwicHJlZmVycmVkX3VzZXJuYW1lIjoidmlzaXRvciIsInVzZXIiOnsiZ3Vlc3QiOiJ0cnVlIn19.BEw6JJMNjy6bgg5nfXTuE7newIcrNy5xlj4QB0lIgfZQPqD9Ts7QuRXL5hB_WyAz7Bmamj1p6f4kZrsANXDHVvNGPAnHtyOWYiKGUcj0o5aHTQYjbwmYDHA13qotDPJKtre1vKU9ugpll6xdvsujl3A3HGglK843XV6RpgB2yz-ULu-jGA4vGDnHJokmjio1Z0uZJSW1M9dWWXew1YZ1P2CvNOiPGY5WTWpREh7QdNn3rMB6z5MRnGhwkmwsBgrev6TeI_B_Sq-xY1ECG8NtBAChUmBUBAzG9K_jIDGJ2J0SzVtOVxMKnTMAXKfypvDEzt3tkyBDqaTeqEr8Ux2bng","expires_in":54000,"refresh_expires_in":1800,"refresh_token":"eyJhbGciOiJSUzI1NiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICJqZjQ3WXlHSzQ3VUprLXJ1cUk5RV9IaDhsNS1heHFrMzkxX0NpUUhmTm9nIn0.eyJqdGkiOiJmZDNhYzBkOS1jNjFlLTQ2MzctYjFlNy1iOWY5MWNmMWIzN2UiLCJleHAiOjE0ODc2MDE2MzUsIm5iZiI6MCwiaWF0IjoxNDg3NTk5ODM1LCJpc3MiOiJodHRwOi8vbG9jYWxob3N0OjgwODEvYXV0aC9yZWFsbXMvbWFzdGVyIiwiYXVkIjoiYWRhcHRlciIsInN1YiI6IjZlNWZkZTRjLWI0MWItNDYyNi04NTMwLTcxZGJjYzU1ZDNlMiIsInR5cCI6IlJlZnJlc2giLCJhenAiOiJhZGFwdGVyIiwiYXV0aF90aW1lIjowLCJzZXNzaW9uX3N0YXRlIjoiZTU1ZGYwNTYtYmYyNC00YjljLWEwNWMtMGQyMTA1ZWMwMmM3IiwiY2xpZW50X3Nlc3Npb24iOiIyNTQ2N2EzOC0xNmZiLTQ0NjEtYjIzZi1iMGYyMTZjZGQxYmMiLCJyZXNvdXJjZV9hY2Nlc3MiOnt9fQ.RGtxFSYCXQ2FatwqpStVEHBsLNSWdTOzCm9iQs_smAfxY24mPeKy1Wz604VqCY1xgw67tu9sml0yetMjxqcQU_BRg3Le90NbUOocaGb8SRdGwXQ0xNoNze7F7Tbq1g5lBtcczFivfvq5QuW8AzlCjHqThfZgPpMVOOZa66mq6X-OYvyY27RRcLMmodeDAmHICfGJmghAMLhfPxSijqgqyBnW0ydPj9CRzwBO_lBfr9eS27Cm_4LTJcazYZGKxuuMkSHui00SBAp5VOZH75zsJGq2N8PcVe890B5HL__TkESY0kmNDxwSKBmCt2wJacuGa8p4StCJ3fOkVV-kkHY2aw","token_type":"bearer","id_token":"eyJhbGciOiJSUzI1NiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICJqZjQ3WXlHSzQ3VUprLXJ1cUk5RV9IaDhsNS1heHFrMzkxX0NpUUhmTm9nIn0.eyJqdGkiOiJhZjA3Y2ZiZC05ZjkzLTRiY2UtYTk5ZC01MjFiZmQ3YzcyYjUiLCJleHAiOjE0ODc2NTM4MzUsIm5iZiI6MCwiaWF0IjoxNDg3NTk5ODM1LCJpc3MiOiJodHRwOi8vbG9jYWxob3N0OjgwODEvYXV0aC9yZWFsbXMvbWFzdGVyIiwiYXVkIjoiYWRhcHRlciIsInN1YiI6IjZlNWZkZTRjLWI0MWItNDYyNi04NTMwLTcxZGJjYzU1ZDNlMiIsInR5cCI6IklEIiwiYXpwIjoiYWRhcHRlciIsImF1dGhfdGltZSI6MCwic2Vzc2lvbl9zdGF0ZSI6ImU1NWRmMDU2LWJmMjQtNGI5Yy1hMDVjLTBkMjEwNWVjMDJjNyIsImFjciI6IjEiLCJuYW1lIjoiIiwicHJlZmVycmVkX3VzZXJuYW1lIjoidmlzaXRvciJ9.cysxtrDJCDv65kgKZXSgyGZCKodck3FnIbM8FMK2LcA1tLkPNlpTVk3Q0bKRW0PkXRU_CGxjO7AuFVCTRCN9pIBEP1db-sRip3W4kDO0LRsmtIZVrrDQ0SGdnDL4LrK8bbS3FZEQ_GNhmzNYegVlk9jIhypOt35ZdILUyOaG-2TOv2TJDIDIXvNGvXEpt75azlIJTmjxSU00l6qzDtHTh-3gyg06O2sLPxLcvY_JCdu8VUJE2UCilBMiLZBTuucXhlj1m596FOS5NYATZfppYsJQV8Jp6DMs_d5VtLVI7oJDCKBNTsVMyL_WrH_1WRu-iVZdFQ7r13zJs_fvFaBMAg","not-before-policy":1487259727,"session_state":"e55df056-bf24-4b9c-a05c-0d2105ec02c7"}
 
-keycloak_config = JSON.parse(File.read('../config/keycloak.json'))
-@s = "-----BEGIN PUBLIC KEY-----\n"
-@s += keycloak_config['realm-public-key'].scan(/.{1,64}/).join("\n")
-@s += "\n-----END PUBLIC KEY-----\n"
-key = OpenSSL::PKey::RSA.new @s
-keycloak_pub_key = key
+  keycloak_config = JSON.parse(File.read('../config/keycloak.json'))
+  @s = "-----BEGIN PUBLIC KEY-----\n"
+  @s += keycloak_config['realm-public-key'].scan(/.{1,64}/).join("\n")
+  @s += "\n-----END PUBLIC KEY-----\n"
+  key = OpenSSL::PKey::RSA.new @s
+  keycloak_pub_key = key
 
-jwt.each { |k, v|
-  puts "k, v", k, v
-  unless k == :'expires_in' or k == :'refresh_expires_in' or k == :'token_type' or k == :'not-before-policy' or k == :'session_state'
-    decoded_payload, decoded_header = JWT.decode v, keycloak_pub_key, true, { :algorithm => 'RS256' }
-    # puts "DECODED_TOKEN: ", @decoded_token
-    puts "DECODED_HEADER: ", decoded_header
-    puts "DECODED_PAYLOAD: ", decoded_payload
-  end
-}
+  jwt.each { |k, v|
+    puts "k, v", k, v
+    unless k == :'expires_in' or k == :'refresh_expires_in' or k == :'token_type' or k == :'not-before-policy' or k == :'session_state'
+      # Decodes token;
+      begin
+        decoded_payload, decoded_header = JWT.decode v, keycloak_pub_key, true, { :algorithm => 'RS256' }
+        # puts "DECODED_TOKEN: ", @decoded_token
+        puts "DECODED_HEADER: ", decoded_header
+        puts "DECODED_PAYLOAD: ", decoded_payload
+      rescue JWT::ExpiredSignature => e
+        # Handle expired token, e.g. logout user or deny access
+        # [403, { 'Content-Type' => 'text/plain' }, ['The token has expired.']]
+        p "ERROR:", e
+      end
+
+    end
+  }
+end
+
+def get_role_details(token)
+  realm = "master"
+  id = "adapter"
+  role = "catalogue_guest"
+  #url = URI("http://localhost:8081/auth/admin/realms/#{realm}/clients/#{id}/roles/#{role}")
+  url = URI("http://localhost:8081/auth/admin/realms/#{realm}/roles/#{role}")
+  http = Net::HTTP.new(url.host, url.port)
+  request = Net::HTTP::Get.new(url.to_s)
+  request["authorization"] = 'bearer ' + token
+  #request["content-type"] = 'application/json'
+
+  response = http.request(request)
+  #p "RESPONSE", response
+  #p "RESPONSE.read_body", response.read_body
+  p "CODE", response.code
+  parsed_res, code = parse_json(response.body)
+  p "RESPONSE_PARSED", parsed_res["description"].split(",")
+end
+
+
+
 
 
 =begin
@@ -484,13 +552,13 @@ jwt.each { |k, v|
 "request_uri_parameter_supported":true}
 =end
 
-# token = userbased
+#token = userbased
 #token = clientbased
 #token = adminbased
 #pub = get_public_key
 #token_validation(token)
 # certificates
-# authenticate(token)
+#authenticate(token)
 # userinfo(token)
 #decode_token(token, pub)
 # register_client(token, pub)
@@ -507,12 +575,10 @@ jwt.each { |k, v|
 #set_Keycloak_config
 #get_inst_file
 #get_client_secret
-
-
-
-
-
-
+full_token
+# get_role_details(token)
+# authorize_browser
+#authorize(token)
 
 
 =begin

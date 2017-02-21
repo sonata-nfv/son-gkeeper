@@ -22,6 +22,17 @@ def parse_json(message)
   return parsed_message, nil
 end
 
+def keyed_hash(hash)
+  Hash[hash.map { |(k, v)| [k.to_sym, v] }]
+end
+
+def json_error(code, message)
+  msg = {'error' => message}
+  logger.error msg.to_s
+  halt code, {'Content-type' => 'application/json'}, msg.to_json
+end
+
+
 class Adapter < Sinatra::Application
   # Method which lists all available interfaces
   # @return [Array] an array of hashes containing all interfaces

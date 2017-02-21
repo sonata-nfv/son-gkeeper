@@ -93,29 +93,3 @@ class Adapter < Sinatra::Application
   # Load configurations
   config_file 'config/config.yml'
 end
-
-# DEPRECATED API - only to apply testings
-=begin
-class SecuredAPI < Sinatra::Application
-  use JwtAuth
-
-  def initialize
-    super
-
-    # Read users-rights from a datasource
-    @accounts = {
-        user1: [{'Service' => 'PERMISSION'}],}
-  end
-
-  def process_request (req, scope)
-    scopes, user = req.env.values_at :scopes, :user
-    username = user['username'].to_sym
-
-    if scopes.include?(scope) && @accounts.has_key?(username)
-      yield req, username
-    else
-      halt 403
-    end
-  end
-end
-=end

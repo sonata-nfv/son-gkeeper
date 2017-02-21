@@ -128,7 +128,50 @@ class Keycloak < Sinatra::Application
     logger.debug 'Adapter: entered POST /authorize'
     # Return if Authorization is invalid
     halt 400 unless request.env["HTTP_AUTHORIZATION"]
-    authorize
+
+    # Get authorization token
+    user_token = request.env["HTTP_AUTHORIZATION"].split(' ').last
+    unless user_token
+      error = {"ERROR" => "Access token is not provided"}
+      halt 400, error.to_json
+    end
+
+    # Get request parameters
+    keyed_params = keyed_hash(params)
+    puts "KEYED_PARAMS", keyed_params
+    # params examples:
+    # {:uri=>"catalogues", :method=>"GET"}
+    # Return if 'uri' and 'method' are not included
+    halt 400 unless (keyed_params[:'path'] and keyed_params[:'method'])
+
+    #TODO: Improve uri parse (include it in body?)
+    puts "PATH", keyed_params[:'path']
+    puts "METHOD",keyed_params[:'method']
+    request = resolve_request(keyed_params[:'path'], keyed_params[:'method'])
+
+    #
+    # ...
+    # TODO:
+    # ...
+    #
+
+    # Validate token
+    res, code = token_validation(user_token)
+    if code == '200'
+      result = is_active?(res)
+      puts "RESULT", result
+      case result
+        when true
+          # continue
+        else
+          halt 400, res
+      end
+    else
+      halt 400, res
+    end
+
+    puts "Ready to authorize"
+    authorize?(user_token, request)
   end
 
   post '/userinfo' do
@@ -144,7 +187,6 @@ class Keycloak < Sinatra::Application
 
     # Validate token
     res, code = token_validation(user_token)
-
     if code == '200'
       result = is_active?(res)
       puts "RESULT", result

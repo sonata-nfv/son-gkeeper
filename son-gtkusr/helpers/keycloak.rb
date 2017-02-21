@@ -4,6 +4,7 @@ require 'yaml'
 require 'net/http'
 require 'base64'
 require 'jwt'
+require 'uri'
 # require 'openssl'
 
 def parse_json(message)
@@ -22,6 +23,11 @@ class Keycloak < Sinatra::Application
   # logger.info "Adapter: Starting configuration"
   # Load configurations
   keycloak_config = YAML.load_file 'config/keycloak.yml'
+
+  # Load authorization mappings
+  @@auth_mappings = YAML.load_file 'config/mappings.yml'
+
+  puts "MAPPINGS CONTENT", @@auth_mappings
 
   # p keycloak_config
   # p "ISSUER", ENV['JWT_ISSUER']
@@ -114,9 +120,21 @@ class Keycloak < Sinatra::Application
 
 
   def decode_token(token, keycloak_pub_key)
-    decoded_payload, decoded_header = JWT.decode token, keycloak_pub_key, true, { :algorithm => 'RS256' }
-    puts "DECODED_HEADER: ", decoded_header
-    puts "DECODED_PAYLOAD: ", decoded_payload
+    begin
+      decoded_payload, decoded_header = JWT.decode token, keycloak_pub_key, true, { :algorithm => 'RS256' }
+      puts "DECODED_HEADER: ", decoded_header
+      puts "DECODED_PAYLOAD: ", decoded_payload
+      return decoded_payload, decoded_header
+    # Handle expired token, e.g. logout user or deny access
+    rescue JWT::DecodeError
+      json_error(401, 'A token must be passed')
+    rescue JWT::ExpiredSignature
+      json_error(403, 'The token has expired')
+    rescue JWT::InvalidIssuerError
+      json_error(403, 'The token does not have a valid issuer')
+    rescue JWT::InvalidIatError
+      json_error(403, 'The token does not have a valid "issued at" time')
+    end
   end
 
   def get_public_key
@@ -391,9 +409,11 @@ class Keycloak < Sinatra::Application
       halt response.code.to_i, response.body
     end
 
-    parsed_res = parse_json(response.body)
-    puts "USER ACCESS TOKEN RECEIVED: ", parsed_res['access_token']
-    halt 200, parsed_res['access_token'].to_json
+    #parsed_res = parse_json(response.body)
+    #p "RESPONSE BODY"
+    #puts parsed_res[0]['access_token']
+    #halt 200, parsed_res['access_token'].to_json
+    halt 200, response.body
   end
 
   # "token_endpoint":"http://localhost:8081/auth/realms/master/protocol/openid-connect/token"
@@ -507,18 +527,47 @@ class Keycloak < Sinatra::Application
 
     if res.body['access_token']
       parsed_res, code = parse_json(res.body)
-      @access_token = parsed_res['access_token']
-      puts "ACCESS_TOKEN RECEIVED"# , parsed_res['access_token']
+      @access_token = parsed_res['id_token']
+      puts "ID_TOKEN RECEIVED"# , parsed_res['access_token']
     else
       halt 401, "ERROR: ACCESS DENIED!"
     end
   end
 
-  def authorize?
-    ###
-    #TODO: Implement
+  def authorize?(user_token, request)
     #=> Check token!
+    public_key = get_public_key
+    payload, header = decode_token(user_token, public_key)
+    puts "payload", payload
+    #=> evaluate request
+    #
+    #=> Check token roles
+=begin
+    "realm_access":{
+        "roles":[
+            "uma_authorization",
+            "hello.say"
+        ]
+    },
+        "resource_access":{
+        "account":{
+            "roles":[
+                "manage-account",
+                "view-profile"
+=end
+# scopes?    "scope" : {
+#    "realm" : [ "user" ]
+#    }
+
     #=> Response => 20X or 40X
+    #
+    #
+    #
+    #
+    #
+    #
+    #
+    #
   end
 
   def refresh
@@ -540,6 +589,20 @@ class Keycloak < Sinatra::Application
 
   end
 
+  def get_role_details(role)
+    #url = URI("http://localhost:8081/auth/admin/realms/#{realm}/clients/#{id}/roles/#{role}")
+    url = URI("http://#{@@address.to_s}:#{@@port.to_s}/#{@@uri.to_s}/admin/realms/#{@@realm_name}/roles/#{role}")
+    http = Net::HTTP.new(url.host, url.port)
+    request = Net::HTTP::Get.new(url.to_s)
+    request["authorization"] = 'Bearer ' + @@access_token
+
+    response = http.request(request)
+    #p "RESPONSE.read_body", response.read_body
+    p "CODE", response.code
+    parsed_res, code = parse_json(response.body)
+    p "RESPONSE_PARSED", parsed_res
+  end
+
   def is_active?(introspect_res)
     puts "JSON PARSING"
     token_evaluation = JSON.parse(introspect_res)
@@ -554,4 +617,66 @@ class Keycloak < Sinatra::Application
     end
   end
 
+  def resolve_request(uri, method)
+    # Parse uri path
+    path = URI(uri).path.split('/')[1]
+    p "path", path
+    # Find mapped resource to path
+    resources = @@auth_mappings['resources']
+    p "RESOURCES", resources
+
+    resource = nil
+    p "PATHS", @@auth_mappings['paths']
+    @@auth_mappings['paths'].each { |k, v|
+      puts "k, v", k, v
+      v.each { |kk, vv|
+        puts "kk, vv", kk, vv
+        if kk == path
+          p "Resource found", k, kk
+          resource = [k, kk]
+          break
+        end
+      }
+      p "FOUND", resource
+      if resource
+        break
+      end
+    }
+    unless resource
+      json_error(401, 'The resource is not available')
+    end
+
+    unless @@auth_mappings['paths'][resource[0]][resource[1]].key?(method)
+      json_error(401, 'The resource operation is not available')
+    else
+      operation = @@auth_mappings['paths'][resource[0]][resource[1]][method]
+      puts "OPERATION", operation
+      request = {"resource" => resource[0], "type" => resource[1], "operation" => operation}
+      #json_error(501, 'OK')
+    end
+  end
 end
+
+
+# DEPRECATED API - only to apply testings
+=begin
+  def initialize
+    super
+
+    # Read users-rights from a datasource
+    @accounts = {
+        user1: [{'Service' => 'PERMISSION'}],}
+  end
+
+  def process_request (req, scope)
+    scopes, user = req.env.values_at :scopes, :user
+    username = user['username'].to_sym
+
+    if scopes.include?(scope) && @accounts.has_key?(username)
+      yield req, username
+    else
+      halt 403
+    end
+  end
+end
+=end
