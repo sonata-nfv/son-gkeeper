@@ -30,7 +30,7 @@
 ENV['RACK_ENV'] ||= 'production'
 
 require 'sinatra/base'
-require 'sinatra/config_file'
+#require 'sinatra/config_file'
 require 'sinatra/cross_origin'
 require 'sinatra/reloader'
 require 'zip'
@@ -50,7 +50,11 @@ end
 
 # Concentrates all the REST API of the Gatekeeper
 class GtkApi < Sinatra::Base
-  register Sinatra::ConfigFile
+  
+  DEFAULT_LOG_FILE_NAME = '/var/log/sonata/son-gtkapi.log'
+  DEFAUL_LOGGER_LEVEL = 'debug'
+  
+  #register Sinatra::ConfigFile
   register Sinatra::CrossOrigin
   register Sinatra::Reloader
   register Sinatra::Logger
@@ -65,7 +69,8 @@ class GtkApi < Sinatra::Base
   set :began_at, Time.now.utc
   set :environments, %w(development test integration qualification demonstration)
   set :environment, ENV['RACK_ENV'] || :development
-  config_file File.join(root, 'config', 'configs.yml.erb')
+  #config_file File.join(root, 'config', 'services.yml')
+
   
   use Rack::Session::Cookie, key: 'rack.session', domain: 'foo.com', path: '/', expire_after: 2592000, secret: '$0nata'
   
@@ -76,7 +81,7 @@ class GtkApi < Sinatra::Base
   
   #FileUtils.mkdir(File.join(settings.root, 'log')) unless File.exists? File.join(settings.root, 'log')
   # File.symbolic('/dev/stdout', '/var/log/sonata/son-gtkapi.log')
-  log_file_name = settings.log_file_name ||= '/var/log/sonata/son-gtkapi.log'
+  log_file_name = ENV['LOG_FILE_NAME'] ||= DEFAULT_LOG_FILE_NAME
   folder = log_file_name.split(File::SEPARATOR)[0..-2].join(File::SEPARATOR)
   FileUtils.mkdir_p(folder) unless File.exists? folder
   name = log_file_name.split(File::SEPARATOR)[-1]
@@ -92,20 +97,20 @@ class GtkApi < Sinatra::Base
   end
 
   raise 'Can not proceed without a logger file' if settings.logger.nil?
-  set :logger_level, (settings.level ||= 'debug').to_sym # can be debug, fatal, error, warn, or info
+  set :logger_level, (ENV['LEVEL'] ||= DEFAUL_LOGGER_LEVEL).to_sym # can be debug, fatal, error, warn, or info
   settings.logger.info(MODULE) {"Started at #{settings.began_at}"}
   settings.logger.info(MODULE) {"Logger level at :#{settings.logger_level} level"}
   
   enable :cross_origin
 
   # TODO: make this relationship loosely coupled
-  PackageManagerService.config(url: settings.pkgmgmt)
-  ServiceManagerService.config(url: settings.srvmgmt)
-  FunctionManagerService.config(url: settings.fnctmgmt)
-  RecordManagerService.config(url: settings.recmgmt)
-  LicenceManagerService.config(url: settings.licmgmt)
-  VimManagerService.config(url: settings.vimmgmt)
-  KpiManagerService.config(url: settings.kpimgmt)
+  PackageManagerService.config(url: ENV['PACKAGE_MANAGEMENT_URL'])
+  ServiceManagerService.config(url: ENV['SERVICE_MANAGEMENT_URL'])
+  FunctionManagerService.config(url: ENV['FUNCTION_MANAGEMENT_URL'])
+  RecordManagerService.config(url: ENV['VIM_MANAGEMENT_URL'])
+  LicenceManagerService.config(url: ENV['RECORD_MANAGEMENT_URL'])
+  VimManagerService.config(url: ENV['LICENCE_MANAGEMENT_URL'])
+  KpiManagerService.config(url: ENV['KPI_MANAGEMENT_URL'])
   
   Zip.setup do |c|
     c.unicode_names = true
