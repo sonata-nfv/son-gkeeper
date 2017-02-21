@@ -73,10 +73,6 @@ class GtkApi < Sinatra::Base
   MODULE = 'GtkApi'
 
 	enable :logging
-  # don't enable logging when running tests 
-  configure :integration, :qualification, :demonstration do
-    enable :logging
-  end
   
   #FileUtils.mkdir(File.join(settings.root, 'log')) unless File.exists? File.join(settings.root, 'log')
   # File.symbolic('/dev/stdout', '/var/log/sonata/son-gtkapi.log')
@@ -87,10 +83,13 @@ class GtkApi < Sinatra::Base
   logfile = File.open(File.join(folder, name), 'a+')
   logfile.sync = true
   set :logger, Logger.new(logfile)
-  $stdout.reopen(logfile)
-  $stderr.reopen(logfile)
-  $stdout.sync = true
-  $stderr.sync = true
+
+  configure :integration, :qualification, :demonstration do
+    $stdout.reopen(logfile)
+    $stderr.reopen(logfile)
+    $stdout.sync = true
+    $stderr.sync = true
+  end
 
   raise 'Can not proceed without a logger file' if settings.logger.nil?
   set :logger_level, (settings.level ||= 'debug').to_sym # can be debug, fatal, error, warn, or info
