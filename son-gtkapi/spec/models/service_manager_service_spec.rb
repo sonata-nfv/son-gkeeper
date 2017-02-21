@@ -35,7 +35,7 @@ RSpec.describe ServiceManagerService, type: :model do
   let(:service_to_be_created_2) {{name:'name', version:'0.2', vendor:'vendor'}}
   let(:created_service_2) {service_to_be_created_2.merge({uuid: service_uuid})}
   let(:all_services) { [ created_service_1, created_service_2 ]}
-  let(:services_url) { ServiceManagerService.url+'/services' }
+  let(:services_url) { ServiceManagerService.class_variable_get(:@@url)+'/services' }
   describe '#find_services' do
     it 'with default parameters should return two services' do
       resp = OpenStruct.new(header_str: "HTTP/1.1 200 OK\nRecord-Count: 2", body: all_services.to_json)      

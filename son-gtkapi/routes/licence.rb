@@ -144,7 +144,7 @@ class GtkApi < Sinatra::Base
       logger.debug(log_message) {"licence_type=#{licence_type.inspect}"}
       if licence_type
         logger.info(log_message) {"leaving with licence_type: #{licence_type}"}
-        headers 'Location'=> LicenceManagerService.url+"/licence-types/#{licence_type[:uuid]}", 'Content-Type'=> 'application/json'
+        headers 'Location'=> LicenceManagerService.class_variable_get(:@@url)+"/licence-types/#{licence_type[:uuid]}", 'Content-Type'=> 'application/json'
         halt 201, licence_type.to_json
       else
         json_error 400, 'Licence type not created'
@@ -177,7 +177,7 @@ class GtkApi < Sinatra::Base
       case licence[:status]
       when 201
         logger.info(log_message) {"leaving with licence: #{licence[:items]}"}
-        headers 'Location'=> LicenceManagerService.url+"/licences/#{licence[:uuid]}", 'Content-Type'=> 'application/json'
+        headers 'Location'=> LicenceManagerService.class_variable_get(:@@url)+"/licences/#{licence[:uuid]}", 'Content-Type'=> 'application/json'
         halt 201, licence.to_json
       when 422
         logger.info(log_message) {"Unprocessable entity"}

@@ -122,7 +122,7 @@ RSpec.describe GtkApi, type: :controller do
     uuid: service2_uuid
   }}
   let(:services) { [ service1, service2 ]}
-  let(:services_url) { ServiceManagerService.url+'/services' }
+  let(:services_url) { ServiceManagerService.class_variable_get(:@@url)+'/services' }
   let(:full_services_url) {services_url+'?offset='+GtkApi::DEFAULT_OFFSET+'&limit='+GtkApi::DEFAULT_LIMIT}
   
   describe 'GET /api/v2/services' do
