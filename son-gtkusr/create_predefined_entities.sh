@@ -40,15 +40,19 @@ function create_realm_role() {
 	return $ret
 }
 
-sleep 20s
 echo
 echo "------------------------------------------------------------------------"
 echo "*** Verifying if Keycloak server is up and listening on $KEYCLOAK_URL"
-res=`curl --connect-timeout 15 --max-time 15 -k -s -o /dev/null -I -w "%{http_code}" $KEYCLOAK_URL`
-if [ $res -ne 200 ]; then
-	echo "Keycloak not detected in $KEYCLOAK_URL!"
-        exit 1
-fi
+retries=0
+until [ $(curl --connect-timeout 15 --max-time 15 -k -s -o /dev/null -I -w "%{http_code}" $KEYCLOAK_URL) -eq 200 ]; do
+    	#printf '.'
+    	sleep 5
+    	let retries="$retries+1"
+    	if [ $retries -eq 12 ]; then
+		echo "Timeout waiting for Keycloak on $KEYCLOAK_URL"
+		exit 1
+	fi
+done
 
 echo "Keycloak server detected! Creating predefined entities..."
 
