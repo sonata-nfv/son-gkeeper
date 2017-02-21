@@ -43,7 +43,7 @@ class GtkApi < Sinatra::Base
           case resp[:status]
           when 201
             logger.info(log_message) {"leaving with package: #{resp[:data][:uuid]}"}
-            headers 'Location'=> PackageManagerService.url+"/packages/#{resp[:data][:uuid]}", 'Content-Type'=> 'application/json'
+            headers 'Location'=> PackageManagerService.class_variable_get(:@@url)+"/packages/#{resp[:data][:uuid]}", 'Content-Type'=> 'application/json'
             halt 201, resp[:data].to_json
           when 409
             logger.error(log_message) {"leaving with duplicated package: #{resp[:data]}"}

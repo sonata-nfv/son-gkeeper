@@ -62,6 +62,15 @@ class LicenceManagerService < ManagerService
   end
   
   def self.valid?(params)
+    # service_uuid, string, mandatory
+    # user_uuid, string, mandatory
+    # license_uuid, string, mandatory
+    # license_type, string, mandatory
+    # description, string
+    # validation_url, string
+    # status, string, mandatory
+
+    
     method = LOG_MESSAGE + "##{__method__}(#{params})"
     GtkApi.logger.debug(method) {'entered'}
     raise ArgumentError, 'User must be valid' unless User.valid? params[:user_uuid]
@@ -75,6 +84,7 @@ class LicenceManagerService < ManagerService
     GtkApi.logger.debug(method) {'entered'}
     headers = {'Content-Type'=>'application/x-www-form-urlencoded'}
 
+    
     begin
       self.valid?(params)
       licence = postCurb(url: @@url+LICENCES_URL, body: params, headers: headers)
