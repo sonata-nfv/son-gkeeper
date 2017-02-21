@@ -89,7 +89,8 @@ class GtkApi < Sinatra::Base
   logfile.sync = true
   set :logger, Logger.new(logfile)
 
-  configure :integration, :qualification, :demonstration do
+  # logs in :development, :test and :integration go also to $stdout and $stderr
+  configure :qualification, :demonstration do
     $stdout.reopen(logfile)
     $stderr.reopen(logfile)
     $stdout.sync = true
