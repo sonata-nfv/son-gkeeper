@@ -58,9 +58,9 @@ configure do
     # Load configurations
     config_file 'config/keycloak.yml'
 
-    self.get_oidc_endpoints
-    self.get_adapter_install_json
-    @@access_token = self.get_adapter_token
+    #self.get_oidc_endpoints
+    #self.get_adapter_install_json
+    #@@access_token = self.get_adapter_token
   end
 
   # turn keycloak realm pub key into an actual openssl compat pub key.
