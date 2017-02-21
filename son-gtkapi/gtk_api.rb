@@ -62,10 +62,10 @@ class GtkApi < Sinatra::Base
   set :public_folder, File.join(File.dirname(__FILE__), 'public')
   set :bind, '0.0.0.0'
   set :files, File.join(settings.public_folder, 'files')
-  set :time_at_startup, Time.now.utc
+  set :began_at, Time.now.utc
   set :environments, %w(development test integration qualification demonstration)
   set :environment, ENV['RACK_ENV'] || :development
-  config_file File.join(root, 'config', 'services.yml.erb')
+  config_file File.join(root, 'config', 'configs.yml.erb')
   
   use Rack::Session::Cookie, key: 'rack.session', domain: 'foo.com', path: '/', expire_after: 2592000, secret: '$0nata'
   
@@ -73,19 +73,33 @@ class GtkApi < Sinatra::Base
   MODULE = 'GtkApi'
 
 	enable :logging
-  FileUtils.mkdir(File.join(settings.root, 'log')) unless File.exists? File.join(settings.root, 'log')
-  logfile = File.open(File.join('log', ENV['RACK_ENV'])+'.log', 'a+')
+  # don't enable logging when running tests 
+  configure :integration, :qualification, :demonstration do
+    enable :logging
+  end
+  
+  #FileUtils.mkdir(File.join(settings.root, 'log')) unless File.exists? File.join(settings.root, 'log')
+  # File.symbolic('/dev/stdout', '/var/log/sonata/son-gtkapi.log')
+  log_file_name = settings.log_file_name ||= '/var/log/sonata/son-gtkapi.log'
+  folder = log_file_name.split(File::SEPARATOR)[0..-2].join(File::SEPARATOR)
+  FileUtils.mkdir_p(folder) unless File.exists? folder
+  name = log_file_name.split(File::SEPARATOR)[-1]
+  logfile = File.open(File.join(folder, name), 'a+')
   logfile.sync = true
   set :logger, Logger.new(logfile)
+  $stdout.reopen(logfile)
+  $stderr.reopen(logfile)
+  $stdout.sync = true
+  $stderr.sync = true
+
   raise 'Can not proceed without a logger file' if settings.logger.nil?
-  set :logger_level, (settings.logger_level ||= 'debug').to_sym # can be debug, fatal, error, warn, or info
-  settings.logger.info(MODULE) {"Started at #{settings.time_at_startup}"}
+  set :logger_level, (settings.level ||= 'debug').to_sym # can be debug, fatal, error, warn, or info
+  settings.logger.info(MODULE) {"Started at #{settings.began_at}"}
   settings.logger.info(MODULE) {"Logger level at :#{settings.logger_level} level"}
   
   enable :cross_origin
 
   # TODO: make this relationship loosely coupled
-  # TODO: logger could be a global variable
   PackageManagerService.config(url: settings.pkgmgmt)
   ServiceManagerService.config(url: settings.srvmgmt)
   FunctionManagerService.config(url: settings.fnctmgmt)

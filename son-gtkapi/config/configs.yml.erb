@@ -33,7 +33,8 @@ development: &common_settings
   recmgmt: <%= ENV['RECORD_MANAGEMENT_URL'] %>
   licmgmt: <%= ENV['LICENCE_MANAGEMENT_URL'] %>
   kpimgmt: <%= ENV['KPI_MANAGEMENT_URL'] %>
-  logger_level: <%= ENV['LOGGER_LEVEL'] %>
+  level: <%= ENV['LEVEL'] %>
+  log_file_name: <%= ENV['LOG_FILE_NAME'] %>
 
 test:
   <<: *common_settings
