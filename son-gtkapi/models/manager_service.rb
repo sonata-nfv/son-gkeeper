@@ -140,7 +140,7 @@ class ManagerService
     http_headers['Record-Count'].to_i
   end
   
-  def self.get_log(url:, log_message:'', logger: nil)
+  def self.get_log(url:, log_message:'')
     GtkApi.logger.debug(log_message) {'entered'}
 
     res=Curl.get( url) do |req|
