@@ -1,4 +1,6 @@
 #!/bin/bash
+
+
 KEYCLOAK_PORT=8080
 KEYCLOAK_USER=admin
 KEYCLOAK_PASSWORD=admin
@@ -38,6 +40,7 @@ function create_realm_role() {
 	return $ret
 }
 
+sleep 20s
 echo
 echo "------------------------------------------------------------------------"
 echo "*** Verifying if Keycloak server is up and listening on $KEYCLOAK_URL"
@@ -69,3 +72,4 @@ create_realm_role sonata Catalogues "see_gatekeeper"
 create_realm_role sonata Repositories "see_gatekeeper"
 create_realm_role sonata Customer "read_repositories, write_repositories, run_repositories, run_catalogues"
 create_realm_role sonata Developer "read_catalogues, write_catalogues"
+

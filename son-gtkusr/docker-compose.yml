@@ -7,14 +7,13 @@ services:
       dockerfile: dockerfile-gtkusr
     ports: 
       - "4021:4021"
+    #links:
+    #  - keycloak
     environment:
       - KEYCLOAK_ADDRESS=sonata.i2cat.net
       - KEYCLOAK_PORT=8080
       - KEYCLOAK_PATH=auth
     container_name: sonata-gk-usr
-    #depends:on:
-     # keycloak:
-     #   condition: service_started
   keycloak:
     build:
       context: ./
@@ -24,4 +23,6 @@ services:
     environment:
       - KEYCLOAK_USER=admin
       - KEYCLOAK_PASSWORD=admin
+    links:
+      - adapter
     container_name: sonata-keycloak    

@@ -28,19 +28,26 @@
 require 'json'
 require 'sinatra'
 require 'net/http'
+require 'resolv'
 require_relative '../helpers/init'
 
 
 #Adapter Config class
 class KeyCloakListener < Sinatra::Application
 
+  ## Get the ip of keycloak. Only works for docker-compose
+  @@keycloak_address = Resolv::DNS.new.getaddress("keycloak")
+
   post '/' do
+    # Check if the request comes from keycloak docker.
+    if request.ip.to_s != @@keycloak_address.to_s
+      halt 401
+    end
     if defined? $secret_key
       halt 409, "Secret key is already defined."
-      # what if we check here the source ip and compare it with the ENV variable?
     end
-    $secret_key = params['secret']
     
+    $secret_key = params['secret']
     halt 200
   end
 end
