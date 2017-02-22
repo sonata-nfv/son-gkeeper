@@ -40,16 +40,30 @@ class KpiManagerService < ManagerService
     GtkApi.logger.debug(method) {'entered'}
   end
 
-  def self.increase_metric(params)
+  def self.update_metric(params)
     method = LOG_MESSAGE + "##{__method__}(#{params})"
     GtkApi.logger.debug(method) {"entered"}
     
     begin
-      GtkApi.logger.debug(method) {"@@url = "+@@url}
-      #response = RestClient.post(@url+'/kpi', params.to_json, content_type: :json, accept: :json) 
-      response = postCurb(url: @@url+'/kpi', body: params, logger: @@logger)
-      GtkApi.logger.debug(method) {"response="+response}
+      GtkApi.logger.debug(method) {"url = "+@@url}      
+      response = putCurb(url: @@url+'/kpis', body: params, logger: @@logger)      
       response
+    rescue => e
+      GtkApi.logger.error(method) {"Error during processing: #{$!}"}
+      GtkApi.logger.error(method) {"Backtrace:\n\t#{e.backtrace.join("\n\t")}"}
+      nil 
+    end      
+  end
+
+  def self.get_metric(params)
+    method = LOG_MESSAGE + "##{__method__}(#{params})"
+    GtkApi.logger.debug(method) {"entered"}
+    
+    begin
+      GtkApi.logger.debug(method) {"url = "+@@url}
+      response = getCurb(url: @@url+'/kpis', params: params.to_json, headers:JSON_HEADERS)      
+      GtkApi.logger.debug(method) {'response='+response.to_s}
+      JSON.parse response[:items].to_json
     rescue => e
       GtkApi.logger.error(method) {"Error during processing: #{$!}"}
       GtkApi.logger.error(method) {"Backtrace:\n\t#{e.backtrace.join("\n\t")}"}

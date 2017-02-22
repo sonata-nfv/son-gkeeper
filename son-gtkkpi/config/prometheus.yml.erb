@@ -27,6 +27,8 @@
 development: &common_settings
   pushgateway_host: <%= ENV['PUSHGATEWAY_HOST'] || 'prometheus' %>
   pushgateway_port: <%= ENV['PUSHGATEWAY_PORT'] || 9091 %>
+  prometheus_port: <%= ENV['PROMETHEUS_PORT'] || 9090 %>
+  prometheus_job_name: <%= ENV['PROMETHEUS_JOB_NAME'] || 'sonata' %>
 
 test:
   <<: *common_settings

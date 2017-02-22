@@ -104,6 +104,24 @@ class ManagerService
       {status: status, count: nil, items: nil, message: "Status #{status} unprocessable"}
     end
   end  
+
+  def self.putCurb(url:, body:, headers: {})
+    log_message=LOG_MESSAGE+"##{__method__}"
+    GtkApi.logger.debug(log_message) {"entered with url=#{url}, body=#{body.to_json}    
+    res=Curl.put(url, body.to_json) do |req|
+      if headers.empty?
+        req.headers['Content-type'] = req.headers['Accept'] = 'application/json'
+      else
+        headers.each do |h|
+          GtkApi.logger.debug(log_message) {"header[#{h[0]}]: #{h[1]}"}
+          req.headers[h[0]] = h[1]
+        end
+      end
+    end
+    status = get_status_from_response_headers(res.header_str)
+    GtkApi.logger.debug(log_message) {"response =#{status}"}   
+    status 
+  end
   
   private
   
