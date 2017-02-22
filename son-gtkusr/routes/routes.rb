@@ -95,7 +95,58 @@ class Keycloak < Sinatra::Application
     register_user(@access_token, form) # user_params)
   end
 
+  post '/service-register' do
+    # Return if content-type is not valid
+    logger.info "Content-Type is " + request.media_type
+    halt 415 unless (request.content_type == 'application/x-www-form-urlencoded' or request.content_type == 'application/json')
+    #payload?={"id":"123123","auth_code":"191331","required_amount":101,"timestamp":1407775713,"status":"completed","total_amount":101}
+
+    # Compatibility support for YAML content-type
+    case request.content_type
+      when 'application/x-www-form-urlencoded'
+        # Validate format
+        form_encoded, errors = request.body.read
+        halt 400, errors.to_json if errors
+
+        p "FORM PARAMS", form_encoded
+        form = Hash[URI.decode_www_form(form_encoded)]
+
+      # Validate Hash format
+      #form, errors = validate_form(form)
+      #halt 400, errors.to_json if errors
+
+      else
+        # Compatibility support for JSON content-type
+        # Parses and validates JSON format
+        form, errors = parse_json(request.body.read)
+        halt 400, errors.to_json if errors
+    end
+    register_user(@access_token, form) # user_params)
+  end
+
   post '/login' do
+    logger.debug 'Adapter: entered POST /login'
+    # Return if Authorization is invalid
+    halt 400 unless request.env["HTTP_AUTHORIZATION"]
+
+    # READ FROM AUTH ENV
+    #p "@client_name", self.client_name
+    #p "@client_secret", self.client_secret
+    user_pass = request.env["HTTP_AUTHORIZATION"].split(' ').last
+    plain_user_pass  = Base64.decode64(user_pass)
+
+
+    # puts "USER_PASS", user_pass
+    # puts  "PLAIN", plain_user_pass.split(':').first
+    # puts  "PLAIN", plain_user_pass.split(':').last
+    username = plain_user_pass.split(':').first # params[:username]
+    password = plain_user_pass.split(':').last # params[:password]
+
+    credentials = {"type" => "password", "value" => password.to_s}
+    login_user(username, credentials)
+  end
+
+  post '/service-login' do
     logger.debug 'Adapter: entered POST /login'
     # Return if Authorization is invalid
     halt 400 unless request.env["HTTP_AUTHORIZATION"]
@@ -142,35 +193,31 @@ class Keycloak < Sinatra::Application
     # params examples:
     # {:uri=>"catalogues", :method=>"GET"}
     # Return if 'uri' and 'method' are not included
-    halt 400 unless (keyed_params[:'path'] and keyed_params[:'method'])
+    halt 401 unless (keyed_params[:'path'] and keyed_params[:'method'])
 
-    #TODO: Improve uri parse (include it in body?)
+    #TODO: Improve path and method parse (include it in body?)
     puts "PATH", keyed_params[:'path']
     puts "METHOD",keyed_params[:'method']
-    request = resolve_request(keyed_params[:'path'], keyed_params[:'method'])
+    request = process_request(keyed_params[:'path'], keyed_params[:'method'])
 
-    #
-    # ...
-    # TODO:
-    # ...
-    #
-
-    # Validate token
-    res, code = token_validation(user_token)
-    if code == '200'
-      result = is_active?(res)
+    # Check token validation
+    val_res, val_code = token_validation(user_token)
+    # Check token expiration
+    if val_code == '200'
+      result = is_active?(val_res)
       puts "RESULT", result
       case result
-        when true
-          # continue
+        when false
+          halt 403, val_res
         else
-          halt 400, res
+          # continue
       end
     else
-      halt 400, res
+      halt 401, val_res
     end
 
     puts "Ready to authorize"
+    # Authorization process
     authorize?(user_token, request)
   end
 
@@ -241,6 +288,10 @@ class Keycloak < Sinatra::Application
     puts "RESULT", user_token
 
     logout(user_token, user=nil, realm=nil)
+  end
+
+  post '/refresh' do
+    #TODO:
   end
 end
 

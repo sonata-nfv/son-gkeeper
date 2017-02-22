@@ -110,15 +110,6 @@ class Keycloak < Sinatra::Application
     end
   end
 
-      # Policies
-  OK = Proc.new { halt 200 }
-  FORBIDDEN = Proc.new {
-    halt 401 unless is_loggedin?(user)
-    halt 403
-  }
-  LOGGEDIN = Proc.new { halt 401 unless is_loggedin?(user) }
-
-
   def decode_token(token, keycloak_pub_key)
     begin
       decoded_payload, decoded_header = JWT.decode token, keycloak_pub_key, true, { :algorithm => 'RS256' }
@@ -139,7 +130,7 @@ class Keycloak < Sinatra::Application
 
   def get_public_key
     # turn keycloak realm pub key into an actual openssl compat pub key.
-    keycloak_config = JSON.parse(File.read('../config/keycloak.json'))
+    keycloak_config = JSON.parse(File.read('config/keycloak.json'))
     @s = "-----BEGIN PUBLIC KEY-----\n"
     @s += keycloak_config['realm-public-key'].scan(/.{1,64}/).join("\n")
     @s += "\n-----END PUBLIC KEY-----\n"
@@ -535,39 +526,62 @@ class Keycloak < Sinatra::Application
   end
 
   def authorize?(user_token, request)
-    #=> Check token!
-    public_key = get_public_key
-    payload, header = decode_token(user_token, public_key)
-    puts "payload", payload
+    #=> Check token
+    #public_key = get_public_key
+    p "SETTINGS", settings.keycloak_pub_key
+    token_payload, token_header = decode_token(user_token, settings.keycloak_pub_key)
+    puts "payload", token_payload
+
     #=> evaluate request
-    #
+    # Find mapped resource to path
+    # required_role is build following next pattern:
+    # operation
+    # operation_resource
+    # operation_resource_type
+
+    required_role = 'role_' + request['operation'] + '-' + request['resource']
+    p "required_role", required_role
+
     #=> Check token roles
-=begin
-    "realm_access":{
-        "roles":[
-            "uma_authorization",
-            "hello.say"
-        ]
-    },
-        "resource_access":{
-        "account":{
-            "roles":[
-                "manage-account",
-                "view-profile"
-=end
-# scopes?    "scope" : {
-#    "realm" : [ "user" ]
-#    }
+    begin
+      token_realm_access_roles = token_payload['realm_access']['roles']
+    rescue
+      json_error(403, 'No permissions')
+    end
+
+    # TODO: Resource access roles (services) will be implemented later
+    token_resource_access_resources = token_payload['resource_access']
+
+    # TODO: Evaluate special roles (customer,developer,etc...)
+
+    p "realm_access_roles", token_realm_access_roles
+    realm_roles = get_realm_roles
+
+    authorized = false
+    token_realm_access_roles.each { |role|
+      puts "ROLE TO INSPECT", role
+
+      token_role_repr = realm_roles.find {|x| x['name'] == role}
+      unless token_role_repr
+        json_error(403, 'No permissions')
+      end
+
+      puts "ROLE_DESC", token_role_repr['description']
+      role_perms = token_role_repr['description'].tr('${}', '').split(',')
+      puts "ROLE_PERM", role_perms
+
+      if role_perms.include?(required_role)
+        authorized = true
+      end
+    }
 
     #=> Response => 20X or 40X
-    #
-    #
-    #
-    #
-    #
-    #
-    #
-    #
+    case authorized
+      when true
+        halt 200
+      else
+        json_error(403, 'User is not authorized')
+    end
   end
 
   def refresh
@@ -589,6 +603,21 @@ class Keycloak < Sinatra::Application
 
   end
 
+  def get_realm_roles
+    #Get all roles for the realm or client
+     url = URI("http://#{@@address.to_s}:#{@@port.to_s}/#{@@uri.to_s}/admin/realms/#{@@realm_name}/roles")
+     http = Net::HTTP.new(url.host, url.port)
+     request = Net::HTTP::Get.new(url.to_s)
+     request["authorization"] = 'Bearer ' + @@access_token
+
+     response = http.request(request)
+     #p "RESPONSE.read_body", response.read_body
+     p "CODE", response.code
+     parsed_res, code = parse_json(response.body)
+     p "RESPONSE_PARSED", parsed_res
+     parsed_res
+  end
+
   def get_role_details(role)
     #url = URI("http://localhost:8081/auth/admin/realms/#{realm}/clients/#{id}/roles/#{role}")
     url = URI("http://#{@@address.to_s}:#{@@port.to_s}/#{@@uri.to_s}/admin/realms/#{@@realm_name}/roles/#{role}")
@@ -601,6 +630,7 @@ class Keycloak < Sinatra::Application
     p "CODE", response.code
     parsed_res, code = parse_json(response.body)
     p "RESPONSE_PARSED", parsed_res
+    parsed_res
   end
 
   def is_active?(introspect_res)
@@ -617,11 +647,13 @@ class Keycloak < Sinatra::Application
     end
   end
 
-  def resolve_request(uri, method)
+  def process_request(uri, method)
     # Parse uri path
     path = URI(uri).path.split('/')[1]
     p "path", path
+
     # Find mapped resource to path
+    # TODO: check this -->
     resources = @@auth_mappings['resources']
     p "RESOURCES", resources
 
@@ -643,40 +675,15 @@ class Keycloak < Sinatra::Application
       end
     }
     unless resource
-      json_error(401, 'The resource is not available')
+      json_error(403, 'The resource is not available')
     end
 
     unless @@auth_mappings['paths'][resource[0]][resource[1]].key?(method)
-      json_error(401, 'The resource operation is not available')
+      json_error(403, 'The resource operation is not available')
     else
       operation = @@auth_mappings['paths'][resource[0]][resource[1]][method]
       puts "OPERATION", operation
       request = {"resource" => resource[0], "type" => resource[1], "operation" => operation}
-      #json_error(501, 'OK')
     end
   end
 end
-
-
-# DEPRECATED API - only to apply testings
-=begin
-  def initialize
-    super
-
-    # Read users-rights from a datasource
-    @accounts = {
-        user1: [{'Service' => 'PERMISSION'}],}
-  end
-
-  def process_request (req, scope)
-    scopes, user = req.env.values_at :scopes, :user
-    username = user['username'].to_sym
-
-    if scopes.include?(scope) && @accounts.has_key?(username)
-      yield req, username
-    else
-      halt 403
-    end
-  end
-end
-=end

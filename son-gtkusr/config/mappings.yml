@@ -1,11 +1,11 @@
 ---
 resources:
-  - catalogues
+  - catalogue
   - repositories
   - gatekeeper
 
 paths:
-    catalogues:
+    catalogue:
         services:
                  GET: read
                  POST: write
