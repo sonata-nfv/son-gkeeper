@@ -107,7 +107,7 @@ class ManagerService
 
   def self.putCurb(url:, body:, headers: {})
     log_message=LOG_MESSAGE+"##{__method__}"
-    GtkApi.logger.debug(log_message) {"entered with url=#{url}, body=#{body.to_json}    
+    GtkApi.logger.debug(log_message) {"entered with url=#{url}, body=#{body.to_json}"}    
     res=Curl.put(url, body.to_json) do |req|
       if headers.empty?
         req.headers['Content-type'] = req.headers['Accept'] = 'application/json'
