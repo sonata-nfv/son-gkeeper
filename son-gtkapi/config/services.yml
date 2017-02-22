@@ -26,15 +26,15 @@
 # partner consortium (www.sonata-nfv.eu).
 # encoding: utf-8
 development: &common_settings
-  pkgmgmt: <%= ENV['PACKAGE_MANAGEMENT_URL'] %>
-  srvmgmt: <%= ENV['SERVICE_MANAGEMENT_URL'] %>
-  fnctmgmt: <%= ENV['FUNCTION_MANAGEMENT_URL'] %>
-  vimmgmt: <%= ENV['VIM_MANAGEMENT_URL'] %>
-  recmgmt: <%= ENV['RECORD_MANAGEMENT_URL'] %>
-  licmgmt: <%= ENV['LICENCE_MANAGEMENT_URL'] %>
-  kpimgmt: <%= ENV['KPI_MANAGEMENT_URL'] %>
-  logger_level: <%= ENV['LOGGER_LEVEL'] %>
-
+  services:
+    packages
+    services
+    functions
+    records
+    vims
+    licences
+    kpis
+    
 test:
   <<: *common_settings
 

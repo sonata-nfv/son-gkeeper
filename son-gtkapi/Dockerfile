@@ -6,6 +6,7 @@ RUN mkdir -p /app
 WORKDIR /app
 COPY Gemfile /app
 RUN bundle install
+RUN mkdir -p /var/log/sonata
 COPY . /app
 EXPOSE 5000
 WORKDIR /app
