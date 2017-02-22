@@ -118,7 +118,7 @@ class ManagerService
         end
       end
     end
-    status = get_status_from_response_headers(res.header_str)
+    status = status_from_response_headers(res.header_str)
     GtkApi.logger.debug(log_message) {"response =#{status}"}   
     status 
   end

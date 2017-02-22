@@ -46,7 +46,7 @@ class KpiManagerService < ManagerService
     
     begin
       GtkApi.logger.debug(method) {"url = "+@@url}      
-      response = putCurb(url: @@url+'/kpis', body: params, logger: @@logger)      
+      response = putCurb(url: @@url+'/kpis', body: params)      
       response
     rescue => e
       GtkApi.logger.error(method) {"Error during processing: #{$!}"}
@@ -61,7 +61,7 @@ class KpiManagerService < ManagerService
     
     begin
       GtkApi.logger.debug(method) {"url = "+@@url}
-      response = getCurb(url: @@url+'/kpis', params: params.to_json, headers:JSON_HEADERS)      
+      response = getCurb(url: @@url+'/kpis', params: params, headers:JSON_HEADERS)      
       GtkApi.logger.debug(method) {'response='+response.to_s}
       JSON.parse response[:items].to_json
     rescue => e
