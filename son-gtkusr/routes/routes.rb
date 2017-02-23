@@ -165,14 +165,30 @@ class Keycloak < Sinatra::Application
     password = plain_user_pass.split(':').last # params[:password]
 
     credentials = {"type" => "password", "value" => password.to_s}
-    login_user(username, credentials)
+    login_client(username, credentials)
   end
 
   post '/authenticate' do
     logger.debug 'Adapter: entered POST /authenticate'
     # Return if Authorization is invalid
     halt 400 unless request.env["HTTP_AUTHORIZATION"]
-    auth
+    keyed_params = params
+
+    case keyed_params[:'grant_type']
+      when 'password' # -> user
+        authenticate(keyed_params[:'client_id'],
+                     keyed_params[:'username'],
+                     keyed_params[:'password'],
+                     keyed_params[:'grant_type'])
+
+
+      when 'client_credentials' # -> service
+        authenticate(keyed_params[:'client_id'],
+                     nil,
+                     keyed_params[:'client_secret'],
+                     keyed_params[:'grant_type'])
+      else
+        json_error(400, 'Bad request')
   end
 
   post '/authorize' do
@@ -208,7 +224,7 @@ class Keycloak < Sinatra::Application
       puts "RESULT", result
       case result
         when false
-          halt 403, val_res
+          json_error(401, 'Token not active')
         else
           # continue
       end
@@ -238,10 +254,10 @@ class Keycloak < Sinatra::Application
       result = is_active?(res)
       puts "RESULT", result
       case result
-        when true
-          # continue
+        when false
+          json_error(401, 'Token not active')
         else
-          halt 400, res
+          # continue
       end
     else
       halt 400, res
@@ -273,10 +289,10 @@ class Keycloak < Sinatra::Application
       result = is_active?(res)
       puts "RESULT", result
       case result
-        when true
-          # continue
+        when false
+          json_error(401, 'Token not active')
         else
-          halt 400, res
+          # continue
       end
     else
       halt 400, res

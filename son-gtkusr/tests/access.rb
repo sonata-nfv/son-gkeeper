@@ -26,9 +26,9 @@ def adminbased()
   url = URI('http://' + @@address.to_s + ':' + @port.to_s + '/' + @uri.to_s + '/realms/master/protocol/openid-connect/token')
 
   res = Net::HTTP.post_form(url, 'client_id' => @client_name, 'client_secret' => @client_secret,
-#                            'username' => "user",
-#                            'password' => "1234",
-                            'grant_type' => "client_credentials")
+                            'username' => "admin",
+                            'password' => "admin",
+                            'grant_type' => "password")
 
   if res.body['access_token']
     parsed_res, code = parse_json(res.body)
@@ -100,6 +100,7 @@ def clientbased
     # {"access_token":"eyJhbGciOiJSUzI1NiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICIyRG1CZm1UaEJEa3NmNElMWVFnVEpSVmNRMDZJWEZYdWNOMzhVWk1rQ0cwIn0.eyJqdGkiOiJjYzY3MmUzYS1mZTVkLTQ4YjItOTQ4My01ZTYxZDNiNGJjMGEiLCJleHAiOjE0NzY0NDQ1OTAsIm5iZiI6MCwiaWF0IjoxNDc2NDQ0MjkwLCJpc3MiOiJodHRwOi8vbG9jYWxob3N0OjgwODEvYXV0aC9yZWFsbXMvU09OQVRBIiwiYXVkIjoiYWRtaW4tY2xpIiwic3ViIjoiYjFiY2M4YmQtOTJhMy00N2RkLTliOGUtZDY3NGQ2ZTU0ZjJjIiwidHlwIjoiQmVhcmVyIiwiYXpwIjoiYWRtaW4tY2xpIiwiYXV0aF90aW1lIjowLCJzZXNzaW9uX3N0YXRlIjoiNTkwYzlhNGUtYzljNC00OTU1LTg1NDAtYTViOTM2ODM5NjEzIiwiYWNyIjoiMSIsImNsaWVudF9zZXNzaW9uIjoiYjhkODI4ZjAtNWQ3Yy00NjI4LWEzOTEtNGQwNTY0MDNkNTRjIiwiYWxsb3dlZC1vcmlnaW5zIjpbXSwicmVzb3VyY2VfYWNjZXNzIjp7fSwibmFtZSI6InNvbmF0YSB1c2VyIHNvbmF0YSB1c2VyIiwicHJlZmVycmVkX3VzZXJuYW1lIjoidXNlcjEiLCJnaXZlbl9uYW1lIjoic29uYXRhIHVzZXIiLCJmYW1pbHlfbmFtZSI6InNvbmF0YSB1c2VyIiwiZW1haWwiOiJzb25hdGF1c2VyQHNvbmF0YS5uZXQifQ.T_GB_kBtZk-gmFNJ5rC2sJpNl4V3TUyhixq76hOi5MbgDbo_FfuKRomxviAeQi-RdJPIEffdzrVmaYXZVQHufpaYx9p90GQd3THQWMyZD50zMY40j-XlungaGKjizWNxaywvGXBMvDE_qYp0hr4Uewm4evO_NRRI1bWQLeaeJ3oHr1_p9vFZf5Kh8tZYR-dQSWuESvHhZrJAqHTzXlYYMRBqfjDyAgUhm8QbbtmDtPr0kkkIh1TmXevkZbm91mrS-9jWrS4zGZE5LiT5KdWnMs9P8FBR1p3vywwIu_z-0MF8_DIMJWa7ApZAXjtrszXAYVfCKsaisjjD9HacgpE-4w","expires_in":300,"refresh_expires_in":1800,"refresh_token":"eyJhbGciOiJSUzI1NiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICIyRG1CZm1UaEJEa3NmNElMWVFnVEpSVmNRMDZJWEZYdWNOMzhVWk1rQ0cwIn0.eyJqdGkiOiIyOTRmZjc5Yy01ZWIxLTQwNDgtYmM1NS03NjcwOGU1Njg1YzMiLCJleHAiOjE0NzY0NDYwOTAsIm5iZiI6MCwiaWF0IjoxNDc2NDQ0MjkwLCJpc3MiOiJodHRwOi8vbG9jYWxob3N0OjgwODEvYXV0aC9yZWFsbXMvU09OQVRBIiwiYXVkIjoiYWRtaW4tY2xpIiwic3ViIjoiYjFiY2M4YmQtOTJhMy00N2RkLTliOGUtZDY3NGQ2ZTU0ZjJjIiwidHlwIjoiUmVmcmVzaCIsImF6cCI6ImFkbWluLWNsaSIsImF1dGhfdGltZSI6MCwic2Vzc2lvbl9zdGF0ZSI6IjU5MGM5YTRlLWM5YzQtNDk1NS04NTQwLWE1YjkzNjgzOTYxMyIsImNsaWVudF9zZXNzaW9uIjoiYjhkODI4ZjAtNWQ3Yy00NjI4LWEzOTEtNGQwNTY0MDNkNTRjIiwicmVzb3VyY2VfYWNjZXNzIjp7fX0.WGHvTiVc08xuVCDM5YLlvIzvBgz0aJ3OY3-VGmKSyI-fDLfbp9LSLkPsIqiKO9mDjybSfEkrNmPBd60lWecUC43DacVhVbiLEU9cJdMnjQjrU0P3wg1HFQmcG8exylJMzWoAbJzm893SP-kgKVYCnbQ55Os1-oT1ClHr3Ts6BHVgz5FWrc3dk6DqOrGAxmoJLQUgNJ5jdF-udt-j81OcBTtC3b-RXFXlRu3AyJ0p-UPiu4_HkKBVdg0pmycuN0v0it-TxR_mlM9lhvdVMGXLD9_-PUgklfc6XisdCrGa_b9r06aQCiekXGWptLoFF1Oz__g2_v4Gsrzla5YKBZzGfA","token_type":"bearer","id_token":"eyJhbGciOiJSUzI1NiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICIyRG1CZm1UaEJEa3NmNElMWVFnVEpSVmNRMDZJWEZYdWNOMzhVWk1rQ0cwIn0.eyJqdGkiOiI5NWVmMGY0Yi1lODIyLTQwMTAtYWU1NS05N2YyYTEzZWViMzkiLCJleHAiOjE0NzY0NDQ1OTAsIm5iZiI6MCwiaWF0IjoxNDc2NDQ0MjkwLCJpc3MiOiJodHRwOi8vbG9jYWxob3N0OjgwODEvYXV0aC9yZWFsbXMvU09OQVRBIiwiYXVkIjoiYWRtaW4tY2xpIiwic3ViIjoiYjFiY2M4YmQtOTJhMy00N2RkLTliOGUtZDY3NGQ2ZTU0ZjJjIiwidHlwIjoiSUQiLCJhenAiOiJhZG1pbi1jbGkiLCJhdXRoX3RpbWUiOjAsInNlc3Npb25fc3RhdGUiOiI1OTBjOWE0ZS1jOWM0LTQ5NTUtODU0MC1hNWI5MzY4Mzk2MTMiLCJhY3IiOiIxIiwibmFtZSI6InNvbmF0YSB1c2VyIHNvbmF0YSB1c2VyIiwicHJlZmVycmVkX3VzZXJuYW1lIjoidXNlcjEiLCJnaXZlbl9uYW1lIjoic29uYXRhIHVzZXIiLCJmYW1pbHlfbmFtZSI6InNvbmF0YSB1c2VyIiwiZW1haWwiOiJzb25hdGF1c2VyQHNvbmF0YS5uZXQifQ.FrwYdv1S8mqivHjsyA93ycl10z2tisVJraUGcBJzle060nCO69ZEa0fzrMMCbSkjY1JAwjP92d7_ixuWpcUVvQLkesxKOgcBc8LVhClyh3__8p46kIwfrJYMZQt0cJ6f6nASX1yaySE9sDgl3ElkW0vz-i9vhEXkIh6m-EuC7lH0ZIIL-39-occssq7G5hDleDUMThno8sEsl8rgtV-GdAfjKIwi-yOB0X8K1RrfDarccwA3XB0R8nHAbInZGsrF114KsBuaEvWjKki4m86xFkfPPuSlvWaVRtCziiTBqrBZ_Qna6wI9FfAOiTzPXE5AfFtDowih6d-26kT_jd_7GA","not-before-policy":0,"session_state":"590c9a4e-c9c4-4955-8540-a5b936839613"}
 
     parsed_res, code = parse_json(res.body)
+    puts "JWT", parsed_res
     @access_token = parsed_res['access_token']
     puts "ACCESS_TOKEN RECEIVED", parsed_res['access_token']
     parsed_res['access_token']
@@ -292,8 +293,12 @@ def register_client (token, keycloak_pub_key)
   #request = Net::HTTP::Get.new(url.to_s)
   request["authorization"] = 'bearer ' + token
   request["content-type"] = 'application/json'
-  body = {"client_name" => "myclient",
-          "client_secret" => "1234-admin"}
+  body = {#"client_id" => "myclient",
+          "client_name" => "myclient",
+          "client_secret" => "1234-admin",
+          #"directAccessGrantsEnabled" => true,
+          #"serviceAccountsEnabled" => true
+  }
 
   request.body = body.to_json
 
@@ -301,10 +306,57 @@ def register_client (token, keycloak_pub_key)
   puts "RESPONSE", response.read_body
   response_json = parse_json(response.read_body)[0]
 
+  puts "PARSED", response_json
+
   @reg_uri = response_json['registration_client_uri']
   @reg_token = response_json['registration_access_token']
   @reg_id = response_json['client_id']
   @reg_secret = response_json['client_secret']
+  response_json
+end
+
+def register_client_bis (token, keycloak_pub_key)
+  #puts "TEST ACCESS_TOKEN", token
+  #decode_token(token, keycloak_pub_key)
+  # url = URI("http://localhost:8081/auth/realms/master/clients-registrations/openid-connect/")
+  url = URI("http://localhost:8081/auth/admin/realms/master/clients")
+  http = Net::HTTP.new(url.host, url.port)
+  request = Net::HTTP::Post.new(url.to_s)
+  request["authorization"] = 'Bearer ' + token
+  request["content-type"] = 'application/json'
+
+  body = {
+      "clientId": "myclient",
+      "surrogateAuthRequired": false,
+      "enabled": true,
+      "clientAuthenticatorType": "client-secret",
+      "secret": "1234",
+      "redirectUris": [
+          "/auth/myclient"
+      ],
+      "webOrigins": [],
+      "notBefore": 0,
+      "bearerOnly": false,
+      "consentRequired": false,
+      "standardFlowEnabled": true,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": true,
+      "serviceAccountsEnabled": true,
+      "publicClient": false,
+      "frontchannelLogout": false,
+      "protocol": "openid-connect",
+      "fullScopeAllowed": false
+  }
+
+
+  request.body = body.to_json
+  response = http.request(request)
+  puts "CODE", response.code
+  puts "BODY", response.body
+  response_json = parse_json(response.read_body)[0]
+
+  #puts "PARSED", response_json
+  response_json
 end
 
 def register_user(token) #, username,firstname, lastname, email, credentials)
@@ -483,7 +535,10 @@ def regenerate_client_secret()
 end
 
 def full_token()
-  jwt = {"access_token": "eyJhbGciOiJSUzI1NiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICJqZjQ3WXlHSzQ3VUprLXJ1cUk5RV9IaDhsNS1heHFrMzkxX0NpUUhmTm9nIn0.eyJqdGkiOiJjNzVhNDRjZi0yYTY3LTQwOTAtOWEyNC0zYWMxOWI2YWZlMDIiLCJleHAiOjE0ODc2NTM4MzUsIm5iZiI6MCwiaWF0IjoxNDg3NTk5ODM1LCJpc3MiOiJodHRwOi8vbG9jYWxob3N0OjgwODEvYXV0aC9yZWFsbXMvbWFzdGVyIiwiYXVkIjoiYWRhcHRlciIsInN1YiI6IjZlNWZkZTRjLWI0MWItNDYyNi04NTMwLTcxZGJjYzU1ZDNlMiIsInR5cCI6IkJlYXJlciIsImF6cCI6ImFkYXB0ZXIiLCJhdXRoX3RpbWUiOjAsInNlc3Npb25fc3RhdGUiOiJlNTVkZjA1Ni1iZjI0LTRiOWMtYTA1Yy0wZDIxMDVlYzAyYzciLCJhY3IiOiIxIiwiY2xpZW50X3Nlc3Npb24iOiIyNTQ2N2EzOC0xNmZiLTQ0NjEtYjIzZi1iMGYyMTZjZGQxYmMiLCJhbGxvd2VkLW9yaWdpbnMiOltdLCJyZXNvdXJjZV9hY2Nlc3MiOnt9LCJuYW1lIjoiIiwicHJlZmVycmVkX3VzZXJuYW1lIjoidmlzaXRvciIsInVzZXIiOnsiZ3Vlc3QiOiJ0cnVlIn19.BEw6JJMNjy6bgg5nfXTuE7newIcrNy5xlj4QB0lIgfZQPqD9Ts7QuRXL5hB_WyAz7Bmamj1p6f4kZrsANXDHVvNGPAnHtyOWYiKGUcj0o5aHTQYjbwmYDHA13qotDPJKtre1vKU9ugpll6xdvsujl3A3HGglK843XV6RpgB2yz-ULu-jGA4vGDnHJokmjio1Z0uZJSW1M9dWWXew1YZ1P2CvNOiPGY5WTWpREh7QdNn3rMB6z5MRnGhwkmwsBgrev6TeI_B_Sq-xY1ECG8NtBAChUmBUBAzG9K_jIDGJ2J0SzVtOVxMKnTMAXKfypvDEzt3tkyBDqaTeqEr8Ux2bng","expires_in":54000,"refresh_expires_in":1800,"refresh_token":"eyJhbGciOiJSUzI1NiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICJqZjQ3WXlHSzQ3VUprLXJ1cUk5RV9IaDhsNS1heHFrMzkxX0NpUUhmTm9nIn0.eyJqdGkiOiJmZDNhYzBkOS1jNjFlLTQ2MzctYjFlNy1iOWY5MWNmMWIzN2UiLCJleHAiOjE0ODc2MDE2MzUsIm5iZiI6MCwiaWF0IjoxNDg3NTk5ODM1LCJpc3MiOiJodHRwOi8vbG9jYWxob3N0OjgwODEvYXV0aC9yZWFsbXMvbWFzdGVyIiwiYXVkIjoiYWRhcHRlciIsInN1YiI6IjZlNWZkZTRjLWI0MWItNDYyNi04NTMwLTcxZGJjYzU1ZDNlMiIsInR5cCI6IlJlZnJlc2giLCJhenAiOiJhZGFwdGVyIiwiYXV0aF90aW1lIjowLCJzZXNzaW9uX3N0YXRlIjoiZTU1ZGYwNTYtYmYyNC00YjljLWEwNWMtMGQyMTA1ZWMwMmM3IiwiY2xpZW50X3Nlc3Npb24iOiIyNTQ2N2EzOC0xNmZiLTQ0NjEtYjIzZi1iMGYyMTZjZGQxYmMiLCJyZXNvdXJjZV9hY2Nlc3MiOnt9fQ.RGtxFSYCXQ2FatwqpStVEHBsLNSWdTOzCm9iQs_smAfxY24mPeKy1Wz604VqCY1xgw67tu9sml0yetMjxqcQU_BRg3Le90NbUOocaGb8SRdGwXQ0xNoNze7F7Tbq1g5lBtcczFivfvq5QuW8AzlCjHqThfZgPpMVOOZa66mq6X-OYvyY27RRcLMmodeDAmHICfGJmghAMLhfPxSijqgqyBnW0ydPj9CRzwBO_lBfr9eS27Cm_4LTJcazYZGKxuuMkSHui00SBAp5VOZH75zsJGq2N8PcVe890B5HL__TkESY0kmNDxwSKBmCt2wJacuGa8p4StCJ3fOkVV-kkHY2aw","token_type":"bearer","id_token":"eyJhbGciOiJSUzI1NiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICJqZjQ3WXlHSzQ3VUprLXJ1cUk5RV9IaDhsNS1heHFrMzkxX0NpUUhmTm9nIn0.eyJqdGkiOiJhZjA3Y2ZiZC05ZjkzLTRiY2UtYTk5ZC01MjFiZmQ3YzcyYjUiLCJleHAiOjE0ODc2NTM4MzUsIm5iZiI6MCwiaWF0IjoxNDg3NTk5ODM1LCJpc3MiOiJodHRwOi8vbG9jYWxob3N0OjgwODEvYXV0aC9yZWFsbXMvbWFzdGVyIiwiYXVkIjoiYWRhcHRlciIsInN1YiI6IjZlNWZkZTRjLWI0MWItNDYyNi04NTMwLTcxZGJjYzU1ZDNlMiIsInR5cCI6IklEIiwiYXpwIjoiYWRhcHRlciIsImF1dGhfdGltZSI6MCwic2Vzc2lvbl9zdGF0ZSI6ImU1NWRmMDU2LWJmMjQtNGI5Yy1hMDVjLTBkMjEwNWVjMDJjNyIsImFjciI6IjEiLCJuYW1lIjoiIiwicHJlZmVycmVkX3VzZXJuYW1lIjoidmlzaXRvciJ9.cysxtrDJCDv65kgKZXSgyGZCKodck3FnIbM8FMK2LcA1tLkPNlpTVk3Q0bKRW0PkXRU_CGxjO7AuFVCTRCN9pIBEP1db-sRip3W4kDO0LRsmtIZVrrDQ0SGdnDL4LrK8bbS3FZEQ_GNhmzNYegVlk9jIhypOt35ZdILUyOaG-2TOv2TJDIDIXvNGvXEpt75azlIJTmjxSU00l6qzDtHTh-3gyg06O2sLPxLcvY_JCdu8VUJE2UCilBMiLZBTuucXhlj1m596FOS5NYATZfppYsJQV8Jp6DMs_d5VtLVI7oJDCKBNTsVMyL_WrH_1WRu-iVZdFQ7r13zJs_fvFaBMAg","not-before-policy":1487259727,"session_state":"e55df056-bf24-4b9c-a05c-0d2105ec02c7"}
+  jwt = {"access_token":"eyJhbGciOiJSUzI1NiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICJqZjQ3WXlHSzQ3VUprLXJ1cUk5RV9IaDhsNS1heHFrMzkxX0NpUUhmTm9nIn0.eyJqdGkiOiJkY2QyODMwMi02Y2VmLTRhYzktYmI0MC1lZjIwODBhMDQ2YjUiLCJleHAiOjE0ODc5MDIyNjAsIm5iZiI6MCwiaWF0IjoxNDg3ODQ4MjYwLCJpc3MiOiJodHRwOi8vbG9jYWxob3N0OjgwODEvYXV0aC9yZWFsbXMvbWFzdGVyIiwiYXVkIjoiYWRhcHRlciIsInN1YiI6ImUyZjdjN2IwLTY4YmEtNDE5NC04N2M5LWU0MmRiYzQyMmZiZCIsInR5cCI6IkJlYXJlciIsImF6cCI6ImFkYXB0ZXIiLCJhdXRoX3RpbWUiOjAsInNlc3Npb25fc3RhdGUiOiI0ZmM1ZWUwNS1hNDczLTRjMjQtYWY4ZC1kZTMyMWYxZDA5MTciLCJhY3IiOiIxIiwiY2xpZW50X3Nlc3Npb24iOiI0MDFlMzkzOC00MDE1LTQ4MjgtYjUzMS0zMzM4NmY0MTk4MDMiLCJhbGxvd2VkLW9yaWdpbnMiOltdLCJyZWFsbV9hY2Nlc3MiOnsicm9sZXMiOlsiY3JlYXRlLXJlYWxtIiwiYWRtaW4iLCJ1bWFfYXV0aG9yaXphdGlvbiJdfSwicmVzb3VyY2VfYWNjZXNzIjp7Im1hc3Rlci1yZWFsbSI6eyJyb2xlcyI6WyJ2aWV3LWlkZW50aXR5LXByb3ZpZGVycyIsInZpZXctcmVhbG0iLCJtYW5hZ2UtaWRlbnRpdHktcHJvdmlkZXJzIiwiaW1wZXJzb25hdGlvbiIsImNyZWF0ZS1jbGllbnQiLCJtYW5hZ2UtdXNlcnMiLCJ2aWV3LWF1dGhvcml6YXRpb24iLCJtYW5hZ2UtZXZlbnRzIiwibWFuYWdlLXJlYWxtIiwidmlldy1ldmVudHMiLCJ2aWV3LXVzZXJzIiwidmlldy1jbGllbnRzIiwibWFuYWdlLWF1dGhvcml6YXRpb24iLCJtYW5hZ2UtY2xpZW50cyJdfSwiYWNjb3VudCI6eyJyb2xlcyI6WyJtYW5hZ2UtYWNjb3VudCIsInZpZXctcHJvZmlsZSJdfX0sIm5hbWUiOiIiLCJwcmVmZXJyZWRfdXNlcm5hbWUiOiJhZG1pbiJ9.I2Thu0T57wdjQxh_nnBSgn-X5t_mlcV0Y4B3R7Vr_BSXjCCWMfyB80KWD5QydYb1TRd-QwqQQRuZBGqeWuwST6oj2YThpAwuZZFvNQgVuK0_4PaXxN1iTPSfKx4p0LrQD2eqZqAnyumEuuM1Vm_xNGIHOhF5rtbpgHiznapq13UdWxGFx1YQd3jwibxSSDdiVEiiHSeSv3Ez8DUgExQuXRW7P7cOVbv4NcB9VWElO_Ut9k9mxJ7VK2oVxz1PnkoB-1wJybiZ-kIB7bCDlkBLyEgOxgW3d5GN4Pbc6l0doaolWkW6XFiFzf7WIz-Mk-sngTdRMFDWVp6GpJvOf0B1Eg","expires_in":54000,"refresh_expires_in":1800,"refresh_token":"eyJhbGciOiJSUzI1NiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICJqZjQ3WXlHSzQ3VUprLXJ1cUk5RV9IaDhsNS1heHFrMzkxX0NpUUhmTm9nIn0.eyJqdGkiOiI2YjM5YTIwZC1lNTU0LTQ1MTUtYWUxNC1hMDExMDdjMjRkZjIiLCJleHAiOjE0ODc4NTAwNjAsIm5iZiI6MCwiaWF0IjoxNDg3ODQ4MjYwLCJpc3MiOiJodHRwOi8vbG9jYWxob3N0OjgwODEvYXV0aC9yZWFsbXMvbWFzdGVyIiwiYXVkIjoiYWRhcHRlciIsInN1YiI6ImUyZjdjN2IwLTY4YmEtNDE5NC04N2M5LWU0MmRiYzQyMmZiZCIsInR5cCI6IlJlZnJlc2giLCJhenAiOiJhZGFwdGVyIiwiYXV0aF90aW1lIjowLCJzZXNzaW9uX3N0YXRlIjoiNGZjNWVlMDUtYTQ3My00YzI0LWFmOGQtZGUzMjFmMWQwOTE3IiwiY2xpZW50X3Nlc3Npb24iOiI0MDFlMzkzOC00MDE1LTQ4MjgtYjUzMS0zMzM4NmY0MTk4MDMiLCJyZWFsbV9hY2Nlc3MiOnsicm9sZXMiOlsiY3JlYXRlLXJlYWxtIiwiYWRtaW4iLCJ1bWFfYXV0aG9yaXphdGlvbiJdfSwicmVzb3VyY2VfYWNjZXNzIjp7Im1hc3Rlci1yZWFsbSI6eyJyb2xlcyI6WyJ2aWV3LWlkZW50aXR5LXByb3ZpZGVycyIsInZpZXctcmVhbG0iLCJtYW5hZ2UtaWRlbnRpdHktcHJvdmlkZXJzIiwiaW1wZXJzb25hdGlvbiIsImNyZWF0ZS1jbGllbnQiLCJtYW5hZ2UtdXNlcnMiLCJ2aWV3LWF1dGhvcml6YXRpb24iLCJtYW5hZ2UtZXZlbnRzIiwibWFuYWdlLXJlYWxtIiwidmlldy1ldmVudHMiLCJ2aWV3LXVzZXJzIiwidmlldy1jbGllbnRzIiwibWFuYWdlLWF1dGhvcml6YXRpb24iLCJtYW5hZ2UtY2xpZW50cyJdfSwiYWNjb3VudCI6eyJyb2xlcyI6WyJtYW5hZ2UtYWNjb3VudCIsInZpZXctcHJvZmlsZSJdfX19.ZoZFEBlyRMH51qA9S4DCQBtmc8Uq_Q8CGgwxqYK_HBT3TD8peNK4RZynyvSN0iIPlycKFXxJk87-iFc6vD3jNwIjgMSdEcrJEkvKG6y5ZkCTnMZOnSubTdLD2ajbh4N5D06eXEos-ZV_TZbU5x8BDfCLylAUPZtZXQc0cy454JuVcw9Ck49WhjrbFHMZtCBD27tqMW-juHr4-SiiDKcPO7pYBvgWP4BQwlohbZfVIQ-VnS4fEoOXzzrDqf7gFGr0NXox1K-tFh4YJIGujcaqmZfkCDr-UtqWJ3pRS-AmUo-pcLOfrCVk7Tw-SuUuoie6_HUTa41iDqriQZzrTUCVkA","token_type":"bearer","id_token":"eyJhbGciOiJSUzI1NiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICJqZjQ3WXlHSzQ3VUprLXJ1cUk5RV9IaDhsNS1heHFrMzkxX0NpUUhmTm9nIn0.eyJqdGkiOiI0NTE5OTYwNy0xMzgxLTQ2YjctYjkzNS1lZDQ5MTI2OGVlOWEiLCJleHAiOjE0ODc5MDIyNjAsIm5iZiI6MCwiaWF0IjoxNDg3ODQ4MjYwLCJpc3MiOiJodHRwOi8vbG9jYWxob3N0OjgwODEvYXV0aC9yZWFsbXMvbWFzdGVyIiwiYXVkIjoiYWRhcHRlciIsInN1YiI6ImUyZjdjN2IwLTY4YmEtNDE5NC04N2M5LWU0MmRiYzQyMmZiZCIsInR5cCI6IklEIiwiYXpwIjoiYWRhcHRlciIsImF1dGhfdGltZSI6MCwic2Vzc2lvbl9zdGF0ZSI6IjRmYzVlZTA1LWE0NzMtNGMyNC1hZjhkLWRlMzIxZjFkMDkxNyIsImFjciI6IjEiLCJuYW1lIjoiIiwicHJlZmVycmVkX3VzZXJuYW1lIjoiYWRtaW4ifQ.TQr3t41wKxmsnCFw2Mf_ZAuKztKbjW042PJoUfRb4xbkuZbtVTF8G69bM9ShefQ93zl8m5uqZRFTsjucuPYgSfpA2XmLQ7T1kw8jbNQOExoJ-S3jrqVBOHeBe999RD5rbxZC4Gjj8rBtlfXsD2u_RG_XhkNyY0njn6D7eeBDTWDKihpi2peRhbT7z5-hIYfjBrSAhdogCLWq2Z-MD4Kh6Vq7TO07F7SWSDDvJn2KoswS02FYXCqTE4GPTTiwNCi_tZcr45hBzTMal7SKlZrzCUZg_X2sKxXY-5RanzNY4KH_fznFCGslmWr6I0g2W0k5-RAZTydyLnyD5bblPiEyHw","not-before-policy":1487259727,"session_state":"4fc5ee05-a473-4c24-af8d-de321f1d0917"}
+
+
+
 
   keycloak_config = JSON.parse(File.read('../config/keycloak.json'))
   @s = "-----BEGIN PUBLIC KEY-----\n"
@@ -530,9 +585,58 @@ def get_role_details(token)
   p "RESPONSE_PARSED", parsed_res["description"].split(",")
 end
 
+def get_users(token)
+  #url = /admin/realms/{realm}/users
+  url = URI("http://localhost:8081/auth/admin/realms/master/users")
+  http = Net::HTTP.new(url.host, url.port)
+  request = Net::HTTP::Get.new(url.to_s)
+  request["authorization"] = 'bearer ' + token
 
+  response = http.request(request)
+  p "CODE", response.code
+  p "RESPONSE", response.body
 
+  parsed_res, code = parse_json(response.body)
+end
 
+def client_access(token, registration)
+  #"client_id"
+  #"client_secret"
+  uri = registration["registration_client_uri"]
+  puts "URI", uri
+
+  url = URI(uri.to_s)
+  #url = URI("http://localhost:8081/auth/realms/master/protocol/openid-connect/token")
+  http = Net::HTTP.new(url.host, url.port)
+  request = Net::HTTP::Get.new(url.to_s)
+  request["authorization"] = 'Bearer ' + registration["registration_access_token"]
+  #request["content-type"] = 'application/x-www-form-urlencoded'
+
+  #request.set_form_data({'client_id' => registration["client_id"],
+  #                       'client_secret' => registration["client_secret"],
+  #                       #'grant_type' => registration["grant_types"][0]})
+  #                       'grant_type' => "client_credentials"})
+
+  response = http.request(request)
+  puts "CODE", response.code
+  puts "ACCESS TOKEN RECEIVED: ", response.read_body
+  parsed_res, code = parse_json(response.body)
+end
+
+def service_user(token)
+  #GET /admin/realms/{realm}/clients/{id}/service-account-user
+  #url = /admin/realms/{realm}/users
+  url = URI("http://localhost:8081/auth/admin/realms/master/clients/200f485d-ca5c-4371-8967-603a4ac6ffd0/service-account-user")
+  http = Net::HTTP.new(url.host, url.port)
+  request = Net::HTTP::Get.new(url.to_s)
+  request["authorization"] = 'bearer ' + token
+
+  response = http.request(request)
+  p "CODE", response.code
+  p "RESPONSE", response.body
+
+  parsed_res, code = parse_json(response.body)
+end
 
 =begin
 "grant_types_supported":["authorization_code","implicit","refresh_token","password","client_credentials"]
@@ -553,7 +657,7 @@ end
 =end
 
 #token = userbased
-#token = clientbased
+token = clientbased
 #token = adminbased
 #pub = get_public_key
 #token_validation(token)
@@ -561,7 +665,11 @@ end
 #authenticate(token)
 # userinfo(token)
 #decode_token(token, pub)
-# register_client(token, pub)
+#registration = register_client(token, pub)
+#register_client_bis(token, pub)
+#puts "TOKEN", registration["registration_access_token"]
+#decode_token(registration["registration_access_token"], pub)
+#client_access(token, registration)
 #token2 = login_user_bis(token)
 #sleep(3)
 #logout_user(token,)
@@ -575,10 +683,12 @@ end
 #set_Keycloak_config
 #get_inst_file
 #get_client_secret
-full_token
+#full_token
 # get_role_details(token)
 # authorize_browser
 #authorize(token)
+#get_users(token)
+#service_user(token)
 
 
 =begin
