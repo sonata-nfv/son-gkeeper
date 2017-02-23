@@ -10,9 +10,11 @@ services:
     #links:
     #  - keycloak
     environment:
-      - KEYCLOAK_ADDRESS=sonata.i2cat.net
+      - KEYCLOAK_ADDRESS=keycloak
       - KEYCLOAK_PORT=8080
       - KEYCLOAK_PATH=auth
+      - SONATA_REALM = "sonata"
+      - CLIENT_NAME = "adapter"
     container_name: sonata-gk-usr
   keycloak:
     build:

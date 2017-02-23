@@ -5,7 +5,7 @@ KEYCLOAK_PORT=8080
 KEYCLOAK_USER=admin
 KEYCLOAK_PASSWORD=admin
 KEYCLOAK_URL=http://localhost:$KEYCLOAK_PORT
-ADAPTER_URL=http://adapter:4021/keycloak/config
+ADAPTER_URL=http://adapter:4021/api/v1/config
 
 # Param: $1 = realm name
 function create_realm() {

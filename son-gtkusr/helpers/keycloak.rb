@@ -4,6 +4,8 @@ require 'yaml'
 require 'net/http'
 require 'base64'
 require 'jwt'
+require 'resolv'
+
 # require 'openssl'
 
 def parse_json(message)
@@ -21,16 +23,17 @@ class Keycloak < Sinatra::Application
 
   # logger.info "Adapter: Starting configuration"
   # Load configurations
-  keycloak_config = YAML.load_file 'config/keycloak.yml'
+  #keycloak_config = YAML.load_file 'config/keycloak.yml'
+
+  ## Get the ip of keycloak. Only works for docker-compose
+  @@address = Resolv::DNS.new.getaddress("keycloak")
 
   # p keycloak_config
   # p "ISSUER", ENV['JWT_ISSUER']
-  @@address = keycloak_config['address']
-  @@port = keycloak_config['port']
-  @@uri = keycloak_config['uri']
-  @@realm_name = keycloak_config['realm']
-  @@client_name = keycloak_config['client']
-  @@client_secret = keycloak_config['secret']
+  @@port = ENV['KEYCLOAK_PORT']
+  @@uri = ENV['KEYCLOAK_PATH']
+  @@realm_name = ENV['SONATA_REALM']
+  @@client_name = ENV['CLIENT_NAME']
 
   def self.get_oidc_endpoints
     # Call http://localhost:8081/auth/realms/master/.well-known/openid-configuration to obtain endpoints

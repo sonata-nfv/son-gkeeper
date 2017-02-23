@@ -33,6 +33,4 @@ require File.expand_path '../gtk_usr.rb', __FILE__
 run Rack::URLMap.new({
                          '/admin' => Adapter,
                          '/api/v1' => Keycloak,
-                         '/keycloak/config' => KeyCloakListener,
-                         # '/tests' => SecuredAPI
                      })
