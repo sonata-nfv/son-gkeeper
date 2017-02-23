@@ -8,6 +8,7 @@ The configuration of the Gatekeeper's KPI Management micro-service is done mostl
 
 * `PUSHGATEWAY_HOST` : the prometheus host where is deployed the pushgateway component
 * `PUSHGATEWAY_PORT` : the port used by the prometheus' pushgateway componentpost
+* `PROMETHEUS_PORT`  : the port used by prometheus
 
 ## Usage
 To use this application, we write
