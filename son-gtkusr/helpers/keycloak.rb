@@ -289,16 +289,16 @@ class Keycloak < Sinatra::Application
   end
 
   # "registration_endpoint":"http://localhost:8081/auth/realms/master/clients-registrations/openid-connect"
-  def register_client (token, keycloak_pub_key, client_object=nil)
+  def register_client (client_object)
     #puts "TEST ACCESS_TOKEN", token
     #decode_token(token, keycloak_pub_key)
     # url = URI("http://localhost:8081/auth/realms/master/clients-registrations/openid-connect/")
     url = URI("http://localhost:8081/auth/admin/realms/master/clients")
     http = Net::HTTP.new(url.host, url.port)
     request = Net::HTTP::Post.new(url.to_s)
-    request["authorization"] = 'Bearer ' + token
+    request["authorization"] = 'Bearer ' + @@access_token
     request["content-type"] = 'application/json'
-
+=begin
     body = {
         "clientId": "myclient",
         "surrogateAuthRequired": false,
@@ -321,15 +321,17 @@ class Keycloak < Sinatra::Application
         "protocol": "openid-connect",
         "fullScopeAllowed": false
     }
+=end
+    #body.to_json
 
-    request.body = body.to_json #client_object.to_json
+    request.body = client_object #.to_json
     response = http.request(request)
     puts "CODE", response.code
     puts "BODY", response.body
     response_json = parse_json(response.read_body)[0]
 
     #puts "PARSED", response_json
-    response_json
+    halt response.code.to_i
   end
 
   # "token_endpoint":"http://localhost:8081/auth/realms/master/protocol/openid-connect/token"
@@ -425,13 +427,15 @@ class Keycloak < Sinatra::Application
 
   # "token_endpoint":"http://localhost:8081/auth/realms/master/protocol/openid-connect/token"
   def login_client(client_id, client_secret)
+    url = URI("http://#{@@address.to_s}:#{@@port.to_s}/#{@@uri.to_s}/realms/#{@@realm_name}/protocol/openid-connect/token")
+    http = Net::HTTP.new(url.host, url.port)
+    request = Net::HTTP::Post.new(url.to_s)
+    request["authorization"] = 'Bearer ' + @@access_token
+    request["content-type"] = 'application/x-www-form-urlencoded'
 
-    http_path = "http://localhost:8081/auth/realms/master/protocol/openid-connect/token"
-    uri = URI(http_path)
-    res = Net::HTTP.post_form(uri, 'client_id' => client_id,
-                              'client_secret' => client_secret,
-                              'grant_type' => 'client_credentials'
-    )
+    request.set_form_data({'client_id' => client_id,
+                           'client_secret' => client_secret,
+                           'grant_type' => 'client_credentials'})
 
     puts "RES.HEADER: ", res.header
     puts "RES.BODY: ", res.body
@@ -442,7 +446,7 @@ class Keycloak < Sinatra::Application
       puts "ACCESS_TOKEN RECEIVED", parsed_res['access_token']
       parsed_res['access_token']
     else
-      401
+      halt 401
     end
   end
 
@@ -632,6 +636,24 @@ class Keycloak < Sinatra::Application
 
     response = http.request(request)
     #p "RESPONSE.read_body", response.read_body
+    p "CODE", response.code
+    parsed_res, code = parse_json(response.body)
+    p "RESPONSE_PARSED", parsed_res
+    parsed_res
+  end
+
+  def get_users(keyed_query)
+    #TODO: FINISH THIS!
+    #Get all users for the realm
+    keyed_query?
+    query = ''
+    uri = "http://#{@@address.to_s}:#{@@port.to_s}/#{@@uri.to_s}/admin/realms/#{@@realm_name}/users?" + query
+    url = URI(uri)
+    http = Net::HTTP.new(url.host, url.port)
+    request = Net::HTTP::Get.new(url.to_s)
+    request["authorization"] = 'Bearer ' + @@access_token
+
+    response = http.request(request)
     p "CODE", response.code
     parsed_res, code = parse_json(response.body)
     p "RESPONSE_PARSED", parsed_res

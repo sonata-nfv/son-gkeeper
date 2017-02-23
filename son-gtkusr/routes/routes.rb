@@ -66,7 +66,7 @@ end
 
 # Adapter-Keycloak API class
 class Keycloak < Sinatra::Application
-  post '/register' do
+  post '/register/user' do
     # Return if content-type is not valid
     logger.info "Content-Type is " + request.media_type
     halt 415 unless (request.content_type == 'application/x-www-form-urlencoded' or request.content_type == 'application/json')
@@ -95,77 +95,69 @@ class Keycloak < Sinatra::Application
     register_user(@access_token, form) # user_params)
   end
 
-  post '/service-register' do
+  post '/register/service' do
     # Return if content-type is not valid
     logger.info "Content-Type is " + request.media_type
     halt 415 unless (request.content_type == 'application/x-www-form-urlencoded' or request.content_type == 'application/json')
     #payload?={"id":"123123","auth_code":"191331","required_amount":101,"timestamp":1407775713,"status":"completed","total_amount":101}
 
     # Compatibility support for YAML content-type
-    case request.content_type
-      when 'application/x-www-form-urlencoded'
+    #case request.content_type
+    #  when 'application/x-www-form-urlencoded'
         # Validate format
-        form_encoded, errors = request.body.read
-        halt 400, errors.to_json if errors
+    #    form_encoded, errors = request.body.read
+    #    halt 400, errors.to_json if errors
 
-        p "FORM PARAMS", form_encoded
-        form = Hash[URI.decode_www_form(form_encoded)]
+    #   p "FORM PARAMS", form_encoded
+    #   form = Hash[URI.decode_www_form(form_encoded)]
 
       # Validate Hash format
       #form, errors = validate_form(form)
       #halt 400, errors.to_json if errors
 
-      else
+    #  else
         # Compatibility support for JSON content-type
         # Parses and validates JSON format
-        form, errors = parse_json(request.body.read)
-        halt 400, errors.to_json if errors
-    end
-    register_user(@access_token, form) # user_params)
+    #    form, errors = parse_json(request.body.read)
+    #    halt 400, errors.to_json if errors
+    #end
+    client_form = request.body.read
+    register_client(client_form) # user_params)
   end
 
-  post '/login' do
-    logger.debug 'Adapter: entered POST /login'
+  post '/login/user' do
+    logger.debug 'Adapter: entered POST /login/user'
     # Return if Authorization is invalid
     halt 400 unless request.env["HTTP_AUTHORIZATION"]
 
-    # READ FROM AUTH ENV
     #p "@client_name", self.client_name
     #p "@client_secret", self.client_secret
-    user_pass = request.env["HTTP_AUTHORIZATION"].split(' ').last
-    plain_user_pass  = Base64.decode64(user_pass)
-
+    pass = request.env["HTTP_AUTHORIZATION"].split(' ').last
+    plain_pass  = Base64.decode64(pass)
 
     # puts "USER_PASS", user_pass
     # puts  "PLAIN", plain_user_pass.split(':').first
     # puts  "PLAIN", plain_user_pass.split(':').last
-    username = plain_user_pass.split(':').first # params[:username]
-    password = plain_user_pass.split(':').last # params[:password]
+    username = plain_pass.split(':').first # params[:username]
+    password = plain_pass.split(':').last # params[:password]
 
     credentials = {"type" => "password", "value" => password.to_s}
     login_user(username, credentials)
   end
 
-  post '/service-login' do
-    logger.debug 'Adapter: entered POST /login'
+  post '/login/service' do
+    logger.debug 'Adapter: entered POST /login/service'
     # Return if Authorization is invalid
     halt 400 unless request.env["HTTP_AUTHORIZATION"]
 
-    # READ FROM AUTH ENV
-    #p "@client_name", self.client_name
-    #p "@client_secret", self.client_secret
-    user_pass = request.env["HTTP_AUTHORIZATION"].split(' ').last
-    plain_user_pass  = Base64.decode64(user_pass)
+    pass = request.env["HTTP_AUTHORIZATION"].split(' ').last
+    plain_pass  = Base64.decode64(pass)
 
+    client_id = plain_pass.split(':').first
+    secret = plain_pass.split(':').last
 
-    # puts "USER_PASS", user_pass
-    # puts  "PLAIN", plain_user_pass.split(':').first
-    # puts  "PLAIN", plain_user_pass.split(':').last
-    username = plain_user_pass.split(':').first # params[:username]
-    password = plain_user_pass.split(':').last # params[:password]
-
-    credentials = {"type" => "password", "value" => password.to_s}
-    login_client(username, credentials)
+    credentials = {"type" => "client_credentials", "value" => secret.to_s}
+    login_client(client_id, credentials)
   end
 
   post '/authenticate' do
@@ -189,6 +181,7 @@ class Keycloak < Sinatra::Application
                      keyed_params[:'grant_type'])
       else
         json_error(400, 'Bad request')
+      end
   end
 
   post '/authorize' do
@@ -309,6 +302,29 @@ class Keycloak < Sinatra::Application
   post '/refresh' do
     #TODO:
   end
+
+  post '/users' do
+    logger.debug 'Adapter: entered POST /users'
+    # Return if Authorization is invalid
+    halt 400 unless request.env["HTTP_AUTHORIZATION"]
+    queriables = %w(search lastName firstName email username first max)
+
+    keyed_params = params
+
+    keyed_params.each { |k, v|
+      unless queriables.include? k
+        json_error(400, 'Bad query')
+      end
+    }
+
+    get_users(keyed_params)
+
+  end
+
+  post '/roles' do
+    #TODO:
+  end
+
 end
 
 =begin
