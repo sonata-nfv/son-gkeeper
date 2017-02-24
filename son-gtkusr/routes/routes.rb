@@ -135,7 +135,7 @@ class Keycloak < Sinatra::Application
     pass = request.env["HTTP_AUTHORIZATION"].split(' ').last
     plain_pass  = Base64.decode64(pass)
 
-    # puts "USER_PASS", user_pass
+    puts "USER_PASS", plain_pass
     # puts  "PLAIN", plain_user_pass.split(':').first
     # puts  "PLAIN", plain_user_pass.split(':').last
     username = plain_pass.split(':').first # params[:username]

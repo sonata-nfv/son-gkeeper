@@ -405,14 +405,16 @@ class Keycloak < Sinatra::Application
     #p "@client_name", @@client_name
     #p "@client_secret", @@client_secret
 
-    case credentials
-      when credentials['type'] == 'password'
+    case credentials['type']
+      when 'password'
+        puts "IS A PASSWORD"
         request.set_form_data({'client_id' => @@client_name,
                                'client_secret' => @@client_secret,
                                'username' => username.to_s,
                                'password' => credentials['value'],
                                'grant_type' => credentials['type']})
       else
+        puts "IS A CLIENT"
         request.set_form_data({'client_id' => username,
                                'client_secret' => credentials['value'],
                                'grant_type' => credentials['type']})
@@ -576,19 +578,24 @@ class Keycloak < Sinatra::Application
     end
   end
 
-  def refresh(token)
+  def refresh(token, credentials)
     #=> Check if token.expired?
+    # TODO:
+
     #=> Then GET new token
     url = URI("http://#{@@address.to_s}:#{@@port.to_s}/#{@@uri.to_s}/realms/#{@@realm_name}/protocol/openid-connect/token")
     http = Net::HTTP.new(url.host, url.port)
     request = Net::HTTP::Post.new(url.to_s)
     request["authorization"] = 'Bearer ' + @@access_token
-    #request["content-type"] = 'application/x-www-form-urlencoded'
+    request["content-type"] = 'application/x-www-form-urlencoded'
+
+    request.set_form_data({'client_id' => 'adapter',
+                           'client_secret' => 'df7e816d-0337-4fbe-a3f4-7b5263eaba9f',
+                           'grant_type' => 'client_credentials'})
 
     response = http.request(request)
     puts "LOG CODE", response.code
-    puts "LOG BODY", response.body
-
+    puts "REFRESH TOKEN BODY", response.body
     unless response.code == '200'
       halt response.code.to_i, response.body
     end
