@@ -30,7 +30,6 @@ require 'sinatra'
 require 'net/http'
 require_relative '../helpers/init'
 
-
 # Adapter class
 class Adapter < Sinatra::Application
   # @method get_root
@@ -66,7 +65,8 @@ end
 
 # Adapter-Keycloak API class
 class Keycloak < Sinatra::Application
-  
+<<<<<<< HEAD
+
   post '/config' do
     # Check if the request comes from keycloak docker.
     if request.ip.to_s != @@address.to_s
@@ -77,14 +77,13 @@ class Keycloak < Sinatra::Application
     end
     
     @@client_secret = params['secret']
-    get_oidc_endpoints
-    get_adapter_install_json
-    @@access_token = self.get_adapter_token
     halt 200
   end
 
-
+  post '/register' do
+=======
   post '/register/user' do
+>>>>>>> 73a0f98135f9320c83f06ddc3117ad60e578065e
     # Return if content-type is not valid
     logger.info "Content-Type is " + request.media_type
     halt 415 unless (request.content_type == 'application/x-www-form-urlencoded' or request.content_type == 'application/json')

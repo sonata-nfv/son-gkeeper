@@ -22,6 +22,17 @@ def parse_json(message)
   return parsed_message, nil
 end
 
+def keyed_hash(hash)
+  Hash[hash.map { |(k, v)| [k.to_sym, v] }]
+end
+
+def json_error(code, message)
+  msg = {'error' => message}
+  logger.error msg.to_s
+  halt code, {'Content-type' => 'application/json'}, msg.to_json
+end
+
+
 class Adapter < Sinatra::Application
   # Method which lists all available interfaces
   # @return [Array] an array of hashes containing all interfaces
@@ -103,11 +114,11 @@ class Adapter < Sinatra::Application
     puts "USER_ROLES?", @decoded_user_roles
 
 
-    # teacher_results = Clever::Teacher.find(nil, filters = {:where => "{\"email\":\"#{@email}\"}" })
-    # puts "TEACHER?", teacher_results.count
-    # halt 401, "Your email address is not unique. Exploding into a million pieces!" if teacher_results.count != 1
-    # halt 401, "Your email address is not unique. Exploding into a million pieces!" if teacher_results.count != 1
-    # @teacher = teacher_results.first
+    # user_results = User.find(nil, filters = {:where => "{\"email\":\"#{@email}\"}" })
+    # puts "USER?", user_results.count
+    # halt 401, "Your email address is not unique. Exploding into a million pieces!" if user_results.count != 1
+    # halt 401, "Your email address is not unique. Exploding into a million pieces!" if user_results.count != 1
+    # @user = user_results.first
     # array = []
     # array << { :name => 'test01', :id => 'test', :email => @email }
     @sections = [Sections.new(@usrname, @id, @email)]
@@ -166,8 +177,18 @@ class Adapter < Sinatra::Application
   end
 
   def get_client_secret()
+    realm = "master"
+    id = "adapter"
     #Get the client secret
-    #GET /admin/realms/{realm}/clients/{id}/client-secret
+    url = URI("http://localhost:8081/auth/admin/realms/#{realm}/clients/#{id}/client-secret")
+    http = Net::HTTP.new(url.host, url.port)
+    request = Net::HTTP::Get.new(url.to_s)
+    request.basic_auth("admin", "admin") # <--- Needs bearer token
+    request["content-type"] = 'application/json'
+
+    response = http.request(request)
+    p "RESPONSE", response
+    p "RESPONSE.read_body222", response.read_body
   end
 
   def regenerate_client_secret()
@@ -222,4 +243,21 @@ class JwtAuth
       [403, { 'Content-Type' => 'text/plain' }, ['The token does not have a valid "issued at" time.']]
     end
   end
+end
+
+
+def create_public_key
+    # turn keycloak realm pub key into an actual openssl compat pub key.
+  keycloak_yml = YAML.load_file('config/keycloak.yml')
+  keycloak_config = JSON.parse(File.read('config/keycloak.json'))
+  @s = "-----BEGIN PUBLIC KEY-----\n"
+  @s += keycloak_yml['realm_public_key'].scan(/.{1,64}/).join("\n")
+  @s += "\n-----END PUBLIC KEY-----\n"
+  @key = OpenSSL::PKey::RSA.new @s
+  set :keycloak_pub_key, @key
+  set :keycloak_client_id, keycloak_config['resource']
+  set :keycloak_url, keycloak_config['auth-server-url'] + '/' + keycloak_config['realm'] + '/'
+
+  # Print token settings
+  puts "settings.keycloak_pub_key: ", settings.keycloak_pub_key
 end
