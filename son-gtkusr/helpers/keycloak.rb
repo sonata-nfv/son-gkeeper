@@ -394,21 +394,29 @@ class Keycloak < Sinatra::Application
     end
   end
 
-  def login_user (username=nil, credentials=nil)
+  # "token_endpoint":"http://localhost:8081/auth/realms/master/protocol/openid-connect/token"
+  def login(username=nil, credentials=nil)
     url = URI("http://#{@@address.to_s}:#{@@port.to_s}/#{@@uri.to_s}/realms/#{@@realm_name}/protocol/openid-connect/token")
     http = Net::HTTP.new(url.host, url.port)
     request = Net::HTTP::Post.new(url.to_s)
     request["authorization"] = 'Bearer ' + @@access_token
     request["content-type"] = 'application/x-www-form-urlencoded'
 
-    p "@client_name", @@client_name
-    p "@client_secret", @@client_secret
+    #p "@client_name", @@client_name
+    #p "@client_secret", @@client_secret
 
-    request.set_form_data({'client_id' => @@client_name,
-                           'client_secret' => @@client_secret,
-                           'username' => username.to_s,
-                           'password' => credentials['value'],
-                           'grant_type' => credentials['type']})
+    case credentials
+      when credentials['type'] == 'password'
+        request.set_form_data({'client_id' => @@client_name,
+                               'client_secret' => @@client_secret,
+                               'username' => username.to_s,
+                               'password' => credentials['value'],
+                               'grant_type' => credentials['type']})
+      else
+        request.set_form_data({'client_id' => username,
+                               'client_secret' => credentials['value'],
+                               'grant_type' => credentials['type']})
+    end
 
     response = http.request(request)
     puts "LOG CODE", response.code
@@ -423,31 +431,6 @@ class Keycloak < Sinatra::Application
     #puts parsed_res[0]['access_token']
     #halt 200, parsed_res['access_token'].to_json
     halt 200, response.body
-  end
-
-  # "token_endpoint":"http://localhost:8081/auth/realms/master/protocol/openid-connect/token"
-  def login_client(client_id, client_secret)
-    url = URI("http://#{@@address.to_s}:#{@@port.to_s}/#{@@uri.to_s}/realms/#{@@realm_name}/protocol/openid-connect/token")
-    http = Net::HTTP.new(url.host, url.port)
-    request = Net::HTTP::Post.new(url.to_s)
-    request["authorization"] = 'Bearer ' + @@access_token
-    request["content-type"] = 'application/x-www-form-urlencoded'
-
-    request.set_form_data({'client_id' => client_id,
-                           'client_secret' => client_secret,
-                           'grant_type' => 'client_credentials'})
-
-    puts "RES.HEADER: ", res.header
-    puts "RES.BODY: ", res.body
-
-    if res.body['access_token']
-      parsed_res, code = parse_json(res.body)
-      @access_token = parsed_res['access_token']
-      puts "ACCESS_TOKEN RECEIVED", parsed_res['access_token']
-      parsed_res['access_token']
-    else
-      halt 401
-    end
   end
 
   # Method that allows end-user authentication through authorized browser
@@ -593,11 +576,23 @@ class Keycloak < Sinatra::Application
     end
   end
 
-  def refresh
-    ###
-    #TODO: Implement
+  def refresh(token)
     #=> Check if token.expired?
     #=> Then GET new token
+    url = URI("http://#{@@address.to_s}:#{@@port.to_s}/#{@@uri.to_s}/realms/#{@@realm_name}/protocol/openid-connect/token")
+    http = Net::HTTP.new(url.host, url.port)
+    request = Net::HTTP::Post.new(url.to_s)
+    request["authorization"] = 'Bearer ' + @@access_token
+    #request["content-type"] = 'application/x-www-form-urlencoded'
+
+    response = http.request(request)
+    puts "LOG CODE", response.code
+    puts "LOG BODY", response.body
+
+    unless response.code == '200'
+      halt response.code.to_i, response.body
+    end
+    halt 200, response.body
   end
 
   def set_user_roles(token)

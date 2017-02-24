@@ -142,7 +142,7 @@ class Keycloak < Sinatra::Application
     password = plain_pass.split(':').last # params[:password]
 
     credentials = {"type" => "password", "value" => password.to_s}
-    login_user(username, credentials)
+    login(username, credentials)
   end
 
   post '/login/service' do
@@ -157,7 +157,7 @@ class Keycloak < Sinatra::Application
     secret = plain_pass.split(':').last
 
     credentials = {"type" => "client_credentials", "value" => secret.to_s}
-    login_client(client_id, credentials)
+    login(client_id, credentials)
   end
 
   post '/authenticate' do
