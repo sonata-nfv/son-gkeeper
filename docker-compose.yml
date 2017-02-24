@@ -180,6 +180,8 @@ services:
      - "443:443"
     links:
      - son-gtkapi
+    volumes:
+     - /etc/ssl/private/sonata/:/etc/nginx/cert/
     logging:
       driver: gelf
       options:
