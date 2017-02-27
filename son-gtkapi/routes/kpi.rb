@@ -30,7 +30,7 @@ class GtkApi < Sinatra::Base
 
   register Sinatra::Namespace
   
-  namespace '/api/v2/kpi' do
+  namespace '/api/v2/kpis' do
     before do
        if request.request_method == 'OPTIONS'
          response.headers['Access-Control-Allow-Origin'] = '*'
@@ -40,19 +40,34 @@ class GtkApi < Sinatra::Base
        end
      end
   
-    # POST a request
-    post '/?' do
-      MESSAGE = "GtkApi::POST /api/v2/kpi"
+    # GET many kpis
+    get '/?' do
+      MESSAGE = "GtkApi::GET /api/v2/kpis"+query_string
+      
+      logger.info(MESSAGE) {"entered"}
+      kpis = KpiManagerService.get_metric(params)
+      logger.debug(MESSAGE) { "kpis= #{kpis}"}
+      if kpis        
+        [200, kpis.to_json]
+      else
+        logger.info(MESSAGE) { "leaving GET with 'No get kpis request were created'"}
+        json_error 400, 'No get list of kpis request was created'
+      end      
+    end
+
+    # PUT a request
+    put '/?' do
+      MESSAGE = "GtkApi::PUT /api/v2/kpis"
       params = JSON.parse(request.body.read)
       unless params.nil?
         logger.debug(MESSAGE) {"entered with params=#{params}"}
-        new_request = settings.kpi_management.create_metric(params)
+        new_request = KpiManagerService.update_metric(params)
         if new_request
           logger.debug(MESSAGE) {"new_request =#{new_request}"}
           halt 201, new_request.to_json
         else
-          logger.debug(MESSAGE) { "leaving with 'No kpi creation request was created'"}
-          json_error 400, 'No kpi create_request was created'
+          logger.debug(MESSAGE) { "leaving with 'No kpi update request was created'"}
+          json_error 400, 'No kpi update_request was created'
         end
       end
       logger.debug(MESSAGE) { "leaving with 'No request id specified'"}
@@ -62,7 +77,7 @@ class GtkApi < Sinatra::Base
   
   private 
   def query_string
-    request.env['QUERY_STRING'].nil? ? '' : '?' + request.env['QUERY_STRING'].to_s
+    request.env['QUERY_STRING'].empty? ? '' : '?' + request.env['QUERY_STRING'].to_s
   end
 
   def request_url

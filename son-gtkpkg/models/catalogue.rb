@@ -66,7 +66,9 @@ class Catalogue
     request["content-type"] = 'application/zip'
     request["content-disposition"] = 'attachment; filename=<filename.son>'
     response = http.request(request)
-    puts response.read_body
+    @logger.debug("Catalogue response: " + response.read_body)
+    response.read_body
+    #puts response.read_body
     # Response should return code 201, and ID of the stored son-package
   end
   
@@ -84,7 +86,7 @@ class Catalogue
   end
   
   def find(params)
-    method = 'Catalogue.find: '
+    method = 'Catalogue.find'
     headers = {'Accept'=>'application/json', 'Content-Type'=>'application/json'}
     headers[:params] = params unless params.empty?
     @logger.debug(method) {"params=#{params}, headers=#{headers}"}
@@ -104,6 +106,26 @@ class Catalogue
   def delete
   end
   
+  def set_sonpackage_id(desc_uuid, sonp_uuid)
+    method = "Catalogue.set_sonpackage_id: "
+    @logger.debug(method) {"desc_uuid=#{desc_uuid}, sonp_uuid=#{sonp_uuid}"}
+    headers = {'Content-Type'=>'application/json'}
+    begin
+      uri = URI(@url + '/' + desc_uuid.to_s + '?sonp_uuid=' + sonp_uuid.to_s)
+      req = Net::HTTP::Put.new(uri)
+      req.content_type = 'application/json'
+      response = Net::HTTP.start(uri.hostname, uri.port) { |http|
+        http.request(req)
+      }
+      #response = RestClient.put(@url + '/' + desc_uuid.to_s + '?sonp_uuid=' + sonp_uuid.to_s, :content_type => 'application/json')
+      @logger.debug(method) {"response was #{response}"}
+      nil
+    rescue => e
+      @logger.error format_error(e.backtrace)
+      e.to_json
+    end
+  end
+
   private
   
   def format_error(backtrace)

@@ -32,6 +32,7 @@ require 'pp'
 require 'securerandom'
 require 'rubygems'
 require 'zip'
+require 'json'
 
 class Package
 
@@ -186,6 +187,29 @@ class Package
     packages
   end
 
+  def store_zip()
+    saved_zip = @@catalogue.create_zip(@package_file)
+    @logger.debug('Package.store_zip: catalogue_response is ' + saved_zip.to_s)
+    if saved_zip
+      @logger.debug('Package.store_zip') {"saved_zip is "+saved_zip.to_s}
+      JSON.parse(saved_zip)
+    else
+      @logger.debug('Package.store_zip') {'failled to store zip with no response'}
+      nil
+    end
+  end
+  
+  def add_sonpackage_id(desc_uuid, sonp_uuid)
+    response = @@catalogue.set_sonpackage_id(desc_uuid, sonp_uuid)
+    if response.nil?
+      @logger.debug('Package.add_sonpackage_id'){'Updated descriptor with params : descriptor_uuid=' + desc_uuid + ', sonpackage_uuid=' + sonp_uuid}
+      nil
+    else
+      @logger.debug('Package.add_sonpackage_id'){'failed to store son-package-uuid in package descriptor'}
+      response
+    end
+  end
+
   private
   
   def duplicate_package?(desc)
@@ -295,17 +319,6 @@ class Package
     @@catalogue.find({'vendor'=>descriptor['vendor'], 'name'=>descriptor['name'], 'version'=>descriptor['version']})
   end
 
-  def store_zip()
-    saved_zip = @catalogue.create_zip(@package_file)
-    if saved_zip && saved_zip['uuid']
-      @logger.debug('Package.store') {"saved_zip is "+saved_zip.to_s}
-      saved_zip
-    else
-      @logger.debug('Package.store') {'failled to store zip with no response'}
-      nil
-    end
-  end
-  
   def store()
     @logger.debug('Package.store') {"descriptor "+@descriptor.to_s}
     saved_descriptor = @@catalogue.create(@descriptor)
@@ -332,7 +345,7 @@ class Package
       saved_descriptor=store()
       if saved_descriptor
         @logger.debug "Package.store_package_service_and_functions: stored package #{saved_descriptor}"
-        if @service
+        if @service.size > 0
           @logger.debug "Package.store_package_service_and_functions: service is #{@service}"
           stored_service = @service.store()
           if stored_service
@@ -343,7 +356,7 @@ class Package
             @logger.debug "Package.store_package_service_and_functions: service and package rollback should happen here"
           end
         end
-        if @functions.size
+        if @functions.size > 0
           @functions.each do |vf|
             @logger.debug "Package.store_package_service_and_functions: vf = #{vf}"
             function = vf.store()

@@ -69,9 +69,10 @@ class GtkApi < Sinatra::Base
       logger.info(MESSAGE) {'entered with '+query_string}
       requests = ServiceManagerService.find_requests(params)
       logger.debug(MESSAGE) {"requests = #{requests}"}
-      if requests && requests.is_a?(Array)
-        links = build_pagination_headers(url: request_url, limit: @limit.to_i, offset: @offset.to_i, total: requests.size)
-        [200, {'Link' => links}, requests.to_json]
+      if requests
+        links = build_pagination_headers(url: request_url, limit: @limit.to_i, offset: @offset.to_i, total: requests[:count])
+        headers 'Link' => links, 'Record-Count' => requests[:count].to_s
+        halt 200, requests[:items].to_json
       else
         ERROR_MESSAGE = 'No requests with '+query_string+' were found'
         logger.info(MESSAGE) {"leaving with '"+ERROR_MESSAGE+"'"}
@@ -97,23 +98,16 @@ class GtkApi < Sinatra::Base
     end
   end
 
-  namespace '/admin/requests' do
+  namespace '/api/v2/admin/requests' do
     # GET module's logs
     get '/logs/?' do
-      METHOD = "GtkApi::GET /api/v2/admin/requests/logs"
-      logger.debug(METHOD) {"entered"}
+      log_message = "GtkApi::GET /api/v2/admin/requests/logs"
+      logger.debug(log_message) {"entered"}
+      url = ServiceManagerService.class_variable_get(:@@url)+'/admin/logs'
+      log = ServiceManagerService.get_log(url: url, log_message:log_message)
+      logger.debug(log_message) {'leaving with log='+log}
       headers 'Content-Type' => 'text/plain; charset=utf8', 'Location' => '/api/v2/admin/requests/logs'
-      log = ServiceManagerService.get_log
-      halt 200, log #.to_s
+      halt 200, log
     end
-  end
-  
-  private 
-  def query_string
-    request.env['QUERY_STRING'].nil? ? '' : '?' + request.env['QUERY_STRING'].to_s
-  end
-
-  def request_url
-    request.env['rack.url_scheme']+'://'+request.env['HTTP_HOST']+request.env['REQUEST_PATH']
   end
 end

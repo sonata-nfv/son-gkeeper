@@ -28,8 +28,11 @@
 class VFunction
   
   def initialize(repository, logger)
+    raise ArgumentError.new('VFunction.new: repository can not be nil') if repository.nil?
+    raise ArgumentError.new('VFunction.new: logger can not be nil') if logger.nil?
     @repository = repository
     @logger = logger
+    @logger.debug "VFunction.new(repository=#{repository.inspect}, logger#{logger.inspect})"
   end
   
   def find(params)
@@ -38,4 +41,12 @@ class VFunction
     @logger.debug "NService.find: #{functions}"
     functions
   end
+  
+  def find_by_uuid(uuid)
+    @logger.debug "VFunction.find_by_uuid(#{uuid})"
+    function = @repository.find_by_uuid(uuid)
+    @logger.debug "VFunction.find_by_uuid: #{service}"
+    function
+  end
+  
 end

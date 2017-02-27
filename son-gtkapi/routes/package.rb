@@ -38,64 +38,62 @@ class GtkApi < Sinatra::Base
     
       unless params[:package].nil?
         if params[:package][:tempfile]
-          package = PackageManagerService.create(params)
-          logger.debug(log_message) {"package=#{package.inspect}"}
-          if package
-            if package.is_a?(Hash) && (package[:uuid] || package['uuid'])
-              logger.info(log_message) {"leaving with package: #{package}"}
-              headers = {'location'=> PackageManagerService.url+"/packages/#{package[:uuid]}", 'Content-Type'=> 'application/json'}
-              halt 201, headers, package.to_json
-            elsif package.is_a?(Hash) && package.key?(:package)
-              #(package[:vendor] || package['vendor']) && (package[:version] || package['version']) && (package[:name] || package['name'])
-              logger.info(log_message) {"leaving with duplicated package: #{package}"}
-              headers = {'Content-Type'=> 'application/json'}
-              halt 409, headers, package[:package].to_json
-            else
-              json_error 400, 'No UUID given to package'
-            end
+          resp = PackageManagerService.create(params)
+          logger.debug(log_message) {"resp=#{resp.inspect}"}
+          case resp[:status]
+          when 201
+            logger.info(log_message) {"leaving with package: #{resp[:data][:uuid]}"}
+            headers 'Location'=> PackageManagerService.class_variable_get(:@@url)+"/packages/#{resp[:data][:uuid]}", 'Content-Type'=> 'application/json'
+            halt 201, resp[:data].to_json
+          when 409
+            logger.error(log_message) {"leaving with duplicated package: #{resp[:data]}"}
+            headers 'Content-Type'=> 'application/json'
+            halt 409, resp[:data].to_json
+          when 400
+            message = "Error creating package #{params}"
+            logger.error(log_message) {message}
+            headers 'Content-Type'=> 'application/json'
+            json_error 400, message
           else
-            json_error 400, 'Package not created'
+            message = "Unknown status: #{resp[:status]} for package #{params}"
+            logger.error(log_message) {message}
+            json_error resp[:status], message
           end
         else
           json_error 400, 'Temp file name not provided'
         end
       end
-      json_error 400, 'No package file specified'
+      json_error 400, "No package file specified: #{params}"
     end
 
-    # GET a specific package
+  # GET a specific package
     get '/:uuid/?' do
-      log_message = 'GtkApi::GET /api/v2/packages/:uuid'
-      
+      log_message = 'GtkApi::GET /api/v2/packages/:uuid/?'
+      logger.debug(log_message) {'entered'}
       unless params[:uuid].nil?
-        logger.debug(log_message) { "entered package id #{params[:uuid]}"}
+        logger.debug(log_message) {"params[:uuid]=#{params[:uuid]}"}
         json_error 400, 'Invalid Package UUID' unless valid? params['uuid']
-      
-        package_file_path = PackageManagerService.find_by_uuid(params[:uuid])
-        logger.debug(log_message) {"package_file_path #{package_file_path}"}
-        if package_file_path
-          logger.debug(log_message) {"leaving with package #{package_file_path}"}
-          send_file package_file_path
+        package = PackageManagerService.find_by_uuid(params[:uuid])
+        if package
+          logger.debug(log_message) {"leaving with package #{package}"}
+          halt 200, package
         else
-          logger.debug(log_message) { "leaving with \"No package with UUID=#{params[:uuid]} was found\""}
+          logger.debug(log_message) {"leaving with \"No package with UUID=#{params[:uuid]} was found\""}
           json_error 404, "No package with UUID=#{params[:uuid]} was found"
         end
-
       end
       logger.debug(log_message) {"leaving with \"No package UUID specified\""}
-      json_error 400, 'No package UUID specified'
+      json_error 400, 'No package UUID specified'      
     end
   
     # GET potentially many packages
     get '/?' do
       log_message = 'GtkApi::GET /api/v2/packages/?'
-    
       logger.debug(log_message) {'entered with '+query_string}
     
       @offset ||= params[:offset] ||= DEFAULT_OFFSET
       @limit ||= params[:limit] ||= DEFAULT_LIMIT
     
-      #packages = settings.package_management.find(params)
       packages = PackageManagerService.find(params)
       if packages
         logger.debug(log_message) { "leaving with #{packages}"}
@@ -134,22 +132,14 @@ class GtkApi < Sinatra::Base
   
   namespace '/api/v2/admin/packages' do
     get '/logs/?' do
-      log_message = 'GtkApi::GET /api/v2/admin/packages/logs/?'
-      logger.debug(log_message) {"entered"}
-      headers 'Content-Type' => 'text/plain; charset=utf8', 'Location' => request_url+'/api/v2/admin/packages/logs'
-      log = PackageManagerService.get_log
-      halt 200, log.to_s
+      log_message = 'GtkApi::GET /api/v2/admin/packages/logs'
+      logger.debug(log_message) {'entered'}
+      url = PackageManagerService.class_variable_get(:@@url)+'/admin/logs'
+      log = PackageManagerService.get_log(url: url, log_message:log_message)
+      logger.debug(log_message) {'leaving with log='+log}
+      headers 'Content-Type' => 'text/plain; charset=utf8', 'Location' => '/'
+      halt 200, log #.to_s
     end
-  end
-  
-  private
-    
-  def query_string
-    request.env['QUERY_STRING'].nil? ? '' : '?' + request.env['QUERY_STRING'].to_s
-  end
-
-  def request_url
-    request.env['rack.url_scheme']+'://'+request.env['HTTP_HOST']+request.env['REQUEST_PATH']
   end
 end
 

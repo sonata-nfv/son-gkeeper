@@ -28,7 +28,6 @@
 # encoding: utf-8
 require 'json' 
 require 'pp'
-require 'addressable/uri'
 
 class GtkRec < Sinatra::Base
 
@@ -39,29 +38,33 @@ class GtkRec < Sinatra::Base
     method = MODULE + ' GET /functions'
     logger.debug(method) {"entered with params #{params}"}
 
-    uri = Addressable::URI.new
-
     # Remove list of wanted fields from the query parameter list
     field_list = params.delete('fields')
-    uri.query_values = params
-    logger.debug(method) {'uri.query='+uri.query}
+    logger.debug(method) {'query_string='+query_string}
     
     functions = VFunction.new(settings.functions_repository, logger).find(params)
-    if functions
+    case functions[:status]
+    when 200
       logger.debug(method) { "functions=#{functions}"}
 
       if field_list
         fields = field_list.split(',')
         logger.debug(method) {"fields=#{fields}"}
-        response = functions.to_json(:only => fields)
+        response = functions[:items].to_json(:only => fields)
       else
-        response = functions.to_json
+        response = functions[:items].to_json
       end
-      logger.debug(method) {'leaving with response='+response}
+      logger.debug(method) {"leaving with response=#{response}"}
+      headers 'Record-Count'=>functions[:count].to_s
       halt 200, response
+    when 400
+    when 404
+      logger.debug(method) {"No function with params #{query_string} was found"}
+      headers 'Record-Count'=>'0'
+      halt 200, '[]'
     else
-      logger.debug(method) {"leaving with \"No function with params #{uri.query} was found\""}
-      json_error 404, "No function with params #{uri.query} was found"
+      logger.debug(method) {"leaving with \"Serious error while fetching function records\""}
+      halt 500, "Serious error while fetching function records"
     end
   end
   
@@ -70,7 +73,8 @@ class GtkRec < Sinatra::Base
     logger.debug(method) {"entered with :uuid=#{params[:uuid]}"}
     
     function = VFunction.new(settings.functions_catalogue, logger).find_by_uuid(params[:uuid])
-    if function
+    case function[:status]
+    when 200
       logger.debug(method) {"function: #{function}"}
       response = function.to_json
       logger.debug(method) {"leaving with response="+response}
@@ -79,5 +83,16 @@ class GtkRec < Sinatra::Base
       logger.debug(method) {"leaving with \"No function with uuid #{params[:uuid]} was found\""}
       json_error 404, "No function with uuid #{params[:uuid]} was found"
     end
+  end
+  
+  private 
+  def query_string
+    request.env['QUERY_STRING'].nil? ? '' : '?' + request.env['QUERY_STRING'].to_s
+  end
+
+  def request_url
+    log_message = 'GtkApi::request_url'
+    logger.debug(log_message) {"Schema=#{request.env['rack.url_scheme']}, host=#{request.env['HTTP_HOST']}, path=#{request.env['REQUEST_PATH']}"}
+    request.env['rack.url_scheme']+'://'+request.env['HTTP_HOST']+request.env['REQUEST_PATH']
   end
 end

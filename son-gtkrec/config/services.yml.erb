@@ -28,6 +28,7 @@
 ---
 development: &common_settings
   repositories: <%= ENV['REPOSITORIES_URL'] %>
+  logger_level: <%= ENV['LOGGER_LEVEL'] %> 
 
 test:
   <<: *common_settings

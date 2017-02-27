@@ -51,13 +51,15 @@ class GtkApi < Sinatra::Base
       @limit ||= params[:limit] ||= DEFAULT_LIMIT
   
       records = RecordManagerService.find_records(params)
-      if records
+      case records[:status]
+      when 200
         logger.debug(log_message) {"leaving with #{records}"}
-        links = build_pagination_headers(url: request_url, limit: @limit.to_i, offset: @offset.to_i, total: records.size)
-        [200, {'Link' => links}, records.to_json]
+        links = build_pagination_headers(url: request_url, limit: @limit.to_i, offset: @offset.to_i, total: records[:count])
+        headers 'Link' => links
+        halt 200, records[:items].to_json
       else
         logger.debug(log_message) {"No #{params[:kind]} records found"}
-        halt 404, "No #{params[:kind]} records found"
+        halt 404, '[]'
       end
     end
 
@@ -67,9 +69,17 @@ class GtkApi < Sinatra::Base
       unless params[:uuid].nil?
         logger.debug(method) {'entered'}
         json_error 400, 'Invalid Instance UUID' unless valid? params[:uuid]
+        record = RecordManagerService.find_record_by_uuid(params[:uuid])
+        case record[:status]
+        when 200
+          logger.debug(log_message) {"leaving with #{record}"}
+          halt 200, record[:items].to_json
+        else
+          logger.debug(log_message) {"No #{params[:kind]} record with uuid #{params[:uuid]} found"}
+          halt 404, "No #{params[:kind]} record with uuid #{params[:uuid]} found"
+        end
       end
       logger.debug(method) {"leaving with \"No instance UUID specified\""}
-      # TODO!!
       json_error 400, 'No instance UUID specified'
     end
   
@@ -118,20 +128,13 @@ class GtkApi < Sinatra::Base
   namespace '/api/v2/admin/records' do
     # GET module's logs
     get '/logs/?' do
-      method = "GtkApi::GET /api/v2/admin/records/logs/?: "
-      logger.debug(method) {"entered"}
+      log_message = "GtkApi::GET /api/v2/admin/records/logs"
+      logger.debug(log_message) {"entered"}
+      url = RecordManagerService.class_variable_get(:@@url)+'/admin/logs'
+      log = RecordManagerService.get_log(url: url, log_message:log_message)
+      logger.debug(log_message) {'leaving with log='+log}
       headers 'Content-Type' => 'text/plain; charset=utf8', 'Location' => '/'
-      log = RecordManagerService.get_log
       halt 200, log #.to_s
     end
-  end
-  
-  private 
-  def query_string
-    request.env['QUERY_STRING'].nil? ? '' : '?' + request.env['QUERY_STRING'].to_s
-  end
-
-  def request_url
-    request.env['rack.url_scheme']+'://'+request.env['HTTP_HOST']+request.env['REQUEST_PATH']
   end
 end
