@@ -42,7 +42,7 @@ end
 def userbased
   # curl -d "client_id=admin-cli" -d "username=user1" -d "password=1234" -d "grant_type=password" "http://localhost:8081/auth/realms/SONATA/protocol/openid-connect/token"
   client_id = "adapter"
-  @usrname = "user"
+  username = "tester"
   pwd = "1234"
   grt_type = "password"
   http_path = "http://localhost:8081/auth/realms/master/protocol/openid-connect/token"
@@ -52,7 +52,7 @@ def userbased
   uri = URI(http_path)
   # uri = URI(idp_path)
   res = Net::HTTP.post_form(uri, 'client_id' => client_id, 'client_secret' => 'df7e816d-0337-4fbe-a3f4-7b5263eaba9f',
-                            'username' => @usrname,
+                            'username' => username,
                             'password' => pwd,
                             'grant_type' => grt_type)
   puts "RES.BODY: ", res.body
@@ -103,7 +103,8 @@ def clientbased
     puts "JWT", parsed_res
     @access_token = parsed_res['access_token']
     puts "ACCESS_TOKEN RECEIVED", parsed_res['access_token']
-    parsed_res['access_token']
+    #parsed_res['access_token']
+    parsed_res
   else
     401
   end
@@ -638,6 +639,27 @@ def service_user(token)
   parsed_res, code = parse_json(response.body)
 end
 
+def refresh_token(token)
+  url = URI("http://localhost:8081/auth/realms/master/protocol/openid-connect/token")
+  http = Net::HTTP.new(url.host, url.port)
+  request = Net::HTTP::Post.new(url.to_s)
+  #request["authorization"] = 'Bearer ' + token
+  request["content-type"] = 'application/x-www-form-urlencoded'
+
+  request.set_form_data({'client_id' => 'adapter',
+                         'client_secret' => 'df7e816d-0337-4fbe-a3f4-7b5263eaba9f',
+                         'grant_type' => 'client_credentials'})
+
+  response = http.request(request)
+  puts "REFRESH CODE", response.code
+  puts "REFRESH TOKEN BODY", response.body
+
+  unless response.code == '200'
+    return response.code.to_i, response.body
+  end
+  return 200, parse_json(response.body)[0]
+end
+
 =begin
 "grant_types_supported":["authorization_code","implicit","refresh_token","password","client_credentials"]
 "response_types_supported":["code","none","id_token","token","id_token token","code id_token","code token","code id_token token"]
@@ -657,7 +679,7 @@ end
 =end
 
 #token = userbased
-token = clientbased
+#token = clientbased
 #token = adminbased
 #pub = get_public_key
 #token_validation(token)
@@ -687,8 +709,11 @@ token = clientbased
 # get_role_details(token)
 # authorize_browser
 #authorize(token)
-get_users(token)
+#get_users(token)
 #service_user(token)
+token = "eyJhbGciOiJSUzI1NiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICJqZjQ3WXlHSzQ3VUprLXJ1cUk5RV9IaDhsNS1heHFrMzkxX0NpUUhmTm9nIn0.eyJqdGkiOiI2YjM5YTIwZC1lNTU0LTQ1MTUtYWUxNC1hMDExMDdjMjRkZjIiLCJleHAiOjE0ODc4NTAwNjAsIm5iZiI6MCwiaWF0IjoxNDg3ODQ4MjYwLCJpc3MiOiJodHRwOi8vbG9jYWxob3N0OjgwODEvYXV0aC9yZWFsbXMvbWFzdGVyIiwiYXVkIjoiYWRhcHRlciIsInN1YiI6ImUyZjdjN2IwLTY4YmEtNDE5NC04N2M5LWU0MmRiYzQyMmZiZCIsInR5cCI6IlJlZnJlc2giLCJhenAiOiJhZGFwdGVyIiwiYXV0aF90aW1lIjowLCJzZXNzaW9uX3N0YXRlIjoiNGZjNWVlMDUtYTQ3My00YzI0LWFmOGQtZGUzMjFmMWQwOTE3IiwiY2xpZW50X3Nlc3Npb24iOiI0MDFlMzkzOC00MDE1LTQ4MjgtYjUzMS0zMzM4NmY0MTk4MDMiLCJyZWFsbV9hY2Nlc3MiOnsicm9sZXMiOlsiY3JlYXRlLXJlYWxtIiwiYWRtaW4iLCJ1bWFfYXV0aG9yaXphdGlvbiJdfSwicmVzb3VyY2VfYWNjZXNzIjp7Im1hc3Rlci1yZWFsbSI6eyJyb2xlcyI6WyJ2aWV3LWlkZW50aXR5LXByb3ZpZGVycyIsInZpZXctcmVhbG0iLCJtYW5hZ2UtaWRlbnRpdHktcHJvdmlkZXJzIiwiaW1wZXJzb25hdGlvbiIsImNyZWF0ZS1jbGllbnQiLCJtYW5hZ2UtdXNlcnMiLCJ2aWV3LWF1dGhvcml6YXRpb24iLCJtYW5hZ2UtZXZlbnRzIiwibWFuYWdlLXJlYWxtIiwidmlldy1ldmVudHMiLCJ2aWV3LXVzZXJzIiwidmlldy1jbGllbnRzIiwibWFuYWdlLWF1dGhvcml6YXRpb24iLCJtYW5hZ2UtY2xpZW50cyJdfSwiYWNjb3VudCI6eyJyb2xlcyI6WyJtYW5hZ2UtYWNjb3VudCIsInZpZXctcHJvZmlsZSJdfX19.ZoZFEBlyRMH51qA9S4DCQBtmc8Uq_Q8CGgwxqYK_HBT3TD8peNK4RZynyvSN0iIPlycKFXxJk87-iFc6vD3jNwIjgMSdEcrJEkvKG6y5ZkCTnMZOnSubTdLD2ajbh4N5D06eXEos-ZV_TZbU5x8BDfCLylAUPZtZXQc0cy454JuVcw9Ck49WhjrbFHMZtCBD27tqMW-juHr4-SiiDKcPO7pYBvgWP4BQwlohbZfVIQ-VnS4fEoOXzzrDqf7gFGr0NXox1K-tFh4YJIGujcaqmZfkCDr-UtqWJ3pRS-AmUo-pcLOfrCVk7Tw-SuUuoie6_HUTa41iDqriQZzrTUCVkA"
+code, token_h = refresh_token(token)
+token_validation(token_h["access_token"])
 
 
 

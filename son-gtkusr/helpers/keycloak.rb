@@ -27,6 +27,7 @@ class Keycloak < Sinatra::Application
 
   # Load authorization mappings
   @@auth_mappings = YAML.load_file 'config/mappings.yml'
+
   puts "MAPPINGS CONTENT", @@auth_mappings
 	
   ## Get the ip of keycloak. Only works for docker-compose
@@ -326,7 +327,6 @@ class Keycloak < Sinatra::Application
     # url = URI("http://localhost:8081/auth/realms/master/clients-registrations/openid-connect/")
     url = URI("http://localhost:8081/auth/admin/realms/master/clients")
     http = Net::HTTP.new(url.host, url.port)
-
     request = Net::HTTP::Post.new(url.to_s)
     request["authorization"] = 'Bearer ' + @@access_token
     request["content-type"] = 'application/json'
@@ -426,21 +426,31 @@ class Keycloak < Sinatra::Application
     end
   end
 
-  def login_user (username=nil, credentials=nil)
+  # "token_endpoint":"http://localhost:8081/auth/realms/master/protocol/openid-connect/token"
+  def login(username=nil, credentials=nil)
     url = URI("http://#{@@address.to_s}:#{@@port.to_s}/#{@@uri.to_s}/realms/#{@@realm_name}/protocol/openid-connect/token")
     http = Net::HTTP.new(url.host, url.port)
     request = Net::HTTP::Post.new(url.to_s)
     request["authorization"] = 'Bearer ' + @@access_token
     request["content-type"] = 'application/x-www-form-urlencoded'
 
-    p "@client_name", @@client_name
-    p "@client_secret", @@client_secret
+    #p "@client_name", @@client_name
+    #p "@client_secret", @@client_secret
 
-    request.set_form_data({'client_id' => @@client_name,
-                           'client_secret' => @@client_secret,
-                           'username' => username.to_s,
-                           'password' => credentials['value'],
-                           'grant_type' => credentials['type']})
+    case credentials['type']
+      when 'password'
+        puts "IS A PASSWORD"
+        request.set_form_data({'client_id' => @@client_name,
+                               'client_secret' => @@client_secret,
+                               'username' => username.to_s,
+                               'password' => credentials['value'],
+                               'grant_type' => credentials['type']})
+      else
+        puts "IS A CLIENT"
+        request.set_form_data({'client_id' => username,
+                               'client_secret' => credentials['value'],
+                               'grant_type' => credentials['type']})
+    end
 
     response = http.request(request)
     puts "LOG CODE", response.code
@@ -634,11 +644,28 @@ class Keycloak < Sinatra::Application
     end
   end
 
-  def refresh
-    ###
-    #TODO: Implement
+  def refresh(token, credentials)
     #=> Check if token.expired?
+    # TODO:
+
     #=> Then GET new token
+    url = URI("http://#{@@address.to_s}:#{@@port.to_s}/#{@@uri.to_s}/realms/#{@@realm_name}/protocol/openid-connect/token")
+    http = Net::HTTP.new(url.host, url.port)
+    request = Net::HTTP::Post.new(url.to_s)
+    request["authorization"] = 'Bearer ' + @@access_token
+    request["content-type"] = 'application/x-www-form-urlencoded'
+
+    request.set_form_data({'client_id' => 'adapter',
+                           'client_secret' => 'df7e816d-0337-4fbe-a3f4-7b5263eaba9f',
+                           'grant_type' => 'client_credentials'})
+
+    response = http.request(request)
+    puts "LOG CODE", response.code
+    puts "REFRESH TOKEN BODY", response.body
+    unless response.code == '200'
+      halt response.code.to_i, response.body
+    end
+    halt 200, response.body
   end
 
   def set_user_roles(token)
