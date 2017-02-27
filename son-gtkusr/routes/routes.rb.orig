@@ -30,7 +30,6 @@ require 'sinatra'
 require 'net/http'
 require_relative '../helpers/init'
 
-
 # Adapter class
 class Adapter < Sinatra::Application
   # @method get_root
@@ -66,7 +65,8 @@ end
 
 # Adapter-Keycloak API class
 class Keycloak < Sinatra::Application
-  
+<<<<<<< HEAD
+
   post '/config' do
     # Check if the request comes from keycloak docker.
     if request.ip.to_s != @@address.to_s
@@ -77,14 +77,13 @@ class Keycloak < Sinatra::Application
     end
     
     @@client_secret = params['secret']
-    get_oidc_endpoints
-    get_adapter_install_json
-    @@access_token = self.get_adapter_token
     halt 200
   end
 
-
+  post '/register' do
+=======
   post '/register/user' do
+>>>>>>> 73a0f98135f9320c83f06ddc3117ad60e578065e
     # Return if content-type is not valid
     logger.info "Content-Type is " + request.media_type
     halt 415 unless (request.content_type == 'application/x-www-form-urlencoded' or request.content_type == 'application/json')
@@ -153,14 +152,14 @@ class Keycloak < Sinatra::Application
     pass = request.env["HTTP_AUTHORIZATION"].split(' ').last
     plain_pass  = Base64.decode64(pass)
 
-    puts "USER_PASS", plain_pass
+    # puts "USER_PASS", user_pass
     # puts  "PLAIN", plain_user_pass.split(':').first
     # puts  "PLAIN", plain_user_pass.split(':').last
     username = plain_pass.split(':').first # params[:username]
     password = plain_pass.split(':').last # params[:password]
 
     credentials = {"type" => "password", "value" => password.to_s}
-    login(username, credentials)
+    login_user(username, credentials)
   end
 
   post '/login/service' do
@@ -175,7 +174,7 @@ class Keycloak < Sinatra::Application
     secret = plain_pass.split(':').last
 
     credentials = {"type" => "client_credentials", "value" => secret.to_s}
-    login(client_id, credentials)
+    login_client(client_id, credentials)
   end
 
   post '/authenticate' do
@@ -319,15 +318,6 @@ class Keycloak < Sinatra::Application
 
   post '/refresh' do
     #TODO:
-    logger.debug 'Adapter: entered POST /refresh'
-    # Return if Authorization is invalid
-    #halt 400 unless request.env["HTTP_AUTHORIZATION"]
-    # puts "headers", request.env["HTTP_CONTENT_DISPOSITION"]
-    att = request.env['HTTP_CONTENT_DISPOSITION']
-    custom_header_value = request.env['HTTP_CUSTOM_HEADER']
-
-    p "ATT", att
-    p "CUSTOM", custom_header_value
   end
 
   post '/users' do

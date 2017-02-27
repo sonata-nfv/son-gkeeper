@@ -57,26 +57,17 @@ configure do
     register Sinatra::ConfigFile
     # Load configurations
     config_file 'config/keycloak.yml'
+    #self.get_realm_public_key
 
-    self.get_oidc_endpoints
-    self.get_adapter_install_json
-    @@access_token = self.get_adapter_token
+    #self.get_oidc_endpoints
+    #self.get_adapter_install_json
+    #@@access_token = self.get_adapter_token
   end
 
-  # turn keycloak realm pub key into an actual openssl compat pub key.
-  keycloak_config = JSON.parse(File.read('config/keycloak.json'))
-  @s = "-----BEGIN PUBLIC KEY-----\n"
-  @s += keycloak_config['realm-public-key'].scan(/.{1,64}/).join("\n")
-  @s += "\n-----END PUBLIC KEY-----\n"
-  @key = OpenSSL::PKey::RSA.new @s
-  set :keycloak_pub_key, @key
-  set :keycloak_client_id, keycloak_config['resource']
-  set :keycloak_url, keycloak_config['auth-server-url'] + '/' + keycloak_config['realm'] + '/'
-
-  # Print token settings
-  puts "settings.keycloak_pub_key: ", settings.keycloak_pub_key
 
   # set up the rest of sinatra config stuff
+  #@key = create_public_key
+  #set :keycloak_pub_key, @key
   set :server, :puma
   set :environment, :production
 end
@@ -93,3 +84,22 @@ class Adapter < Sinatra::Application
   # Load configurations
   config_file 'config/config.yml'
 end
+
+=begin
+def create_public_key
+    # turn keycloak realm pub key into an actual openssl compat pub key.
+  keycloak_yml = YAML.load_file('config/keycloak.yml')
+  #keycloak_config = JSON.parse(File.read('config/keycloak.json'))
+  @s = "-----BEGIN PUBLIC KEY-----\n"
+  @s += keycloak_yml['realm_public_key'].scan(/.{1,64}/).join("\n")
+  @s += "\n-----END PUBLIC KEY-----\n"
+  @key = OpenSSL::PKey::RSA.new @s
+  @key
+  
+  #set :keycloak_client_id, keycloak_config['resource']
+  #set :keycloak_url, keycloak_config['auth-server-url'] + '/' + keycloak_config['realm'] + '/'
+
+  # Print token settings
+  #puts "settings.keycloak_pub_key: ", settings.keycloak_pub_key
+end
+=end
