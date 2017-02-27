@@ -301,6 +301,15 @@ class Keycloak < Sinatra::Application
 
   post '/refresh' do
     #TODO:
+    logger.debug 'Adapter: entered POST /refresh'
+    # Return if Authorization is invalid
+    #halt 400 unless request.env["HTTP_AUTHORIZATION"]
+    # puts "headers", request.env["HTTP_CONTENT_DISPOSITION"]
+    att = request.env['HTTP_CONTENT_DISPOSITION']
+    custom_header_value = request.env['HTTP_CUSTOM_HEADER']
+
+    p "ATT", att
+    p "CUSTOM", custom_header_value
   end
 
   post '/users' do
