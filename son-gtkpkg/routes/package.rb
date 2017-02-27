@@ -62,7 +62,7 @@ class GtkPkg < Sinatra::Base
         if descriptor.key?('uuid')
           logger.info("Storing son-package in catalogue")
           son_package = Package.new(catalogue: settings.son_packages_catalogue, logger: logger, params: {io: params[:package][:tempfile][:tempfile]})
-          son_package = son_package.store_zip()
+          son_package = son_package.store_package_file()
           if son_package && son_package['uuid']
             package = Package.new(catalogue: settings.packages_catalogue, logger: logger, params: {io: params[:package][:tempfile][:tempfile]})
             response = package.add_sonpackage_id(descriptor['uuid'], son_package['uuid'])
@@ -102,45 +102,21 @@ class GtkPkg < Sinatra::Base
     end
   end
  
-=begin  
-  get '/packages/:uuid' do
-    unless params[:uuid].nil?
-      logger.info('GtkPkg.get') { "GtkPkg: entered GET \"/packages/#{params[:uuid]}\""}
-      #package = Package.find_by_uuid( params[:uuid], logger)
-      package = settings.packages_catalogue.find_by_uuid( params[:uuid])
-      if package && package.is_a?(Hash) && package['uuid']
-        logger.info "GtkPkg: in GET /packages/#{params[:uuid]}, found package #{package}"
-        response = Package.new(catalogue: settings.packages_catalogue, logger: logger, params: {descriptor: package}).to_file()    
-        if response
-          logger.info "GtkPkg: leaving GET /packages/#{params[:uuid]} with package found and sent in file .../#{package['name']}.son"
-          halt 200, { 'filepath'=>File.join('public', 'packages', params[:uuid], package['name']+'.son')}.to_json
-        else
-          logger.error "GtkPkg: leaving GET /packages/#{params[:uuid]}, with 'Could not create package file'."
-          json_error 400, "Could not create package file"
-        end
-      else
-        logger.error "GtkPkg: leaving GET \"/packages/#{params[:uuid]}\" with \"No package with UUID=#{params[:uuid]} was found\""
-        json_error 400, "No package with UUID=#{params[:uuid]} was found"
-      end
-    end
-    logger.error "GtkPkg: leaving GET \"/packages/#{params[:uuid]}\" with \"No package UUID specified\""
-    json_error 400, 'No package UUID specified'
-  end
-=end
   # GET package descriptor
   get '/packages/:uuid' do
+    log_message = 'GtkPkg.get /packages/:uuid'
     unless params[:uuid].nil?
-      logger.info('GtkPkg.get') { "GtkPkg: entered GET \"/packages/#{params[:uuid]}\""}
+      logger.debug(log_message) { "entered with uuid=\"#{params[:uuid]}\""}
       package = settings.packages_catalogue.find_by_uuid( params[:uuid])
       if package && package.is_a?(Hash) && package['uuid']
-        logger.info "GtkPkg: leaving GET /packages/#{params[:uuid]} with package found. Package: #{package}"
+        logger.debug(log_message) { "leaving with package found. Package: #{package}"}
         halt 200, package.to_json
       else
-        logger.error "GtkPkg: leaving GET \"/packages/#{params[:uuid]}\" with \"No package with UUID=#{params[:uuid]} was found\""
+        logger.error(log_message) { "leaving with \"No package with UUID=#{params[:uuid]} was found\""}
         json_error 400, "No package with UUID=#{params[:uuid]} was found"       
       end
     end
-    logger.error "GtkPkg: leaving GET \"/packages/#{params[:uuid]}\" with \"No package UUID specified\""
+    logger.error(log_message) { "leaving with \"No package UUID specified\""}
     json_error 400, 'No package UUID specified'    
   end
   
@@ -182,7 +158,19 @@ class GtkPkg < Sinatra::Base
       [200, {}, packages.to_json]
     else
       error_message = "No package with params #{params} was found"
-      logger.info(message) { "leaving with \"#{error_message}\""}
+      logger.error(message) { "leaving with \"#{error_message}\""}
+      json_error 404, error_message
+    end
+  end
+  
+  delete '/packages/:uuid/?' do
+    log_message = LOG_MESSAGE + ' DELETE /packages/:uuid'
+    logger.info(log_message) {"uuid = #{params[:uuid]}"}
+    if settings.packages_catalogue.delete(params[:uuid])
+      [200, {}, '']
+    else
+      error_message = 'Could not delete package with uuid='+params[:uuid]
+      logger.error(message) { "leaving with \"#{error_message}\""}
       json_error 404, error_message
     end
   end

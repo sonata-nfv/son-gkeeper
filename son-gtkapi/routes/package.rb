@@ -101,7 +101,7 @@ class GtkApi < Sinatra::Base
         links = build_pagination_headers(url: request_url, limit: @limit.to_i, offset: @offset.to_i, total: packages.size)
         [200, {'Link' => links}, packages]
       else
-        error_message = 'No package found with parameters '+query_string
+        error_message = 'No packages found' + query_string=='' ? '' : ' with parameters "-'+query_string+'-"'
         logger.debug(log_message) {'leaving with "'+error_message+'"'}
         json_error 404, error_message
       end
@@ -120,13 +120,23 @@ class GtkApi < Sinatra::Base
   
     # DELETE
     delete '/:uuid/?' do
-      # TODO
       log_message = 'GtkApi::DELETE /api/v2/packages/:uuid/?'
       unless params[:uuid].nil?
         logger.info(log_message) { "entered with package id #{params[:uuid]}"}
-        logger.info(log_message) { "leaving with \"Not implemented yet\""}
+        packages = PackageManagerService.delete(params[:uuid])
+        if packages
+          logger.debug(log_message) { "deleted package with uuid=#{params[:uuid]}"}
+          [200, {}, '']
+        else
+          error_message = 'No package found with uuid='+params[:uuid]
+          logger.debug(log_message) {'leaving with "'+error_message+'"'}
+          json_error 404, error_message
+        end
+      else
+        error_message = 'Package uuid needed'
+        logger.debug(log_message) {'leaving with "'+error_message+'"'}
+        json_error 404, error_message
       end
-      json_error 501, "Not implemented yet"
     end
   end
   

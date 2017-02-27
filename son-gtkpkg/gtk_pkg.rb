@@ -75,6 +75,7 @@ class GtkPkg < Sinatra::Base
   logger.info(MODULE) {"Logger level at :#{settings.logger_level}"}
     
   enable :cross_origin
+  #enable :method_override
 
   if GtkPkg.settings.catalogues
    set :son_packages_catalogue, Catalogue.new(GtkPkg.settings.catalogues+'/son-packages', logger)

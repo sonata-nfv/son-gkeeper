@@ -83,6 +83,7 @@ class GtkApi < Sinatra::Base
   settings.logger.info(MODULE) {"Logger level at :#{settings.logger_level} level"}
   
   enable :cross_origin
+  #enable :method_override
 
   # TODO: make this relationship loosely coupled
   # TODO: logger could be a global variable
