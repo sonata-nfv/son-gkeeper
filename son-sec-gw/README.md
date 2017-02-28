@@ -5,11 +5,11 @@ This folder has the configuration, code and specifications of sonata security ga
 
 ## Architecture
 The son-sec-gw will enable a security layer for SONATA Service Platform components. To be used as a part of infrastructure the following was considered:
-*Is a nginx proxy-pass container.
-*Is located on front of son-gktapi and son-gui. 
-*The certificates should be mounted as volume inside the son-sec-gw
-*The communication between son-sec-gw and internal components is always https
-*The communication between clients and son-sec-gw is https if certificates exists, otherwise http is allowed but with a warning.
+* Is a nginx proxy-pass container.
+* Is located on front of son-gktapi and son-gui. 
+* The certificates should be mounted as volume inside the son-sec-gw
+* The communication between son-sec-gw and internal components is always https
+* The communication between clients and son-sec-gw is https if certificates exists, otherwise http is allowed but with a warning.
 
 ```
 
