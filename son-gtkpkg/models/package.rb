@@ -351,46 +351,47 @@ class Package
   end
 
   def store_package_service_and_functions
-    @logger.debug('Package.store_package_service_and_functions') {"@package is #{@package}"}
-    @logger.debug('Package.store_package_service_and_functions') {"@service is #{@service}"}
-    @logger.debug('Package.store_package_service_and_functions') {"@functions is #{@functions}"}
+    log_message = 'Package.'+__method__.to_s
+    @logger.debug(log_message) {"@package is #{@package}"}
+    @logger.debug(log_message) {"@service is #{@service}"}
+    @logger.debug(log_message) {"@functions is #{@functions}"}
     
     # The verification of duplicates may have to migrate to the router, in order to make it return '200' instead of '201' 
     package_descriptor = duplicated_package?(@descriptor)
     if package_descriptor.one?
-      @logger.error('Package.store_package_service_and_functions') {"package exists: #{package_descriptor[0]}"}
+      @logger.error(log_message) {"package exists: #{package_descriptor[0]}"}
       package_descriptor[0]
     else
       saved_descriptor=store()
       if saved_descriptor
-        @logger.debug "Package.store_package_service_and_functions: stored package #{saved_descriptor}"
-        if @service.size > 0
-          @logger.debug "Package.store_package_service_and_functions: service is #{@service}"
+        @logger.debug(log_message) {"stored package #{saved_descriptor}"}
+        if @service #.size > 0
+          @logger.debug(log_message) {"service is #{@service.inspect}"}
           stored_service = @service.store()
           if stored_service
-            @logger.debug "Package.store_package_service_and_functions: stored service #{stored_service}"
+            @logger.debug(log_message) {"stored service #{stored_service}"}
           else
             # TODO: what if storing a service goes wrong?
             # rollback!
-            @logger.debug "Package.store_package_service_and_functions: service and package rollback should happen here"
+            @logger.debug(log_message) {"service and package rollback should happen here"}
           end
         end
         if @functions.size > 0
           @functions.each do |vf|
-            @logger.debug "Package.store_package_service_and_functions: vf = #{vf}"
+            @logger.debug(log_message) {"vf = #{vf}"}
             function = vf.store()
             if function
-              @logger.debug "Package.store_package_service_and_functions: stored function #{function}"
+              @logger.debug(log_message) {"stored function #{function}"}
               # TODO: rollback if failled
             else
-              @logger.debug "Package.store_package_service_and_functions: function, service and package rollback should happen here"
+              @logger.debug(log_message) {"function, service and package rollback should happen here"}
             end
           end
         end
-        @logger.debug('Package.store_package_service_and_functions') {"saved_descriptor is #{saved_descriptor}"}
+        @logger.debug(log_message) {"saved_descriptor is #{saved_descriptor}"}
         saved_descriptor
       else
-        @logger.debug "Package.store_package_service_and_functions: failled to store package with descriptor=#{@descriptor}"
+        @logger.debug(log_message) { "failled to store package with descriptor=#{@descriptor}"}
         {}
       end
     end
