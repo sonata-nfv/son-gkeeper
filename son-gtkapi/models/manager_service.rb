@@ -100,8 +100,10 @@ class ManagerService
         GtkApi.logger.error(log_message) {"Backtrace:\n\t#{e.backtrace.join("\n\t")}"}
         {status: nil, count: nil, items: nil, message: "Error processing #{$!}: \n\t#{e.backtrace.join("\n\t")}"}
       end
+    when 400..499
+      {status: status, count: nil, items: nil, message: "Status #{status}: cold not process"}
     else
-      {status: status, count: nil, items: nil, message: "Status #{status} unprocessable"}
+      {status: status, count: nil, items: nil, message: "Status #{status} unknown"}
     end
   end  
 

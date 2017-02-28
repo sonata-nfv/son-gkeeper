@@ -104,7 +104,7 @@ class Catalogue
   def update
   end
   
-  def delete(uuid:)
+  def delete(uuid)
     method = CLASS + __method__.to_s
     @logger.debug(method) {'entered with uuid='+uuid}
     begin

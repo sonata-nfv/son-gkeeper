@@ -121,7 +121,7 @@ class PackageManagerService < ManagerService
     GtkApi.logger.debug(method) {'entered'}
     headers = { 'Accept'=> 'application/json', 'Content-Type'=>'application/json'}
     begin
-      response = RestClient.get(@@url+'/packages/'+uuid, headers)
+      response = RestClient.delete(@@url+'/packages/'+uuid, headers)
       GtkApi.logger.debug(method) {"response #{response}"}
       response
     rescue => e
