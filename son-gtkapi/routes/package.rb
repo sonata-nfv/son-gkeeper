@@ -38,7 +38,8 @@ class GtkApi < Sinatra::Base
     
       unless params[:package].nil?
         if params[:package][:tempfile]
-          resp = PackageManagerService.create(params)
+          # TODO: we're fixing the user here, but it should come from the request
+          resp = PackageManagerService.create(params.merge({user: {name: 'Unknown', password: 'None'}}))
           logger.debug(log_message) {"resp=#{resp.inspect}"}
           case resp[:status]
           when 201
