@@ -29,8 +29,7 @@ class LicenceManagerService < ManagerService
   
   JSON_HEADERS = { 'Accept'=> 'application/json', 'Content-Type'=>'application/json'}
   LOG_MESSAGE = 'GtkApi::' + self.name
-  LICENCE_TYPES_URL = '/api/v1/types/'
-  LICENCES_URL = '/api/v1/licences/'
+  LICENCES_URL = '/api/v1/licenses/'
   
   def self.config(url:)
     method = LOG_MESSAGE + "#config(url=#{url})"
@@ -38,27 +37,6 @@ class LicenceManagerService < ManagerService
     raise ArgumentError.new('LicenceManagerService can not be configured with empty url') if url.empty?
     @@url = url
     GtkApi.logger.debug(method) {'entered'}
-  end
-
-  def self.create_type(params)
-    method = LOG_MESSAGE + "##{__method__}(#{params})"
-    GtkApi.logger.debug(method) {'entered'}
-    headers = {'Content-Type'=>'application/x-www-form-urlencoded'}
-    begin
-      licence_type = postCurb(url: @@url+LICENCE_TYPES_URL, body: params, headers: headers)
-      # {"status_code:": 200, "data": {"duration": 10, "status": "ACTIVE", "type": "Private", "type_uuid": "a592eb72-4e84-4aae-bb38-5014d731cf65"}, "description": "Type successfully created", "error": ""}
-      if licence_type && licence_type['data']
-        GtkApi.logger.debug(method) {"licence_type=#{licence_type['data']}"}
-        licence_type['data']
-      else
-        GtkApi.logger.error(method) {"No licence_type with params=#{params} has been created"}
-        {}
-      end
-    rescue  => e #RestClient::Conflict
-      GtkApi.logger.error(method) {"Error during processing: #{$!}"}
-      GtkApi.logger.error(method) {"Backtrace:\n\t#{e.backtrace.join("\n\t")}"}
-      {error: 'Licence type not created', licence_type: e.backtrace}
-    end
   end
   
   def self.valid?(params)
@@ -74,7 +52,7 @@ class LicenceManagerService < ManagerService
     method = LOG_MESSAGE + "##{__method__}(#{params})"
     GtkApi.logger.debug(method) {'entered'}
     raise ArgumentError, 'User must be valid' unless User.valid? params[:user_uuid]
-    raise ArgumentError, 'Service must be valid' unless ServiceManagementService.valid? params[:service_uuid]
+    raise ArgumentError, 'Service must be valid' unless ServiceManagerService.valid? params[:service_uuid]
     GtkApi.logger.debug(method) {'Leaving with valid licence data'}
     true
   end
@@ -84,17 +62,16 @@ class LicenceManagerService < ManagerService
     GtkApi.logger.debug(method) {'entered'}
     headers = {'Content-Type'=>'application/x-www-form-urlencoded'}
 
-    
     begin
       self.valid?(params)
       licence = postCurb(url: @@url+LICENCES_URL, body: params, headers: headers)
-      GtkApi.logger.debug(method) {"licence=#{licence.body}"}
-      parsed_licence=JSON.parse(licence.body)
-      case parsed_licence[:status_code]
-      when 201
-        {status: 201, count: 1, items: parsed_licence[:data], message: 'Created'}
+      GtkApi.logger.debug(method) {"licence=#{licence}"}
+      
+      case licence[:status]
+      when 200, 201
+        {status: 201, count: 1, items: licence[:data], message: 'Created'}
       else
-        {status: parsed_licence[:status_code], count: 0, items: [], message: parsed_licence[:error]}
+        {status: licence[:status], count: 0, items: [], message: licence[:error]}
       end
     rescue  ArgumentError => ae
       {status: 422, count: 0, items:[], message: 'Unprocessable Entity'}
@@ -105,36 +82,39 @@ class LicenceManagerService < ManagerService
     end
   end
 
-  def self.find_licence_type_by_uuid(uuid)
-    licence_type=find(url: @@url + LICENCE_TYPES_URL + uuid + '/', log_message: LOG_MESSAGE + "##{__method__}(#{uuid})")
-      #{"status_code:": 200, "data": {"duration": 10, "status": "ACTIVE", "type": "Private", "type_uuid": "9e0dffc3-707e-41b6-81d1-79196cfe88a9"}, "description": "Type successfully retrieved", "error": ""}
-    licence_type['data'] if licence_type
-  end
+  def self.find_by_uuid(uuid)
+    log_message = LOG_MESSAGE + "##{__method__}(#{uuid})"
+    GtkApi.logger.debug(log_message) {'entered'}
 
-  def self.find_licence_by_uuid(uuid)
-    licence=find(url: @@url + LICENCES_URL + uuid + '/', log_message: LOG_MESSAGE + "##{__method__}(#{uuid})")
-    licence['data'] if licence
+    headers = { 'Accept'=> 'application/json', 'Content-Type'=>'application/json'}
+    licence = getCurb(url: @@url + LICENCES_URL + uuid + '/', params: {}, headers: headers)
+    GtkApi.logger.debug(log_message) {"licence=#{licence}"}
+    case licence[:status]
+    when 200
+      {status: 200, count: 1, items: licence[:items][:data][:licenses], message: "OK"}
+    when 400
+    when 404
+      {status: licence[:status], count: 0, items: [], message: "Not Found"}
+    else
+      {status: licences[:status], count: 0, items: [], message: "Error"}
+    end
   end
-  
-  def self.find_licence_types(params)
-    licence_types=find(url: @@url + LICENCE_TYPES_URL, params: params, log_message: LOG_MESSAGE + "##{__method__}(#{params})")
-      #{"status_code:"=>200, "data"=>{"types"=>[{"duration"=>1000, "status"=>"ACTIVE", "type"=>"Public", "type_uuid"=>"21cf0db6-f96b-4659-a463-05d5c3413141"}, {"duration"=>10, "status"=>"ACTIVE", "type"=>"Private", "type_uuid"=>"9e0dffc3-707e-41b6-81d1-79196cfe88a9"}]}, "description"=>"Types list successfully retrieved", "error"=>""}
-    licence_types[:items][:data][:types] if licence_types
-  end
-  
-  def self.find_licences(params)
-    method = LOG_MESSAGE + "##{__method__}(#{params})"
-    #licences = find(url: @@url + LICENCES_URL, params: params, log_message: LOG_MESSAGE + "##{__method__}(#{params})")
-    #GtkApi.logger.debug(method) {"licences=#{licences}"}
-    #case licences[:status]
-    #when 200
-    #  {status: 200, count: licences[:items][:data][:licences].count, items: licences[:items][:data][:licences], message: "OK"}
-    #when 400
-    #when 404
+    
+  def self.find(params)
+    log_message = LOG_MESSAGE + "##{__method__}(#{params})"
+    headers = { 'Accept'=> 'application/json', 'Content-Type'=>'application/json'}
+    GtkApi.logger.debug(log_message) {'entered'}
+    licences = getCurb(url: @@url + LICENCES_URL, params: params, headers: headers)
+    GtkApi.logger.debug(log_message) {"licences=#{licences}"}
+    case licences[:status]
+    when 200
+      {status: 200, count: licences[:items][:data][:licenses].count, items: licences[:items][:data][:licenses], message: "OK"}
+    when 400
+    when 404
       {status: 200, count: 0, items: [], message: "OK"}
-    #else
-    #  {status: licences[:status], count: 0, items: [], message: "Error"}
-    #end
+    else
+      {status: licences[:status], count: 0, items: [], message: "Error"}
+    end
   end
   
   #def user

@@ -72,7 +72,7 @@ class GtkApi < Sinatra::Base
       @offset ||= params['offset'] ||= DEFAULT_OFFSET 
       @limit ||= params['limit'] ||= DEFAULT_LIMIT
 
-      licences = LicenceManagerService.find_licences(params)
+      licences = LicenceManagerService.find(params)
       logger.debug(log_message) {"Found licences #{licences}"}
       case licences[:status]
       when 200
@@ -88,28 +88,6 @@ class GtkApi < Sinatra::Base
         json_error 404, message
       end
     end
-      
-    # GET a specific licence type
-    get '/licence-types/:uuid/?' do
-      log_message = MODULE+' GET /api/v2/licence-types/:uuid'
-      logger.debug(log_message) {"entered with #{params[:uuid]}"}
-    
-      if valid?(params[:uuid])
-        licence_type = LicenceManagerService.find_licence_type_by_uuid(params[:uuid])
-        if licence_type
-          logger.debug(log_message) {"leaving with #{licence_type}"}
-          halt 200, licence_type.to_json
-        else
-          logger.debug(log_message) {"leaving with message 'Licence type #{params[:uuid]} not found'"}
-          json_error 404, "Licence type #{params[:uuid]} not found"
-        end
-      else
-        message = "Licence type #{params[:uuid]} not valid"
-        logger.debug(log_message) {"leaving with message '"+message+"'"}
-        json_error 404, message
-      end
-    end
-
 
     # GET a specific licence
     get '/licences/:uuid/?' do
@@ -117,7 +95,7 @@ class GtkApi < Sinatra::Base
       logger.debug(log_message) {"entered with #{params[:uuid]}"}
     
       if valid?(params[:uuid])
-        licence = LicenceManagerService.find_licence_by_uuid(params[:uuid])
+        licence = LicenceManagerService.find_by_uuid(params[:uuid])
         if licence
           logger.debug(log_message) {"leaving with #{licence}"}
           halt 200, licence.to_json
@@ -172,21 +150,19 @@ class GtkApi < Sinatra::Base
       params = JSON.parse(body, symbolize_names: true)
       logger.debug(log_message) {"entered with params=#{params}"}
 
-      licence = LicenceManagerService.create(body)
+      licence = LicenceManagerService.create(params)
       logger.debug(log_message) {"licence=#{licence.inspect}"}
       case licence[:status]
       when 201
         logger.info(log_message) {"leaving with licence: #{licence[:items]}"}
         headers 'Location'=> LicenceManagerService.class_variable_get(:@@url)+"/licences/#{licence[:uuid]}", 'Content-Type'=> 'application/json'
         halt 201, licence.to_json
+      when 400
+        json_error 400, '{}', 'Unprocessable entity'
       when 422
-        logger.info(log_message) {"Unprocessable entity"}
-        headers 'Content-Type'=> 'application/json'
-        halt 422, '{}'
+        json_error 422, '{}', 'Unprocessable entity'
       else
-        logger.info(log_message) {"Internal error while trying to create a licence #{body}"}
-        headers 'Content-Type'=> 'application/json'
-        halt 500, 'Internal error while trying to create a licence'
+        json_error 500, "Internal error while trying to create a licence with params #{params}"
       end
     end
   end

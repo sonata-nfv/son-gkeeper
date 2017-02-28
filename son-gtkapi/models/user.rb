@@ -83,6 +83,11 @@ class User < ManagerService
     true
   end
   
+  # TODO
+  def self.valid?(user)
+    true
+  end
+  
   def self.find_by_uuid(uuid)
     user=find(url: @@url + USERS_URL + uuid, log_message: LOG_MESSAGE + "##{__method__}(#{uuid})")
     user['data'] if user
