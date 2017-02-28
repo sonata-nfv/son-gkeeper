@@ -63,11 +63,15 @@ module GtkPkgHelpers
     end
   end
 
-  def json_error(code, message)
+  def json_error(code, error_message, log_message='')
     content_type :json
-    msg = {'error' => message}
-    logger.error msg.to_s
-    halt code, {'Content-Type'=>'application/json'}, msg.to_json
+    msg = {'error' => { 'code'=>code, 'message'=>error_message}}.to_json
+    if log_message.empty?
+      logger.error msg
+    else
+      logger.error(log_message) {"leaving with #{msg}"}
+    end
+    halt code, msg
   end
 
   def valid?(uuid)

@@ -36,6 +36,7 @@ require 'rest-client'
 class Catalogue
   
   attr_accessor :url
+  CLASS = self.name
   
   def initialize(url, logger)
     @url = url
@@ -73,7 +74,7 @@ class Catalogue
   end
   
   def find_by_uuid(uuid)
-    @logger.debug "Catalogue.find_by_uuid(#{uuid})"
+    @logger.debug CLASS+".find_by_uuid(#{uuid})"
     headers = {'Accept'=>'application/json', 'Content-Type'=>'application/json'}
     #headers[:params] = uuid
     begin
@@ -103,11 +104,26 @@ class Catalogue
   def update
   end
   
-  def delete
+  def delete(uuid:)
+    method = CLASS + __method__.to_s
+    @logger.debug(method) {'entered with uuid='+uuid}
+    begin
+      uri = URI(@url + '/' + uuid)
+      req = Net::HTTP::Delete.new(uri)
+      req.content_type = 'application/json'
+      response = Net::HTTP.start(uri.hostname, uri.port) { |http|
+        http.request(req)
+      }
+      @logger.debug(method) {"response was #{response}"}
+      response.code.to_i
+    rescue => e
+      @logger.error format_error(e.backtrace)
+      nil
+    end
   end
   
   def set_sonpackage_id(desc_uuid, sonp_uuid)
-    method = "Catalogue.set_sonpackage_id: "
+    method = CLASS + __method__.to_s
     @logger.debug(method) {"desc_uuid=#{desc_uuid}, sonp_uuid=#{sonp_uuid}"}
     headers = {'Content-Type'=>'application/json'}
     begin

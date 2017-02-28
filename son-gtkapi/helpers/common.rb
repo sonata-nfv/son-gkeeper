@@ -29,10 +29,15 @@ module GtkApiHelper
     #@content ||= Package.decode(package_file_path) || halt 404
   end  
 
-  def json_error(code, message)
-    msg = {'error' => { 'code'=>code, 'message'=>message}}
-    logger.error msg.to_s
-    halt code, {'Content-type'=>'application/json'}, msg.to_json
+  def json_error(code, message, log_message='')
+    content_type :json
+    msg = {'error' => { 'code'=>code, 'message'=>message}}.to_json
+    if log_message.empty?
+      logger.error msg
+    else
+      logger.error(log_message) {"leaving with #{msg}"}
+    end
+    halt code, msg
   end
 
   def valid?(uuid)

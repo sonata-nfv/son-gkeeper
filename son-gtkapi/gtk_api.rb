@@ -65,7 +65,7 @@ class GtkApi < Sinatra::Base
   set :time_at_startup, Time.now.utc
   set :environments, %w(development test integration qualification demonstration)
   set :environment, ENV['RACK_ENV'] || :development
-  config_file File.join(root, 'config', 'services.yml.erb')
+  config_file File.join(root, 'config', 'services.yml')
   
   use Rack::Session::Cookie, key: 'rack.session', domain: 'foo.com', path: '/', expire_after: 2592000, secret: '$0nata'
   
@@ -78,21 +78,22 @@ class GtkApi < Sinatra::Base
   logfile.sync = true
   set :logger, Logger.new(logfile)
   raise 'Can not proceed without a logger file' if settings.logger.nil?
-  set :logger_level, (settings.logger_level ||= 'debug').to_sym # can be debug, fatal, error, warn, or info
+  set :logger_level, (ENV['LOGGER_LEVEL'] || settings.level ||= 'debug').to_sym # can be debug, fatal, error, warn, or info
   settings.logger.info(MODULE) {"Started at #{settings.time_at_startup}"}
   settings.logger.info(MODULE) {"Logger level at :#{settings.logger_level} level"}
   
   enable :cross_origin
+  #enable :method_override
 
   # TODO: make this relationship loosely coupled
   # TODO: logger could be a global variable
-  PackageManagerService.config(url: settings.pkgmgmt)
-  ServiceManagerService.config(url: settings.srvmgmt)
-  FunctionManagerService.config(url: settings.fnctmgmt)
-  RecordManagerService.config(url: settings.recmgmt)
-  LicenceManagerService.config(url: settings.licmgmt)
-  VimManagerService.config(url: settings.vimmgmt)
-  KpiManagerService.config(url: settings.kpimgmt)
+  PackageManagerService.config(url: ENV['PACKAGE_MANAGEMENT_URL'] || settings.pkgmgmt)
+  ServiceManagerService.config(url: ENV['SERVICE_MANAGEMENT_URL'] || settings.srvmgmt)
+  FunctionManagerService.config(url: ENV['FUNCTION_MANAGEMENT_URL'] || settings.fnctmgmt)
+  RecordManagerService.config(url: ENV['RECORD_MANAGEMENT_URL'] || settings.recmgmt)
+  LicenceManagerService.config(url: ENV['LICENCE_MANAGEMENT_URL'] || settings.licmgmt)
+  VimManagerService.config(url: ENV['VIM_MANAGEMENT_URL'] || settings.vimmgmt)
+  KpiManagerService.config(url: ENV['KPI_MANAGEMENT_URL'] || settings.kpimgmt)
   
   Zip.setup do |c|
     c.unicode_names = true
