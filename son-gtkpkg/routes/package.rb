@@ -34,22 +34,6 @@ class GtkPkg < Sinatra::Base
   LOG_MESSAGE = 'GtkPkg::'
 
   # Receive the Java package
-  #post '/uploads' do
-  #  puts "Params: " + params.inspect
-  #  puts "Headers: " + headers.inspect
-  #  if params[:file]
-  #    filename = params[:file][:filename]
-  #    file = params[:file][:tempfile]
-
-  #    File.open(File.join('files/p2', filename), 'wb') do |f|
-  #      f.write file.read
-  #    end
-  #    puts 'Upload successful'
-  #  else
-  #    puts 'You have to choose a file'
-  #  end
-  #end
-
   post '/packages/?' do
     log_message = LOG_MESSAGE + ' POST /packages'
     logger.info(log_message) {"params = #{params}"}
@@ -73,32 +57,22 @@ class GtkPkg < Sinatra::Base
               halt 201, {'Location' => "/son-packages/#{descriptor['son-package-uuid']}"}, descriptor.to_json
             else
               error_message = "Error storing son-package-uuid in descriptor: " + response
-              logger.error(log_message) {"leaving with #{error_message}"}
-              json_error 400, error_message
+              json_error 400, error_message, log_message
             end
           else
-            error_message = 'Error storing son-package.'
-            logger.error(log_message) {"leaving with #{error_message}"}
-            json_error 400, error_message            
+            json_error 400, 'Error storing son-package.', log_message         
           end
         elsif descriptor.key?('name') && descriptor.key?('vendor') && descriptor.key?('version')
           error_message = "Version #{descriptor['version']} of package '#{descriptor['name']}' from vendor '#{descriptor['vendor']}' already exists"
-          logger.info(log_message) {"leaving with #{error_message}"}
-          halt 409, descriptor.to_json 
+          halt 409, error_message, log_message
         else
-          error_message = 'Oops.. something terribly wrong happened here!'
-          logger.error(log_message) {"leaving with #{error_message}"}
-          json_error 400, error_message         
+          json_error 400, 'Oops.. something terribly wrong happened here!', log_message      
         end
       else
-        error_message = 'Error generating package descriptor'
-        logger.error(log_message) {"leaving with #{error_message}"}
-        json_error 400, error_message
+        json_error 400, 'Error generating package descriptor', log_message
       end
     else
-      error_message = 'No package created'
-      logger.error(log_message) {"leaving with #{error_message}"}
-      json_error 400, error_message
+      json_error 400, 'No package created', log_message
     end
   end
  
@@ -112,12 +86,10 @@ class GtkPkg < Sinatra::Base
         logger.debug(log_message) { "leaving with package found. Package: #{package}"}
         halt 200, package.to_json
       else
-        logger.error(log_message) { "leaving with \"No package with UUID=#{params[:uuid]} was found\""}
-        json_error 400, "No package with UUID=#{params[:uuid]} was found"       
+        json_error 400, "No package with UUID=#{params[:uuid]} was found", log_message     
       end
     end
-    logger.error(log_message) { "leaving with \"No package UUID specified\""}
-    json_error 400, 'No package UUID specified'    
+    json_error 400, 'No package UUID specified', log_message   
   end
   
   get '/packages/:uuid/package?' do
@@ -128,7 +100,7 @@ class GtkPkg < Sinatra::Base
       logger.debug "GtkPkg: entries are #{entries}"
       send_file File.join('public','packages',params[:uuid], entries[0]) if entries.size
     end
-    logger.info "GtkPkg: leaving GET /packages/#{params[:uuid]}/package with \"No package UUID specified\""
+    logger.debug("GtkPkg GET /packages/#{params[:uuid]}/package") {"leaving with \"No package UUID specified\""}
     json_error 400, 'No package UUID specified'
   end
 
@@ -157,9 +129,7 @@ class GtkPkg < Sinatra::Base
       logger.debug(message) {"leaving with #{packages.size} package(s) found"}
       [200, {}, packages.to_json]
     else
-      error_message = "No package with params #{params} was found"
-      logger.error(message) { "leaving with \"#{error_message}\""}
-      json_error 404, error_message
+      json_error 404, "No package with params #{params} was found", message
     end
   end
   
@@ -169,20 +139,12 @@ class GtkPkg < Sinatra::Base
     if settings.packages_catalogue.delete(params[:uuid])
       [200, {}, '']
     else
-      error_message = 'Could not delete package with uuid='+params[:uuid]
-      logger.error(message) { "leaving with \"#{error_message}\""}
-      json_error 404, error_message
+      json_error 404, 'Could not delete package with uuid='+params[:uuid], message
     end
   end
   
   get '/admin/logs/?' do
     logger.debug "GtkPkg: entered GET /admin/logs"
     File.open('log/'+ENV['RACK_ENV']+'.log', 'r').read
-  end
-  
-  private
-  
-  def query_string
-    request.env['QUERY_STRING'].nil? ? '' : '?' + request.env['QUERY_STRING'].to_s
   end
 end
