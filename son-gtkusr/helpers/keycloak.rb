@@ -6,7 +6,9 @@ require 'base64'
 require 'jwt'
 require 'resolv'
 require 'uri'
+require_relative 'helpers'
 # require 'openssl'
+
 
 def parse_json(message)
   # Check JSON message format
@@ -29,10 +31,6 @@ class Keycloak < Sinatra::Application
   @@auth_mappings = YAML.load_file 'config/mappings.yml'
 
   puts "MAPPINGS CONTENT", @@auth_mappings
-	
-  ## Get the ip of keycloak. Only works for docker-compose
-  @@address = Resolv::DNS.new.getaddress("keycloak")
-
 
   # p keycloak_config
   # p "ISSUER", ENV['JWT_ISSUER']
@@ -40,6 +38,37 @@ class Keycloak < Sinatra::Application
   @@uri = ENV['KEYCLOAK_PATH']
   @@realm_name = ENV['SONATA_REALM']
   @@client_name = ENV['CLIENT_NAME']
+  # TODO: remove this or comment
+  #@@port = 8081
+  #@@uri = 'auth'
+  #@@realm_name = 'master'
+  #@@client_name = 'adapter'
+
+  def Keycloak.get_adapter_token
+    url = URI("http://#{@@address.to_s}:#{@@port.to_s}/#{@@uri.to_s}/realms/#{@@realm_name}/protocol/openid-connect/token")
+    res = Net::HTTP.post_form(url, 'client_id' => @@client_name, 'client_secret' => @@client_secret,
+                              'username' => "admin",
+                              'password' => "admin",
+                              'grant_type' => "client_credentials")
+
+    parsed_res, code = parse_json(res.body)
+
+    if parsed_res['access_token']
+      puts "ACCESS_TOKEN RECEIVED", parsed_res['access_token']
+
+      File.open('config/token.json', 'w') do |f|
+        f.puts parsed_res['access_token']
+      end
+      parsed_res['access_token']
+    end
+  end
+
+  ## Get the ip of keycloak. Only works for docker-compose
+  @@address = Resolv::DNS.new.getaddress("keycloak")
+  # TODO: remove this or comment
+  #@@address = 'localhost'
+  #@@client_secret = 'df7e816d-0337-4fbe-a3f4-7b5263eaba9f'
+  #@@access_token = Keycloak.get_adapter_token
 
   def get_oidc_endpoints
     # Call http://localhost:8081/auth/realms/master/.well-known/openid-configuration to obtain endpoints
@@ -77,43 +106,6 @@ class Keycloak < Sinatra::Application
       f.puts response.read_body
     end
   end
-
-  def get_adapter_token
-    url = URI("http://#{@@address.to_s}:#{@@port.to_s}/#{@@uri.to_s}/realms/#{@@realm_name}/protocol/openid-connect/token")
-    #http = Net::HTTP.new(url.host, url.port)
-
-    #request = Net::HTTP::Post.new(url.to_s)
-    #request.basic_auth(@client_name.to_s, @client_secret.to_s)
-    #request["content-type"] = 'application/json'
-    #body = {"username" => "admin",
-    #        "credentials" => [
-    #            {"type" => "client_credentials",
-    #             "value" => "admin"}]}
-    #request.body = body.to_json
-
-    res = Net::HTTP.post_form(url, 'client_id' => @@client_name, 'client_secret' => @@client_secret,
-                              'username' => "admin",
-                              'password' => "admin",
-                              'grant_type' => "client_credentials")
-
-    #res = http.request(request)
-
-    #p "RESPONSE", res
-    #p "RESPONSE.read_body333", res.read_body
-
-    parsed_res, code = parse_json(res.body)
-
-    if parsed_res['access_token']
-      puts "ACCESS_TOKEN RECEIVED", parsed_res['access_token']
-
-      File.open('config/token.json', 'w') do |f|
-        f.puts parsed_res['access_token']
-      end
-      #@access_token = parsed_res['access_token']
-      parsed_res['access_token']
-    end
-  end
-
 
   def self.get_realm_public_key
     url = URI.parse("http://#{@@address.to_s}:#{@@port.to_s}/#{@@uri.to_s}/realms/#{@@realm_name}")
@@ -225,7 +217,7 @@ class Keycloak < Sinatra::Application
     return res.body, res.code
   end
 
-  def register_user(token, user_form) #, username,firstname, lastname, email, credentials)
+  def register_user(user_form) #, username,firstname, lastname, email, credentials)
     # schema = {"username" => "tester",
     #         "enabled" => true,
     #         "totp" => false,
@@ -243,16 +235,14 @@ class Keycloak < Sinatra::Application
     #         "realmRoles" => [],
     #         "clientRoles" => {},
     #         "groups" => []}
-
-    token = @@access_token
-    puts "REGISTER_USER ACCESS_TOKEN_CONTENT", token
+    refresh_adapter # Refresh admin token if expired
     body = user_form
 
     url = URI("http://#{@@address.to_s}:#{@@port.to_s}/#{@@uri.to_s}/admin/realms/#{@@realm_name}/users")
     http = Net::HTTP.new(url.host, url.port)
 
     request = Net::HTTP::Post.new(url.to_s)
-    request["authorization"] = 'Bearer ' + token
+    request["authorization"] = 'Bearer ' + @@access_token
     request["content-type"] = 'application/json'
     request.body = body.to_json
     response = http.request(request)
@@ -262,13 +252,12 @@ class Keycloak < Sinatra::Application
       halt response.code.to_i, response.body.to_s
     end
 
-
     #GET new registered user Id
     url = URI("http://#{@@address.to_s}:#{@@port.to_s}/#{@@uri.to_s}/admin/realms/#{@@realm_name}/users?username=#{user_form['username']}")
     http = Net::HTTP.new(url.host, url.port)
 
     request = Net::HTTP::Get.new(url.to_s)
-    request["authorization"] = 'Bearer ' + token
+    request["authorization"] = 'Bearer ' + @@access_token
     request.body = body.to_json
 
     response = http.request(request)
@@ -282,14 +271,15 @@ class Keycloak < Sinatra::Application
     url = URI("http://#{@@address.to_s}:#{@@port.to_s}/#{@@uri.to_s}/admin/realms/#{@@realm_name}/users/#{user_id}/reset-password")
     http = Net::HTTP.new(url.host, url.port)
     request = Net::HTTP::Put.new(url.to_s)
-    request["authorization"] = 'Bearer ' + token
+    request["authorization"] = 'Bearer ' + @@access_token
     request["content-type"] = 'application/json'
 
-    # credentials = user_form['credentials']
+    credentials = user_form['credentials'][0]
+    credentials['temporary'] = 'false'
 
-    credentials = {"type" => "password",
-                   "value" => "1234",
-                   "temporary" => "false"}
+    #credentials = {"type" => "password",
+    #               "value" => "1234",
+    #               "temporary" => "false"}
 
     request.body = credentials.to_json
     response = http.request(request)
@@ -305,7 +295,7 @@ class Keycloak < Sinatra::Application
     url = URI("http://#{@@address.to_s}:#{@@port.to_s}/#{@@uri.to_s}/admin/realms/#{@@realm_name}/users/#{user_id}")
     http = Net::HTTP.new(url.host, url.port)
     request = Net::HTTP::Put.new(url.to_s)
-    request["authorization"] = 'Bearer ' + token
+    request["authorization"] = 'Bearer ' + @@access_token
     request["content-type"] = 'application/json'
 
     body = {"requiredActions" => []}
@@ -317,19 +307,23 @@ class Keycloak < Sinatra::Application
     if response.code.to_i != 204
       halt response.code.to_i, response.body.to_s
     end
-    halt 201
+
+    user_id
   end
 
   # "registration_endpoint":"http://localhost:8081/auth/realms/master/clients-registrations/openid-connect"
   def register_client (client_object)
     #puts "TEST ACCESS_TOKEN", token
     #decode_token(token, keycloak_pub_key)
+    refresh_adapter # Refresh admin token if expired
+
     # url = URI("http://localhost:8081/auth/realms/master/clients-registrations/openid-connect/")
     url = URI("http://localhost:8081/auth/admin/realms/master/clients")
     http = Net::HTTP.new(url.host, url.port)
     request = Net::HTTP::Post.new(url.to_s)
     request["authorization"] = 'Bearer ' + @@access_token
     request["content-type"] = 'application/json'
+
 =begin
     body = {
         "clientId": "myclient",
@@ -354,16 +348,16 @@ class Keycloak < Sinatra::Application
         "fullScopeAllowed": false
     }
 =end
-    #body.to_json
 
-    request.body = client_object #.to_json
+    request.body = client_object.to_json
     response = http.request(request)
     puts "CODE", response.code
     puts "BODY", response.body
-    response_json = parse_json(response.read_body)[0]
+    response_json, code = parse_json(response.read_body)
 
-    #puts "PARSED", response_json
-    halt response.code.to_i
+    if response.code.to_i != 201
+      json_error(response.code.to_i, response.body)
+    end
   end
 
   # "token_endpoint":"http://localhost:8081/auth/realms/master/protocol/openid-connect/token"
@@ -428,6 +422,7 @@ class Keycloak < Sinatra::Application
 
   # "token_endpoint":"http://localhost:8081/auth/realms/master/protocol/openid-connect/token"
   def login(username=nil, credentials=nil)
+    refresh_adapter # Refresh admin token if expired
     url = URI("http://#{@@address.to_s}:#{@@port.to_s}/#{@@uri.to_s}/realms/#{@@realm_name}/protocol/openid-connect/token")
     http = Net::HTTP.new(url.host, url.port)
     request = Net::HTTP::Post.new(url.to_s)
@@ -469,6 +464,7 @@ class Keycloak < Sinatra::Application
 
   # "token_endpoint":"http://localhost:8081/auth/realms/master/protocol/openid-connect/token"
   def login_client(client_id, client_secret)
+    #TODO: DEPRECATED
     url = URI("http://#{@@address.to_s}:#{@@port.to_s}/#{@@uri.to_s}/realms/#{@@realm_name}/protocol/openid-connect/token")
     http = Net::HTTP.new(url.host, url.port)
     request = Net::HTTP::Post.new(url.to_s)
@@ -481,7 +477,6 @@ class Keycloak < Sinatra::Application
 
     puts "RES.HEADER: ", res.header
     puts "RES.BODY: ", res.body
-
 
     if res.body['access_token']
       #if env['HTTP_AUTHORIZATION']
@@ -524,11 +519,12 @@ class Keycloak < Sinatra::Application
 
   # "end_session_endpoint":"http://localhost:8081/auth/realms/master/protocol/openid-connect/logout"
   def logout(user_token, user=nil, realm=nil)
+    refresh_adapter # Refresh admin token if expired
     # user = token['sub']#'971fc827-6401-434e-8ea0-5b0f6d33cb41'
     user = parse_json(userinfo(user_token))[0]
     p "SUB[0]", user['sub']
     # http_path = "http://localhost:8081/auth/realms/master/protocol/openid-connect/logout"
-    http_path ="http://localhost:8081/auth/admin/realms/master/users/#{user['sub']}/logout"
+    http_path ="http://#{@@address.to_s}:#{@@port.to_s}/#{@@uri.to_s}/admin/realms/#{@@realm_name}/users/#{user['sub']}/logout"
     url = URI(http_path)
     http = Net::HTTP.new(url.host, url.port)
     # request = Net::HTTP::Post.new(url.to_s)
@@ -556,7 +552,7 @@ class Keycloak < Sinatra::Application
   end
 
   def authenticate(client_id, username, password, grant_type)
-    http_path = "http://localhost:8081/auth/realms/master/protocol/openid-connect/token"
+    http_path = "http://#{@@address.to_s}:#{@@port.to_s}/#{@@uri.to_s}/realms/#{@@realm_name}/protocol/openid-connect/token"
     # puts `curl -X POST --data "client_id=#{client_id}&username=#{usrname}"&password=#{pwd}&grant_type=#{grt_type} #{http_path}`
 
     uri = URI(http_path)
@@ -646,26 +642,15 @@ class Keycloak < Sinatra::Application
 
   def refresh_service(token, credentials)
     #=> Check if token.expired?
-    # TODO:
-
-    #=> Then GET new token
-    url = URI("http://#{@@address.to_s}:#{@@port.to_s}/#{@@uri.to_s}/realms/#{@@realm_name}/protocol/openid-connect/token")
-    http = Net::HTTP.new(url.host, url.port)
-    request = Net::HTTP::Post.new(url.to_s)
-    request["authorization"] = 'Bearer ' + @@access_token
-    request["content-type"] = 'application/x-www-form-urlencoded'
-
-    request.set_form_data({'client_id' => 'adapter',
-                           'client_secret' => 'df7e816d-0337-4fbe-a3f4-7b5263eaba9f',
-                           'grant_type' => 'client_credentials'})
-
-    response = http.request(request)
-    puts "LOG CODE", response.code
-    puts "REFRESH TOKEN BODY", response.body
-    unless response.code == '200'
-      halt response.code.to_i, response.body
+    code = is_expired?
+    case code
+      when 'OK'
+        puts "OK"
+        return
+      else
+        #=> Then GET new token
+       # TODO: OPTIONAL
     end
-    halt 200, response.body
   end
 
   def refresh_adapter()
@@ -673,32 +658,143 @@ class Keycloak < Sinatra::Application
     code = is_expired?
     case code
       when 'OK'
+        puts "OK"
+        #@@access_token = Keycloak.get_adapter_token
         return
       else
-        # TODO:
         #=> Then GET new token
-        url = URI("http://#{@@address.to_s}:#{@@port.to_s}/#{@@uri.to_s}/realms/#{@@realm_name}/protocol/openid-connect/token")
-        http = Net::HTTP.new(url.host, url.port)
-        request = Net::HTTP::Post.new(url.to_s)
-        request["authorization"] = 'Bearer ' + @@access_token
-        request["content-type"] = 'application/x-www-form-urlencoded'
-
-        request.set_form_data({'client_id' => 'adapter',
-                               'client_secret' => 'df7e816d-0337-4fbe-a3f4-7b5263eaba9f',
-                               'grant_type' => 'client_credentials'})
-
-        response = http.request(request)
-        puts "LOG CODE", response.code
-        puts "REFRESH TOKEN BODY", response.body
-        unless response.code == '200'
-          halt response.code.to_i, response.body
-        end
-        halt 200, response.body
+        puts "REFRESHING TOKEN..."
+        @@access_token = Keycloak.get_adapter_token
     end
   end
 
-  def set_user_roles(token)
-    #TODO: Implement
+  def set_user_roles(user_type, user_id)
+    # Search roles
+    realm_roles = get_realm_roles
+    role_data = parse_json(realm_roles)[0].find {|role| role['name'] == user_type}
+    p "ROLE DATA", role_data
+    # Compare user_type with roles
+    unless role_data
+      json_error(401, 'User type not allowed')
+    end
+
+    # Add role from roles to user_id
+    ##POST rest-api/admin/realms/{realm}/users/{id}/role-mappings/realm
+    http_path = "http://#{@@address.to_s}:#{@@port.to_s}/#{@@uri.to_s}/admin/realms/#{@@realm_name}/users/#{user_id}/role-mappings/realm"
+    url = URI(http_path)
+    http = Net::HTTP.new(url.host, url.port)
+    request = Net::HTTP::Post.new(url.to_s)
+    request["authorization"] = 'bearer ' + @@access_token
+    request["content-type"] = 'application/json'
+    body = []
+    request.body = (body << role_data).to_json
+
+    response = http.request(request)
+    p "CODE", response.code
+    p "BODY", response.body
+
+    if response.code == '204'
+      halt response.code.to_i
+    else
+      json_error(response.code.to_i, response.body.to_s)
+    end
+  end
+
+  def set_user_groups(attr, user_id)
+    # Assign group based on attr
+    group_name = Adapter.assign_group(attr)
+    puts "DESIGNATED GROUP", group_name
+    # Search roles
+    group_data, errors = parse_json(get_groups({'name' => group_name}))
+    #groups = get_groups(attribute)
+    #group_data = parse_json(realm_roles)[0].find {|group| group['name'] == attribute}
+    p "GROUP DATA", group_data
+    # Compare user_type with roles
+    unless group_data
+      json_error(401, 'User type not allowed')
+    end
+
+    # Add user to group
+    ##PUT /admin/realms/{realm}/users/{id}/groups/{groupId}
+    http_path = "http://#{@@address.to_s}:#{@@port.to_s}/#{@@uri.to_s}/admin/realms/#{@@realm_name}/users/#{user_id}/groups/#{group_data['id']}"
+    url = URI(http_path)
+    http = Net::HTTP.new(url.host, url.port)
+    request = Net::HTTP::Put.new(url.to_s)
+    request["authorization"] = 'bearer ' + @@access_token
+    #request["content-type"] = 'application/json'
+    #body = []
+    #request.body = (body << role_data).to_json
+    p "ADDING USER TO GROUP"
+
+    response = http.request(request)
+    p "CODE", response.code
+    p "BODY", response.body
+
+    if response.code == '204'
+      #halt response.code.to_i
+      puts "USER ADDED TO GROUP"
+      return
+    else
+      json_error(response.code.to_i, response.body.to_s)
+    end
+  end
+
+  def set_service_roles(client_id)
+    # Search client ID by cliendID name
+    query = {'name' => client_id}
+    client_data, errors = parse_json(get_clients(query))
+
+    #Get realm-level roles that are available to attach to this client’s scope
+    #GET http://localhost:8081/auth/admin/realms/{realm}/clients/{id}/scope-mappings/realm/available
+    http_path = "http://#{@@address.to_s}:#{@@port.to_s}/#{@@uri.to_s}/admin/realms/#{@@realm_name}/clients/#{client_data['id']}/scope-mappings/realm/available"
+    url = URI(http_path)
+    http = Net::HTTP.new(url.host, url.port)
+    request = Net::HTTP::Get.new(url.to_s)
+    request["authorization"] = 'bearer ' + @@access_token
+
+    response = http.request(request)
+    p "REALM AVAILABLE SCOPE", parse_json(response.body)[0]
+
+    role_data = parse_json(response.body)[0].find {|role| role['name'] == query['name'] }
+    p "ROLE DATA", role_data
+    unless role_data
+      json_error(401, 'Service not allowed')
+    end
+
+    #Add a set of realm-level roles to the client’s scope
+    #POST /admin/realms/{realm}/clients/{id}/scope-mappings/realm
+    http_path = "http://#{@@address.to_s}:#{@@port.to_s}/#{@@uri.to_s}/admin/realms/#{@@realm_name}/clients/#{client_data['id']}/scope-mappings/realm"
+    url = URI(http_path)
+    http = Net::HTTP.new(url.host, url.port)
+    request = Net::HTTP::Post.new(url.to_s)
+    request["authorization"] = 'bearer ' + @@access_token
+    request["content-type"] = 'application/json'
+    body = []
+    request.body = (body << role_data).to_json
+
+    response = http.request(request)
+    p "CODE", response.code
+    p "BODY", response.body
+
+    if response.code == '204'
+      halt response.code.to_i
+    else
+      json_error(response.code.to_i, response.body.to_s)
+    end
+    #Returns the roles for the client that can be associated with the client's scope
+    #GET /admin/realms/{realm}/clients/{id}/scope-mappings/clients/{client}/available
+    #Get realm-level roles that are available to attach to this client’s scope
+    #http_path = "http://localhost:8081/auth/admin/realms/master/clients/#{client_data['id']}/scope-mappings/realm/available"
+    #url = URI(http_path)
+    #http = Net::HTTP.new(url.host, url.port)
+    #request = Net::HTTP::Get.new(url.to_s)
+    #request["authorization"] = 'bearer ' + @@access_token
+    #response = http.request(request)
+  end
+
+  def delete_realm_role(role)
+    #Delete a role by name
+    #DELETE /admin/realms/{realm}/roles/{role-name}
   end
 
   def update_client()
@@ -709,19 +805,89 @@ class Keycloak < Sinatra::Application
 
   end
 
-  def get_realm_roles
-    #Get all roles for the realm or client
-     url = URI("http://#{@@address.to_s}:#{@@port.to_s}/#{@@uri.to_s}/admin/realms/#{@@realm_name}/roles")
-     http = Net::HTTP.new(url.host, url.port)
-     request = Net::HTTP::Get.new(url.to_s)
-     request["authorization"] = 'Bearer ' + @@access_token
+  def get_groups(query=nil)
+    puts "GET_GROUPS_QUERY", query
+    #GET /admin/realms/{realm}/groups
+    # GroupRepresentation
+    # id, name, path, attributes, realmRoles, clientRoles, subGroups
+    #TODO: IT ONLY SUPPORTS QUERIES BY ID, NAME (GROUPID)
+    url = URI("http://#{@@address.to_s}:#{@@port.to_s}/#{@@uri.to_s}/admin/realms/#{@@realm_name}/groups")
+    http = Net::HTTP.new(url.host, url.port)
+    request = Net::HTTP::Get.new(url.to_s)
+    request["authorization"] = 'Bearer ' + @@access_token
+    request["content-type"] = 'application/json'
 
-     response = http.request(request)
-     #p "RESPONSE.read_body", response.read_body
-     p "CODE", response.code
-     parsed_res, code = parse_json(response.body)
-     p "RESPONSE_PARSED", parsed_res
-     parsed_res
+    response = http.request(request)
+    #p "RESPONSE", response.body
+    p "CODE", response.code
+    p "RESPONSE.read_body222", parse_json(response.read_body)[0]
+    group_list = parse_json(response.read_body)[0]
+    if query['name']
+      puts "NAME PRESENT?", query['name']
+      group_data = group_list.find {|group| group['name'] == query['name'] }
+      return group_data.to_json
+    else
+      response.body
+    end
+  end
+
+  def get_clients(query=nil)
+    #TODO: IT ONLY SUPPORTS QUERIES BY NAME (CLIENTID)
+    url = URI("http://#{@@address.to_s}:#{@@port.to_s}/#{@@uri.to_s}/admin/realms/#{@@realm_name}/clients")
+    http = Net::HTTP.new(url.host, url.port)
+    request = Net::HTTP::Get.new(url.to_s)
+    request["authorization"] = 'Bearer ' + @@access_token
+    request["content-type"] = 'application/json'
+
+    response = http.request(request)
+    #p "RESPONSE", response.body
+    p "CODE", response.code
+    p "RESPONSE.read_body222", parse_json(response.read_body)[0]
+    client_list = parse_json(response.read_body)[0]
+    if query['name']
+      puts "NAME PRESENT?", query['name']
+      client_data = client_list.find {|client| client['clientId'] == query['name'] }
+      return client_data.to_json
+    else
+      response.body
+    end
+  end
+
+  def get_client_service_account
+    # Get a user dedicated to the service account
+    # GET /admin/realms/{realm}/clients/{id}/service-account-user
+  end
+
+  def get_realm_roles(keyed_query=nil)
+    # Get all roles for the realm or client
+    # puts "KEYED_QUERY", keyed_query
+    # query = Rack::Utils.build_query(keyed_query) # QUERIES NOT SUPPORTED
+    url = URI("http://#{@@address.to_s}:#{@@port.to_s}/#{@@uri.to_s}/admin/realms/#{@@realm_name}/roles")
+    http = Net::HTTP.new(url.host, url.port)
+    request = Net::HTTP::Get.new(url.to_s)
+    request["authorization"] = 'Bearer ' + @@access_token
+
+    response = http.request(request)
+    #p "RESPONSE.read_body", response.read_body
+    p "CODE", response.code
+    parsed_res, code = parse_json(response.body)
+    p "RESPONSE_PARSED", parsed_res
+    response.body
+  end
+
+  def get_client_roles(client, keyed_query=nil)
+    #Get all roles for the realm or client
+    url = URI("http://#{@@address.to_s}:#{@@port.to_s}/#{@@uri.to_s}/admin/realms/#{@@realm_name}/clients/#{client}/roles")
+    http = Net::HTTP.new(url.host, url.port)
+    request = Net::HTTP::Get.new(url.to_s)
+    request["authorization"] = 'Bearer ' + @@access_token
+
+    response = http.request(request)
+    #p "RESPONSE.read_body", response.read_body
+    p "CODE", response.code
+    parsed_res, code = parse_json(response.body)
+    p "RESPONSE_PARSED", parsed_res
+    parsed_res
   end
 
   def get_role_details(role)
@@ -740,10 +906,9 @@ class Keycloak < Sinatra::Application
   end
 
   def get_users(keyed_query)
-    #TODO: FINISH THIS!
+    puts "KEYED_QUERY", keyed_query
     #Get all users for the realm
-    keyed_query?
-    query = ''
+    query = Rack::Utils.build_query(keyed_query)
     uri = "http://#{@@address.to_s}:#{@@port.to_s}/#{@@uri.to_s}/admin/realms/#{@@realm_name}/users?" + query
     url = URI(uri)
     http = Net::HTTP.new(url.host, url.port)
@@ -754,7 +919,7 @@ class Keycloak < Sinatra::Application
     p "CODE", response.code
     parsed_res, code = parse_json(response.body)
     p "RESPONSE_PARSED", parsed_res
-    parsed_res
+    response.body
   end
 
   def is_active?(introspect_res)
@@ -772,12 +937,13 @@ class Keycloak < Sinatra::Application
   end
 
   def is_expired?
+    public_key = get_public_key
     begin
-      decoded_payload, decoded_header = JWT.decode @@access_token, settings.keycloak_pub_key, true, { :algorithm => 'RS256' }
+      decoded_payload, decoded_header = JWT.decode @@access_token, public_key, true, { :algorithm => 'RS256' }
       puts "DECODED_HEADER: ", decoded_header
       puts "DECODED_PAYLOAD: ", decoded_payload
       response = 'OK'
-        # if expired token, refresh adapter token
+    # if expired token, refresh adapter token
     rescue JWT::DecodeError
       response = 'DecodeError'
     rescue JWT::ExpiredSignature

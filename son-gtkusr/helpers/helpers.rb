@@ -57,6 +57,20 @@ class Adapter < Sinatra::Application
     end
   end
 
+  def self.assign_group(attr)
+    # TODO: UPDATE THIS! Use mapping settings to configure?
+    # Supported attrs = developer, customer
+    # Supported groups = Developers, Customers
+    case attr
+      when 'developer'
+        return 'Developers'
+      when 'customer'
+        return 'Customers'
+      else
+        json_error(400, 'No group available')
+    end
+  end
+
   def authorize!
     # curl -d "client_id=admin-cli" -d "username=user1" -d "password=1234" -d "grant_type=password" "http://localhost:8081/auth/realms/SONATA/protocol/openid-connect/token"
     client_id = "service"

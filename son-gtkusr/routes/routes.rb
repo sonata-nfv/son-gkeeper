@@ -99,10 +99,7 @@ class Keycloak < Sinatra::Application
 
         p "FORM PARAMS", form_encoded
         form = Hash[URI.decode_www_form(form_encoded)]
-
-        # Validate Hash format
-        #form, errors = validate_form(form)
-        #halt 400, errors.to_json if errors
+        # TODO: Validate Hash format
 
       else
         # Compatibility support for JSON content-type
@@ -110,37 +107,36 @@ class Keycloak < Sinatra::Application
         form, errors = parse_json(request.body.read)
         halt 400, errors.to_json if errors
     end
-    register_user(@access_token, form) # user_params)
+    user_id = register_user(form)
+
+    #query = {:'username' => form['username']}
+    #user_data = get_users(query)
+    #puts "USER_DATA", user_data
+
+    form['attributes']['userType'].each { |attr|
+      puts "SETTING_USER_ROLE", attr
+      set_user_groups(attr, user_id)
+      set_user_roles(attr, user_id)
+    }
   end
 
   post '/register/service' do
+    logger.debug 'Adapter: entered POST /register/service'
     # Return if content-type is not valid
     logger.info "Content-Type is " + request.media_type
     halt 415 unless (request.content_type == 'application/x-www-form-urlencoded' or request.content_type == 'application/json')
-    #payload?={"id":"123123","auth_code":"191331","required_amount":101,"timestamp":1407775713,"status":"completed","total_amount":101}
 
-    # Compatibility support for YAML content-type
-    #case request.content_type
-    #  when 'application/x-www-form-urlencoded'
-        # Validate format
-    #    form_encoded, errors = request.body.read
-    #    halt 400, errors.to_json if errors
+    # TODO: Do some validations to the serviceForm
+    # Compatibility support for JSON content-type
+    # Parses and validates JSON format
+    parsed_form, errors = parse_json(request.body.read)
+    halt 400, errors.to_json if errors
 
-    #   p "FORM PARAMS", form_encoded
-    #   form = Hash[URI.decode_www_form(form_encoded)]
+    puts "REGISTERING NEW CLIENT"
+    register_client(parsed_form)
 
-      # Validate Hash format
-      #form, errors = validate_form(form)
-      #halt 400, errors.to_json if errors
-
-    #  else
-        # Compatibility support for JSON content-type
-        # Parses and validates JSON format
-    #    form, errors = parse_json(request.body.read)
-    #    halt 400, errors.to_json if errors
-    #end
-    client_form = request.body.read
-    register_client(client_form) # user_params)
+    puts "SETTING CLIENT ROLES"
+    set_service_roles(parsed_form['clientId'])
   end
 
   post '/login/user' do
@@ -318,7 +314,7 @@ class Keycloak < Sinatra::Application
   end
 
   post '/refresh' do
-    #TODO:
+    #TODO: OPTIONAL
     logger.debug 'Adapter: entered POST /refresh'
     # Return if Authorization is invalid
     #halt 400 unless request.env["HTTP_AUTHORIZATION"]
@@ -330,7 +326,9 @@ class Keycloak < Sinatra::Application
     p "CUSTOM", custom_header_value
   end
 
-  post '/users' do
+  get '/users' do
+    # This endpoint allows queries for the next fields:
+    # search, lastName, firstName, email, username, first, max
     logger.debug 'Adapter: entered POST /users'
     # Return if Authorization is invalid
     halt 400 unless request.env["HTTP_AUTHORIZATION"]
@@ -343,13 +341,42 @@ class Keycloak < Sinatra::Application
         json_error(400, 'Bad query')
       end
     }
-
     get_users(keyed_params)
-
   end
 
-  post '/roles' do
-    #TODO:
+  get '/services' do
+    # This endpoint allows queries for the next fields:
+    # name
+    logger.debug 'Adapter: entered POST /services'
+    # Return if Authorization is invalid
+    halt 400 unless request.env["HTTP_AUTHORIZATION"]
+    queriables = %w(name first max)
+
+    keyed_params = params
+    keyed_params.each { |k, v|
+      unless queriables.include? k
+        json_error(400, 'Bad query')
+      end
+    }
+    get_clients(keyed_params)
+  end
+
+
+  get '/roles' do
+    #TODO: QUERIES NOT SUPPORTED
+    # This endpoint allows queries for the next fields:
+    # search, lastName, firstName, email, username, first, max
+    logger.debug 'Adapter: entered POST /users'
+    # Return if Authorization is invalid
+    halt 400 unless request.env["HTTP_AUTHORIZATION"]
+    queriables = %w(search id name description first max)
+    keyed_params = params
+    keyed_params.each { |k, v|
+      unless queriables.include? k
+        json_error(400, 'Bad query')
+      end
+    }
+    get_realm_roles(keyed_params)
   end
 
 end
