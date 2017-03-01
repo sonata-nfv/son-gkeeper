@@ -83,6 +83,13 @@ class Keycloak < Sinatra::Application
     halt 200
   end
 
+  get '/public-key' do
+    # This endpoint returns the Keycloak public key
+    logger.debug 'Adapter: entered POST /public-key'
+    keycloak_yml = YAML.load_file('config/keycloak.yml')
+    keycloak_yml['realm_public_key']
+  end
+
 
   post '/register/user' do
     # Return if content-type is not valid
@@ -118,6 +125,7 @@ class Keycloak < Sinatra::Application
       set_user_groups(attr, user_id)
       set_user_roles(attr, user_id)
     }
+    halt 201
   end
 
   post '/register/service' do
@@ -134,6 +142,8 @@ class Keycloak < Sinatra::Application
 
     puts "REGISTERING NEW CLIENT"
     register_client(parsed_form)
+
+
 
     puts "SETTING CLIENT ROLES"
     set_service_roles(parsed_form['clientId'])

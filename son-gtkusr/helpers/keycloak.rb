@@ -34,15 +34,17 @@ class Keycloak < Sinatra::Application
 
   # p keycloak_config
   # p "ISSUER", ENV['JWT_ISSUER']
-  @@port = ENV['KEYCLOAK_PORT']
-  @@uri = ENV['KEYCLOAK_PATH']
-  @@realm_name = ENV['SONATA_REALM']
-  @@client_name = ENV['CLIENT_NAME']
-  # TODO: remove this or comment
-  #@@port = 8081
-  #@@uri = 'auth'
-  #@@realm_name = 'master'
-  #@@client_name = 'adapter'
+
+  #@@port = ENV['KEYCLOAK_PORT']
+  #@@uri = ENV['KEYCLOAK_PATH']
+  #@@realm_name = ENV['SONATA_REALM']
+  #@@client_name = ENV['CLIENT_NAME']
+
+  ## TODO: remove this or comment
+  @@port = 8081
+  @@uri = 'auth'
+  @@realm_name = 'master'
+  @@client_name = 'adapter'
 
   def Keycloak.get_adapter_token
     url = URI("http://#{@@address.to_s}:#{@@port.to_s}/#{@@uri.to_s}/realms/#{@@realm_name}/protocol/openid-connect/token")
@@ -64,11 +66,12 @@ class Keycloak < Sinatra::Application
   end
 
   ## Get the ip of keycloak. Only works for docker-compose
-  @@address = Resolv::DNS.new.getaddress("keycloak")
+  #@@address = Resolv::DNS.new.getaddress("keycloak")
+
   # TODO: remove this or comment
-  #@@address = 'localhost'
-  #@@client_secret = 'df7e816d-0337-4fbe-a3f4-7b5263eaba9f'
-  #@@access_token = Keycloak.get_adapter_token
+  @@address = 'localhost'
+  @@client_secret = 'df7e816d-0337-4fbe-a3f4-7b5263eaba9f'
+  @@access_token = Keycloak.get_adapter_token
 
   def get_oidc_endpoints
     # Call http://localhost:8081/auth/realms/master/.well-known/openid-configuration to obtain endpoints
@@ -91,7 +94,7 @@ class Keycloak < Sinatra::Application
 
     #url = URI("http://127.0.0.1:8081/auth/realms/master/clients-registrations/install/adapter")
     url = URI("http://#{@@address.to_s}:#{@@port.to_s}/#{@@uri.to_s}/realms/#{@@realm_name}/clients-registrations/install/adapter")
-    p "URL", "http://#{@@address.to_s}:#{@@port.to_s}/#{@@uri.to_s}/realms/#{@@realm_name}/clients-registrations/install/adapter"
+    # p "URL", "http://#{@@address.to_s}:#{@@port.to_s}/#{@@uri.to_s}/realms/#{@@realm_name}/clients-registrations/install/adapter"
     http = Net::HTTP.new(url.host, url.port)
 
     request = Net::HTTP::Get.new(url.to_s)
@@ -155,18 +158,15 @@ class Keycloak < Sinatra::Application
     File.open('config/keycloak.yml', 'a') do |f|
       f.puts "realm_public_key: #{parsed_response['public_key']}"
     end
-
-
   end
 
-      # Policies
-  OK = Proc.new { halt 200 }
-  FORBIDDEN = Proc.new {
-    halt 401 unless is_loggedin?(user)
-    halt 403
-  }
-  LOGGEDIN = Proc.new { halt 401 unless is_loggedin?(user) }
-
+  #    # Policies
+  #OK = Proc.new { halt 200 }
+  #FORBIDDEN = Proc.new {
+  #  halt 401 unless is_loggedin?(user)
+  #  halt 403
+  #}
+  #LOGGEDIN = Proc.new { halt 401 unless is_loggedin?(user) }
 
   def decode_token(token, keycloak_pub_key)
     begin
@@ -201,7 +201,7 @@ class Keycloak < Sinatra::Application
   # Public key used by realm encoded as a JSON Web Key (JWK).
   # This key can be used to verify tokens issued by Keycloak without making invocations to the server.
   def jwk_certs(realm=nil)
-    http_path = "http://localhost:8081/auth/realms/master/protocol/openid-connect/certs"
+    http_path = "http://http://#{@@address.to_s}:#{@@port.to_s}/#{@@uri.to_s}/realms/#{@@realm_name}/protocol/openid-connect/certs"
     url = URI(http_path)
     http = Net::HTTP.new(url.host, url.port)
     request = Net::HTTP::Get.new(url.to_s)
@@ -231,7 +231,7 @@ class Keycloak < Sinatra::Application
     # puts "TEST ACCESS_TOKEN", token
     # decode_token(token, keycloak_pub_key)
     # url = URI("http://localhost:8081/auth/realms/master/clients-registrations/openid-connect/")
-    url = URI("http://127.0.0.1:8081/auth/realms/master/protocol/openid-connect/token/introspect")
+    url = URI("http://#{@@address.to_s}:#{@@port.to_s}/#{@@uri.to_s}/realms/#{@@realm_name}/protocol/openid-connect/token/introspect")
     # ttp = Net::HTTP.new(url.host, url.port)
 
     # request = Net::HTTP::Post.new(url.to_s)
@@ -354,7 +354,7 @@ class Keycloak < Sinatra::Application
     refresh_adapter # Refresh admin token if expired
 
     # url = URI("http://localhost:8081/auth/realms/master/clients-registrations/openid-connect/")
-    url = URI("http://localhost:8081/auth/admin/realms/master/clients")
+    url = URI("http://#{@@address.to_s}:#{@@port.to_s}/#{@@uri.to_s}/admin/realms/#{@@realm_name}/clients")
     http = Net::HTTP.new(url.host, url.port)
     request = Net::HTTP::Post.new(url.to_s)
     request["authorization"] = 'Bearer ' + @@access_token
@@ -390,9 +390,10 @@ class Keycloak < Sinatra::Application
     puts "CODE", response.code
     puts "BODY", response.body
     response_json, code = parse_json(response.read_body)
-
     if response.code.to_i != 201
       json_error(response.code.to_i, response.body)
+    else
+      return
     end
   end
 
@@ -405,7 +406,7 @@ class Keycloak < Sinatra::Application
     @client_secret = 'df7e816d-0337-4fbe-a3f4-7b5263eaba9f'
     @access_token = nil
 
-    url = URI('http://' + @@address.to_s + ':' + @port.to_s + '/' + @uri.to_s + '/realms/master/protocol/openid-connect/token')
+    url = URI("http://#{@@address.to_s}:#{@@port.to_s}/#{@@uri.to_s}/admin/realms/#{@@realm_name}/protocol/openid-connect/token")
 
     res = Net::HTTP.post_form(url, 'client_id' => @client_name, 'client_secret' => @client_secret,
                               #                            'username' => "user",
@@ -427,7 +428,7 @@ class Keycloak < Sinatra::Application
     @usrname = "user"
     pwd = "1234"
     grt_type = "password"
-    http_path = "http://localhost:8081/auth/realms/master/protocol/openid-connect/token"
+    http_path = "http://http://#{@@address.to_s}:#{@@port.to_s}/#{@@uri.to_s}/realms/#{@@realm_name}/protocol/openid-connect/token"
     idp_path = "http://localhost:8081/auth/realms/master/broker/github/login?"
     # puts `curl -X POST --data "client_id=#{client_id}&username=#{usrname}"&password=#{pwd}&grant_type=#{grt_type} #{http_path}`
 
@@ -539,7 +540,7 @@ class Keycloak < Sinatra::Application
     grt_type = "password"
 
     query = "response_type=code&scope=openid%20profile&client_id=adapter&redirect_uri=http://127.0.0.1/"
-    http_path = "http://localhost:8081/auth/realms/master/protocol/openid-connect/auth" + "?" + query
+    http_path = "http://http://#{@@address.to_s}:#{@@port.to_s}/#{@@uri.to_s}/realms/#{@@realm_name}/protocol/openid-connect/auth" + "?" + query
     url = URI(http_path)
     http = Net::HTTP.new(url.host, url.port)
     request = Net::HTTP::Get.new(url.to_s)
@@ -730,7 +731,7 @@ class Keycloak < Sinatra::Application
     p "BODY", response.body
 
     if response.code == '204'
-      halt response.code.to_i
+      return
     else
       json_error(response.code.to_i, response.body.to_s)
     end

@@ -63,9 +63,9 @@ class Adapter < Sinatra::Application
     # Supported groups = Developers, Customers
     case attr
       when 'developer'
-        return 'Developers'
+        return 'developers'
       when 'customer'
-        return 'Customers'
+        return 'customers'
       else
         json_error(400, 'No group available')
     end
