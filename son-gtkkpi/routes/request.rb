@@ -37,21 +37,21 @@ require 'net/http'
 
 class GtkKpi < Sinatra::Base  
   
-  def self.counter(params, pushgateway)
+  # default registry
+  registry = Prometheus::Client.registry 
 
-    # default registry
-    registry = Prometheus::Client.registry  
+  def self.counter(params, pushgateway, registry)
 
     # if counter exists, it will be increased
     if registry.exist?(params[:name].to_sym)
       counter = registry.get(params[:name])
-      counter.increment
+      counter.increment(params[:base_labels])
       Prometheus::Client::Push.new(params[:job], params[:instance], pushgateway).replace(registry)
 
     else
       # creates a metric type counter
       counter = Prometheus::Client::Counter.new(params[:name].to_sym, params[:docstring], params[:base_labels])
-      counter.increment
+      counter.increment(params[:base_labels])
       # registers counter
       registry.register(counter)
         
@@ -60,10 +60,8 @@ class GtkKpi < Sinatra::Base
     end      
   end
 
-  def self.gauge(params, pushgateway)
-    # default registry
-    registry = Prometheus::Client.registry  
-
+  def self.gauge(params, pushgateway, registry)
+    
     # if gauge exists, it will be updated
     if registry.exist?(params[:name].to_sym)
       gauge = registry.get(params[:name])
@@ -101,9 +99,9 @@ class GtkKpi < Sinatra::Base
     begin
 
       if params[:metric_type]=='counter' 
-        GtkKpi.counter(params, pushgateway)
+        GtkKpi.counter(params, pushgateway, registry)
       else
-        GtkKpi.gauge(params, pushgateway)
+        GtkKpi.gauge(params, pushgateway, registry)
       end
 
       logger.info 'GtkKpi: '+params[:metric_type]+' '+params[:name].to_s+' updated/created'
@@ -132,8 +130,6 @@ class GtkKpi < Sinatra::Base
       else
         base_labels = JSON.parse(eval("#{params[:base_labels]}").to_json, :symbolize_names => true)
         logger.info "GtkKpi: entered GET /kpis with metric name=#{params[:name]} and labels=#{base_labels}"        
-
-        registry = Prometheus::Client.registry
 
           if registry.exist?(params[:name].to_sym)
             metric = registry.get(params[:name])

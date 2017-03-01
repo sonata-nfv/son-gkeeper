@@ -38,9 +38,7 @@ class GtkApi < Sinatra::Base
     halt 200, api.read.to_s
   end
   
-  
-  #error Sinatra::NotFound do
-  not_found do
+  error Sinatra::NotFound do
     json_error 404, request.path+' not supported'
   end
   

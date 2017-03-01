@@ -96,4 +96,9 @@ class ServiceManagerService < ManagerService
       nil 
     end      
   end
+  
+  # TODO
+  def self.valid?(user)
+    true
+  end
 end
