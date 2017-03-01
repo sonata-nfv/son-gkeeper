@@ -110,7 +110,7 @@ class Keycloak < Sinatra::Application
         form, errors = parse_json(request.body.read)
         halt 400, errors.to_json if errors
     end
-    register_user(@access_token, form) # user_params)
+    register_user(@@access_token, form) # user_params)
   end
 
   post '/register/service' do
