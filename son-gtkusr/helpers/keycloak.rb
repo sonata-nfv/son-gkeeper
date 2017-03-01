@@ -107,6 +107,42 @@ class Keycloak < Sinatra::Application
     end
   end
 
+  def get_adapter_token
+    url = URI("http://#{@@address.to_s}:#{@@port.to_s}/#{@@uri.to_s}/realms/#{@@realm_name}/protocol/openid-connect/token")
+    #http = Net::HTTP.new(url.host, url.port)
+
+    #request = Net::HTTP::Post.new(url.to_s)
+    #request.basic_auth(@client_name.to_s, @client_secret.to_s)
+    #request["content-type"] = 'application/json'
+    #body = {"username" => "admin",
+    #        "credentials" => [
+    #            {"type" => "client_credentials",
+    #             "value" => "admin"}]}
+    #request.body = body.to_json
+
+    res = Net::HTTP.post_form(url, 'client_id' => @@client_name, 'client_secret' => @@client_secret,
+                              #'username' => "admin",
+                              #'password' => "admin",
+                              'grant_type' => "client_credentials")
+
+    #res = http.request(request)
+
+    #p "RESPONSE", res
+    #p "RESPONSE.read_body333", res.read_body
+
+    parsed_res, code = parse_json(res.body)
+
+    if parsed_res['access_token']
+      puts "ACCESS_TOKEN RECEIVED", parsed_res['access_token']
+
+      File.open('config/token.json', 'w') do |f|
+        f.puts parsed_res['access_token']
+      end
+      #@access_token = parsed_res['access_token']
+      parsed_res['access_token']
+    end
+  end
+
   def self.get_realm_public_key
     url = URI.parse("http://#{@@address.to_s}:#{@@port.to_s}/#{@@uri.to_s}/realms/#{@@realm_name}")
 
