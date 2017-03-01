@@ -107,9 +107,9 @@ curl -k -s -o /dev/null -X POST -H "Content-Type: application/x-www-form-urlenco
 #	return 1
 #fi
 
-# Add the manage-users and view-users role to the service account associated with the adapter client
-echo Adding manage-users role to adapter service account...
-$KCADMIN_SCRIPT add-roles -r $SONATA_REALM --uusername service-account-$ADAPTER_CLIENT --cclientid realm-management --rolename manage-users --rolename view-users
+# Add the realm-admin role to the service account associated with the adapter client
+echo Adding realm-admin role to adapter service account...
+$KCADMIN_SCRIPT add-roles -r $SONATA_REALM --uusername service-account-$ADAPTER_CLIENT --cclientid realm-management --rolename realm-admin
 
 if [ "$ADAPTER_URL" ]; then 
 	#echo "adapter_secret=$adapter_secret"
