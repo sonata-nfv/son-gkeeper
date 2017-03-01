@@ -92,8 +92,8 @@ class Keycloak < Sinatra::Application
     #request.body = body.to_json
 
     res = Net::HTTP.post_form(url, 'client_id' => @@client_name, 'client_secret' => @@client_secret,
-                              'username' => "admin",
-                              'password' => "admin",
+                              #'username' => "admin",
+                              #'password' => "admin",
                               'grant_type' => "client_credentials")
 
     #res = http.request(request)

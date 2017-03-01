@@ -5,11 +5,16 @@ KEYCLOAK_PORT=8080
 KEYCLOAK_USER=admin
 KEYCLOAK_PASSWORD=admin
 KEYCLOAK_URL=http://localhost:$KEYCLOAK_PORT
+KEYCLOAK_OPENID_TOKEN_ENDPOINT=$KEYCLOAK_URL/auth/realms/sonata/protocol/openid-connect/token
 ADAPTER_URL=http://adapter:4021/api/v1/config
+KCADMIN_SCRIPT=/opt/jboss/keycloak/bin/kcadm.sh
+
+SONATA_REALM=sonata
+ADAPTER_CLIENT=adapter
 
 # Param: $1 = realm name
 function create_realm() {
-	/opt/jboss/keycloak/bin/kcadm.sh create realms -s realm=$1 -s enabled=true -s sslRequired=none -i > /dev/null
+	$KCADMIN_SCRIPT create realms -s realm=$1 -s enabled=true -s sslRequired=none -i > /dev/null
 	ret=$?
 	if [ $ret -eq 0 ]; then
         	echo "Created realm [$1]"
@@ -19,7 +24,7 @@ function create_realm() {
 
 # Params: $1 = realm, $2 = client name, $3 = redirect URI
 function create_client() {
-	cid=$(/opt/jboss/keycloak/bin/kcadm.sh create clients -r $1 -s clientId=$2 -s "redirectUris=[\"$3\"]" -s serviceAccountsEnabled=true -s authorizationServicesEnabled=true -i)
+	cid=$($KCADMIN_SCRIPT create clients -r $1 -s clientId=$2 -s "redirectUris=[\"$3\"]" -s serviceAccountsEnabled=true -s authorizationServicesEnabled=true -s directAccessGrantsEnabled=true -i)
 	ret=$?
 	if [ $ret -eq 0 ]; then
         	echo "Created client [$2] for realm [$1] id=$cid"
@@ -30,7 +35,7 @@ function create_client() {
 
 # Params: $1 = realm, $2 = role name, $3 = role description
 function create_realm_role() {
-	/opt/jboss/keycloak/bin/kcadm.sh create roles -r $1 -s name=$2 -s description="$3" -i > /dev/null
+	$KCADMIN_SCRIPT create roles -r $1 -s name=$2 -s description="$3" -i > /dev/null
 	ret=$?
 	if [ $ret -eq 0 ]; then
         	echo "Created role [$2] for realm [$1]"
@@ -41,7 +46,7 @@ function create_realm_role() {
 # Params: $1 = realm, $2 = client id
 function get_client_secret() {
 # Attempt to retrieve the client secret
-        secret=$(keycloak/bin/kcadm.sh get clients/$2/installation/providers/keycloak-oidc-keycloak-json -r $1 | grep secret | sed 's/"//g' | awk '{print $3}' 2>/dev/null)
+        secret=$($KCADMIN_SCRIPT get clients/$2/installation/providers/keycloak-oidc-keycloak-json -r $1 | grep secret | sed 's/"//g' | awk '{print $3}' 2>/dev/null)
         ret=$?
         if [ $ret -eq 0 ]; then
         	echo "$secret"
@@ -66,7 +71,7 @@ done
 echo "Keycloak server detected! Creating predefined entities..."
 
 # Log in to create session:
-/opt/jboss/keycloak/bin/kcadm.sh config credentials --server $KEYCLOAK_URL/auth --realm master --user $KEYCLOAK_USER --password $KEYCLOAK_PASSWORD -o
+$KCADMIN_SCRIPT config credentials --server $KEYCLOAK_URL/auth --realm master --user $KEYCLOAK_USER --password $KEYCLOAK_PASSWORD -o
 
 if [ $? -ne 0 ]; then 
 	echo "Unable to login as admin"
@@ -74,26 +79,42 @@ if [ $? -ne 0 ]; then
 fi
 
 # Creating a realm:
-create_realm sonata
+create_realm $SONATA_REALM
  
 # Creating a client:
-create_client_out=$(create_client sonata adapter "http://localhost:8081/adapter")
+create_client_out=$(create_client $SONATA_REALM $ADAPTER_CLIENT "http://localhost:8081/adapter")
 echo $create_client_out
 adapter_cid=$(echo $create_client_out | awk -F id= '{print $2}')
 #echo "adapter_cid=$adapter_cid"
 
 # Creating a realm role:
-create_realm_role sonata GK "see_catalogues, see_repositories"
-create_realm_role sonata Catalogues "see_gatekeeper"
-create_realm_role sonata Repositories "see_gatekeeper"
-create_realm_role sonata Customer "read_repositories, write_repositories, run_repositories, run_catalogues"
-create_realm_role sonata Developer "read_catalogues, write_catalogues"
+create_realm_role $SONATA_REALM GK "see_catalogues, see_repositories"
+create_realm_role $SONATA_REALM Catalogues "see_gatekeeper"
+create_realm_role $SONATA_REALM Repositories "see_gatekeeper"
+create_realm_role $SONATA_REALM Customer "read_repositories, write_repositories, run_repositories, run_catalogues"
+create_realm_role $SONATA_REALM Developer "read_catalogues, write_catalogues"
+
+# Capture the adapter client secret for the next set of operations
+adapter_secret=$(get_client_secret $SONATA_REALM $adapter_cid)
+
+# Attempt to get access and ID tokens. This serves two purposes:
+# 1. it tests the endpoint: we make sure that the adapter client was created correctly and we have the adapter client secret, and 
+# 2. it has the side effect of creating the adapter "service account" user, upon which we would like to assign roles that allow us to create users.
+echo "Testing adapter client token endpoint: $KEYCLOAK_OPENID_TOKEN_ENDPOINT"
+curl -k -s -o /dev/null -X POST -H "Content-Type: application/x-www-form-urlencoded" -d "grant_type=client_credentials&client_id=$ADAPTER_CLIENT&client_secret=$adapter_secret" "$KEYCLOAK_OPENID_TOKEN_ENDPOINT"
+#if [ $endpoint_ret -ne 200 ]; then
+#	echo "Got $endpoint_ret instead of 200 OK"
+#	return 1
+#fi
+
+# Add the realm-admin role to the service account associated with the adapter client
+echo Adding realm-admin role to adapter service account...
+$KCADMIN_SCRIPT add-roles -r $SONATA_REALM --uusername service-account-$ADAPTER_CLIENT --cclientid realm-management --rolename realm-admin
 
 if [ "$ADAPTER_URL" ]; then 
-	adapter_secret=$(get_client_secret sonata $adapter_cid)
-	echo "adapter_secret=$adapter_secret"
+	#echo "adapter_secret=$adapter_secret"
 	if [ $(curl -X POST -o /dev/null -s -w "%{http_code}" -d "secret=$adapter_secret" $ADAPTER_URL) -eq 200 ]; then
-		echo "Secret of client [adapter] successfully POSTed to $ADAPTER_URL"
+		echo "Secret of client [$ADAPTER_CLIENT] successfully POSTed to $ADAPTER_URL"
 	else
 		echo "Unable to POST secret to $ADAPTER_URL"
 	fi
