@@ -104,6 +104,8 @@ $ bundle exec rake ci:all
 ```
 everytime a *pull request* is done.
 
+Please see the [several levels of tests](test_levels.md) that may be considered.
+
 ## Usage
 Please refer to the [`son-gtkapi`](https://github.com/sonata-nfv/son-gkeeper/tree/master/son-gtkapi) repository and each one of the other folders in this repository for examples of usage of each one of the already developed micro-services.
 
