@@ -29,97 +29,22 @@ require './models/manager_service.rb'
 
 class FunctionManagerService < ManagerService
     
-  # We're not yet using this: it allows for multiple implementations, such as Fakes (for testing)
-  attr_reader :url, :logger
-  
   JSON_HEADERS = { 'Accept'=> 'application/json', 'Content-Type'=>'application/json'}
   LOG_MESSAGE = 'GtkApi::' + self.name
   
-  def self.config(url:, logger:)
-    method = LOG_MESSAGE + "#config(url=#{url}, logger=#{logger})"
+  def self.config(url:)
+    method = LOG_MESSAGE + "#config(url=#{url})"
     raise ArgumentError.new('FunctionManagerService can not be configured with nil url') if url.nil?
     raise ArgumentError.new('FunctionManagerService can not be configured with empty url') if url.empty?
-    raise ArgumentError.new('FunctionManagerService can not be configured with nil logger') if logger.nil?
     @@url = url
-    @@logger = logger
-    @@logger.debug(method) {'entered'}
+    GtkApi.logger.debug(method) {'entered'}
   end
 
   def self.find_function_by_uuid(uuid)
-    method = LOG_MESSAGE + ".find_function_by_uuid(#{uuid})"
-    @@logger.debug(method) {'entered'}
-    begin
-      response = self.getCurb(url: @@url+"/functions/#{uuid}", headers: JSON_HEADERS, logger: @@logger)
-      @@logger.debug(method) {"Leaving with response.body=#{response.body}"}
-      JSON.parse response.body
-    rescue => e
-      @@logger.error(method) {"Error during processing: #{$!}"}
-      @@logger.error(method) {"Backtrace:\n\t#{e.backtrace.join("\n\t")}"}
-      nil 
-    end
-  end
-
-  def self.find_functions_by_uuid(uuid)
-    method = LOG_MESSAGE + ".find_functions_by_uuid(#{uuid})"
-    @@logger.debug(method) {'entered'}
-    begin
-      response = getCurb( url: @@url + '/functions/'+uuid, headers: JSON_HEADERS)
-      @@logger.debug(method) {'response='+response.body}
-      case response.response_code
-        when 200
-          @@logger.debug(method) {'found function ' + response.body}
-          JSON.parse response.body
-        when 404
-          @@logger.error(method) {"Function with UUID=#{uuid} was not found"}
-          nil
-        else
-          @@logger.error(method) {"Strange error (#{response.response_code}) while looking for function with UUID=#{uuid}"}
-          nil
-      end
-    rescue => e
-      @@logger.error(method) {"Error during processing: #{$!}"}
-      @@logger.error(method) {"Backtrace:\n\t#{e.backtrace.join("\n\t")}"}
-      nil 
-    end
+    find(url: @@url + '/functions/' + uuid, log_message: LOG_MESSAGE + "##{__method__}(#{uuid})")
   end
   
   def self.find_functions(params)
-    method = LOG_MESSAGE + ".find_functions(#{params})"
-    @@logger.debug(method) {'entered'}
-    begin
-      response = getCurb(url: @@url + '/functions', params: params, headers: JSON_HEADERS, logger: @@logger) 
-      @@logger.debug(method) {'response='+response.body}
-      case response.response_code
-        when 200
-          @@logger.debug(method) {'found function(s) ' + response.body}
-          JSON.parse response.body
-        when 404
-          @@logger.error(method) {"Function with params=#{params} were not found"}
-          []
-        else
-          @@logger.error(method) {"Strange error (#{response.response_code}) while looking for function with params=#{params}"}
-          nil
-      end
-    rescue => e
-      @@logger.error(method) {"Error during processing: #{$!}"}
-      @@logger.error(method) {"Backtrace:\n\t#{e.backtrace.join("\n\t")}"}
-      nil 
-    end
-  end
-  
-  def self.get_log
-    method = 'GtkApi::' + CLASS_NAME + ".get_log()"
-    @@logger.debug(method) {'entered'}
-
-    response=getCurb(url: @@url+'/admin/logs', headers: {'Content-Type' => 'text/plain; charset=utf8', 'Location' => '/'}, logger: @@logger)
-    @@logger.debug(method) {'status=' + response.response_code.to_s}
-    case response.response_code
-      when 200
-        response.body
-      else
-        @@logger.error(method) {"Error during processing: #{$!}"}
-        @@logger.error(method) {"Backtrace:\n\t#{e.backtrace.join("\n\t")}"}
-        nil
-      end
+    find(url: @@url + '/functions', params: params, log_message: LOG_MESSAGE + "##{__method__}(#{params})")
   end
 end

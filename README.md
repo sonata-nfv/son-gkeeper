@@ -26,14 +26,15 @@ Micro-services currently implemented are the following:
 1. [`son-gtksrv`](https://github.com/sonata-nfv/son-gkeeper/tree/master/son-gtksrv): where all Services features are implemented;
 1. [`son-gtkfnct`](https://github.com/sonata-nfv/son-gkeeper/tree/master/son-gtkfnct): where all Functions features are implemented;
 1. [`son-gtkvim`](https://github.com/sonata-nfv/son-gkeeper/tree/master/son-gtkvim): where all Vims features are implemented;
-1. [`son-gtkrec`](https://github.com/sonata-nfv/son-gkeeper/tree/master/son-gtkrec): where all Records§ features are implemented;
+1. [`son-gtkrec`](https://github.com/sonata-nfv/son-gkeeper/tree/master/son-gtkrec): where all Records' features are implemented;
+1. [`son-gtklic`](https://github.com/sonata-nfv/son-gkeeper/tree/master/son-gtklic): where all Licences' features are implemented;
+1. [`son-gtkusr`](https://github.com/sonata-nfv/son-gkeeper/tree/master/son-gtkusr): where all Users' features are implemented;
+1. [`son-gtkkpi`](https://github.com/sonata-nfv/son-gkeeper/tree/master/son-gtkkpi): where all KPIs' features are implemented;
 
-All these micro-services have been implemented using [`ruby`](https://github.com/ruby/ruby/tree/ruby_2_2) programming language and the [`sinatra`](https://github.com/sinatra/sinatra) framework. This is not mandatory, as long as the micro-service to be implemented provides a REST API.
-
-The remaining micro-services ([`son-gtkusr`](https://github.com/sonata-nfv/son-gkeeper/tree/master/son-gtkusr), [`son-gtklic`](https://github.com/sonata-nfv/son-gkeeper/tree/master/son-gtklic) and [`son-gtkkpi`](https://github.com/sonata-nfv/son-gkeeper/tree/master/son-gtkkpi), and eventually others), will be implemented in the course of the project.
+The last three micro-services are still a work in progress. Most of these micro-services have been implemented using [`ruby`](https://github.com/ruby/ruby/tree/ruby_2_2) programming language and the [`sinatra`](https://github.com/sinatra/sinatra) framework. The exception is the [`son-gtklic`](https://github.com/sonata-nfv/son-gkeeper/tree/master/son-gtklic), which is implemented in [`python`](https://www.python.org/). The only need is that the micro-service to be implemented provides a REST API, whatever the language it is implemented in.
 
 ### Building
-'Building' the Gatekkeper, given the approach mentioned above, is more like 'composing' it from the available micro-services. So:
+'Building' the Gatekeeper, given the approach mentioned above, is more like 'composing' it from the available micro-services. So:
 
 * each micro-service is provided in its own container (we're using [`docker`](https://github.com/docker/docker));
 * the `Dockerfile` in each folder specifies the environment the container needs to work;
@@ -49,7 +50,6 @@ The libraries the Gatekeep depends on are the following:
 * [`ci_reporter_rspec`](https://github.com/ci-reporter/ci_reporter_rspec) >=1.0.0 (MIT)
 * [`foreman`](https://github.com/ddollar/foreman) >=0.82.0 (MIT)
 * [`pg`](https://bitbucket.org/ged/ruby-pg/wiki/Home) >=0.18.4 (MIT)
-* [`pry`](https://github.com/pry/pry) 0.10.3 (MIT)
 * [`puma`](https://github.com/puma/puma) >=3.4.0 (BSD-3-CLAUSE)
 * [`rack-parser`](https://github.com/achiu/rack-parser) >=0.7.0 (MIT)
 * [`rack-test`](https://github.com/brynary/rack-test) >=0.6.3 (MIT)

@@ -27,15 +27,14 @@
 # spec/spec_helper.rb
 require 'rack/test'
 require 'rspec'
-require 'webmock/rspec'
 
-ENV['RACK_ENV'] ||= 'test'
+ENV['RACK_ENV'] = 'test'
 
 $: << File.expand_path('../..', __FILE__)
 require 'gtk_kpi'
 
 def app
-  GtkSrv
+  GtkKpi
 end
 
 RSpec.configure do |config|

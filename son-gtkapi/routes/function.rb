@@ -76,19 +76,13 @@ class GtkApi < Sinatra::Base
   
   namespace '/api/v2/admin/functions' do
     get '/logs/?' do
-      logger.debug('GtkApi::GET /api/v2/admin/functions/logs/?') {'entered'}
-      headers 'Content-Type' => 'text/plain; charset=utf8', 'Location' => '/api/v2/admin/functions/logs'
-      log = FunctionManagerService.get_log
+      log_message = 'GtkApi::GET /admin/functions/logs'
+      logger.debug(log_message) {'entered'}
+      url = FunctionManagerService.class_variable_get(:@@url)+'/admin/logs'
+      log = FunctionManagerService.get_log(url: url, log_message:log_message)
+      logger.debug(log_message) {'leaving with log='+log}
+      headers 'Content-Type' => 'text/plain; charset=utf8', 'Location' => '/'
       halt 200, log
     end
-  end
-  
-  private 
-  def query_string
-    request.env['QUERY_STRING'].nil? ? '' : '?' + request.env['QUERY_STRING'].to_s
-  end
-
-  def request_url
-    request.env['rack.url_scheme']+'://'+request.env['HTTP_HOST']+request.env['REQUEST_PATH']
   end
 end

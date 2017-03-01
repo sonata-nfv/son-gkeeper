@@ -92,8 +92,8 @@ class Keycloak < Sinatra::Application
     #request.body = body.to_json
 
     res = Net::HTTP.post_form(url, 'client_id' => @@client_name, 'client_secret' => @@client_secret,
-                              'username' => "admin",
-                              'password' => "admin",
+                              #'username' => "admin",
+                              #'password' => "admin",
                               'grant_type' => "client_credentials")
 
     #res = http.request(request)
@@ -644,7 +644,7 @@ class Keycloak < Sinatra::Application
     end
   end
 
-  def refresh(token, credentials)
+  def refresh_service(token, credentials)
     #=> Check if token.expired?
     # TODO:
 
@@ -666,6 +666,35 @@ class Keycloak < Sinatra::Application
       halt response.code.to_i, response.body
     end
     halt 200, response.body
+  end
+
+  def refresh_adapter()
+    #=> Check if token.expired?
+    code = is_expired?
+    case code
+      when 'OK'
+        return
+      else
+        # TODO:
+        #=> Then GET new token
+        url = URI("http://#{@@address.to_s}:#{@@port.to_s}/#{@@uri.to_s}/realms/#{@@realm_name}/protocol/openid-connect/token")
+        http = Net::HTTP.new(url.host, url.port)
+        request = Net::HTTP::Post.new(url.to_s)
+        request["authorization"] = 'Bearer ' + @@access_token
+        request["content-type"] = 'application/x-www-form-urlencoded'
+
+        request.set_form_data({'client_id' => 'adapter',
+                               'client_secret' => 'df7e816d-0337-4fbe-a3f4-7b5263eaba9f',
+                               'grant_type' => 'client_credentials'})
+
+        response = http.request(request)
+        puts "LOG CODE", response.code
+        puts "REFRESH TOKEN BODY", response.body
+        unless response.code == '200'
+          halt response.code.to_i, response.body
+        end
+        halt 200, response.body
+    end
   end
 
   def set_user_roles(token)
@@ -739,6 +768,24 @@ class Keycloak < Sinatra::Application
       else
         p "ACTIVE CONTENTS FALSE", token_evaluation['active']
         false
+    end
+  end
+
+  def is_expired?
+    begin
+      decoded_payload, decoded_header = JWT.decode @@access_token, settings.keycloak_pub_key, true, { :algorithm => 'RS256' }
+      puts "DECODED_HEADER: ", decoded_header
+      puts "DECODED_PAYLOAD: ", decoded_payload
+      response = 'OK'
+        # if expired token, refresh adapter token
+    rescue JWT::DecodeError
+      response = 'DecodeError'
+    rescue JWT::ExpiredSignature
+      response = 'ExpiredSignature'
+    rescue JWT::InvalidIssuerError
+      response = 'InvalidIssuerError'
+    rescue JWT::InvalidIatError
+      response = 'InvalidIatError'
     end
   end
 

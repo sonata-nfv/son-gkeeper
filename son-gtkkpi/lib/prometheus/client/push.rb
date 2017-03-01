@@ -13,9 +13,10 @@ module Prometheus
     # Pushgateway.
     class Push
       DEFAULT_GATEWAY = 'http://localhost:9091'.freeze
-      PATH            = '/metrics/job/%s'.freeze
-      INSTANCE_PATH   = '/metrics/job/%s/instance/%s'.freeze
+      PATH            = '/metrics/jobs/%s'.freeze
+      INSTANCE_PATH   = '/metrics/jobs/%s/instances/%s'.freeze
       HEADER          = { 'Content-Type' => Formats::Text::CONTENT_TYPE }.freeze
+      SUPPORTED_SCHEMES = %w(http https).freeze
 
       attr_reader :job, :instance, :gateway, :path
 
@@ -26,6 +27,7 @@ module Prometheus
         @uri = parse(@gateway)
         @path = build_path(job, instance)
         @http = Net::HTTP.new(@uri.host, @uri.port)
+        @http.use_ssl = @uri.scheme == 'https'
       end
 
       def add(registry)
@@ -45,11 +47,11 @@ module Prometheus
       def parse(url)
         uri = URI.parse(url)
 
-        if uri.scheme == 'http'
-          uri
-        else
+        unless SUPPORTED_SCHEMES.include?(uri.scheme)
           raise ArgumentError, 'only HTTP gateway URLs are supported currently.'
         end
+
+        uri
       rescue URI::InvalidURIError => e
         raise ArgumentError, "#{url} is not a valid URL: #{e}"
       end

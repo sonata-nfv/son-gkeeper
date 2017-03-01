@@ -4,9 +4,16 @@ import json
 import unittest
 import xmlrunner
 import uuid
+import subprocess
 from datetime import datetime, timedelta
 
 from app import app, db
+
+app.config.from_pyfile('settings.py')
+if app.config['PORT'] == '5000':
+    validation_url = "http://localhost:5001"
+else:
+    validation_url = "http://localhost:5000"
 
 class TestCase(unittest.TestCase):
 
@@ -21,129 +28,79 @@ class TestCase(unittest.TestCase):
         db.session.remove()
         db.drop_all()
 
-    def test_add_type(self):
-        # Test adding a license type
-
-        response = self.app.post("/api/v1/types/", data=dict(description="Test", duration=30))
-        self.assertEqual(response.status_code, 200)
-        resp_json = json.loads(response.data)
-
-        type_uuid = resp_json["data"]["type_uuid"]
-        duration = resp_json["data"]["duration"]
-        desc = resp_json["data"]["type"]
-
-        self.assertEqual(duration, 30)
-        self.assertEqual(desc, "Test")
-
-    def test_get_types(self):
-        # Test getting a license type in the list of all
-
-        # First Adding a type
-        response = self.app.post("/api/v1/types/", data=dict(description="TEST_GET", duration=30))
-        self.assertEqual(response.status_code, 200)
-        resp_json = json.loads(response.data)
-
-        type_uuid = resp_json["data"]["type_uuid"]
-
-        # Get all license types
-        response = self.app.get("/api/v1/types/")
-        self.assertEqual(response.status_code, 200)
-        resp_json = json.loads(response.data)
-
-        types_list = []
-        for i in resp_json["data"]["types"]:
-            types_list.append(i["type_uuid"])
-
-        self.assertTrue(type_uuid in types_list)
-
-        # Get a specific license types
-        response = self.app.get("/api/v1/types/%s/" % type_uuid)
-        self.assertEqual(response.status_code, 200)
-        resp_json = json.loads(response.data)
-
-        self.assertEqual(resp_json["data"]["type_uuid"], type_uuid)
-
-    def test_delete_type(self):
-        # Test deleting (desactivating) a license type
-
-        # First Adding a type
-        response = self.app.post("/api/v1/types/", data=dict(description="TEST_DELETE", duration=30))
-        self.assertEqual(response.status_code, 200)
-        resp_json = json.loads(response.data)
-
-        type_uuid = resp_json["data"]["type_uuid"]
-
-        response = self.app.delete("/api/v1/types/%s/" % type_uuid)
-        self.assertEqual(response.status_code, 200)
-        resp_json = json.loads(response.data)
-
-        self.assertEqual(resp_json["data"]["type_uuid"], type_uuid)
-        self.assertEqual(resp_json["data"]["status"], "SUSPENDED")
-
-    def test_add_license(self):
+    def test_add_private_license(self):
         # Test adding a license
+        service_uuid = uuid.uuid4()
+        user_uuid = uuid.uuid4()
+
+        # Adding active License
+        response = self.app.post("/api/v1/licenses/", data=dict(
+                                                        service_uuid=service_uuid,
+                                                        user_uuid=user_uuid,
+                                                        description="Test",
+                                                        license_type="private",
+                                                        validation_url=validation_url,
+                                                        status="active"))
+        self.assertEqual(response.status_code, 200)
+        resp_json = json.loads(response.data)
+
+        license_uuid = resp_json["data"]["license_uuid"]
+        desc = resp_json["data"]["description"]
+        status = resp_json["data"]["status"]
+        license_type = resp_json["data"]["license_type"]
+
+        self.assertEqual(desc, "Test")
+        self.assertEqual(status, "ACTIVE")
+        self.assertEqual(license_type, "PRIVATE")
+
+    def test_add_same_license(self):
+
+        # Test adding a license
+        service_uuid = uuid.uuid4()
+        user_uuid = uuid.uuid4()
+
+        # Adding active License
+        response = self.app.post("/api/v1/licenses/", data=dict(
+                                                        service_uuid=service_uuid,
+                                                        user_uuid=user_uuid,
+                                                        description="Test",
+                                                        license_type="private",
+                                                        validation_url=validation_url,
+                                                        status="active"))
+        self.assertEqual(response.status_code, 200)
+
+        # Testing adding a license that the same user already has for a service of that type
+        response = self.app.post("/api/v1/licenses/", data=dict(
+                                                        service_uuid=service_uuid,
+                                                        user_uuid=user_uuid,
+                                                        description="Test",
+                                                        license_type="private",
+                                                        validation_url=validation_url,
+                                                        status="active"))
+        self.assertEqual(response.status_code, 400)
+
+
+    def test_add_public_license(self):
+
+        # Adding active public License
 
         service_uuid = uuid.uuid4()
         user_uuid = uuid.uuid4()
-        startingDate = datetime.now()
 
-        # Adding License Type
-        response = self.app.post("/api/v1/types/", data=dict(description="TEST_GET", duration=30))
-        self.assertEqual(response.status_code, 200)
-        resp_json = json.loads(response.data)
-
-        type_uuid = resp_json["data"]["type_uuid"]
-
-        # Adding active License
-        expiringDate = startingDate + timedelta(days=30)
-        response = self.app.post("/api/v1/licenses/", data=dict(type_uuid=type_uuid,
+        response = self.app.post("/api/v1/licenses/", data=dict(
                                                         service_uuid=service_uuid,
                                                         user_uuid=user_uuid,
                                                         description="Test",
-                                                        startingDate=startingDate.strftime('%d-%m-%Y %H:%M'),
+                                                        license_type="public",
                                                         status="active"))
         self.assertEqual(response.status_code, 200)
         resp_json = json.loads(response.data)
 
-        license_uuid = resp_json["data"]["license_uuid"]
-        license_expiring_date = resp_json["data"]["expiringDate"]
-        desc = resp_json["data"]["description"]
         status = resp_json["data"]["status"]
+        license_type = resp_json["data"]["license_type"]
 
-        self.assertEqual(license_expiring_date, expiringDate.strftime('%d-%m-%Y %H:%M'))
-        self.assertEqual(desc, "Test")
         self.assertEqual(status, "ACTIVE")
-
-        # Testing adding a license that the same user already has for a service of that type
-        response = self.app.post("/api/v1/licenses/", data=dict(type_uuid=type_uuid,
-                                                        service_uuid=service_uuid,
-                                                        user_uuid=user_uuid,
-                                                        description="Test",
-                                                        startingDate=startingDate.strftime('%d-%m-%Y %H:%M'),
-                                                        status="active"))
-        self.assertEqual(response.status_code, 304)
-
-        # New user for Testing
-        user_uuid = uuid.uuid4()
-
-        # Adding initially suspended license
-        response = self.app.post("/api/v1/licenses/", data=dict(type_uuid=type_uuid,
-                                                        service_uuid=service_uuid,
-                                                        user_uuid=user_uuid,
-                                                        description="Test",
-                                                        startingDate=startingDate.strftime('%d-%m-%Y %H:%M'),
-                                                        status="inactive"))
-        self.assertEqual(response.status_code, 200)
-        resp_json = json.loads(response.data)
-
-        license_uuid = resp_json["data"]["license_uuid"]
-        license_expiring_date = resp_json["data"]["expiringDate"]
-        desc = resp_json["data"]["description"]
-        status = resp_json["data"]["status"]
-
-        self.assertEqual(license_expiring_date, expiringDate.strftime('%d-%m-%Y %H:%M'))
-        self.assertEqual(desc, "Test")
-        self.assertEqual(status, "INACTIVE")
+        self.assertEqual(license_type, "PUBLIC")
 
     def test_get_license(self):
         # Test getting a license
@@ -152,20 +109,13 @@ class TestCase(unittest.TestCase):
         user_uuid = uuid.uuid4()
         startingDate = datetime.now()
 
-        # Adding License Type
-        response = self.app.post("/api/v1/types/", data=dict(description="TEST_GET", duration=30))
-        self.assertEqual(response.status_code, 200)
-        resp_json = json.loads(response.data)
-
-        type_uuid = resp_json["data"]["type_uuid"]
-
         # Adding active License
-        expiringDate = startingDate + timedelta(days=30)
-        response = self.app.post("/api/v1/licenses/", data=dict(type_uuid=type_uuid,
+        response = self.app.post("/api/v1/licenses/", data=dict(
                                                         service_uuid=service_uuid,
                                                         user_uuid=user_uuid,
                                                         description="Test",
-                                                        startingDate=startingDate.strftime('%d-%m-%Y %H:%M'),
+                                                        license_type="private",
+                                                        validation_url=validation_url,
                                                         status="active"))
         self.assertEqual(response.status_code, 200)
         resp_json = json.loads(response.data)
@@ -194,112 +144,26 @@ class TestCase(unittest.TestCase):
         response = self.app.head("/api/v1/licenses/%s/"%license_uuid)
         self.assertEqual(response.status_code, 200)
 
-    def test_renew_license(self):
-        # Test renewing a license
-
-        service_uuid = uuid.uuid4()
-        user_uuid = uuid.uuid4()
-        startingDate = datetime.now()
-
-        # Adding License Type
-        response = self.app.post("/api/v1/types/", data=dict(description="TEST_GET", duration=30))
-        self.assertEqual(response.status_code, 200)
-        resp_json = json.loads(response.data)
-
-        type_uuid = resp_json["data"]["type_uuid"]
-
-        # Adding active License
-        expiringDate = startingDate + timedelta(days=30)
-        response = self.app.post("/api/v1/licenses/", data=dict(type_uuid=type_uuid,
-                                                        service_uuid=service_uuid,
-                                                        user_uuid=user_uuid,
-                                                        description="Test",
-                                                        startingDate=startingDate.strftime('%d-%m-%Y %H:%M'),
-                                                        status="active"))
-        self.assertEqual(response.status_code, 200)
-        resp_json = json.loads(response.data)
-
-        license_uuid = resp_json["data"]["license_uuid"]
-        license_expiring_date = resp_json["data"]["expiringDate"]
-        self.assertEqual(license_expiring_date, expiringDate.strftime('%d-%m-%Y %H:%M'))
-
-        # Renewing a License
-        expiringDate = expiringDate + timedelta(days=30)
-        response = self.app.post("/api/v1/licenses/%s/"%license_uuid, data=dict(
-                                                                        type_uuid=type_uuid,
-                                                                        user_uuid=user_uuid))
-
-        self.assertEqual(response.status_code, 200)
-        resp_json = json.loads(response.data)
-
-        license_license_uuid = resp_json["data"]["license_uuid"]
-        license_expiring_date = resp_json["data"]["expiringDate"]
-        self.assertEqual(license_uuid, license_license_uuid)
-        self.assertEqual(license_expiring_date, expiringDate.strftime('%d-%m-%Y %H:%M'))
-
-    def test_suspend_license(self):
-        # Test suspending a license
-
-        service_uuid = uuid.uuid4()
-        user_uuid = uuid.uuid4()
-        startingDate = datetime.now()
-
-        # Adding License Type
-        response = self.app.post("/api/v1/types/", data=dict(description="TEST_GET", duration=30))
-        self.assertEqual(response.status_code, 200)
-        resp_json = json.loads(response.data)
-
-        type_uuid = resp_json["data"]["type_uuid"]
-
-        # Adding active License
-        expiringDate = startingDate + timedelta(days=30)
-        response = self.app.post("/api/v1/licenses/", data=dict(type_uuid=type_uuid,
-                                                        service_uuid=service_uuid,
-                                                        user_uuid=user_uuid,
-                                                        description="Test",
-                                                        startingDate=startingDate.strftime('%d-%m-%Y %H:%M'),
-                                                        status="active"))
-        self.assertEqual(response.status_code, 200)
-        resp_json = json.loads(response.data)
-
-        license_uuid = resp_json["data"]["license_uuid"]
-
-        # Suspend a license
-        response = self.app.put("/api/v1/licenses/%s/"%license_uuid)
-        self.assertEqual(response.status_code, 200)
-        resp_json = json.loads(response.data)
-
-        self.assertEqual(license_uuid, resp_json["data"]["license_uuid"])
-        self.assertEqual(resp_json["data"]["status"], "SUSPENDED")
-
     def test_cancel_license(self):
         # Test canceling a license
 
         service_uuid = uuid.uuid4()
         user_uuid = uuid.uuid4()
-        startingDate = datetime.now()
-
-        # Adding License Type
-        response = self.app.post("/api/v1/types/", data=dict(description="TEST_GET", duration=30))
-        self.assertEqual(response.status_code, 200)
-        resp_json = json.loads(response.data)
-
-        type_uuid = resp_json["data"]["type_uuid"]
 
         # Adding active License
-        expiringDate = startingDate + timedelta(days=30)
-        response = self.app.post("/api/v1/licenses/", data=dict(type_uuid=type_uuid,
+        response = self.app.post("/api/v1/licenses/", data=dict(
                                                         service_uuid=service_uuid,
                                                         user_uuid=user_uuid,
                                                         description="Test",
-                                                        startingDate=startingDate.strftime('%d-%m-%Y %H:%M'),
+                                                        license_type="private",
+                                                        validation_url=validation_url,
                                                         status="active"))
         self.assertEqual(response.status_code, 200)
         resp_json = json.loads(response.data)
 
         license_uuid = resp_json["data"]["license_uuid"]
 
-        # Suspend a license
+        # Cancel a license
         response = self.app.delete("/api/v1/licenses/%s/"%license_uuid)
         self.assertEqual(response.status_code, 200)
         resp_json = json.loads(response.data)
@@ -309,4 +173,8 @@ class TestCase(unittest.TestCase):
 
 
 if __name__ == '__main__':
+    FNULL = open(os.devnull, 'w')
+    p = subprocess.Popen(['python','test_resources/validate.py'], stdout=FNULL, stderr=subprocess.STDOUT)
     unittest.main(testRunner=xmlrunner.XMLTestRunner(output='test-reports'))
+    p.terminate()
+    p.wait()

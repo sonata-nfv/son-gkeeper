@@ -29,6 +29,7 @@
 development: &common_settings
   catalogues: <%= ENV['CATALOGUES_URL'] %>
   mqserver_url: <%= ENV['MQSERVER'] %>
+  logger_level: <%= ENV['LOGGER_LEVEL'] %> 
 
 test:
   <<: *common_settings

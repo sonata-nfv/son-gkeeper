@@ -33,43 +33,117 @@ require 'yaml'
 require 'bunny'
 require 'prometheus/client'
 require 'prometheus/client/push'
+require 'net/http'
 
 class GtkKpi < Sinatra::Base  
   
+  def self.counter(params, pushgateway)
 
-  # Creates a new metric (counter)
-  post '/kpi/?' do
+    # default registry
+    registry = Prometheus::Client.registry  
+
+    # if counter exists, it will be increased
+    if registry.exist?(params[:name].to_sym)
+      counter = registry.get(params[:name])
+      counter.increment
+      Prometheus::Client::Push.new(params[:job], params[:instance], pushgateway).replace(registry)
+
+    else
+      # creates a metric type counter
+      counter = Prometheus::Client::Counter.new(params[:name].to_sym, params[:docstring], params[:base_labels])
+      counter.increment
+      # registers counter
+      registry.register(counter)
+        
+      # push the registry to the gateway
+      Prometheus::Client::Push.new(params[:job], params[:instance], pushgateway).add(registry) 
+    end      
+  end
+
+  def self.gauge(params, pushgateway)
+    # default registry
+    registry = Prometheus::Client.registry  
+
+    # if gauge exists, it will be updated
+    if registry.exist?(params[:name].to_sym)
+      gauge = registry.get(params[:name])
+      value = gauge.get(params[:base_labels])
+        
+      if params[:operation]=='inc'
+        value = value.to_i + 1
+      else
+        value = value.to_i - 1
+      end
+
+      gauge.set(params[:base_labels],value)
+
+      Prometheus::Client::Push.new(params[:job], params[:instance], pushgateway).replace(registry)
+
+    else
+      # creates a metric type gauge
+      gauge = Prometheus::Client::Gauge.new(params[:name].to_sym, params[:docstring], params[:base_labels])
+      gauge.set(params[:base_labels], 1)
+      # registers gauge
+      registry.register(gauge)
+        
+      # push the registry to the gateway
+      Prometheus::Client::Push.new(params[:job], params[:instance], pushgateway).add(registry) 
+    end     
+  end
+  
+  put '/kpis/?' do
     original_body = request.body.read
-    logger.info "GtkVim: entered POST /kpi with original_body=#{original_body}"
+    logger.info "GtkKpi: entered PUT /kpis with original_body=#{original_body}"
     params = JSON.parse(original_body, :symbolize_names => true)
-    logger.info "GtkKpi: POST /kpi with params=#{params}"    
+    logger.info "GtkKpi: PUT /kpis with params=#{params}"    
     pushgateway = 'http://'+settings.pushgateway_host+':'+settings.pushgateway_port.to_s
 
     begin
 
-      # default registry
-      registry = Prometheus::Client.registry  
-
-      # if counter exists, it will be increased
-      if registry.exist?(params[:name].to_sym)
-        counter = registry.get(params[:name])
-        counter.increment
-        Prometheus::Client::Push.new(params[:job], params[:instance], params[:prometheusServer]).replace(registry)
-
+      if params[:metric_type]=='counter' 
+        GtkKpi.counter(params, pushgateway)
       else
-        # creates a metric type counter
-        counter = Prometheus::Client::Counter.new(params[:name].to_sym, params[:docstring], params[:base_labels])
-        counter.increment
-        # registers counter
-        registry.register(counter)
-        
-        # push the registry to the gateway
-        Prometheus::Client::Push.new(params[:job], params[:instance], pushgateway).add(registry) 
+        GtkKpi.gauge(params, pushgateway)
       end
-      
-      logger.info 'GtkKpi: counter '+params[:name].to_s+' updated/created'
+
+      logger.info 'GtkKpi: '+params[:metric_type]+' '+params[:name].to_s+' updated/created'
       halt 201
       
+    rescue Exception => e
+      logger.debug(e.message)
+      logger.debug(e.backtrace.inspect)
+      halt 500, 'Internal server error'
+    end           
+  end
+
+  get '/kpis/?' do
+    pushgateway = 'http://'+settings.pushgateway_host+':'+settings.pushgateway_port.to_s
+    prometheus_API_url = 'http://'+settings.pushgateway_host+':'+settings.prometheus_port.to_s+'/api/v1/series?match[]={exported_job="'+settings.prometheus_job_name+'"}' 
+    begin
+      if params.empty?
+        #get all sonata metrics
+        url = URI.parse(prometheus_API_url)
+        req = Net::HTTP::Get.new(url.to_s)
+        res = Net::HTTP.start(url.host, url.port) {|http|
+          http.request(req)
+        }
+        halt 200, res.body
+        logger.info 'GtkKpi: sonata metrics list retrieved'
+      else
+        base_labels = JSON.parse(eval("#{params[:base_labels]}").to_json, :symbolize_names => true)
+        logger.info "GtkKpi: entered GET /kpis with metric name=#{params[:name]} and labels=#{base_labels}"        
+
+        registry = Prometheus::Client.registry
+
+          if registry.exist?(params[:name].to_sym)
+            metric = registry.get(params[:name])
+            value = metric.get(base_labels)
+          end
+
+        logger.info 'GtkKpi: '+params[:name].to_s+' metric value retrieved: '+value.to_s
+        response = {'value' => value}
+        halt 200, response.to_json
+      end
     rescue Exception => e
       logger.debug(e.message)
       logger.debug(e.backtrace.inspect)
