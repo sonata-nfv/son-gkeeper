@@ -13,7 +13,7 @@ services:
      - VIM_MANAGEMENT_URL=http://son-gtkvim:5700
      - RECORD_MANAGEMENT_URL=http://son-gtkrec:5800
      - KPI_MANAGEMENT_URL=http://son-gtkkpi:5400
-     - LICENCE_MANAGEMENT_URL=http://son-gtkkpi:5900
+     - LICENCE_MANAGEMENT_URL=http://son-gtklic:5900
     ports:
       - "32001:5000"
     restart: always
