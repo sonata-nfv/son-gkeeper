@@ -43,11 +43,13 @@ class GtkKpi < Sinatra::Base
   def self.counter(params, pushgateway, registry)
 
     if ("#{params[:base_labels]}" == '') 
-      base_labels = {}                
+      base_labels = {}
+    else
+      base_labels = params[:base_labels]                
     end    
 
     # if counter exists, it will be increased
-    if registry.exist?(params[:name].to_sym)
+    if (registry.exist?(params[:name].to_sym) and registry.get(params[:name]).get(base_labels) != null)
       counter = registry.get(params[:name])
       counter.increment(base_labels)
       Prometheus::Client::Push.new(params[:job], params[:instance], pushgateway).replace(registry)
@@ -67,11 +69,13 @@ class GtkKpi < Sinatra::Base
   def self.gauge(params, pushgateway, registry)
     
     if ("#{params[:base_labels]}" == '') 
-      base_labels = {}                
+      base_labels = {}
+    else
+      base_labels = params[:base_labels]                
     end
-    
+
     # if gauge exists, it will be updated
-    if registry.exist?(params[:name].to_sym)
+    if ( registry.exist?(params[:name].to_sym) and registry.get(params[:name]).get(base_labels) != null )
       gauge = registry.get(params[:name])
       value = gauge.get(base_labels)
         
@@ -118,7 +122,7 @@ class GtkKpi < Sinatra::Base
     rescue Exception => e
       logger.debug(e.message)
       logger.debug(e.backtrace.inspect)
-      halt 500, 'Internal server error'
+      nil
     end           
   end
 
@@ -157,7 +161,7 @@ class GtkKpi < Sinatra::Base
     rescue Exception => e
       logger.debug(e.message)
       logger.debug(e.backtrace.inspect)
-      halt 500, 'Internal server error'
+      nil
     end
   end
 end

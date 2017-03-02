@@ -64,7 +64,7 @@ class GtkApi < Sinatra::Base
         new_request = KpiManagerService.update_metric(params)
         if new_request
           logger.debug(MESSAGE) {"new_request =#{new_request}"}
-          halt 201, new_request.to_json
+          halt 201
         else
           logger.debug(MESSAGE) { "leaving with 'No kpi update request was created'"}
           json_error 400, 'No kpi update_request was created'
