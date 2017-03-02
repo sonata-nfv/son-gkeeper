@@ -32,10 +32,15 @@ class GtkApi < Sinatra::Base
   DEFAULT_MAX_LIMIT = "100"
 
   # Root
-  get '/' do
+  get '/api/?' do
     headers 'Content-Type' => 'text/plain; charset=utf8', 'Location' => '/'
     api = open('./config/api.yml')
     halt 200, api.read.to_s
+  end
+  
+  # API documentation
+  get '/api/doc/?' do
+    erb :api_doc
   end
   
   error Sinatra::NotFound do
