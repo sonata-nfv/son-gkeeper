@@ -13,6 +13,7 @@ services:
      - VIM_MANAGEMENT_URL=http://son-gtkvim:5700
      - RECORD_MANAGEMENT_URL=http://son-gtkrec:5800
      - KPI_MANAGEMENT_URL=http://son-gtkkpi:5400
+     - LICENCE_MANAGEMENT_URL=http://son-gtklic:5900
     ports:
       - "32001:5000"
     restart: always
@@ -87,8 +88,6 @@ services:
      - MQSERVER=amqp://guest:guest@broker:5672
     depends_on:
      - postgres
-    extra_hosts:
-      - "jenkins.sonata-nfv.eu:192.168.60.5"
     logging:
       driver: gelf
       options:
@@ -122,8 +121,6 @@ services:
      - DATABASE_PORT=5432
     depends_on:
      - postgres
-    extra_hosts:
-      - "jenkins.sonata-nfv.eu:192.168.60.5"
     logging:
       driver: gelf
       options:
@@ -144,8 +141,6 @@ services:
      - DATABASE_PORT=5432
     depends_on:
      - postgres
-    extra_hosts:
-      - "jenkins.sonata-nfv.eu:192.168.60.5"
     logging:
       driver: gelf
       options:
