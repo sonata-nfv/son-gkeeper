@@ -42,16 +42,20 @@ class GtkKpi < Sinatra::Base
 
   def self.counter(params, pushgateway, registry)
 
+    if ("#{params[:base_labels]}" == '') 
+      base_labels = {}                
+    end    
+
     # if counter exists, it will be increased
     if registry.exist?(params[:name].to_sym)
       counter = registry.get(params[:name])
-      counter.increment(params[:base_labels])
+      counter.increment(base_labels)
       Prometheus::Client::Push.new(params[:job], params[:instance], pushgateway).replace(registry)
 
     else
       # creates a metric type counter
-      counter = Prometheus::Client::Counter.new(params[:name].to_sym, params[:docstring], params[:base_labels])
-      counter.increment(params[:base_labels])
+      counter = Prometheus::Client::Counter.new(params[:name].to_sym, params[:docstring], base_labels)
+      counter.increment(base_labels)
       # registers counter
       registry.register(counter)
         
@@ -62,10 +66,14 @@ class GtkKpi < Sinatra::Base
 
   def self.gauge(params, pushgateway, registry)
     
+    if ("#{params[:base_labels]}" == '') 
+      base_labels = {}                
+    end
+    
     # if gauge exists, it will be updated
     if registry.exist?(params[:name].to_sym)
       gauge = registry.get(params[:name])
-      value = gauge.get(params[:base_labels])
+      value = gauge.get(base_labels)
         
       if params[:operation]=='inc'
         value = value.to_i + 1
@@ -73,14 +81,14 @@ class GtkKpi < Sinatra::Base
         value = value.to_i - 1
       end
 
-      gauge.set(params[:base_labels],value)
+      gauge.set(base_labels,value)
 
       Prometheus::Client::Push.new(params[:job], params[:instance], pushgateway).replace(registry)
 
     else
       # creates a metric type gauge
-      gauge = Prometheus::Client::Gauge.new(params[:name].to_sym, params[:docstring], params[:base_labels])
-      gauge.set(params[:base_labels], 1)
+      gauge = Prometheus::Client::Gauge.new(params[:name].to_sym, params[:docstring], base_labels)
+      gauge.set(base_labels, 1)
       # registers gauge
       registry.register(gauge)
         
@@ -128,15 +136,18 @@ class GtkKpi < Sinatra::Base
         halt 200, res.body
         logger.info 'GtkKpi: sonata metrics list retrieved'
       else        
-        logger.info "GtkKpi: entered GET /kpis with metric name=#{params[:name]} and labels=#{base_labels}"        
+        logger.info "GtkKpi: entered GET /kpis with params=#{params}"        
 
           if registry.exist?(params[:name].to_sym)
             metric = registry.get(params[:name])
+            
             if ("#{params[:base_labels]}" == '') 
-              value = metric.get()
+              base_labels = {}
             else
-              base_labels = JSON.parse(eval("#{params[:base_labels]}").to_json, :symbolize_names => true)
-              value = metric.get(base_labels)
+              base_labels = JSON.parse(eval("#{params[:base_labels]}").to_json, :symbolize_names => true)              
+            end
+
+            value = metric.get(base_labels)
           end
 
         logger.info 'GtkKpi: '+params[:name].to_s+' metric value retrieved: '+value.to_s
