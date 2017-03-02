@@ -619,6 +619,7 @@ class Keycloak < Sinatra::Application
   end
 
   def authorize?(user_token, request)
+    refresh_adapter
     #=> Check token
     public_key = get_public_key
     #p "SETTINGS", settings.keycloak_pub_key
@@ -650,11 +651,15 @@ class Keycloak < Sinatra::Application
     p "realm_access_roles", token_realm_access_roles
     realm_roles = get_realm_roles
 
+    p "realm_roles", realm_roles
+    parsed_realm_roles, code = parse_json(realm_roles)
+    p "Realm_roles_PARSED", parsed_realm_roles
+
     authorized = false
     token_realm_access_roles.each { |role|
       puts "ROLE TO INSPECT", role
 
-      token_role_repr = realm_roles.find {|x| x['name'] == role}
+      token_role_repr = parsed_realm_roles.find {|x| x['name'] == role}
       unless token_role_repr
         json_error(403, 'No permissions')
       end
