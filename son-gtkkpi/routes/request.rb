@@ -127,13 +127,16 @@ class GtkKpi < Sinatra::Base
         }
         halt 200, res.body
         logger.info 'GtkKpi: sonata metrics list retrieved'
-      else
-        base_labels = JSON.parse(eval("#{params[:base_labels]}").to_json, :symbolize_names => true)
+      else        
         logger.info "GtkKpi: entered GET /kpis with metric name=#{params[:name]} and labels=#{base_labels}"        
 
           if registry.exist?(params[:name].to_sym)
             metric = registry.get(params[:name])
-            value = metric.get(base_labels)
+            if ("#{params[:base_labels]}" == '') 
+              value = metric.get()
+            else
+              base_labels = JSON.parse(eval("#{params[:base_labels]}").to_json, :symbolize_names => true)
+              value = metric.get(base_labels)
           end
 
         logger.info 'GtkKpi: '+params[:name].to_s+' metric value retrieved: '+value.to_s
