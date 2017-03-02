@@ -143,10 +143,9 @@ class Keycloak < Sinatra::Application
     puts "REGISTERING NEW CLIENT"
     register_client(parsed_form)
 
-
-
     puts "SETTING CLIENT ROLES"
     set_service_roles(parsed_form['clientId'])
+    halt 201
   end
 
   post '/login/user' do

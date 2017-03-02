@@ -492,7 +492,7 @@ class Keycloak < Sinatra::Application
       halt response.code.to_i, response.body
     end
 
-    #parsed_res = parse_json(response.body)
+    parsed_res, errors = parse_json(response.body)
     #p "RESPONSE BODY"
     #puts parsed_res[0]['access_token']
     #halt 200, parsed_res['access_token'].to_json
@@ -813,10 +813,11 @@ class Keycloak < Sinatra::Application
     p "CODE", response.code
     p "BODY", response.body
 
-    if response.code == '204'
-      halt response.code.to_i
-    else
+    if response.code != '204'
       json_error(response.code.to_i, response.body.to_s)
+    else
+      #halt response.code.to_i
+      return
     end
     #Returns the roles for the client that can be associated with the client's scope
     #GET /admin/realms/{realm}/clients/{id}/scope-mappings/clients/{client}/available
