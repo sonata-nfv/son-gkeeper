@@ -91,8 +91,8 @@ adapter_cid=$(echo $create_client_out | awk -F id= '{print $2}')
 create_realm_role $SONATA_REALM GK "see_catalogues, see_repositories"
 create_realm_role $SONATA_REALM son-catalogues ""
 create_realm_role $SONATA_REALM son-repositories "\${role_read-catalogue}"
-create_realm_role $SONATA_REALM customer "\${role_read-repositories}, \${role_write-repositories}, \${role_execute-repositories}"
-create_realm_role $SONATA_REALM developer "\${role_read-catalogue}, \${role_write-catalogue}"
+create_realm_role $SONATA_REALM customer "\${role_read-repositories},\${role_write-repositories},\${role_execute-catalogue}"
+create_realm_role $SONATA_REALM developer "\${role_read-catalogue},\${role_write-catalogue}"
 
 # Capture the adapter client secret for the next set of operations
 adapter_secret=$(get_client_secret $SONATA_REALM $adapter_cid)
