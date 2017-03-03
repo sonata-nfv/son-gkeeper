@@ -61,14 +61,17 @@ class GtkApi < Sinatra::Base
       params = JSON.parse(request.body.read)
       unless params.nil?
         logger.debug(MESSAGE) {"entered with params=#{params}"}
-        new_request = KpiManagerService.update_metric(params)
-        if new_request
-          logger.debug(MESSAGE) {"new_request =#{new_request}"}
-          halt 201
-        else
-          logger.debug(MESSAGE) { "leaving with 'No kpi update request was created'"}
-          json_error 400, 'No kpi update_request was created'
-        end
+        resp = KpiManagerService.update_metric(params)
+        logger.debug(log_message) {"resp=#{resp.inspect}"}
+        case resp[:status]
+          when 201            
+            halt 201, resp[:data].to_json        
+          else
+            message = "Unknown status: #{resp[:status]} for update_metric #{params}"
+            logger.error(log_message) {message}
+            json_error resp[:status], message
+          end
+        }        
       end
       logger.debug(MESSAGE) { "leaving with 'No request id specified'"}
       json_error 400, 'No params specified for the create request'
