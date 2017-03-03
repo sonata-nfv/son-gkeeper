@@ -49,9 +49,9 @@ class KpiManagerService < ManagerService
       response = putCurb(url: @@url+'/kpis', body: params)      
       case response
       when 201
-        { status: response, data: JSON.parse(response.body, :symbolize_names => true), message: 'Metric Updated'}        
+        { message: 'Metric Updated'}        
       else
-        { status: response, data: {}, message: 'Metric does not updated'}
+        { status: response, message: 'Metric does not updated'}
       end      
     rescue => e
       GtkApi.logger.error(method) {"Error during processing: #{$!}"}
@@ -67,16 +67,16 @@ class KpiManagerService < ManagerService
     begin
       GtkApi.logger.debug(method) {"url = "+@@url}
       response = getCurb(url: @@url+'/kpis', params: params, headers:JSON_HEADERS)      
-      case response.code
+      case response[:status]
       when 200
-        { status: response.code, data: JSON.parse(response[:items].to_json, :symbolize_names => true), message: 'Value(s) retrieved'}        
+        { JSON.parse(response[:items].to_json }
       else
-        { status: response.code, data: {}, message: 'Metric does not updated'}
+        { status: response[:status], message: 'Metric does not updated'}
       end   
     rescue => e
       GtkApi.logger.error(method) {"Error during processing: #{$!}"}
       GtkApi.logger.error(method) {"Backtrace:\n\t#{e.backtrace.join("\n\t")}"}
-      { status: 500, data: {}, message: e.backtrace.join("\n\t")}
+      { status: 500, message: e.backtrace.join("\n\t")}
     end      
   end
 end
