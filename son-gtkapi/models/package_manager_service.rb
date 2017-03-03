@@ -62,7 +62,7 @@ class PackageManagerService < ManagerService
             GtkApi.logger.debug(method) {"response=#{response.inspect}"}
             case response.code
             when 201
-              { status: 201, count: 1, data: created_package, message: 'Created'}
+              { status: 201, count: 1, data: JSON.parse(response.body, :symbolize_names => true), message: 'Created'}
             when 409
               { status: 409, count: 0, data: JSON.parse(response.body, :symbolize_names => true), message: 'Conflict'}
             when 400
