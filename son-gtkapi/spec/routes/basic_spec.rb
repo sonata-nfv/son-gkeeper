@@ -38,22 +38,22 @@ RSpec.describe GtkApi do
     GtkApi # this defines the active application for this test
   end
 
-  describe 'GET "/"' do
+  describe 'GET "/api"' do
     before do
       stub_request(:get, 'localhost:5000').to_return(:body => File.new('./config/api.yml'), :status => 200)
-      get '/'
+      get '/api'
     end
 
     subject { last_response }
     its(:status) { is_expected.to eq 200 }
   end
   
-  describe 'GET "/api-doc"' do
+  describe 'GET "/api/doc"' do
     let(:doc) {  File.new('./views/api_doc.erb')}
 
     before do
       stub_request(:get, 'localhost:5000/api-doc').to_return(body: File.new('./views/api_doc.erb'), status: 200)
-      get '/api-doc'
+      get '/api/doc'
     end
 
     subject { last_response }

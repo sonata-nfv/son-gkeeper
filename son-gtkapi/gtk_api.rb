@@ -62,7 +62,7 @@ class GtkApi < Sinatra::Base
   set :public_folder, File.join(File.dirname(__FILE__), 'public')
   set :bind, '0.0.0.0'
   set :files, File.join(settings.public_folder, 'files')
-  set :time_at_startup, Time.now.utc
+  set :began_at, Time.now.utc
   set :environments, %w(development test integration qualification demonstration)
   set :environment, ENV['RACK_ENV'] || :development
   config_file File.join(root, 'config', 'services.yml')
@@ -79,7 +79,7 @@ class GtkApi < Sinatra::Base
   set :logger, Logger.new(logfile)
   raise 'Can not proceed without a logger file' if settings.logger.nil?
   set :logger_level, (ENV['LOGGER_LEVEL'] || settings.level ||= 'debug').to_sym # can be debug, fatal, error, warn, or info
-  settings.logger.info(MODULE) {"Started at #{settings.time_at_startup}"}
+  settings.logger.info(MODULE) {"Started at #{settings.began_at}"}
   settings.logger.info(MODULE) {"Logger level at :#{settings.logger_level} level"}
   
   enable :cross_origin
