@@ -74,6 +74,13 @@ class ManagerService
     end
   end
   
+  def self.find(url:, params: {}, headers: JSON_HEADERS, log_message:'')
+    GtkApi.logger.debug(log_message) {'entered'}
+    response = getCurb(url: url, params: params, headers: headers)
+    GtkApi.logger.debug(log_message) {"response=#{response}"}
+    response
+  end
+  
   def self.postCurb(url:, body:, headers: {})
     log_message=LOG_MESSAGE+"##{__method__}"
     GtkApi.logger.debug(log_message) {"entered with url=#{url}, body=#{body}"}
@@ -180,13 +187,6 @@ class ManagerService
       end
   end
 
-  def self.find(url:, params: {}, headers: JSON_HEADERS, log_message:'')
-    GtkApi.logger.debug(log_message) {'entered'}
-    response = getCurb(url: url, params: params, headers: headers)
-    GtkApi.logger.debug(log_message) {"response=#{response}"}
-    response
-  end
-  
   def self.vectorize_hash(hash)
     {
       status: hash[:status], 

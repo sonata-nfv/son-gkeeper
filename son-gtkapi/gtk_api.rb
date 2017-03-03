@@ -94,6 +94,7 @@ class GtkApi < Sinatra::Base
   LicenceManagerService.config(url: ENV['LICENCE_MANAGEMENT_URL'] || settings.licmgmt)
   VimManagerService.config(url: ENV['VIM_MANAGEMENT_URL'] || settings.vimmgmt)
   KpiManagerService.config(url: ENV['KPI_MANAGEMENT_URL'] || settings.kpimgmt)
+  User.config(url: ENV['USER_MANAGEMENT_URL'] || settings.usrmgmt)
   
   Zip.setup do |c|
     c.unicode_names = true
@@ -110,6 +111,6 @@ class GtkApi < Sinatra::Base
   def request_url
     log_message = 'GtkApi::request_url'
     settings.logger.debug(log_message) {"Schema=#{request.env['rack.url_scheme']}, host=#{request.env['HTTP_HOST']}, path=#{request.env['REQUEST_PATH']}"}
-    request.env['rack.url_scheme']+'://'+request.env['HTTP_HOST']+request.env['REQUEST_PATH']
+    "#{request.env['rack.url_scheme']}://#{request.env['HTTP_HOST']}#{request.env['REQUEST_PATH']}"
   end
 end
