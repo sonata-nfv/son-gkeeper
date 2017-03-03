@@ -62,13 +62,13 @@ class GtkApi < Sinatra::Base
       unless params.nil?
         logger.debug(MESSAGE) {"entered with params=#{params}"}
         resp = KpiManagerService.update_metric(params)
-        logger.debug(log_message) {"resp=#{resp.inspect}"}
+        logger.debug(MESSAGE) {"resp=#{resp.inspect}"}
         case resp[:status]
         when 201            
           halt 201, resp[:data].to_json        
         else
           message = "Unknown status: #{resp[:status]} for update_metric #{params}"
-          logger.error(log_message) {message}
+          logger.error(MESSAGE) {message}
           json_error resp[:status], message
         end                
       end
