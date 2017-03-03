@@ -71,7 +71,7 @@ class KpiManagerService < ManagerService
       when 200
         { status: response[:status], data: JSON.parse(response[:items].to_json, :symbolize_names => true) }
       else
-        { status: response[:status], data: {}, message: 'Metric does not updated'}
+        { status: response[:status], data: {}, message: 'Metric does not retrieved'}
       end   
     rescue => e
       GtkApi.logger.error(method) {"Error during processing: #{$!}"}
