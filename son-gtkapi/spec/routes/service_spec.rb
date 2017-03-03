@@ -77,9 +77,9 @@ RSpec.describe GtkApi, type: :controller do
         get '/api/v2/services'
       end
         
-      #it 'calls ServiceManagerService' do
-      #  expect(ServiceManagerService.find_services(default_params)).to have_been_made
-      #end
+      it 'calls ServiceManagerService' do
+        expect(ServiceManagerService).to have_received(:find_services)
+      end
       
       it 'returns Ok (200)' do
         expect(last_response.status).to eq(200)
