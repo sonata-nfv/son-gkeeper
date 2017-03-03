@@ -46,7 +46,6 @@ class GtkApi < Sinatra::Base
       
       logger.info(MESSAGE) {"entered"}
       resp = KpiManagerService.get_metric(params)
-      logger.debug(MESSAGE) { "kpis= #{kpis}"}
       case resp[:status]
       when 200
         halt 200, resp[:data].to_json        

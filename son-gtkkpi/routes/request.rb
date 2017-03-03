@@ -130,7 +130,7 @@ class GtkKpi < Sinatra::Base
     rescue Exception => e
       logger.debug(e.message)
       logger.debug(e.backtrace.inspect)
-      nil
+      halt 400
     end           
   end
 
@@ -169,7 +169,7 @@ class GtkKpi < Sinatra::Base
     rescue Exception => e
       logger.debug(e.message)
       logger.debug(e.backtrace.inspect)
-      nil
+      halt 400
     end
   end
 end
