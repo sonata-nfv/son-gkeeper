@@ -42,63 +42,71 @@ class GtkKpi < Sinatra::Base
 
   def self.counter(params, pushgateway, registry)
 
-    if ("#{params[:base_labels]}" == '') 
-      base_labels = {}
-    else
-      base_labels = params[:base_labels]                
-    end    
+    begin
+      if ("#{params[:base_labels]}" == '') 
+        base_labels = {}
+      else
+        base_labels = params[:base_labels]                
+      end    
 
-    # if counter exists, it will be increased
-    if (registry.exist?(params[:name].to_sym) and registry.get(params[:name]).get(base_labels) != null)
-      counter = registry.get(params[:name])
-      counter.increment(base_labels)
-      Prometheus::Client::Push.new(params[:job], params[:instance], pushgateway).replace(registry)
+      # if counter exists, it will be increased
+      if (registry.exist?(params[:name].to_sym) and registry.get(params[:name]).get(base_labels) != nil)
+        counter = registry.get(params[:name])
+        counter.increment(base_labels)
+        Prometheus::Client::Push.new(params[:job], params[:instance], pushgateway).replace(registry)
 
-    else
-      # creates a metric type counter
-      counter = Prometheus::Client::Counter.new(params[:name].to_sym, params[:docstring], base_labels)
-      counter.increment(base_labels)
-      # registers counter
-      registry.register(counter)
+      else
+        # creates a metric type counter
+        counter = Prometheus::Client::Counter.new(params[:name].to_sym, params[:docstring], base_labels)
+        counter.increment(base_labels)
+        # registers counter
+        registry.register(counter)
         
-      # push the registry to the gateway
-      Prometheus::Client::Push.new(params[:job], params[:instance], pushgateway).add(registry) 
-    end      
+        # push the registry to the gateway
+        Prometheus::Client::Push.new(params[:job], params[:instance], pushgateway).add(registry) 
+      end
+    rescue Exception => e
+      raise e
+    end
   end
 
   def self.gauge(params, pushgateway, registry)
     
-    if ("#{params[:base_labels]}" == '') 
-      base_labels = {}
-    else
-      base_labels = params[:base_labels]                
-    end
-
-    # if gauge exists, it will be updated
-    if ( registry.exist?(params[:name].to_sym) and registry.get(params[:name]).get(base_labels) != null )
-      gauge = registry.get(params[:name])
-      value = gauge.get(base_labels)
-        
-      if params[:operation]=='inc'
-        value = value.to_i + 1
+    begin
+      if ("#{params[:base_labels]}" == '') 
+        base_labels = {}
       else
-        value = value.to_i - 1
+        base_labels = params[:base_labels]                
       end
 
-      gauge.set(base_labels,value)
-
-      Prometheus::Client::Push.new(params[:job], params[:instance], pushgateway).replace(registry)
-
-    else
-      # creates a metric type gauge
-      gauge = Prometheus::Client::Gauge.new(params[:name].to_sym, params[:docstring], base_labels)
-      gauge.set(base_labels, 1)
-      # registers gauge
-      registry.register(gauge)
+      # if gauge exists, it will be updated
+      if ( registry.exist?(params[:name].to_sym) and registry.get(params[:name]).get(base_labels) != nil )
+        gauge = registry.get(params[:name])
+        value = gauge.get(base_labels)
         
-      # push the registry to the gateway
-      Prometheus::Client::Push.new(params[:job], params[:instance], pushgateway).add(registry) 
-    end     
+        if params[:operation]=='inc'
+          value = value.to_i + 1
+        else
+          value = value.to_i - 1
+        end
+
+        gauge.set(base_labels,value)
+
+        Prometheus::Client::Push.new(params[:job], params[:instance], pushgateway).replace(registry)
+
+      else
+        # creates a metric type gauge
+        gauge = Prometheus::Client::Gauge.new(params[:name].to_sym, params[:docstring], base_labels)
+        gauge.set(base_labels, 1)
+        # registers gauge
+        registry.register(gauge)
+        
+        # push the registry to the gateway
+        Prometheus::Client::Push.new(params[:job], params[:instance], pushgateway).add(registry) 
+      end
+    rescue Exception => e
+      raise e
+    end
   end
   
   put '/kpis/?' do
