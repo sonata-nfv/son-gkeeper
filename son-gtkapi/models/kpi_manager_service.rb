@@ -52,8 +52,7 @@ class KpiManagerService < ManagerService
           { status: response.code, data: JSON.parse(response.body, :symbolize_names => true), message: 'Metric Updated'}        
         else
           { status: response.code, data: {}, message: 'Metric does not updated'}
-        end
-      }
+        end      
     rescue => e
       GtkKpi.logger.error(method) {"Error during processing: #{$!}"}
       GtkKpi.logger.error(method) {"Backtrace:\n\t#{e.backtrace.join("\n\t")}"}
@@ -73,8 +72,7 @@ class KpiManagerService < ManagerService
           { status: response.code, data: JSON.parse(response.[:items].to_json), :symbolize_names => true), message: 'Value(s) retrieved'}        
         else
           { status: response.code, data: {}, message: 'Metric does not updated'}
-        end
-      }      
+        end   
     rescue => e
       GtkKpi.logger.error(method) {"Error during processing: #{$!}"}
       GtkKpi.logger.error(method) {"Backtrace:\n\t#{e.backtrace.join("\n\t")}"}

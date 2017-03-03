@@ -70,8 +70,7 @@ class GtkApi < Sinatra::Base
             message = "Unknown status: #{resp[:status]} for update_metric #{params}"
             logger.error(log_message) {message}
             json_error resp[:status], message
-          end
-        }        
+          end                
       end
       logger.debug(MESSAGE) { "leaving with 'No request id specified'"}
       json_error 400, 'No params specified for the create request'
