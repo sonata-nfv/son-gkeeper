@@ -35,16 +35,16 @@ class Keycloak < Sinatra::Application
   # p keycloak_config
   # p "ISSUER", ENV['JWT_ISSUER']
 
-  #@@port = ENV['KEYCLOAK_PORT']
-  #@@uri = ENV['KEYCLOAK_PATH']
-  #@@realm_name = ENV['SONATA_REALM']
-  #@@client_name = ENV['CLIENT_NAME']
+  @@port = ENV['KEYCLOAK_PORT']
+  @@uri = ENV['KEYCLOAK_PATH']
+  @@realm_name = ENV['SONATA_REALM']
+  @@client_name = ENV['CLIENT_NAME']
 
   ## TODO: remove this or comment
-  @@port = 8081
-  @@uri = 'auth'
-  @@realm_name = 'master'
-  @@client_name = 'adapter'
+  #@@port = 8081
+  #@@uri = 'auth'
+  #@@realm_name = 'master'
+  #@@client_name = 'adapter'
 
   def Keycloak.get_adapter_token
     url = URI("http://#{@@address.to_s}:#{@@port.to_s}/#{@@uri.to_s}/realms/#{@@realm_name}/protocol/openid-connect/token")
@@ -66,12 +66,12 @@ class Keycloak < Sinatra::Application
   end
 
   ## Get the ip of keycloak. Only works for docker-compose
-  #@@address = Resolv::DNS.new.getaddress("keycloak")
+  @@address = Resolv::DNS.new.getaddress("keycloak")
 
   # TODO: remove this or comment
-  @@address = 'localhost'
-  @@client_secret = 'df7e816d-0337-4fbe-a3f4-7b5263eaba9f'
-  @@access_token = Keycloak.get_adapter_token
+  #@@address = 'localhost'
+  #@@client_secret = 'df7e816d-0337-4fbe-a3f4-7b5263eaba9f'
+  #@@access_token = Keycloak.get_adapter_token
 
   def get_oidc_endpoints
     # Call http://localhost:8081/auth/realms/master/.well-known/openid-configuration to obtain endpoints
@@ -634,7 +634,7 @@ class Keycloak < Sinatra::Application
     # operation_resource_type
 
     required_role = 'role_' + request['operation'] + '-' + request['resource']
-    p "required_role", required_role
+    p "REQUIRED ROLE", required_role
 
     #=> Check token roles
     begin
@@ -645,8 +645,13 @@ class Keycloak < Sinatra::Application
 
     # TODO: Resource access roles (services) will be implemented later
     token_resource_access_resources = token_payload['resource_access']
-
+    # .
+    # .
+    # .
     # TODO: Evaluate special roles (customer,developer,etc...)
+    # .
+    # .
+    # .
 
     p "realm_access_roles", token_realm_access_roles
     realm_roles = get_realm_roles
@@ -822,7 +827,7 @@ class Keycloak < Sinatra::Application
       json_error(response.code.to_i, response.body.to_s)
     else
       #halt response.code.to_i
-      return
+      return client_data, role_data
     end
     #Returns the roles for the client that can be associated with the client's scope
     #GET /admin/realms/{realm}/clients/{id}/scope-mappings/clients/{client}/available
@@ -833,6 +838,44 @@ class Keycloak < Sinatra::Application
     #request = Net::HTTP::Get.new(url.to_s)
     #request["authorization"] = 'bearer ' + @@access_token
     #response = http.request(request)
+  end
+
+  def set_service_account_roles(client_data, role_data)
+    puts "CLIENT ID", client_data
+    #Get a user dedicated to the service account
+    #GET /admin/realms/{realm}/clients/{id}/service-account-user
+    http_path = "http://#{@@address.to_s}:#{@@port.to_s}/#{@@uri.to_s}/admin/realms/#{@@realm_name}/clients/#{client_data}/service-account-user"
+    url = URI(http_path)
+    http = Net::HTTP.new(url.host, url.port)
+    request = Net::HTTP::Get.new(url.to_s)
+    request["authorization"] = 'bearer ' + @@access_token
+
+    response = http.request(request)
+    p "CODE", response.code
+    p "BODY", response.body
+
+    parsed_user, errors = parse_json(response.body)
+
+    # Add role from roles to user_id
+    ##POST rest-api/admin/realms/{realm}/users/{id}/role-mappings/realm
+    http_path = "http://#{@@address.to_s}:#{@@port.to_s}/#{@@uri.to_s}/admin/realms/#{@@realm_name}/users/#{parsed_user['id']}/role-mappings/realm"
+    url = URI(http_path)
+    http = Net::HTTP.new(url.host, url.port)
+    request = Net::HTTP::Post.new(url.to_s)
+    request["authorization"] = 'bearer ' + @@access_token
+    request["content-type"] = 'application/json'
+    body = []
+    request.body = (body << role_data).to_json
+
+    response = http.request(request)
+    p "CODE", response.code
+    p "BODY", response.body
+
+    if response.code == '204'
+      return
+    else
+      json_error(response.code.to_i, response.body.to_s)
+    end
   end
 
   def delete_realm_role(role)

@@ -97,7 +97,7 @@ class Keycloak < Sinatra::Application
     halt 415 unless (request.content_type == 'application/x-www-form-urlencoded' or request.content_type == 'application/json')
     #payload?={"id":"123123","auth_code":"191331","required_amount":101,"timestamp":1407775713,"status":"completed","total_amount":101}
 
-    # Compatibility support for YAML content-type
+    # Compatibility support for form-urlencoded content-type
     case request.content_type
       when 'application/x-www-form-urlencoded'
         # Validate format
@@ -144,7 +144,10 @@ class Keycloak < Sinatra::Application
     register_client(parsed_form)
 
     puts "SETTING CLIENT ROLES"
-    set_service_roles(parsed_form['clientId'])
+    client_data, role_data = set_service_roles(parsed_form['clientId'])
+    #puts "CLIENT_DATA!!", client_data
+    puts "SETTING SERVICE ACCOUNT ROLES"
+    set_service_account_roles(client_data['id'], role_data)
     halt 201
   end
 
@@ -219,19 +222,6 @@ class Keycloak < Sinatra::Application
       halt 400, error.to_json
     end
 
-    # Get request parameters
-    keyed_params = keyed_hash(params)
-    puts "KEYED_PARAMS", keyed_params
-    # params examples:
-    # {:uri=>"catalogues", :method=>"GET"}
-    # Return if 'uri' and 'method' are not included
-    halt 401 unless (keyed_params[:'path'] and keyed_params[:'method'])
-
-    #TODO: Improve path and method parse (include it in body?)
-    puts "PATH", keyed_params[:'path']
-    puts "METHOD",keyed_params[:'method']
-    request = process_request(keyed_params[:'path'], keyed_params[:'method'])
-
     # Check token validation
     val_res, val_code = token_validation(user_token)
     # Check token expiration
@@ -247,6 +237,51 @@ class Keycloak < Sinatra::Application
     else
       halt 401, val_res
     end
+
+    # Return if content-type is not valid
+    if request.content_type
+      logger.info "Content-Type is " + request.content_type
+    end
+    # halt 415 unless (request.content_type == 'application/x-www-form-urlencoded' or request.content_type == 'application/json')
+    # We will accept both a JSON file, form-urlencoded or query type
+    # Compatibility support
+    case request.content_type
+      when 'application/x-www-form-urlencoded'
+        # Validate format
+        form_encoded, errors = request.body.read
+        halt 400, errors.to_json if errors
+
+        p "FORM PARAMS", form_encoded
+        form = Hash[URI.decode_www_form(form_encoded)]
+        # TODO: Validate Hash format
+        p "FORM", form
+        keyed_params = keyed_hash(form)
+        halt 401 unless (keyed_params[:'path'] and keyed_params[:'method'])
+
+      when 'application/json'
+        # Compatibility support for JSON content-type
+        # Parses and validates JSON format
+        form, errors = parse_json(request.body.read)
+        halt 400, errors.to_json if errors
+        p "FORM", form
+        keyed_params = keyed_hash(form)
+        halt 401 unless (keyed_params[:'path'] and keyed_params[:'method'])
+      else
+        #QUERY TYPE
+        # Get request parameters
+        keyed_params = keyed_hash(params)
+        puts "KEYED_PARAMS", keyed_params
+        # params examples:
+        # {:uri=>"catalogues", :method=>"GET"}
+        # Return if 'uri' and 'method' are not included
+        halt 401 unless (keyed_params[:'path'] and keyed_params[:'method'])
+    end
+
+    #TODO: Improve path and method parse (include it in body?)
+    puts "PATH", keyed_params[:'path']
+    puts "METHOD",keyed_params[:'method']
+    # Check the provided path to the resource and the HTTP method, then build the request
+    request = process_request(keyed_params[:'path'], keyed_params[:'method'])
 
     puts "Ready to authorize"
     # Authorization process

@@ -74,6 +74,7 @@ end
 
 before do
   logger.level = Logger::DEBUG
+  refresh_adapter
 end
 
 # Configurations
