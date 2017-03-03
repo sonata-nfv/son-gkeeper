@@ -94,6 +94,7 @@ class GtkApi < Sinatra::Base
   LicenceManagerService.config(url: ENV['LICENCE_MANAGEMENT_URL'] || settings.licmgmt)
   VimManagerService.config(url: ENV['VIM_MANAGEMENT_URL'] || settings.vimmgmt)
   KpiManagerService.config(url: ENV['KPI_MANAGEMENT_URL'] || settings.kpimgmt)
+  User.config(url: ENV['USER_MANAGEMENT_URL'] || settings.usrmgmt)
   
   Zip.setup do |c|
     c.unicode_names = true

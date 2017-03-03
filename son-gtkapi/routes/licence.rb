@@ -39,28 +39,6 @@ class GtkApi < Sinatra::Base
         halt 200
       end
     end
-    
-    # GET licence types
-    get '/licence-types/?' do
-      log_message = 'GtkApi::GET /api/v2/licence-types/?'
-      
-      logger.debug(log_message) {"entered with #{query_string}"}
-      
-      @offset ||= params['offset'] ||= DEFAULT_OFFSET 
-      @limit ||= params['limit'] ||= DEFAULT_LIMIT
-    
-      licence_types = LicenceManagerService.find_licence_types(params)
-      if licence_types
-        logger.debug(log_message) {"leaving with #{licence_types}"}
-        links = build_pagination_headers(url: request_url, limit: @limit.to_i, offset: @offset.to_i, total: licence_types.size)
-        [200, {'Link' => links}, licence_types.to_json]
-      else
-        error_message = "No licence types with #{params} were found"
-        logger.debug(log_message) {"leaving with message '"+error_message+"'"}
-        json_error 404, error_message
-
-      end
-    end
 
     # GET many licences
     get '/licences/?' do
@@ -107,25 +85,6 @@ class GtkApi < Sinatra::Base
         message = "Licence #{params[:uuid]} not valid"
         logger.debug(log_message) {"leaving with message '"+message+"'"}
         json_error 404, message
-      end
-    end
-    
-    post '/licence-types/?' do
-      log_message = 'GtkApi::POST /licence-types/?'
-      params = JSON.parse(request.body.read)
-      logger.info(log_message) {"entered with params=#{params}"}
-      raise ArgumentError.new('Licence type has to have a description') unless params && params['description']
-      raise ArgumentError.new('Licence type has to have a duration') unless params && params['duration']
-    
-      # description, duration, status
-      licence_type = LicenceManagerService.create_type(params)
-      logger.debug(log_message) {"licence_type=#{licence_type.inspect}"}
-      if licence_type
-        logger.info(log_message) {"leaving with licence_type: #{licence_type}"}
-        headers 'Location'=> LicenceManagerService.class_variable_get(:@@url)+"/licence-types/#{licence_type[:uuid]}", 'Content-Type'=> 'application/json'
-        halt 201, licence_type.to_json
-      else
-        json_error 400, 'Licence type not created'
       end
     end
     

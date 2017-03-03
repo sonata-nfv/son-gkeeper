@@ -92,11 +92,11 @@ RSpec.describe GtkApi, type: :controller do
   
   describe 'PUT /api/v2/services/:uuid' do
     context 'with UUID given' do
-      context 'with record found' do
+      context 'and found' do
         context 'and successfully updated'
         context 'but not successfully updated'
       end
-      context 'without record found' do
+      context 'but not found' do
       end
     end
     context 'without UUID given' do

@@ -33,6 +33,7 @@ development: &common_settings
   recmgmt: 'http://localhost:5500'
   licmgmt: 'http://sp.int3.sonata-nfv.eu:5900'
   kpimgmt: 'http://localhost:5200'
+  usrmgmt: 'http://localhost:5700'
   level: 'debug'
 
 test:
