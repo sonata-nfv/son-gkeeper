@@ -51,9 +51,10 @@ class PackageManagerService < ManagerService
     uri = @@url+'/packages'
     raise ArgumentError.new('PackageManagerService can not be created without a user') unless params.key?(:user)
     
-    if User.authenticate!(params[:user])
+    user = User.find_by_name(params[:user][:name])
+    if user.authenticate!(params[:user])
       GtkApi.logger.debug(method) {"User #{params[:user][:name]} authenticated"}
-      if User.authorized?(params[:user])
+      if user.authorized?(params[:user])
         GtkApi.logger.debug(method) {"User #{params[:user][:name]} authorized"}
         begin
           # from http://www.rubydoc.info/gems/rest-client/1.6.7/frames#Result_handling
