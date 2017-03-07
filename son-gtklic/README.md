@@ -39,3 +39,67 @@ Some notes wrth to mention here:
 1. We're keeping things simple (remember the very first **Main idea** above?) and not considering variations like a package containing a function that's 'Public' and another that is 'Private': all the package shares the same type of licence, although the mechanisms to distinguish them are all in place;
 2. There's a call to a **Author Licences** *boundary* kind of object, which is the **validation URL** mentioned above;
 3. The diagram above considers only the *happy path*, in which the **Developer** has a licence; for that to happen, he she should buy such a licence in a portal provided by the service/function author.
+
+# Configuration
+The configuration of the son-gtklic micro-service is done mostly by defining `ENV` variables in the [`Dockerfile`](https://github.com/bsilvr/son-gkeeper/blob/v2/son-gtklic/Dockerfile). These variables are:
+
+* `POSTGRES_USER` : the postgres user, currently Dockerfile uses `sonata` as default;
+* `POSTGRES_PASSWORD`: the postgres password, currently Dockerfile uses `sonatatest` as default;
+* `POSTGRES_DB`: the postgres database, currently Dockerfile uses `gatekeeper` as default;
+* `DATABASE_HOST` : the postgres host, should be the IP address of postgres database. If using another docker container leave the default `postgres` as it will be linked at runtime;
+* `DATABASE_PORT` : the postgres port, is the default postgres tcp port, currently `5432`;
+* `PORT`: the port the micro-service is to provide it's services, default `5000`;
+
+# Building
+To build this container using the provided ['Dockerfile'](https://github.com/bsilvr/son-gkeeper/blob/v2/son-gtklic/Dockerfile) run this command at the directory son-gtklic:
+
+```sh
+$ docker build -t <son-gtklic-docker-tag> .
+
+```
+
+# Usage
+The usage of this module requires a ['Postgres'](https://www.postgresql.org/) database where this service can connect. The database can be another docker container and this usage is recommended.
+
+To first apply the required migrations to the database run the container this way:
+
+```sh
+$ docker run --name son-gtklic --rm -it --link <postgres-container-name>:postgres <son-gtklic-docker-tag> python manage.py db upgrade
+
+```
+OPTIONS:
+* --name = Container name (Optional).
+* --rm = Remove container after the execution, used because this container is only used to apply the migrations.
+* -it = Run in iterative mode
+* --link = Link with the postgres container. If using real host instead this is unnecessary.
+
+
+Finally to run this module use::
+
+```sh
+$ docker run --name son-gtklic -d -p 5000:5000 --link <postgres-container-name>:postgres -v /directory/to/store/log:/code/log/ <son-gtklic-docker-tag>
+
+```
+OPTIONS:
+* --name = Container name (Optional).
+* -d = Run in daemon mode
+* -p = 5000:5000 External port 5000 -> Internal port 5000. Used to expose the docker to the host, use the same port configured in the ['Dockerfile'](https://github.com/bsilvr/son-gkeeper/blob/v2/son-gtklic/Dockerfile).
+* --link = Link with the postgres container. If using real host instead this is unnecessary.
+* -v = Host directory where the module log should be created (Optional).
+
+# Tests
+This module supports unit tests using the python library `unittest`. To execute the tests run:
+
+```sh
+$ docker run --name son-gtklic --rm -it --link <postgres-tests-container-name>:postgres <son-gtklic-docker-tag> python tests.py
+
+```
+OPTIONS:
+* --name = Container name (Optional).
+* --rm = Remove container after the execution, used because this container is only testing the module.
+* -it = Run in iterative mode
+* --link = Link with the postgres container. If using real host instead this is unnecessary.
+
+NOTE: The tests and production databases should be different!
+
+If migrations are applied to a database and the module is tested on the same database the tables will be deleted in the end and subsequent migrations will fail due to the migrations version table not being deleted. If this happens a manual drop of all tables existing on the database is required and the migrations then re-applied.
