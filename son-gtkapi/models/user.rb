@@ -68,7 +68,7 @@ class User < ManagerService
   end
 
   # TODO
-  def authenticate!(password)
+  def authenticate!(params)
     method = LOG_MESSAGE + "##{__method__}"
     GtkApi.logger.debug(method) {"entered with password #{password}"}
     @session = {began_at: Time.now.utc}
@@ -105,7 +105,7 @@ class User < ManagerService
     method = LOG_MESSAGE + "##{__method__}(#{params})"
     #user=find(url: @@url + USERS_URL + name, log_message: LOG_MESSAGE + "##{__method__}(#{name})")
     #user ? User.new(user['data']) : nil
-    params[:name]=='Unknown' ? User.new(params) : nil
+    name=='Unknown' ? User.new({name: 'Unknown', password: 'None'}) : nil
   end
 
   def self.find(params)
