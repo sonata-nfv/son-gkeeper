@@ -33,7 +33,7 @@ class User < ManagerService
   LOG_MESSAGE = 'GtkApi::' + self.name
   USERS_URL = '/users/'
   
-  attr_accessor :uuid, :name, :password, :session
+  attr_accessor :uuid, :name, :session
   
   def self.config(url:)
     method = LOG_MESSAGE + "#config(url=#{url})"
@@ -68,10 +68,11 @@ class User < ManagerService
   end
 
   # TODO
-  def authenticate!(password)
+  def authenticated?(params)
     method = LOG_MESSAGE + "##{__method__}"
-    GtkApi.logger.debug(method) {"entered with password #{password}"}
+    GtkApi.logger.debug(method) {"entered with password #{params}"}
     @session = {began_at: Time.now.utc}
+    @name == params[:name] && @password == params[:password] ? self : nil
   end
   
   def logout!
@@ -81,7 +82,7 @@ class User < ManagerService
   end
   
   # TODO
-  def self.authorized?(params)
+  def authorized?(params)
     method = LOG_MESSAGE + "##{__method__}"
     GtkApi.logger.debug(method) {"entered with params #{params}"}
     true
@@ -95,27 +96,32 @@ class User < ManagerService
   end
   
   def self.find_by_uuid(uuid)
+    method = LOG_MESSAGE + "##{__method__}(#{params})"
     user = find(url: @@url + USERS_URL + uuid, log_message: LOG_MESSAGE + "##{__method__}(#{uuid})")
     user ? User.new(user['data']) : nil
   end
 
   def self.find_by_name(name)
-    user=find(url: @@url + USERS_URL + name, log_message: LOG_MESSAGE + "##{__method__}(#{name})")
-    user ? User.new(user['data']) : nil
+    method = LOG_MESSAGE + "##{__method__}"
+    GtkApi.logger.debug(method) {"entered with name #{name}"}
+    #user=find(url: @@url + USERS_URL + name, log_message: LOG_MESSAGE + "##{__method__}(#{name})")
+    #user ? User.new(user['data']) : nil
+    name=='Unknown' ? User.new({name: 'Unknown', password: 'None'}) : nil
   end
 
   def self.find(params)
     method = LOG_MESSAGE + "##{__method__}(#{params})"
-    users = find(url: @@url + USERS_URL, params: params, log_message: LOG_MESSAGE + "##{__method__}(#{params})")
-    GtkApi.logger.debug(method) {"users=#{users}"}
-    case users[:status]
-    when 200
-      {status: 200, count: users[:items][:data][:licences].count, items: users[:items][:data][:licences], message: "OK"}
-    when 400
-    when 404
-      {status: 200, count: 0, items: [], message: "OK"}
-    else
-      {status: users[:status], count: 0, items: [], message: "Error"}
-    end
+    params[:name]=='Unknown' && params[:password]=='None' ? User.new(params) : nil
+    #users = find(url: @@url + USERS_URL, params: params, log_message: LOG_MESSAGE + "##{__method__}(#{params})")
+    #GtkApi.logger.debug(method) {"users=#{users}"}
+    #case users[:status]
+    #when 200
+    #  {status: 200, count: users[:items][:data][:licences].count, items: users[:items][:data][:licences], message: "OK"}
+    #when 400
+    #when 404
+    #  {status: 200, count: 0, items: [], message: "OK"}
+    #else
+    #  {status: users[:status], count: 0, items: [], message: "Error"}
+    #end
   end
 end
