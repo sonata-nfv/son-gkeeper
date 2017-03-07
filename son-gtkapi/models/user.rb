@@ -33,7 +33,7 @@ class User < ManagerService
   LOG_MESSAGE = 'GtkApi::' + self.name
   USERS_URL = '/users/'
   
-  attr_accessor :uuid, :name, :password, :session
+  attr_accessor :uuid, :name, :session
   
   def self.config(url:)
     method = LOG_MESSAGE + "#config(url=#{url})"
@@ -68,11 +68,11 @@ class User < ManagerService
   end
 
   # TODO
-  def authenticate!(params)
+  def authenticated?(params)
     method = LOG_MESSAGE + "##{__method__}"
-    GtkApi.logger.debug(method) {"entered with password #{password}"}
+    GtkApi.logger.debug(method) {"entered with password #{params}"}
     @session = {began_at: Time.now.utc}
-    self.name =='Unknown' && self.password =='None' ? self : nil
+    @name == params[:name] && @password == params[:password] ? self : nil
   end
   
   def logout!
@@ -102,7 +102,8 @@ class User < ManagerService
   end
 
   def self.find_by_name(name)
-    method = LOG_MESSAGE + "##{__method__}(#{params})"
+    method = LOG_MESSAGE + "##{__method__}"
+    GtkApi.logger.debug(method) {"entered with name #{name}"}
     #user=find(url: @@url + USERS_URL + name, log_message: LOG_MESSAGE + "##{__method__}(#{name})")
     #user ? User.new(user['data']) : nil
     name=='Unknown' ? User.new({name: 'Unknown', password: 'None'}) : nil

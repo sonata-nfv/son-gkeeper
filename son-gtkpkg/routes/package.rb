@@ -41,10 +41,10 @@ class GtkPkg < Sinatra::Base
     if package 
       logger.debug(log_message) {"package=#{package.inspect}"}
       descriptor = package.from_file()
-      logger.info(log_message) {"descriptor is #{descriptor}"}
       if descriptor
+        logger.info(log_message) {"descriptor is #{descriptor}"}
         if descriptor.key?('uuid')
-          logger.info("Storing son-package in catalogue")
+          logger.debug("Storing son-package in catalogue")
           son_package = Package.new(catalogue: settings.son_packages_catalogue, logger: logger, params: {io: params[:package][:tempfile][:tempfile]})
           son_package = son_package.store_package_file()
           if son_package && son_package['uuid']
@@ -63,8 +63,9 @@ class GtkPkg < Sinatra::Base
             json_error 400, 'Error storing son-package.', log_message         
           end
         elsif descriptor.key?('name') && descriptor.key?('vendor') && descriptor.key?('version')
+          logger.debug(log_message) {"Package is duplicated"}
           error_message = "Version #{descriptor['version']} of package '#{descriptor['name']}' from vendor '#{descriptor['vendor']}' already exists"
-          halt 409, error_message, log_message
+          json_error 409, error_message, log_message
         else
           json_error 400, 'Oops.. something terribly wrong happened here!', log_message      
         end
