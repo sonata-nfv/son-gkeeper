@@ -45,7 +45,7 @@ class VimManagerService < ManagerService
     method = LOG_MESSAGE + "##{__method__}(#{params})"
     GtkApi.logger.debug(method) {'entered'}
     begin
-      response = getCurb(url:@@url+'/vim', headers:JSON_HEADERS, logger:@@logger)
+      response = getCurb(url:@@url+'/vim', headers:JSON_HEADERS)
       GtkApi.logger.debug(method) {'response='+response.to_s}
       response
     rescue => e
