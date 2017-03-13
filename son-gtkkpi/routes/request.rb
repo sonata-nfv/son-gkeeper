@@ -208,7 +208,7 @@ class GtkKpi < Sinatra::Base
         end
 
         # getting old value
-        logger.debug "GtkKpi: getting old value" 
+        logger.debug "GtkKpi: getting old value with query: " + get_url 
         url = URI.parse(get_url)
         req = Net::HTTP::Get.new(url.to_s)
         res = Net::HTTP.start(url.host, url.port) {|http|
@@ -216,11 +216,16 @@ class GtkKpi < Sinatra::Base
         }
         
         response = JSON.parse(res)
-        old_value = response['data']['result']['value'][1].to_f
-        # "value": [
-        #   1489151705.383,
-        #   "33.333"
-        # ]
+
+        if response['data']['result'].has_key?('value')
+          old_value = response['data']['result']['value'][1].to_f
+          # "value": [
+          #   1489151705.383,
+          #   "33.333"
+          # ]
+        else
+          old_value = 0
+        end
         
         logger.debug "GtkKpi: obtaining new value"
         if params[:metric_type]=='counter'
