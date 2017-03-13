@@ -192,7 +192,11 @@ class GtkKpi < Sinatra::Base
     begin
 
       post_url = pushgateway + '/metrics/job/'+params[:job]+'/instance/'+params[:instance]
-      get_url = prometheus + '/api/v1/query?query='+params[:name]+"#{params[:base_labels]}"
+
+      query_labels = params[:base_labels].to_json
+      query_labels = query_labels.gsub(":", "")
+      query_labels = query_labels.gsub("=>","=")
+      get_url = prometheus + '/api/v1/query?query='+params[:name]+query_labels
 
       if params[:operation]=='set'
         if ("#{params[:value]}" != '') 
