@@ -199,9 +199,9 @@ class GtkKpi < Sinatra::Base
       get_url = prometheus + '/api/v1/query?query='+params[:name]+query_labels
 
       if params[:operation]=='set'
-        if ("#{params[:value]}" != '') 
-          logger.debug "GtkKpi: setting operation" 
+        if ("#{params[:value]}" != '')            
           new_value = params[:value]
+          logger.debug "GtkKpi: new_value = "+new_value.to_s
         end
       else
         logger.debug "GtkKpi: inc/dec operation"
@@ -238,10 +238,12 @@ class GtkKpi < Sinatra::Base
         logger.debug "GtkKpi: obtaining new value"
         if params[:metric_type]=='counter'
           # if no set -> it can only be incremented
+          logger.debug "GtkKpi: new value = "+old_value.to_s+" + "+factor.to_s
           new_value = old_value + factor
         else
           if params[:operation]=='inc'
             new_value = old_value + factor
+            logger.debug "GtkKpi: new value = "+old_value.to_s+" - "+factor.to_s
           else 
             #dec
             new_value = old_value - factor
@@ -250,12 +252,12 @@ class GtkKpi < Sinatra::Base
       end
 
       # creating data binary
-      logger.debug "GtkKpi: setting new value"
-      data = '#TYPE '+params[:name]+' '+params[:metric_type]+'\n'+params[:name]+params[:base_labels]+' '+new_value.to_s+'\n'
+      data = '#TYPE '+params[:name].to_s+' '+params[:metric_type].to_s+'\n'+params[:name].to_s+query_labels+' '+new_value.to_s+'\n'
+      logger.debug "GtkKpi: setting new value - data="+data+", url="+post_url      
 
       url = URI.parse(post_url)
       http = Net::HTTP.new(url.host, url.port)
-      response = http.post(url.path, data, {'Content-type'=>'text/xml;charset=utf-8'})
+      response = http.post(url.path, data, {'Content-type'=>'text/plain;charset=utf-8'})
       halt 201
       
     rescue Exception => e
