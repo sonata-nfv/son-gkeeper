@@ -193,7 +193,7 @@ class GtkKpi < Sinatra::Base
 
       post_url = pushgateway + '/metrics/job/'+params[:job]+'/instance/'+params[:instance]
 
-      query_labels = params[:base_labels].to_json
+      query_labels = params[:base_labels].to_s
       query_labels = query_labels.gsub(":", "")
       query_labels = query_labels.gsub("=>","=")
       get_url = prometheus + '/api/v1/query?query='+params[:name]+query_labels
@@ -219,14 +219,18 @@ class GtkKpi < Sinatra::Base
           http.request(req)
         }
         
-        response = JSON.parse(res)
+        response = JSON.parse(res.body)
 
-        if response['data']['result'].has_key?('value')
-          old_value = response['data']['result']['value'][1].to_f
-          # "value": [
-          #   1489151705.383,
-          #   "33.333"
-          # ]
+        # "value": [
+        #   1489151705.383,
+        #   "33.333"
+        # ]
+        #
+        # value[0] = timestamp
+        # value[1] = value
+
+        if response["data"]["result"].to_s != "[]"
+          old_value = response["data"]["result"][1].to_s
         else
           old_value = 0
         end
