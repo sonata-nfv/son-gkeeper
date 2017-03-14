@@ -43,6 +43,11 @@ class GtkApi < Sinatra::Base
     erb :api_doc
   end
   
+  get '/api/v2/available-services/?' do
+    content_type :json
+    halt 200, GtkApi.services.keys.to_json 
+  end
+  
   error Sinatra::NotFound do
     json_error 404, request.path+' not supported'
   end

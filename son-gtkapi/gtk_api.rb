@@ -85,17 +85,10 @@ class GtkApi < Sinatra::Base
   enable :cross_origin
   #enable :method_override
 
-  # TODO: make this relationship loosely coupled
-  # TODO: logger could be a global variable
-  PackageManagerService.config(url: ENV['PACKAGE_MANAGEMENT_URL'] || settings.pkgmgmt)
-  ServiceManagerService.config(url: ENV['SERVICE_MANAGEMENT_URL'] || settings.srvmgmt)
-  FunctionManagerService.config(url: ENV['FUNCTION_MANAGEMENT_URL'] || settings.fnctmgmt)
-  RecordManagerService.config(url: ENV['RECORD_MANAGEMENT_URL'] || settings.recmgmt)
-  LicenceManagerService.config(url: ENV['LICENCE_MANAGEMENT_URL'] || settings.licmgmt)
-  VimManagerService.config(url: ENV['VIM_MANAGEMENT_URL'] || settings.vimmgmt)
-  KpiManagerService.config(url: ENV['KPI_MANAGEMENT_URL'] || settings.kpimgmt)
-  User.config(url: ENV['USER_MANAGEMENT_URL'] || settings.usrmgmt)
-  
+  settings.services.each do |service, properties|
+    Object.const_get(properties['model']).config(url: ENV[properties['environment']] || properties['url'])
+  end  
+
   Zip.setup do |c|
     c.unicode_names = true
     c.on_exists_proc = true
