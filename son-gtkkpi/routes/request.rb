@@ -212,28 +212,15 @@ class GtkKpi < Sinatra::Base
         end
 
         # getting old value
-        logger.debug "GtkKpi: getting old value with query: " + get_url 
-        url = URI.parse(get_url)
-        req = Net::HTTP::Get.new(url.to_s)
-        res = Net::HTTP.start(url.host, url.port) {|http|
-          http.request(req)
-        }
-        
-        response = JSON.parse(res.body)
+        response = getKpiValue(params)
 
-        # "value": [
-        #   1489151705.383,
-        #   "33.333"
-        # ]
-        #
-        # value[0] = timestamp
-        # value[1] = value
-
-        if response["data"]["result"].to_s != "[]"
-          old_value = response["data"]["result"][0]["value"][1].to_f
+        if response["value"].to_s != "[]"
+          old_value = response["value"].to_f
         else
           old_value = 0
         end
+
+        # getting new value
         
         logger.debug "GtkKpi: obtaining new value"
         if params[:metric_type]=='counter'
@@ -268,26 +255,71 @@ class GtkKpi < Sinatra::Base
   end
 
   get '/kpis/?' do
-    pushgateway = 'http://'+settings.pushgateway_host+':'+settings.pushgateway_port.to_s
-    prometheus_query = 'http://'+settings.pushgateway_host+':'+settings.prometheus_port.to_s+'/api/v1/query?query='+settings.prometheus_job_name    
     begin
-
-      if "#{params[:base_labels]}" != ''
-        prometheus_query = prometheus_query + "#{params[:base_labels]}"
-      end
-
-      url = URI.parse(prometheus_query)
-      req = Net::HTTP::Get.new(url.to_s)
-      res = Net::HTTP.start(url.host, url.port) {|http|
-        http.request(req)
-      }
-      halt 200, res.body
-      logger.info 'GtkKpi: sonata metrics list retrieved'
       
+      response = getKpiValue(params)
+      logger.info 'GtkKpi: sonata metric obtained'
+      halt 200, response
+
     rescue Exception => e
       logger.debug(e.message)
       logger.debug(e.backtrace.inspect)
       halt 400
+    end
+  end
+
+  def self.getKpiValue(params)    
+    begin
+      pushgateway_url = 'http://'+settings.pushgateway_host+':'+settings.pushgateway_port.to_s
+      prometheus_url = 'http://'+settings.prometheus_host+':'+settings.prometheus_port.to_s
+      prometheus_query = prometheus_url+'/api/v1/query?query='+"#{params[:name]}"
+      pushgateway_query = pushgateway_url+"/metrics"
+
+      # checking if metric value exists in pushgateway
+
+      url = URI.parse(pushgateway_query)
+      req = Net::HTTP::Get.new(url.to_s)
+      res = Net::HTTP.start(url.host, url.port) {|http|
+        http.request(req)
+      }
+      res.body
+      
+      matchExpression = params[:name]+".*"+params[:base_labels]
+
+      kpi=""
+      File.each_line(res.body) do |li|
+        kpi = li if (li[matchExpression)
+      end
+
+      logger.debug "kpi line: "+kpi
+
+      response = {kpi:params[:name],base_labels:params[:base_labels],value:[]]} 
+
+      if kpi != ""
+        logger.debug "kpi present in pushgateway: "+kpi
+        response["value"] = kpi.split.last
+      else
+
+        # if metric does not exist in pushgateway, check prometheus    
+        if "#{params[:base_labels]}" != ''
+          prometheus_query = prometheus_query + "#{params[:base_labels]}"
+        end
+
+        url = URI.parse(prometheus_query)
+        req = Net::HTTP::Get.new(url.to_s)
+        res = Net::HTTP.start(url.host, url.port) {|http|
+          http.request(req)
+        }
+        if res["data"]["result"].to_s != "[]"
+          logger.debug "kpi present in prometheus!"
+          response["value"] = res["data"]["result"][0]["value"][1]                  
+        end                
+      end
+      
+      halt 200, response
+
+    rescue Exception => e
+      raise e
     end
   end
 end
