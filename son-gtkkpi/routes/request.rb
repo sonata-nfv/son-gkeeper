@@ -212,7 +212,7 @@ class GtkKpi < Sinatra::Base
         end
 
         # getting old value
-        response = getKpiValue(params)
+        response = GtkKpi.getKpiValue(params)
 
         if response["value"].to_s != "[]"
           old_value = response["value"].to_f
@@ -257,7 +257,7 @@ class GtkKpi < Sinatra::Base
   get '/kpis/?' do
     begin
       
-      response = getKpiValue(params)
+      response = GtkKpi.getKpiValue(params)
       logger.info 'GtkKpi: sonata metric obtained'
       halt 200, response
 
@@ -275,6 +275,10 @@ class GtkKpi < Sinatra::Base
       prometheus_query = prometheus_url+'/api/v1/query?query='+"#{params[:name]}"
       pushgateway_query = pushgateway_url+"/metrics"
 
+      query_labels = params[:base_labels].to_s
+      query_labels = query_labels.gsub(":", "")
+      query_labels = query_labels.gsub("=>","=")
+
       # checking if metric value exists in pushgateway
 
       url = URI.parse(pushgateway_query)
@@ -284,16 +288,14 @@ class GtkKpi < Sinatra::Base
       }
       res.body
       
-      matchExpression = params[:name]+".*"+params[:base_labels]
+      matchExpression = "#{params[:name]}"+".*"+query_labels
 
       kpi=""
-      File.each_line(res.body) do |li|
-        kpi = li if (li[matchExpression)
+      res.body.each_line do |li|
+        kpi = li if (li[matchExpression])
       end
 
-      logger.debug "kpi line: "+kpi
-
-      response = {kpi:params[:name],base_labels:params[:base_labels],value:[]]} 
+      response = {kpi:params[:name],base_labels:query_labels,value:[]} 
 
       if kpi != ""
         logger.debug "kpi present in pushgateway: "+kpi
@@ -302,17 +304,22 @@ class GtkKpi < Sinatra::Base
 
         # if metric does not exist in pushgateway, check prometheus    
         if "#{params[:base_labels]}" != ''
-          prometheus_query = prometheus_query + "#{params[:base_labels]}"
+          prometheus_query = prometheus_query + query_labels
         end
+
+        logger.debug "getting value with query = "+prometheus_query
 
         url = URI.parse(prometheus_query)
         req = Net::HTTP::Get.new(url.to_s)
         res = Net::HTTP.start(url.host, url.port) {|http|
           http.request(req)
         }
-        if res["data"]["result"].to_s != "[]"
+
+        resp = JSON.parse(res.body)
+
+        if resp["data"]["result"].to_s != "[]"
           logger.debug "kpi present in prometheus!"
-          response["value"] = res["data"]["result"][0]["value"][1]                  
+          response["value"] = resp["data"]["result"][0]["value"][1]                  
         end                
       end
       
