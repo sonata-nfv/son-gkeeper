@@ -230,7 +230,7 @@ class GtkKpi < Sinatra::Base
         # value[1] = value
 
         if response["data"]["result"].to_s != "[]"
-          old_value = response["data"]["result"][1].to_s
+          old_value = response["data"]["result"][0]["value"][1].to_f
         else
           old_value = 0
         end
@@ -252,7 +252,7 @@ class GtkKpi < Sinatra::Base
       end
 
       # creating data binary
-      data = '#TYPE '+params[:name].to_s+' '+params[:metric_type].to_s+'\n'+params[:name].to_s+query_labels+' '+new_value.to_s+'\n'
+      data = "#TYPE "+params[:name].to_s+" "+params[:metric_type].to_s+"\n"+params[:name].to_s+query_labels+" "+new_value.to_s+"\n"
       logger.debug "GtkKpi: setting new value - data="+data+", url="+post_url      
 
       url = URI.parse(post_url)
