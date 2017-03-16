@@ -285,13 +285,13 @@ class GtkKpi < Sinatra::Base
       req = Net::HTTP::Get.new(url.to_s)
       res = Net::HTTP.start(url.host, url.port) {|http|
         http.request(req)
-      }
-      res.body
+      }      
       
-      regExp = "^"+"#{params[:name]}"+"{(.*)"+query_labels[1..-1]
+      regExp = "^"+"#{params[:name]}"+"{(.*)"+query_labels[1..-1].delete(' ')
       regExp = Regexp.new regExp
 
       kpi=""
+
       res.body.each_line do |li|
         kpi = li if (li =~ regExp)
       end
