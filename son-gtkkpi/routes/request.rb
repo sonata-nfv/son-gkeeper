@@ -288,17 +288,18 @@ class GtkKpi < Sinatra::Base
       }
       res.body
       
-      matchExpression = "#{params[:name]}"+".*"+query_labels
+      regExp = "^"+"#{params[:name]}"+"{(.*)"+query_labels[1..-1]
+      regExp = Regexp.new regExp
 
       kpi=""
       res.body.each_line do |li|
-        kpi = li if (li[matchExpression])
+        kpi = li if (li =~ regExp)
       end
 
       response = {kpi:params[:name],base_labels:query_labels,value:[]} 
 
       if kpi != ""
-        logger.debug "kpi present in pushgateway: "+kpi
+        logger.debug "kpi present in pushgateway: "+kpi.split.last
         response["value"] = kpi.split.last
       else
 
@@ -323,7 +324,7 @@ class GtkKpi < Sinatra::Base
         end                
       end
       
-      halt 200, response
+      response
 
     rescue Exception => e
       raise e
