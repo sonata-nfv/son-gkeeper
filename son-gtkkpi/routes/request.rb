@@ -113,7 +113,7 @@ class GtkKpi < Sinatra::Base
     original_body = request.body.read
     params = JSON.parse(original_body, :symbolize_names => true)
     logger.info "GtkKpi: PUT /kpis with params=#{params}"    
-    pushgateway = 'http://'+settings.pushgateway_host+':'+settings.pushgateway_port.to_s
+    pushgateway = 'http://'+settings.prometheus_host+':'+settings.prometheus_port.to_s
 
     begin
 
@@ -134,8 +134,8 @@ class GtkKpi < Sinatra::Base
   end
 
   get '/kpis/?' do
-    pushgateway = 'http://'+settings.pushgateway_host+':'+settings.pushgateway_port.to_s
-    prometheus_API_url = 'http://'+settings.pushgateway_host+':'+settings.prometheus_port.to_s+'/api/v1/series?match[]={exported_job="'+settings.prometheus_job_name+'"}' 
+    pushgateway = 'http://'+settings.prometheus_host+':'+settings.prometheus_port.to_s
+    prometheus_API_url = 'http://'+settings.prometheus_host+':'+settings.prometheus_port.to_s+'/api/v1/series?match[]={exported_job="'+settings.prometheus_job_name+'"}' 
     begin
       if params.empty?
         #get all sonata metrics

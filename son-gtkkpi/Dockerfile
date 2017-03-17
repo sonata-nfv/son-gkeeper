@@ -10,9 +10,9 @@ COPY ./lib /app/lib
 RUN bundle install
 COPY . /app
 EXPOSE 5400
+EXPOSE 5000
 WORKDIR /app
 ENV PROMETHEUS_HOST prometheus
 ENV PROMETHEUS_PORT 9090
 ENV PORT 5400
-RUN bundle install
-CMD bundle exec unicorn -c ./unicorn.conf && foreman start
+CMD ["foreman","start"]
