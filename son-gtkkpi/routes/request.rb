@@ -27,18 +27,8 @@
 ## partner consortium (www.sonata-nfv.eu).
 # encoding: utf-8
 
-# require 'json' 
-# require 'pp'
-# require 'addressable/uri'
-# require 'yaml'
-# require 'bunny'
-# require 'prometheus/client'
-# require 'prometheus/client/push'
-# require 'net/http'
-
-require 'net/http'
-require 'uri'
-require 'json'
+require 'json' 
+require 'prometheus/client'
 
 class GtkKpi < Sinatra::Base  
   
@@ -56,12 +46,15 @@ class GtkKpi < Sinatra::Base
 
       # if counter exists, it will be increased
       if registry.exist?(params[:name].to_sym)
+        logger.debug "Counter exists, it will be updated"
         http_requests = registry.get(params[:name])              
       else
         # creates a metric type counter
+        logger.debug "Gauge does not exist, it will be created"
         http_requests = Prometheus::Client::Counter.new(params[:name].to_sym, params[:docstring], base_labels)        
       end
 
+      logger.debug "Updating counter..."
       if (params[:value] == nil)
         http_requests.increment(base_labels)
       else
@@ -83,6 +76,7 @@ class GtkKpi < Sinatra::Base
 
       # if gauge exists, it will be updated
       if registry.exist?(params[:name].to_sym)
+        logger.debug "Gauge exists, it will be updated"
         http_requests = registry.get(params[:name])
 
         logger.debug "Getting gauge value"
@@ -105,7 +99,9 @@ class GtkKpi < Sinatra::Base
 
       else
         # creates a metric type gauge
+        logger.debug "Gauge does not exist, it will be created"
         http_requests = Prometheus::Client::Gauge.new(params[:name].to_sym, params[:docstring], base_labels)
+        logger.debug "Seting gauge's value to 1"
         http_requests.set(base_labels, 1)
       end
     rescue Exception => e
@@ -115,7 +111,6 @@ class GtkKpi < Sinatra::Base
   
   put '/kpis/?' do
     original_body = request.body.read
-    logger.info "GtkKpi: entered PUT /kpis with original_body=#{original_body}"
     params = JSON.parse(original_body, :symbolize_names => true)
     logger.info "GtkKpi: PUT /kpis with params=#{params}"    
     pushgateway = 'http://'+settings.pushgateway_host+':'+settings.pushgateway_port.to_s
@@ -176,3 +171,4 @@ class GtkKpi < Sinatra::Base
       halt 400
     end
   end
+end

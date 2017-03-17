@@ -25,20 +25,6 @@
 # partner consortium (www.sonata-nfv.eu).
 # encoding: utf-8
 
-global:
-  scrape_interval: "15s"
-
-scrape_configs:
-  - job_name: "prometheus"
-    static_configs:
-      - targets:
-        - "<%= ENV['PROMETHEUS_HOST'] || 'prometheus' %>:<%= ENV['PROMETHEUS_PORT'] || 9090 %>"
-
-  - job_name: "rack"
-    static_configs:
-      - targets:
-        - "localhost:5000"
-
 development: &common_settings
   prometheus_host: <%= ENV['PROMETHEUS_HOST'] || 'prometheus' %>
   prometheus_port: <%= ENV['PROMETHEUS_PORT'] || 9090 %>
