@@ -256,7 +256,7 @@ class GtkKpi < Sinatra::Base
 
   get '/kpis/?' do
     begin
-      
+      params = JSON.parse("#{params}".to_json, :symbolize_names => true)
       response = GtkKpi.getKpiValue(params)
       logger.info 'GtkKpi: sonata metric obtained'
       halt 200, response
@@ -281,20 +281,23 @@ class GtkKpi < Sinatra::Base
 
       # checking if metric value exists in pushgateway
 
-      url = URI.parse(pushgateway_query)
-      req = Net::HTTP::Get.new(url.to_s)
-      res = Net::HTTP.start(url.host, url.port) {|http|
-        http.request(req)
-      }      
+      #url = URI.parse(pushgateway_query)
+      #req = Net::HTTP::Get.new(url.to_s)
+      #res = Net::HTTP.start(url.host, url.port) {|http|
+      #  http.request(req)
+      #}      
       
-      regExp = "^"+"#{params[:name]}"+"{(.*)"+query_labels[1..-1].delete(' ')
-      regExp = Regexp.new regExp
+      #regExp = "^"+"#{params[:name]}"+"{(.*)"+query_labels[1..-1].delete(' ')
+      #regExp = Regexp.new regExp
 
       kpi=""
 
-      res.body.each_line do |li|
-        kpi = li if (li =~ regExp)
-      end
+      #res.body.each_line do |li|
+      #  kpi = li if (li =~ regExp)
+      #end
+
+      kpi = system "prom2json "+pushgateway_query+" | jq '.[]|select(.name=="+params[:name]+")'"
+      logger.debug "json obtained from pushgateway: "+kpi.to_s
 
       response = {kpi:params[:name],base_labels:query_labels,value:[]} 
 
