@@ -60,8 +60,22 @@ class GtkKpi < Sinatra::Base
       # if counter exists, it will be increased
       if registry.exist?(params[:name].to_sym)
         counter = registry.get(params[:name])
-        counter.increment(base_labels, factor)
-        Prometheus::Client::Push.new(params[:job], params[:instance], pushgateway).replace(registry)
+
+        value = counter.get(base_labels)
+        
+        if value == nil
+          # creates a metric type counter
+          counter = Prometheus::Client::Counter.new(params[:name].to_sym, params[:docstring], base_labels)
+          counter.increment(base_labels, factor)
+          # registers counter
+          registry.register(counter)
+        
+          # push the registry to the gateway
+          Prometheus::Client::Push.new(params[:job], params[:instance], pushgateway).add(registry) 
+        else
+          counter.increment(base_labels, factor)
+          Prometheus::Client::Push.new(params[:job], params[:instance], pushgateway).replace(registry)
+        end
       else
         # creates a metric type counter
         counter = Prometheus::Client::Counter.new(params[:name].to_sym, params[:docstring], base_labels)
@@ -99,17 +113,26 @@ class GtkKpi < Sinatra::Base
         logger.debug "Getting gauge value"
         value = gauge.get(base_labels)
         
-        if params[:operation]=='inc'
-          value = value.to_i + factor
+        if value == nil 
+          # gauge exists but with different base_labels so it will be created
+          gauge = Prometheus::Client::Gauge.new(params[:name].to_sym, params[:docstring], base_labels)
+          gauge.set(base_labels, factor)
+          # registers gauge
+          registry.register(gauge)
+          # push the registry to the gateway
+          Prometheus::Client::Push.new(params[:job], params[:instance], pushgateway).add(registry) 
         else
-          value = value.to_i - factor
+          if params[:operation]=='inc'
+            value = value.to_i + factor
+          else
+            value = value.to_i - factor
+          end
+
+          logger.debug "Setting gauge value"
+          gauge.set(base_labels,value)
+
+          Prometheus::Client::Push.new(params[:job], params[:instance], pushgateway).replace(registry)
         end
-
-        logger.debug "Setting gauge value"
-        gauge.set(base_labels,value)
-
-        Prometheus::Client::Push.new(params[:job], params[:instance], pushgateway).replace(registry)
-
       else
         # creates a metric type gauge
         gauge = Prometheus::Client::Gauge.new(params[:name].to_sym, params[:docstring], base_labels)
@@ -166,8 +189,8 @@ class GtkKpi < Sinatra::Base
         cmd = 'prom2json '+pushgateway_query
         res = %x( #{cmd} )
 
-        logger.info 'GtkKpi: '+params[:name].to_s+' retrieved: '+res.to_json
-        halt 200, res.to_json
+        logger.info 'GtkKpi: '+params[:name].to_s+' retrieved: '+res
+        halt 200, res
       end
     rescue Exception => e
       logger.debug(e.message)
