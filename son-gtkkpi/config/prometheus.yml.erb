@@ -26,8 +26,8 @@
 # encoding: utf-8
 
 development: &common_settings
-  prometheus_host: <%= ENV['PROMETHEUS_HOST'] || 'prometheus' %>
-  prometheus_port: <%= ENV['PROMETHEUS_PORT'] || 9090 %>
+  pushgateway_host: <%= ENV['PUSHGATEWAY_HOST'] || 'pushgateway' %>
+  pushgateway_port: <%= ENV['PUSHGATEWAY_PORT'] || 9090 %>
   prometheus_job_name: <%= ENV['PROMETHEUS_JOB_NAME'] || 'sonata' %>
 
 test:
