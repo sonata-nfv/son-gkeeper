@@ -54,7 +54,7 @@ class GtkKpi < Sinatra::Base
       if (params[:value] == nil)
         factor = 1
       else
-        factor = params[:value]
+        factor = params[:value].to_f
       end
 
       # if counter exists, it will be increased
@@ -101,7 +101,7 @@ class GtkKpi < Sinatra::Base
       if (params[:value] == nil)
         factor = 1
       else
-        factor = params[:value]
+        factor = params[:value].to_f
       end
 
       # if gauge exists, it will be updated
@@ -116,10 +116,10 @@ class GtkKpi < Sinatra::Base
           new_gauge = registry.gauge(params[:name].to_sym, params[:docstring], base_labels)
           new_gauge.set(base_labels, factor)          
         else
-          if params[:operation]=='inc'
-            value = value.to_i + factor
-          else
-            value = value.to_i - factor
+          if params[:operation]=='dec'
+            value = value.to_f - factor
+          else # default operation: inc
+            value = value.to_f + factor          
           end
 
           logger.debug "Setting gauge value"
