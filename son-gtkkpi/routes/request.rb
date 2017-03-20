@@ -64,18 +64,16 @@ class GtkKpi < Sinatra::Base
         value = counter.get(base_labels)
         
         if value == nil
-          # creates a metric type counter
-          counter = Prometheus::Client::Counter.new(params[:name].to_sym, params[:docstring], base_labels)
-          counter.increment(base_labels, factor)
-          # registers counter
-          registry.register(counter)
-        
-          # push the registry to the gateway
-          Prometheus::Client::Push.new(params[:job], params[:instance], pushgateway).add(registry) 
+          # creates a metric type counter                  
+          new_counter = registry.counter(params[:name].to_sym, params[:docstring], base_labels)
+          new_counter.increment(base_labels, factor)
         else
+          # increments the existing one
           counter.increment(base_labels, factor)
-          Prometheus::Client::Push.new(params[:job], params[:instance], pushgateway).replace(registry)
-        end
+        end                    
+        
+        Prometheus::Client::Push.new(params[:job], params[:instance], pushgateway).replace(registry)
+        
       else
         # creates a metric type counter
         counter = Prometheus::Client::Counter.new(params[:name].to_sym, params[:docstring], base_labels)
@@ -117,8 +115,6 @@ class GtkKpi < Sinatra::Base
           # gauge exists but with different base_labels so it will be created
           gauge = Prometheus::Client::Gauge.new(params[:name].to_sym, params[:docstring], base_labels)
           gauge.set(base_labels, factor)
-          # registers gauge
-          registry.register(gauge)
           # push the registry to the gateway
           Prometheus::Client::Push.new(params[:job], params[:instance], pushgateway).add(registry) 
         else
