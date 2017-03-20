@@ -34,9 +34,9 @@ module Prometheus
 
         valid?(labels)
 
-        unless @validated.empty? || match?(labels, @validated.first.last)
-          raise InvalidLabelSetError, 'labels must have the same signature'
-        end
+        #unless @validated.empty? || match?(labels, @validated.first.last)
+        #  raise InvalidLabelSetError, 'labels must have the same signature'
+        #end
 
         @validated[labels.hash] = labels
       end

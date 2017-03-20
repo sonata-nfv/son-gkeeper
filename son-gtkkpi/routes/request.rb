@@ -113,10 +113,8 @@ class GtkKpi < Sinatra::Base
         
         if value == nil 
           # gauge exists but with different base_labels so it will be created
-          gauge = Prometheus::Client::Gauge.new(params[:name].to_sym, params[:docstring], base_labels)
-          gauge.set(base_labels, factor)
-          # push the registry to the gateway
-          Prometheus::Client::Push.new(params[:job], params[:instance], pushgateway).add(registry) 
+          new_gauge = registry.gauge(params[:name].to_sym, params[:docstring], base_labels)
+          new_gauge.set(base_labels, factor)          
         else
           if params[:operation]=='inc'
             value = value.to_i + factor
@@ -125,10 +123,11 @@ class GtkKpi < Sinatra::Base
           end
 
           logger.debug "Setting gauge value"
-          gauge.set(base_labels,value)
-
-          Prometheus::Client::Push.new(params[:job], params[:instance], pushgateway).replace(registry)
+          gauge.set(base_labels,value)          
         end
+
+        Prometheus::Client::Push.new(params[:job], params[:instance], pushgateway).replace(registry)
+
       else
         # creates a metric type gauge
         gauge = Prometheus::Client::Gauge.new(params[:name].to_sym, params[:docstring], base_labels)
