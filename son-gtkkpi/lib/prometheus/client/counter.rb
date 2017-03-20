@@ -19,6 +19,9 @@ module Prometheus
 
       private
 
+      def default
+        0.0
+      end
     end
   end
 end

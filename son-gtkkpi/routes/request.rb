@@ -109,7 +109,6 @@ class GtkKpi < Sinatra::Base
           end          
         end
 
-        logger.debug "Setting gauge value"
         gauge.set(base_labels,value)
         Prometheus::Client::Push.new(params[:job], params[:instance], pushgateway).replace(registry)
 
@@ -130,7 +129,6 @@ class GtkKpi < Sinatra::Base
   
   put '/kpis/?' do
     original_body = request.body.read
-    logger.info "GtkKpi: entered PUT /kpis with original_body=#{original_body}"
     params = JSON.parse(original_body, :symbolize_names => true)
     logger.info "GtkKpi: PUT /kpis with params=#{params}"    
     pushgateway = 'http://'+settings.pushgateway_host+':'+settings.pushgateway_port.to_s
