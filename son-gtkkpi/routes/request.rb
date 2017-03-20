@@ -151,21 +151,23 @@ class GtkKpi < Sinatra::Base
   end
 
   get '/kpis/?' do
-    pushgateway_query = 'http://'+settings.pushgateway_host+':'+settings.pushgateway_port.to_s+'/metrics | jq .'    
+    pushgateway_query = 'http://'+settings.pushgateway_host+':'+settings.pushgateway_port.to_s    
     begin
       if params.empty?
-        res = system "prom2json "+pushgateway_query
+        cmd = 'prom2json '+pushgateway_query+'/metrics | jq -c .'
+        res = %x( #{cmd} )
+
         halt 200, res
         logger.info 'GtkKpi: sonata metrics list retrieved'
       else        
         logger.info "GtkKpi: entered GET /kpis with params=#{params}"        
-        pushgateway_query = pushgateway_query + '.[]|select(.name=="'+params[:name]+'")'
+        pushgateway_query = pushgateway_query + '/metrics | jq -c \'.[]|select(.name=="'+params[:name]+'")\''
 
-        res = system "prom2json "+pushgateway_query
+        cmd = 'prom2json '+pushgateway_query
+        res = %x( #{cmd} )
 
-        logger.info 'GtkKpi: '+params[:name].to_s+' metric value retrieved: '+value.to_s
-        response = {'value' => value}
-        halt 200, response.to_json
+        logger.info 'GtkKpi: '+params[:name].to_s+' retrieved: '+res.to_json
+        halt 200, res.to_json
       end
     rescue Exception => e
       logger.debug(e.message)
