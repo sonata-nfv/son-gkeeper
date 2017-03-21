@@ -160,14 +160,36 @@ class GtkKpi < Sinatra::Base
 
         halt 200, res
         logger.info 'GtkKpi: sonata metrics list retrieved'
-      else        
-        logger.info "GtkKpi: entered GET /kpis with params=#{params}"        
-        pushgateway_query = pushgateway_query + '/metrics | jq -c \'.[]|select(.name=="'+params[:name]+'")\''
+      else
 
-        cmd = 'prom2json '+pushgateway_query
-        res = %x( #{cmd} )
+        if params[:base_labels] == nil        
+          logger.info "GtkKpi: entered GET /kpis with params=#{params}"        
+          pushgateway_query = pushgateway_query + '/metrics | jq -c \'.[]|select(.name=="'+params[:name]+'")\''
 
-        logger.info 'GtkKpi: '+params[:name].to_s+' retrieved: '+res
+          cmd = 'prom2json '+pushgateway_query
+          res = %x( #{cmd} )
+        else
+          # jq -c '.[]|select(.name=="counter1")|.metrics|.[]|select(.labels=={"instance":"gtkkpi","job":"sonata","label1":"value1","label2":"value2","label3":"value3"})|.value'          
+          base_labels = params['base_labels']
+          metric_name = params['name']
+          params.delete('base_labels')
+          params.delete('name')
+          labels = "{"+params.to_s[1..-2]+', '+base_labels.to_s[1..-2]+"}"          
+          labels = labels.gsub('=>',':')
+          labels = labels.gsub(' ','')
+          pushgateway_query = pushgateway_query + '/metrics | jq -c \'.[]|select(.name=="'+metric_name+'")|.metrics|.[]|select(.labels=='+labels+')|.value\''
+          logger.debug "prom2json query: "+pushgateway_query
+
+          cmd = 'prom2json '+pushgateway_query
+          res = %x( #{cmd} )
+
+          res = JSON.parse(eval(res).to_json)
+          res["name"] = metric_name
+          res = res.to_s
+          res = res.gsub('=>',':')          
+        end
+
+        logger.info 'GtkKpi: '+metric_name.to_s+' retrieved: '+res
         halt 200, res
       end
     rescue Exception => e
