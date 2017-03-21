@@ -27,24 +27,16 @@
 # encoding: utf-8
 require './models/manager_service.rb'
 
-class FunctionManagerService < ManagerService
+class Catalogue < ManagerService
     
   #JSON_HEADERS = { 'Accept'=> 'application/json', 'Content-Type'=>'application/json'}
   LOG_MESSAGE = 'GtkApi::' + self.name
   
   def self.config(url:)
     method = LOG_MESSAGE + "#config(url=#{url})"
-    raise ArgumentError.new('FunctionManagerService can not be configured with nil url') if url.nil?
-    raise ArgumentError.new('FunctionManagerService can not be configured with empty url') if url.empty?
+    raise ArgumentError.new('Catalogue can not be configured with nil url') if url.nil?
+    raise ArgumentError.new('Catalogue can not be configured with empty url') if url.empty?
     @@url = url
     GtkApi.logger.debug(method) {'entered'}
-  end
-
-  def self.find_function_by_uuid(uuid)
-    find(url: @@url + '/functions/' + uuid, log_message: LOG_MESSAGE + "##{__method__}(#{uuid})")
-  end
-  
-  def self.find_functions(params)
-    find(url: @@url + '/functions', params: params, log_message: LOG_MESSAGE + "##{__method__}(#{params})")
   end
 end
