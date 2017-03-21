@@ -177,7 +177,7 @@ class GtkKpi < Sinatra::Base
           labels = "{"+params.to_s[1..-2]+', '+base_labels.to_s[1..-2]+"}"          
           labels = labels.gsub('=>',':')
           labels = labels.gsub(' ','')
-          pushgateway_query = pushgateway_query + '/metrics | jq -c \'.[]|select(.name=="'+metric_name+'")|.metrics|.[]|select(.labels=='+labels+')|.value\''
+          pushgateway_query = pushgateway_query + '/metrics | jq -c \'.[]|select(.name=="'+metric_name+'")|.metrics|.[]|select(.labels=='+labels+')\''
           logger.debug "prom2json query: "+pushgateway_query
 
           cmd = 'prom2json '+pushgateway_query
