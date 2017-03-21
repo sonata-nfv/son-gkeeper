@@ -27,14 +27,8 @@
 ## partner consortium (www.sonata-nfv.eu).
 # encoding: utf-8
 
-# require 'json' 
-# require 'pp'
-# require 'addressable/uri'
-# require 'yaml'
-# require 'bunny'
 require 'prometheus/client'
 require 'prometheus/client/push'
-# require 'net/http'
 require 'json'
 
 class GtkKpi < Sinatra::Base  

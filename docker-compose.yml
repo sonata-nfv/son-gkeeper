@@ -137,8 +137,6 @@ services:
     environment:
      - PUSHGATEWAY_HOST=pushgateway
      - PUSHGATEWAY_PORT=9091
-     - PROMETHEUS_HOST=prometheus
-     - PROMETHEUS_PORT=9090
      - RACK_ENV=integration
     depends_on:
      - postgres
