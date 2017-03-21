@@ -132,13 +132,9 @@ services:
       - "5400"
     restart: always
     environment:
-     - PUSHGATEWAY_HOST=prometheus
-     - PUSHGATEWAY_PORT=9091     
-     - POSTGRES_PASSWORD=sonata
-     - POSTGRES_USER=sonatatest
+     - PUSHGATEWAY_HOST=pushgateway
+     - PUSHGATEWAY_PORT=9091
      - RACK_ENV=integration
-     - DATABASE_HOST=postgres
-     - DATABASE_PORT=5432
     depends_on:
      - postgres
     logging:

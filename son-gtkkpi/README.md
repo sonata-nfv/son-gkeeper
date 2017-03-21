@@ -8,7 +8,6 @@ The configuration of the Gatekeeper's KPI Management micro-service is done mostl
 
 * `PUSHGATEWAY_HOST` : the prometheus host where is deployed the pushgateway component
 * `PUSHGATEWAY_PORT` : the port used by the prometheus' pushgateway componentpost
-* `PROMETHEUS_PORT`  : the port used by prometheus
 
 ## Usage
 To use this application, we write
@@ -23,32 +22,32 @@ The implemented API of the Gatekeeper's KPI module is the following:
 
 * `/kpis`:    
     * `PUT`: increment or decrement the value of an existing prometheus metric counter/gauge (gauge can increment/decrement, counter only can increment). If it doesn't exist, this module creates a new metric counter with value '1'
-    * `GET` with params: get the counter/gauge value based on the parameters
-    * `GET` with no params: retrieve the list of the 'SONATA' KPIs with all their values and parameters
+    * `GET` + counter/gauge name: get the counter/gauge information (name, value, labels, etc)
+    * `GET` with no params: retrieve the list all metrics contained by the pushgateway
 
 **Example 1:** How to create/increment a metric counter:
 ```
-$ curl -H "Content-Type: application/json" -X PUT -d '{"job":"job-name","instance":"instance-name","name":"counter_name", "metric_type": "counter", "docstring":"metric counter description","base_labels": {"label1":"value1","label2":"value2"}}' http://<PUSHGATEWAY_HOST>:<PUSHGATEWAY_PORT>/kpis
+$ curl -H "Content-Type: application/json" -X PUT -d '{"job":"job-name","instance":"instance-name","name":"counter_name", "metric_type": "counter", "docstring":"metric counter description", "value": "metric_value (optional; default 1)", base_labels": {"label1":"value1","label2":"value2"}}' http://<GATEKEEPER_HOST>:<KPI_MODULE_PORT>/kpis
 ```
 
 **Example 2:** How to create/increment a metric gauge:
 ```
-$ curl -H "Content-Type: application/json" -X PUT -d '{"job":"job-name","instance":"instance-name","name":"gauge_name", "metric_type": "gauge", "operation": "inc", "docstring":"metric gauge description","base_labels": {"label1":"value1","label2":"value2"}}' http://<PUSHGATEWAY_HOST>:<PUSHGATEWAY_PORT>/kpis
+$ curl -H "Content-Type: application/json" -X PUT -d '{"job":"job-name","instance":"instance-name","name":"gauge_name", "metric_type": "gauge", "operation": "inc" (optional; default "inc"), "docstring":"metric gauge description", "metric_value (optional; default 1)", "base_labels": {"label1":"value1","label2":"value2"}}' http://<GATEKEEPER_HOST>:<KPI_MODULE_PORT>/kpis
 ```
 
 **Example 3:** How to decrement a metric gauge:
 ```
-$ curl -H "Content-Type: application/json" -X PUT -d '{"job":"job-name","instance":"instance-name","name":"gauge_name", "metric_type": "gauge", "operation": "dec", "docstring":"metric gauge description","base_labels": {"label1":"value1","label2":"value2"}}' http://<PUSHGATEWAY_HOST>:<PUSHGATEWAY_PORT>/kpis
+$ curl -H "Content-Type: application/json" -X PUT -d '{"job":"job-name","instance":"instance-name","name":"gauge_name", "metric_type": "gauge", "operation": "dec" (optional; default "inc"), "docstring":"metric gauge description", "metric_value (optional; default 1)", "base_labels": {"label1":"value1","label2":"value2"}}' http://<GATEKEEPER_HOST>:<KPI_MODULE_PORT>/kpis
 ```
 
-**Example 4:** How to get a metric counter/gauge value:
+**Example 4:** How to get a metric counter/gauge:
 ```
-$ curl -H "Content-Type: application/json" -X GET -G http://<PUSHGATEWAY_HOST>:<PUSHGATEWAY_PORT>/kpis?name=counter-gauge-name -d base_labels[label1]=value1 -d base_labels[label2]=value2
+$ curl -H "Content-Type: application/json" -X GET -G http://<GATEKEEPER_HOST>:<KPI_MODULE_PORT>/kpis?name=counter-gauge-name
 ```
 
-**Example 5:** How to get the list of gatekeeper KPIs:
+**Example 5:** How to get the list of the pushgateway KPIs:
 ```
-$ curl -H "Content-Type: application/json" -X GET http://<PUSHGATEWAY_HOST>:<PUSHGATEWAY_PORT>/kpis
+$ curl -H "Content-Type: application/json" -X GET http://<GATEKEEPER_HOST>:<KPI_MODULE_PORT>/kpis
 ```
 
 ## Tests
