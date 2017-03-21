@@ -93,15 +93,21 @@ class GtkPkg < Sinatra::Base
     json_error 400, 'No package UUID specified', log_message   
   end
   
-  get '/packages/:uuid/package?' do
+  get '/packages/:uuid/file/?' do
+    MESSAGE = "GtkPkg::GET /packages/:uuid/package"
+    logger.debug(MESSAGE) {'entered with uuid='+params[:uuid]}
     unless params[:uuid].nil?
-      logger.debug "GtkPkg: entered GET /packages/#{params[:uuid]}/package"
-      file_dir = File.join('public','packages',params[:uuid])
-      entries = Dir.entries(file_dir) - %w(. ..)
-      logger.debug "GtkPkg: entries are #{entries}"
-      send_file File.join('public','packages',params[:uuid], entries[0]) if entries.size
+      # curl -i -X POST -H "Content-Type: multipart/form-data" -F "image=@./image" -F "data=@./imagedata.json" http://localhost:4567/images
+      # TODO: save the file and use send_file, don't use send_data
+      package_file = Package.fetch_package_file(params[:uuid])
+      if package_file
+        send_file package_file
+      else
+        logger.debug(MESSAGE) {"leaving with \"No package UUID specified\""}
+        json_error 400, 'No package file found'
+      end
     end
-    logger.debug("GtkPkg GET /packages/#{params[:uuid]}/package") {"leaving with \"No package UUID specified\""}
+    logger.debug(MESSAGE) {"leaving with \"No package UUID specified\""}
     json_error 400, 'No package UUID specified'
   end
 

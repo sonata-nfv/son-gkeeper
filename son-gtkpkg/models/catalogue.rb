@@ -73,6 +73,25 @@ class Catalogue
     # Response should return code 201, and ID of the stored son-package
   end
   
+  def fetch_zip(uuid)
+    #url = URI("http://api.int.sonata-nfv.eu:4002/catalogues/son-packages")
+    url = URI(@url)
+    http = Net::HTTP.new(url.host, url.port)
+    request = Net::HTTP::Get.new(@url+'/'+uuid)
+    # These fields are mandatory
+    request["content-type"] = 'application/zip'
+    request["content-disposition"] = 'attachment; filename=<filename.son>'
+    response = http.request(request)
+    @logger.debug("Catalogue response: #{response}")
+    case response.code
+    when 200
+      #length = File.write(zip, response.read_body)
+      response.read_body
+    else
+      nil
+    end
+  end
+
   def find_by_uuid(uuid)
     @logger.debug CLASS+".find_by_uuid(#{uuid})"
     headers = {'Accept'=>'application/json', 'Content-Type'=>'application/json'}
