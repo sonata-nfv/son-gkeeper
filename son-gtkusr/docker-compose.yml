@@ -7,8 +7,8 @@ services:
       dockerfile: dockerfile-gtkusr
     ports: 
       - "4021:4021"
-    #links:
-    #  - keycloak
+    links:
+      - keycloak
     environment:
       - KEYCLOAK_ADDRESS=keycloak
       - KEYCLOAK_PORT=8080

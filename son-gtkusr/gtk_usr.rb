@@ -31,7 +31,7 @@ ENV['RACK_ENV'] ||= 'development'
 require 'sinatra'
 require 'sinatra/base'
 require 'sinatra/config_file'
-#require 'sinatra/logger'
+# require 'sinatra/logger'
 require 'json'
 require 'yaml'
 require 'jwt'
@@ -59,15 +59,15 @@ configure do
     config_file 'config/keycloak.yml'
     #self.get_realm_public_key
 
-    #self.get_oidc_endpoints
-    #self.get_adapter_install_json
-    #@@access_token = self.get_adapter_token
+    # self.get_oidc_endpoints
+    # self.get_adapter_install_json
+    # @@access_token = self.get_adapter_token
   end
 
 
   # set up the rest of sinatra config stuff
-  #@key = create_public_key
-  #set :keycloak_pub_key, @key
+  # @key = create_public_key
+  # set :keycloak_pub_key, @key
   set :server, :puma
   set :environment, :production
 end

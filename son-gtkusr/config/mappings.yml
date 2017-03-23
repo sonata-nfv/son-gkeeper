@@ -3,6 +3,7 @@ resources:
   - catalogue
   - repositories
   - gatekeeper
+  - monitoring
 
 paths:
     catalogue:
@@ -33,7 +34,7 @@ paths:
                  GET: read
 
     gatekeeper:
-        /:
+    monitoring:
     bss:
     gui:
 

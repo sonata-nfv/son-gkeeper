@@ -104,7 +104,7 @@ class Keycloak < Sinatra::Application
         form_encoded, errors = request.body.read
         halt 400, errors.to_json if errors
 
-        p "FORM PARAMS", form_encoded
+        # p "FORM PARAMS", form_encoded
         form = Hash[URI.decode_www_form(form_encoded)]
         # TODO: Validate Hash format
 
@@ -121,7 +121,7 @@ class Keycloak < Sinatra::Application
     #puts "USER_DATA", user_data
 
     form['attributes']['userType'].each { |attr|
-      puts "SETTING_USER_ROLE", attr
+      # puts "SETTING_USER_ROLE", attr
       set_user_groups(attr, user_id)
       set_user_roles(attr, user_id)
     }
@@ -140,13 +140,13 @@ class Keycloak < Sinatra::Application
     parsed_form, errors = parse_json(request.body.read)
     halt 400, errors.to_json if errors
 
-    puts "REGISTERING NEW CLIENT"
+    # puts "REGISTERING NEW CLIENT"
     register_client(parsed_form)
 
-    puts "SETTING CLIENT ROLES"
+    # puts "SETTING CLIENT ROLES"
     client_data, role_data = set_service_roles(parsed_form['clientId'])
     #puts "CLIENT_DATA!!", client_data
-    puts "SETTING SERVICE ACCOUNT ROLES"
+    # puts "SETTING SERVICE ACCOUNT ROLES"
     set_service_account_roles(client_data['id'], role_data)
     halt 201
   end
@@ -161,7 +161,7 @@ class Keycloak < Sinatra::Application
     pass = request.env["HTTP_AUTHORIZATION"].split(' ').last
     plain_pass  = Base64.decode64(pass)
 
-    puts "USER_PASS", plain_pass
+    # puts "USER_PASS", plain_pass
     # puts  "PLAIN", plain_user_pass.split(':').first
     # puts  "PLAIN", plain_user_pass.split(':').last
     username = plain_pass.split(':').first # params[:username]
@@ -227,7 +227,7 @@ class Keycloak < Sinatra::Application
     # Check token expiration
     if val_code == '200'
       result = is_active?(val_res)
-      puts "RESULT", result
+      # puts "RESULT", result
       case result
         when false
           json_error(401, 'Token not active')
@@ -251,10 +251,10 @@ class Keycloak < Sinatra::Application
         form_encoded, errors = request.body.read
         halt 400, errors.to_json if errors
 
-        p "FORM PARAMS", form_encoded
+        # p "FORM PARAMS", form_encoded
         form = Hash[URI.decode_www_form(form_encoded)]
         # TODO: Validate Hash format
-        p "FORM", form
+        # p "FORM", form
         keyed_params = keyed_hash(form)
         halt 401 unless (keyed_params[:'path'] and keyed_params[:'method'])
 
@@ -263,23 +263,23 @@ class Keycloak < Sinatra::Application
         # Parses and validates JSON format
         form, errors = parse_json(request.body.read)
         halt 400, errors.to_json if errors
-        p "FORM", form
+        # p "FORM", form
         keyed_params = keyed_hash(form)
         halt 401 unless (keyed_params[:'path'] and keyed_params[:'method'])
       else
         #QUERY TYPE
         # Get request parameters
         keyed_params = keyed_hash(params)
-        puts "KEYED_PARAMS", keyed_params
+        # puts "KEYED_PARAMS", keyed_params
         # params examples:
         # {:uri=>"catalogues", :method=>"GET"}
         # Return if 'uri' and 'method' are not included
         halt 401 unless (keyed_params[:'path'] and keyed_params[:'method'])
     end
 
-    #TODO: Improve path and method parse (include it in body?)
-    puts "PATH", keyed_params[:'path']
-    puts "METHOD",keyed_params[:'method']
+    # TODO: Improve path and method parse (include it in body?)
+    # puts "PATH", keyed_params[:'path']
+    # puts "METHOD",keyed_params[:'method']
     # Check the provided path to the resource and the HTTP method, then build the request
     request = process_request(keyed_params[:'path'], keyed_params[:'method'])
 
@@ -314,7 +314,7 @@ class Keycloak < Sinatra::Application
       halt 400, res
     end
 
-    puts "RESULT", user_token
+    # puts "RESULT", user_token
     user_info = userinfo(user_token)
     halt 200, user_info
   end
@@ -338,7 +338,7 @@ class Keycloak < Sinatra::Application
 
     if code == '200'
       result = is_active?(res)
-      puts "RESULT", result
+      # puts "RESULT", result
       case result
         when false
           json_error(401, 'Token not active')
@@ -349,10 +349,10 @@ class Keycloak < Sinatra::Application
       halt 400, res
     end
 
-    #if headers['Authorization']
-    #  puts "AUTHORIZATION", headers['Authorization'].split(' ').last
-    #end
-    puts "RESULT", user_token
+    # if headers['Authorization']
+    #   puts "AUTHORIZATION", headers['Authorization'].split(' ').last
+    # end
+    # puts "RESULT", user_token
 
     logout(user_token, user=nil, realm=nil)
   end
@@ -361,13 +361,13 @@ class Keycloak < Sinatra::Application
     #TODO: OPTIONAL
     logger.debug 'Adapter: entered POST /refresh'
     # Return if Authorization is invalid
-    #halt 400 unless request.env["HTTP_AUTHORIZATION"]
+    # halt 400 unless request.env["HTTP_AUTHORIZATION"]
     # puts "headers", request.env["HTTP_CONTENT_DISPOSITION"]
     att = request.env['HTTP_CONTENT_DISPOSITION']
     custom_header_value = request.env['HTTP_CUSTOM_HEADER']
 
-    p "ATT", att
-    p "CUSTOM", custom_header_value
+    # p "ATT", att
+    # p "CUSTOM", custom_header_value
   end
 
   get '/users' do
@@ -405,7 +405,6 @@ class Keycloak < Sinatra::Application
     get_clients(keyed_params)
   end
 
-
   get '/roles' do
     #TODO: QUERIES NOT SUPPORTED
     # This endpoint allows queries for the next fields:
@@ -422,63 +421,4 @@ class Keycloak < Sinatra::Application
     }
     get_realm_roles(keyed_params)
   end
-
 end
-
-=begin
-class SecuredAPI < Sinatra::Application
-  # This is a sample of a secured API
-
-  get '/services' do
-    # content_type :json
-    # {message: "Hello, User!"}.to_json
-
-    # scopes, user = request.env.values_at :scopes, :user
-    # username = user['username'].to_sym
-
-    # if scopes.include?('view_services') && @accounts.has_key?(username)
-    # content_type :json
-    # { services: @accounts[username]}.to_json
-    # else
-    # halt 403
-
-    process_request request, 'view_services' do |req, username|
-      content_type :json
-      {services: @accounts[username]}.to_json
-    end
-  end
-
-  post '/services' do
-    # code
-    scopes, user = request.env.values_at :scopes, :user
-    username = user['username'].to_sym
-
-    if scopes.include?('add_services') && @accounts.has_key?(username)
-      service = request[:service]
-      @accounts[username] << {'Service' => service}
-
-      content_type :json
-      {services: @accounts[username]}.to_json
-    else
-      halt 403
-    end
-  end
-
-  delete '/services' do
-    # code
-    scopes, user = request.env.values_at :scopes, :user
-    username = user['username'].to_sym
-
-    if scopes.include?('remove_services') && @accounts.has_key?(username)
-      service = request[:service]
-
-      @accounts[username].delete_if { |h| h['Service'] == service }
-
-      content_type :json
-      {services: @accounts[username]}.to_json
-    else
-      halt 403
-    end
-  end
-end
-=end

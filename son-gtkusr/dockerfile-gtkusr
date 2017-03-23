@@ -11,5 +11,5 @@ COPY . /app
 ENV PORT 5000
 EXPOSE 5000
 WORKDIR /app
-ENV USER_MANAGEMENT_URL http://son-gtkpkg:5150
+ENV USER_MANAGEMENT_URL http://adapter:4021
 CMD ["rake", "start"]

@@ -1,3 +1,30 @@
+##
+## Copyright (c) 2015 SONATA-NFV
+## ALL RIGHTS RESERVED.
+##
+## Licensed under the Apache License, Version 2.0 (the "License");
+## you may not use this file except in compliance with the License.
+## You may obtain a copy of the License at
+##
+##     http://www.apache.org/licenses/LICENSE-2.0
+##
+## Unless required by applicable law or agreed to in writing, software
+## distributed under the License is distributed on an "AS IS" BASIS,
+## WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+## See the License for the specific language governing permissions and
+## limitations under the License.
+##
+## Neither the name of the SONATA-NFV
+## nor the names of its contributors may be used to endorse or promote
+## products derived from this software without specific prior written
+## permission.
+##
+## This work has been performed in the framework of the SONATA project,
+## funded by the European Commission under Grant number 671517 through
+## the Horizon 2020 and 5G-PPP programmes. The authors would like to
+## acknowledge the contributions of their colleagues of the SONATA
+## partner consortium (www.sonata-nfv.eu).
+
 require 'json'
 require 'sinatra'
 require 'yaml'
@@ -25,12 +52,12 @@ class Keycloak < Sinatra::Application
 
   # logger.info "Adapter: Starting configuration"
   # Load configurations
-  #keycloak_config = YAML.load_file 'config/keycloak.yml'
+  # keycloak_config = YAML.load_file 'config/keycloak.yml'
 
   # Load authorization mappings
   @@auth_mappings = YAML.load_file 'config/mappings.yml'
 
-  puts "MAPPINGS CONTENT", @@auth_mappings
+  # puts "MAPPINGS CONTENT", @@auth_mappings
 
   # p keycloak_config
   # p "ISSUER", ENV['JWT_ISSUER']
@@ -56,7 +83,7 @@ class Keycloak < Sinatra::Application
     parsed_res, code = parse_json(res.body)
 
     if parsed_res['access_token']
-      puts "ACCESS_TOKEN RECEIVED", parsed_res['access_token']
+      # puts "ACCESS_TOKEN RECEIVED", parsed_res['access_token']
 
       File.open('config/token.json', 'w') do |f|
         f.puts parsed_res['access_token']
@@ -102,8 +129,8 @@ class Keycloak < Sinatra::Application
     request["content-type"] = 'application/json'
 
     response = http.request(request)
-    p "RESPONSE", response.code
-    p "RESPONSE.read_body222", response.read_body
+    # p "RESPONSE", response.code
+    # p "RESPONSE.read_body222", response.read_body
     # puts response.read_body # <-- save endpoints file
     File.open('config/keycloak.json', 'w') do |f|
       f.puts response.read_body
@@ -112,36 +139,36 @@ class Keycloak < Sinatra::Application
 
   def get_adapter_token
     url = URI("http://#{@@address.to_s}:#{@@port.to_s}/#{@@uri.to_s}/realms/#{@@realm_name}/protocol/openid-connect/token")
-    #http = Net::HTTP.new(url.host, url.port)
+    # http = Net::HTTP.new(url.host, url.port)
 
-    #request = Net::HTTP::Post.new(url.to_s)
-    #request.basic_auth(@client_name.to_s, @client_secret.to_s)
-    #request["content-type"] = 'application/json'
-    #body = {"username" => "admin",
+    # request = Net::HTTP::Post.new(url.to_s)
+    # request.basic_auth(@client_name.to_s, @client_secret.to_s)
+    # request["content-type"] = 'application/json'
+    # body = {"username" => "admin",
     #        "credentials" => [
     #            {"type" => "client_credentials",
     #             "value" => "admin"}]}
-    #request.body = body.to_json
+    # request.body = body.to_json
 
     res = Net::HTTP.post_form(url, 'client_id' => @@client_name, 'client_secret' => @@client_secret,
                               #'username' => "admin",
                               #'password' => "admin",
                               'grant_type' => "client_credentials")
 
-    #res = http.request(request)
+    # res = http.request(request)
 
-    #p "RESPONSE", res
-    #p "RESPONSE.read_body333", res.read_body
+    # p "RESPONSE", res
+    # p "RESPONSE.read_body333", res.read_body
 
     parsed_res, code = parse_json(res.body)
 
     if parsed_res['access_token']
-      puts "ACCESS_TOKEN RECEIVED", parsed_res['access_token']
+      # puts "ACCESS_TOKEN RECEIVED", parsed_res['access_token']
 
       File.open('config/token.json', 'w') do |f|
         f.puts parsed_res['access_token']
       end
-      #@access_token = parsed_res['access_token']
+      # @access_token = parsed_res['access_token']
       parsed_res['access_token']
     end
   end
@@ -161,18 +188,18 @@ class Keycloak < Sinatra::Application
   end
 
   #    # Policies
-  #OK = Proc.new { halt 200 }
-  #FORBIDDEN = Proc.new {
+  # OK = Proc.new { halt 200 }
+  # FORBIDDEN = Proc.new {
   #  halt 401 unless is_loggedin?(user)
   #  halt 403
-  #}
-  #LOGGEDIN = Proc.new { halt 401 unless is_loggedin?(user) }
+  # }
+  # LOGGEDIN = Proc.new { halt 401 unless is_loggedin?(user) }
 
   def decode_token(token, keycloak_pub_key)
     begin
       decoded_payload, decoded_header = JWT.decode token, keycloak_pub_key, true, { :algorithm => 'RS256' }
-      puts "DECODED_HEADER: ", decoded_header
-      puts "DECODED_PAYLOAD: ", decoded_payload
+      # puts "DECODED_HEADER: ", decoded_header
+      # puts "DECODED_PAYLOAD: ", decoded_payload
       return decoded_payload, decoded_header
     # Handle expired token, e.g. logout user or deny access
     rescue JWT::DecodeError
@@ -188,7 +215,7 @@ class Keycloak < Sinatra::Application
 
   def get_public_key
     # turn keycloak realm pub key into an actual openssl compat pub key.
-    #keycloak_config = JSON.parse(File.read('config/keycloak.json'))
+    # keycloak_config = JSON.parse(File.read('config/keycloak.json'))
     keycloak_yml = YAML.load_file('config/keycloak.yml')
     @s = "-----BEGIN PUBLIC KEY-----\n"
     #@s += keycloak_config['realm-public-key'].scan(/.{1,64}/).join("\n")
@@ -206,21 +233,21 @@ class Keycloak < Sinatra::Application
     http = Net::HTTP.new(url.host, url.port)
     request = Net::HTTP::Get.new(url.to_s)
     response = http.request(request)
-    puts "RESPONSE", response.read_body
+    # puts "RESPONSE", response.read_body
     response_json = parse_json(response.read_body)[0]
   end
 
   # "userinfo_endpoint":"http://localhost:8081/auth/realms/master/protocol/openid-connect/userinfo"
   def userinfo(token)
     # token = @@access_token
-    puts "TOKEN_CONTENT", token
+    # puts "TOKEN_CONTENT", token
     http_path = "http://#{@@address.to_s}:#{@@port.to_s}/#{@@uri.to_s}/realms/#{@@realm_name}/protocol/openid-connect/userinfo"
     url = URI(http_path)
     http = Net::HTTP.new(url.host, url.port)
     request = Net::HTTP::Get.new(url.to_s)
     request["authorization"] = 'bearer ' + token
     response = http.request(request)
-    puts "RESPONSE", response.read_body
+    # puts "RESPONSE", response.read_body
     # response_json = parse_json(response.read_body)[0]
     response.body
   end
@@ -246,8 +273,8 @@ class Keycloak < Sinatra::Application
                               'client_secret' => 'df7e816d-0337-4fbe-a3f4-7b5263eaba9f',
                               'grant_type' => 'client_credentials', 'token' => token)
 
-    puts "RESPONSE_INTROSPECT", res.read_body
-    puts "CODE_INTROSPECT", res.code
+    # puts "RESPONSE_INTROSPECT", res.read_body
+    # puts "CODE_INTROSPECT", res.code
     # RESPONSE_INTROSPECT:
     # {"jti":"bc1200e5-3b6d-43f2-a125-dc4ed45c7ced","exp":1486105972,"nbf":0,"iat":1486051972,"iss":"http://localhost:8081/auth/realms/master","aud":"adapter","sub":"67cdf213-349b-4539-bdb2-43351bf3f56e","typ":"Bearer","azp":"adapter","auth_time":0,"session_state":"608a2a72-198d-440b-986f-ddf37883c802","name":"","preferred_username":"service-account-adapter","email":"service-account-adapter@placeholder.org","acr":"1","client_session":"2c31bbd9-c13d-43f1-bb30-d9bd46e3c0ab","allowed-origins":[],"realm_access":{"roles":["create-realm","admin","uma_authorization"]},"resource_access":{"adapter":{"roles":["uma_protection"]},"master-realm":{"roles":["view-identity-providers","view-realm","manage-identity-providers","impersonation","create-client","manage-users","view-authorization","manage-events","manage-realm","view-events","view-users","view-clients","manage-authorization","manage-clients"]},"account":{"roles":["manage-account","view-profile"]}},"clientHost":"127.0.0.1","clientId":"adapter","clientAddress":"127.0.0.1","client_id":"adapter","username":"service-account-adapter","active":true}
     return res.body, res.code
@@ -282,13 +309,13 @@ class Keycloak < Sinatra::Application
     request["content-type"] = 'application/json'
     request.body = body.to_json
     response = http.request(request)
-    puts "REG CODE", response.code
-    puts "REG BODY", response.body
+    # puts "REG CODE", response.code
+    # puts "REG BODY", response.body
     if response.code.to_i != 201
       halt response.code.to_i, response.body.to_s
     end
 
-    #GET new registered user Id
+    # GET new registered user Id
     url = URI("http://#{@@address.to_s}:#{@@port.to_s}/#{@@uri.to_s}/admin/realms/#{@@realm_name}/users?username=#{user_form['username']}")
     http = Net::HTTP.new(url.host, url.port)
 
@@ -297,13 +324,13 @@ class Keycloak < Sinatra::Application
     request.body = body.to_json
 
     response = http.request(request)
-    puts "ID CODE", response.code
-    puts "ID BODY", response.body
+    # puts "ID CODE", response.code
+    # puts "ID BODY", response.body
     user_id = parse_json(response.body).first[0]["id"]
-    puts "USER ID", user_id
+    # puts "USER ID", user_id
 
-    #- Use the endpoint to setup temporary password of user (It will
-    #automatically add requiredAction for UPDATE_PASSWORD
+    # - Use the endpoint to setup temporary password of user (It will
+    # automatically add requiredAction for UPDATE_PASSWORD
     url = URI("http://#{@@address.to_s}:#{@@port.to_s}/#{@@uri.to_s}/admin/realms/#{@@realm_name}/users/#{user_id}/reset-password")
     http = Net::HTTP.new(url.host, url.port)
     request = Net::HTTP::Put.new(url.to_s)
@@ -313,21 +340,21 @@ class Keycloak < Sinatra::Application
     credentials = user_form['credentials'][0]
     credentials['temporary'] = 'false'
 
-    #credentials = {"type" => "password",
+    # credentials = {"type" => "password",
     #               "value" => "1234",
     #               "temporary" => "false"}
 
     request.body = credentials.to_json
     response = http.request(request)
-    puts "CRED CODE", response.code
-    puts "CRED BODY", response.body
+    # puts "CRED CODE", response.code
+    # puts "CRED BODY", response.body
     if response.code.to_i != 204
       halt response.code.to_i, response.body.to_s
     end
 
-    #- Then use the endpoint for update user and send the empty array of
-    #requiredActions in it. This will ensure that UPDATE_PASSWORD required
-    #action will be deleted and user won't need to update password again.
+    # - Then use the endpoint for update user and send the empty array of
+    # requiredActions in it. This will ensure that UPDATE_PASSWORD required
+    # action will be deleted and user won't need to update password again.
     url = URI("http://#{@@address.to_s}:#{@@port.to_s}/#{@@uri.to_s}/admin/realms/#{@@realm_name}/users/#{user_id}")
     http = Net::HTTP.new(url.host, url.port)
     request = Net::HTTP::Put.new(url.to_s)
@@ -338,8 +365,8 @@ class Keycloak < Sinatra::Application
 
     request.body = body.to_json
     response = http.request(request)
-    puts "UPD CODE", response.code
-    puts "UPD BODY", response.body
+    # puts "UPD CODE", response.code
+    # puts "UPD BODY", response.body
     if response.code.to_i != 204
       halt response.code.to_i, response.body.to_s
     end
@@ -349,8 +376,8 @@ class Keycloak < Sinatra::Application
 
   # "registration_endpoint":"http://localhost:8081/auth/realms/master/clients-registrations/openid-connect"
   def register_client (client_object)
-    #puts "TEST ACCESS_TOKEN", token
-    #decode_token(token, keycloak_pub_key)
+    # puts "TEST ACCESS_TOKEN", token
+    # decode_token(token, keycloak_pub_key)
     refresh_adapter # Refresh admin token if expired
 
     # url = URI("http://localhost:8081/auth/realms/master/clients-registrations/openid-connect/")
@@ -360,35 +387,10 @@ class Keycloak < Sinatra::Application
     request["authorization"] = 'Bearer ' + @@access_token
     request["content-type"] = 'application/json'
 
-=begin
-    body = {
-        "clientId": "myclient",
-        "surrogateAuthRequired": false,
-        "enabled": true,
-        "clientAuthenticatorType": "client-secret",
-        "secret": "1234",
-        "redirectUris": [
-            "/auth/myclient"
-        ],
-        "webOrigins": [],
-        "notBefore": 0,
-        "bearerOnly": false,
-        "consentRequired": false,
-        "standardFlowEnabled": true,
-        "implicitFlowEnabled": false,
-        "directAccessGrantsEnabled": true,
-        "serviceAccountsEnabled": true,
-        "publicClient": false,
-        "frontchannelLogout": false,
-        "protocol": "openid-connect",
-        "fullScopeAllowed": false
-    }
-=end
-
     request.body = client_object.to_json
     response = http.request(request)
-    puts "CODE", response.code
-    puts "BODY", response.body
+    # puts "CODE", response.code
+    # puts "BODY", response.body
     response_json, code = parse_json(response.read_body)
     if response.code.to_i != 201
       json_error(response.code.to_i, response.body)
@@ -416,17 +418,18 @@ class Keycloak < Sinatra::Application
     if res.body['access_token']
       parsed_res, code = parse_json(res.body)
       @access_token = parsed_res['access_token']
-      puts "ACCESS_TOKEN RECEIVED" , parsed_res['access_token']
+      # puts "ACCESS_TOKEN RECEIVED" , parsed_res['access_token']
       parsed_res['access_token']
     end
   end
 
   # "token_endpoint":"http://localhost:8081/auth/realms/master/protocol/openid-connect/token"
   def login_user_broker
+    # TODO:
     # curl -d "client_id=admin-cli" -d "username=user1" -d "password=1234" -d "grant_type=password" "http://localhost:8081/auth/realms/SONATA/protocol/openid-connect/token"
     client_id = "adapter"
-    @usrname = "user"
-    pwd = "1234"
+    # @usrname = "user"
+    # pwd = "1234"
     grt_type = "password"
     http_path = "http://http://#{@@address.to_s}:#{@@port.to_s}/#{@@uri.to_s}/realms/#{@@realm_name}/protocol/openid-connect/token"
     idp_path = "http://localhost:8081/auth/realms/master/broker/github/login?"
@@ -442,15 +445,14 @@ class Keycloak < Sinatra::Application
 
 
     if res.body['access_token']
-      #if env['HTTP_AUTHORIZATION']
-      # puts "env: ", env['HTTP_AUTHORIZATION']
-      # access_token = env['HTTP_AUTHORIZATION'].split(' ').last
-      # puts "access_token: ", access_token
-      # {"access_token":"eyJhbGciOiJSUzI1NiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICIyRG1CZm1UaEJEa3NmNElMWVFnVEpSVmNRMDZJWEZYdWNOMzhVWk1rQ0cwIn0.eyJqdGkiOiJjYzY3MmUzYS1mZTVkLTQ4YjItOTQ4My01ZTYxZDNiNGJjMGEiLCJleHAiOjE0NzY0NDQ1OTAsIm5iZiI6MCwiaWF0IjoxNDc2NDQ0MjkwLCJpc3MiOiJodHRwOi8vbG9jYWxob3N0OjgwODEvYXV0aC9yZWFsbXMvU09OQVRBIiwiYXVkIjoiYWRtaW4tY2xpIiwic3ViIjoiYjFiY2M4YmQtOTJhMy00N2RkLTliOGUtZDY3NGQ2ZTU0ZjJjIiwidHlwIjoiQmVhcmVyIiwiYXpwIjoiYWRtaW4tY2xpIiwiYXV0aF90aW1lIjowLCJzZXNzaW9uX3N0YXRlIjoiNTkwYzlhNGUtYzljNC00OTU1LTg1NDAtYTViOTM2ODM5NjEzIiwiYWNyIjoiMSIsImNsaWVudF9zZXNzaW9uIjoiYjhkODI4ZjAtNWQ3Yy00NjI4LWEzOTEtNGQwNTY0MDNkNTRjIiwiYWxsb3dlZC1vcmlnaW5zIjpbXSwicmVzb3VyY2VfYWNjZXNzIjp7fSwibmFtZSI6InNvbmF0YSB1c2VyIHNvbmF0YSB1c2VyIiwicHJlZmVycmVkX3VzZXJuYW1lIjoidXNlcjEiLCJnaXZlbl9uYW1lIjoic29uYXRhIHVzZXIiLCJmYW1pbHlfbmFtZSI6InNvbmF0YSB1c2VyIiwiZW1haWwiOiJzb25hdGF1c2VyQHNvbmF0YS5uZXQifQ.T_GB_kBtZk-gmFNJ5rC2sJpNl4V3TUyhixq76hOi5MbgDbo_FfuKRomxviAeQi-RdJPIEffdzrVmaYXZVQHufpaYx9p90GQd3THQWMyZD50zMY40j-XlungaGKjizWNxaywvGXBMvDE_qYp0hr4Uewm4evO_NRRI1bWQLeaeJ3oHr1_p9vFZf5Kh8tZYR-dQSWuESvHhZrJAqHTzXlYYMRBqfjDyAgUhm8QbbtmDtPr0kkkIh1TmXevkZbm91mrS-9jWrS4zGZE5LiT5KdWnMs9P8FBR1p3vywwIu_z-0MF8_DIMJWa7ApZAXjtrszXAYVfCKsaisjjD9HacgpE-4w","expires_in":300,"refresh_expires_in":1800,"refresh_token":"eyJhbGciOiJSUzI1NiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICIyRG1CZm1UaEJEa3NmNElMWVFnVEpSVmNRMDZJWEZYdWNOMzhVWk1rQ0cwIn0.eyJqdGkiOiIyOTRmZjc5Yy01ZWIxLTQwNDgtYmM1NS03NjcwOGU1Njg1YzMiLCJleHAiOjE0NzY0NDYwOTAsIm5iZiI6MCwiaWF0IjoxNDc2NDQ0MjkwLCJpc3MiOiJodHRwOi8vbG9jYWxob3N0OjgwODEvYXV0aC9yZWFsbXMvU09OQVRBIiwiYXVkIjoiYWRtaW4tY2xpIiwic3ViIjoiYjFiY2M4YmQtOTJhMy00N2RkLTliOGUtZDY3NGQ2ZTU0ZjJjIiwidHlwIjoiUmVmcmVzaCIsImF6cCI6ImFkbWluLWNsaSIsImF1dGhfdGltZSI6MCwic2Vzc2lvbl9zdGF0ZSI6IjU5MGM5YTRlLWM5YzQtNDk1NS04NTQwLWE1YjkzNjgzOTYxMyIsImNsaWVudF9zZXNzaW9uIjoiYjhkODI4ZjAtNWQ3Yy00NjI4LWEzOTEtNGQwNTY0MDNkNTRjIiwicmVzb3VyY2VfYWNjZXNzIjp7fX0.WGHvTiVc08xuVCDM5YLlvIzvBgz0aJ3OY3-VGmKSyI-fDLfbp9LSLkPsIqiKO9mDjybSfEkrNmPBd60lWecUC43DacVhVbiLEU9cJdMnjQjrU0P3wg1HFQmcG8exylJMzWoAbJzm893SP-kgKVYCnbQ55Os1-oT1ClHr3Ts6BHVgz5FWrc3dk6DqOrGAxmoJLQUgNJ5jdF-udt-j81OcBTtC3b-RXFXlRu3AyJ0p-UPiu4_HkKBVdg0pmycuN0v0it-TxR_mlM9lhvdVMGXLD9_-PUgklfc6XisdCrGa_b9r06aQCiekXGWptLoFF1Oz__g2_v4Gsrzla5YKBZzGfA","token_type":"bearer","id_token":"eyJhbGciOiJSUzI1NiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICIyRG1CZm1UaEJEa3NmNElMWVFnVEpSVmNRMDZJWEZYdWNOMzhVWk1rQ0cwIn0.eyJqdGkiOiI5NWVmMGY0Yi1lODIyLTQwMTAtYWU1NS05N2YyYTEzZWViMzkiLCJleHAiOjE0NzY0NDQ1OTAsIm5iZiI6MCwiaWF0IjoxNDc2NDQ0MjkwLCJpc3MiOiJodHRwOi8vbG9jYWxob3N0OjgwODEvYXV0aC9yZWFsbXMvU09OQVRBIiwiYXVkIjoiYWRtaW4tY2xpIiwic3ViIjoiYjFiY2M4YmQtOTJhMy00N2RkLTliOGUtZDY3NGQ2ZTU0ZjJjIiwidHlwIjoiSUQiLCJhenAiOiJhZG1pbi1jbGkiLCJhdXRoX3RpbWUiOjAsInNlc3Npb25fc3RhdGUiOiI1OTBjOWE0ZS1jOWM0LTQ5NTUtODU0MC1hNWI5MzY4Mzk2MTMiLCJhY3IiOiIxIiwibmFtZSI6InNvbmF0YSB1c2VyIHNvbmF0YSB1c2VyIiwicHJlZmVycmVkX3VzZXJuYW1lIjoidXNlcjEiLCJnaXZlbl9uYW1lIjoic29uYXRhIHVzZXIiLCJmYW1pbHlfbmFtZSI6InNvbmF0YSB1c2VyIiwiZW1haWwiOiJzb25hdGF1c2VyQHNvbmF0YS5uZXQifQ.FrwYdv1S8mqivHjsyA93ycl10z2tisVJraUGcBJzle060nCO69ZEa0fzrMMCbSkjY1JAwjP92d7_ixuWpcUVvQLkesxKOgcBc8LVhClyh3__8p46kIwfrJYMZQt0cJ6f6nASX1yaySE9sDgl3ElkW0vz-i9vhEXkIh6m-EuC7lH0ZIIL-39-occssq7G5hDleDUMThno8sEsl8rgtV-GdAfjKIwi-yOB0X8K1RrfDarccwA3XB0R8nHAbInZGsrF114KsBuaEvWjKki4m86xFkfPPuSlvWaVRtCziiTBqrBZ_Qna6wI9FfAOiTzPXE5AfFtDowih6d-26kT_jd_7GA","not-before-policy":0,"session_state":"590c9a4e-c9c4-4955-8540-a5b936839613"}
+      # if env['HTTP_AUTHORIZATION']
+      #  puts "env: ", env['HTTP_AUTHORIZATION']
+      #  access_token = env['HTTP_AUTHORIZATION'].split(' ').last
+      #  puts "access_token: ", access_token
 
       parsed_res, code = parse_json(res.body)
       @access_token = parsed_res['access_token']
-      puts "ACCESS_TOKEN RECEIVED", parsed_res['access_token']
+      # puts "ACCESS_TOKEN RECEIVED", parsed_res['access_token']
       parsed_res['access_token']
     else
       401
@@ -471,31 +473,31 @@ class Keycloak < Sinatra::Application
 
     case credentials['type']
       when 'password'
-        puts "IS A PASSWORD"
+        # puts "IS A PASSWORD"
         request.set_form_data({'client_id' => @@client_name,
                                'client_secret' => @@client_secret,
                                'username' => username.to_s,
                                'password' => credentials['value'],
                                'grant_type' => credentials['type']})
       else
-        puts "IS A CLIENT"
+        # puts "IS A CLIENT"
         request.set_form_data({'client_id' => username,
                                'client_secret' => credentials['value'],
                                'grant_type' => credentials['type']})
     end
 
     response = http.request(request)
-    puts "LOG CODE", response.code
-    puts "LOG BODY", response.body
+    # puts "LOG CODE", response.code
+    # puts "LOG BODY", response.body
 
     unless response.code == '200'
       halt response.code.to_i, response.body
     end
 
     parsed_res, errors = parse_json(response.body)
-    #p "RESPONSE BODY"
-    #puts parsed_res[0]['access_token']
-    #halt 200, parsed_res['access_token'].to_json
+    # p "RESPONSE BODY"
+    # puts parsed_res[0]['access_token']
+    # halt 200, parsed_res['access_token'].to_json
     halt 200, response.body
   end
 
@@ -512,11 +514,11 @@ class Keycloak < Sinatra::Application
                            'client_secret' => client_secret,
                            'grant_type' => 'client_credentials'})
 
-    puts "RES.HEADER: ", res.header
-    puts "RES.BODY: ", res.body
+    # puts "RES.HEADER: ", res.header
+    # puts "RES.BODY: ", res.body
 
     if res.body['access_token']
-      #if env['HTTP_AUTHORIZATION']
+      # if env['HTTP_AUTHORIZATION']
       # puts "env: ", env['HTTP_AUTHORIZATION']
       # access_token = env['HTTP_AUTHORIZATION'].split(' ').last
       # puts "access_token: ", access_token
@@ -524,7 +526,7 @@ class Keycloak < Sinatra::Application
 
       parsed_res, code = parse_json(res.body)
       @access_token = parsed_res['access_token']
-      puts "ACCESS_TOKEN RECEIVED", parsed_res['access_token']
+      # puts "ACCESS_TOKEN RECEIVED", parsed_res['access_token']
       parsed_res['access_token']
     else
       halt 401
@@ -559,7 +561,7 @@ class Keycloak < Sinatra::Application
     refresh_adapter # Refresh admin token if expired
     # user = token['sub']#'971fc827-6401-434e-8ea0-5b0f6d33cb41'
     user = parse_json(userinfo(user_token))[0]
-    p "SUB[0]", user['sub']
+    # p "SUB[0]", user['sub']
     # http_path = "http://localhost:8081/auth/realms/master/protocol/openid-connect/logout"
     http_path ="http://#{@@address.to_s}:#{@@port.to_s}/#{@@uri.to_s}/admin/realms/#{@@realm_name}/users/#{user['sub']}/logout"
     url = URI(http_path)
@@ -568,23 +570,23 @@ class Keycloak < Sinatra::Application
     request = Net::HTTP::Post.new(url.to_s)
     request["authorization"] = 'bearer ' + @@access_token
     request["content-type"] = 'application/x-www-form-urlencoded'
-    #request["content-type"] = 'application/json'
+    # request["content-type"] = 'application/json'
 
-    #request.set_form_data({'client_id' => 'adapter',
+    # request.set_form_data({'client_id' => 'adapter',
     #                       'client_secret' => 'df7e816d-0337-4fbe-a3f4-7b5263eaba9f',
     #                       'username' => 'user',
     #                       'password' => '1234',
     #                       'grant_type' => 'password'})
-    #request.set_form_data('refresh_token' => token)
+    # request.set_form_data('refresh_token' => token)
 
-    #_remove_all_user_sessions_associated_with_the_user
+    # _remove_all_user_sessions_associated_with_the_user
 
-    #request.body = body.to_json
+    # request.body = body.to_json
 
     response = http.request(request)
-    puts "RESPONSE CODE", response.code
+    # puts "RESPONSE CODE", response.code
     # puts "RESPONSE BODY", response.body
-    #response_json = parse_json(response.read_body)[0]
+    # response_json = parse_json(response.read_body)[0]
     halt response.code.to_i
   end
 
@@ -612,7 +614,7 @@ class Keycloak < Sinatra::Application
     if res.body['id_token']
       parsed_res, code = parse_json(res.body)
       id_token = parsed_res['id_token']
-      puts "ID_TOKEN RECEIVED"# , parsed_res['access_token']
+      # puts "ID_TOKEN RECEIVED"# , parsed_res['access_token']
     else
       halt 401, "ERROR: ACCESS DENIED!"
     end
@@ -620,13 +622,13 @@ class Keycloak < Sinatra::Application
 
   def authorize?(user_token, request)
     refresh_adapter
-    #=> Check token
+    # => Check token
     public_key = get_public_key
-    #p "SETTINGS", settings.keycloak_pub_key
+    # p "SETTINGS", settings.keycloak_pub_key
     token_payload, token_header = decode_token(user_token, public_key)
-    puts "payload", token_payload
+    # puts "payload", token_payload
 
-    #=> evaluate request
+    # => evaluate request
     # Find mapped resource to path
     # required_role is build following next pattern:
     # operation
@@ -634,9 +636,9 @@ class Keycloak < Sinatra::Application
     # operation_resource_type
 
     required_role = 'role_' + request['operation'] + '-' + request['resource']
-    p "REQUIRED ROLE", required_role
+    # p "REQUIRED ROLE", required_role
 
-    #=> Check token roles
+    # => Check token roles
     begin
       token_realm_access_roles = token_payload['realm_access']['roles']
     rescue
@@ -653,25 +655,25 @@ class Keycloak < Sinatra::Application
     # .
     # .
 
-    p "realm_access_roles", token_realm_access_roles
+    # p "realm_access_roles", token_realm_access_roles
     realm_roles = get_realm_roles
 
-    p "realm_roles", realm_roles
+    # p "realm_roles", realm_roles
     parsed_realm_roles, code = parse_json(realm_roles)
-    p "Realm_roles_PARSED", parsed_realm_roles
+    # p "Realm_roles_PARSED", parsed_realm_roles
 
     authorized = false
     token_realm_access_roles.each { |role|
-      puts "ROLE TO INSPECT", role
+      # puts "ROLE TO INSPECT", role
 
       token_role_repr = parsed_realm_roles.find {|x| x['name'] == role}
       unless token_role_repr
         json_error(403, 'No permissions')
       end
 
-      puts "ROLE_DESC", token_role_repr['description']
+      # puts "ROLE_DESC", token_role_repr['description']
       role_perms = token_role_repr['description'].tr('${}', '').split(',')
-      puts "ROLE_PERM", role_perms
+      # puts "ROLE_PERM", role_perms
 
       if role_perms.include?(required_role)
         authorized = true
@@ -692,7 +694,7 @@ class Keycloak < Sinatra::Application
     code = is_expired?
     case code
       when 'OK'
-        puts "OK"
+        # puts "OK"
         return
       else
         #=> Then GET new token
@@ -705,7 +707,7 @@ class Keycloak < Sinatra::Application
     code = is_expired?
     case code
       when 'OK'
-        puts "OK"
+        # puts "OK"
         #@@access_token = Keycloak.get_adapter_token
         return
       else
@@ -719,7 +721,7 @@ class Keycloak < Sinatra::Application
     # Search roles
     realm_roles = get_realm_roles
     role_data = parse_json(realm_roles)[0].find {|role| role['name'] == user_type}
-    p "ROLE DATA", role_data
+    # p "ROLE DATA", role_data
     # Compare user_type with roles
     unless role_data
       json_error(401, 'User type not allowed')
@@ -737,8 +739,8 @@ class Keycloak < Sinatra::Application
     request.body = (body << role_data).to_json
 
     response = http.request(request)
-    p "CODE", response.code
-    p "BODY", response.body
+    # p "CODE", response.code
+    # p "BODY", response.body
 
     if response.code == '204'
       return
@@ -750,36 +752,36 @@ class Keycloak < Sinatra::Application
   def set_user_groups(attr, user_id)
     # Assign group based on attr
     group_name = Adapter.assign_group(attr)
-    puts "DESIGNATED GROUP", group_name
+    # puts "DESIGNATED GROUP", group_name
     # Search roles
     group_data, errors = parse_json(get_groups({'name' => group_name}))
-    #groups = get_groups(attribute)
-    #group_data = parse_json(realm_roles)[0].find {|group| group['name'] == attribute}
-    p "GROUP DATA", group_data
+    # groups = get_groups(attribute)
+    # group_data = parse_json(realm_roles)[0].find {|group| group['name'] == attribute}
+    # p "GROUP DATA", group_data
     # Compare user_type with roles
     unless group_data
       json_error(401, 'User type not allowed')
     end
 
     # Add user to group
-    ##PUT /admin/realms/{realm}/users/{id}/groups/{groupId}
+    ## PUT /admin/realms/{realm}/users/{id}/groups/{groupId}
     http_path = "http://#{@@address.to_s}:#{@@port.to_s}/#{@@uri.to_s}/admin/realms/#{@@realm_name}/users/#{user_id}/groups/#{group_data['id']}"
     url = URI(http_path)
     http = Net::HTTP.new(url.host, url.port)
     request = Net::HTTP::Put.new(url.to_s)
     request["authorization"] = 'bearer ' + @@access_token
-    #request["content-type"] = 'application/json'
-    #body = []
-    #request.body = (body << role_data).to_json
-    p "ADDING USER TO GROUP"
+    # request["content-type"] = 'application/json'
+    # body = []
+    # request.body = (body << role_data).to_json
+    # p "ADDING USER TO GROUP"
 
     response = http.request(request)
-    p "CODE", response.code
-    p "BODY", response.body
+    # p "CODE", response.code
+    # p "BODY", response.body
 
     if response.code == '204'
-      #halt response.code.to_i
-      puts "USER ADDED TO GROUP"
+      # halt response.code.to_i
+      # puts "USER ADDED TO GROUP"
       return
     else
       json_error(response.code.to_i, response.body.to_s)
@@ -791,8 +793,8 @@ class Keycloak < Sinatra::Application
     query = {'name' => client_id}
     client_data, errors = parse_json(get_clients(query))
 
-    #Get realm-level roles that are available to attach to this client’s scope
-    #GET http://localhost:8081/auth/admin/realms/{realm}/clients/{id}/scope-mappings/realm/available
+    # Get realm-level roles that are available to attach to this client’s scope
+    # GET http://localhost:8081/auth/admin/realms/{realm}/clients/{id}/scope-mappings/realm/available
     http_path = "http://#{@@address.to_s}:#{@@port.to_s}/#{@@uri.to_s}/admin/realms/#{@@realm_name}/clients/#{client_data['id']}/scope-mappings/realm/available"
     url = URI(http_path)
     http = Net::HTTP.new(url.host, url.port)
@@ -800,16 +802,16 @@ class Keycloak < Sinatra::Application
     request["authorization"] = 'bearer ' + @@access_token
 
     response = http.request(request)
-    p "REALM AVAILABLE SCOPE", parse_json(response.body)[0]
+    # p "REALM AVAILABLE SCOPE", parse_json(response.body)[0]
 
     role_data = parse_json(response.body)[0].find {|role| role['name'] == query['name'] }
-    p "ROLE DATA", role_data
+    # p "ROLE DATA", role_data
     unless role_data
       json_error(401, 'Service not allowed')
     end
 
-    #Add a set of realm-level roles to the client’s scope
-    #POST /admin/realms/{realm}/clients/{id}/scope-mappings/realm
+    # Add a set of realm-level roles to the client’s scope
+    # POST /admin/realms/{realm}/clients/{id}/scope-mappings/realm
     http_path = "http://#{@@address.to_s}:#{@@port.to_s}/#{@@uri.to_s}/admin/realms/#{@@realm_name}/clients/#{client_data['id']}/scope-mappings/realm"
     url = URI(http_path)
     http = Net::HTTP.new(url.host, url.port)
@@ -820,30 +822,30 @@ class Keycloak < Sinatra::Application
     request.body = (body << role_data).to_json
 
     response = http.request(request)
-    p "CODE", response.code
-    p "BODY", response.body
+    # p "CODE", response.code
+    # p "BODY", response.body
 
     if response.code != '204'
       json_error(response.code.to_i, response.body.to_s)
     else
-      #halt response.code.to_i
+      # halt response.code.to_i
       return client_data, role_data
     end
-    #Returns the roles for the client that can be associated with the client's scope
-    #GET /admin/realms/{realm}/clients/{id}/scope-mappings/clients/{client}/available
-    #Get realm-level roles that are available to attach to this client’s scope
-    #http_path = "http://localhost:8081/auth/admin/realms/master/clients/#{client_data['id']}/scope-mappings/realm/available"
-    #url = URI(http_path)
-    #http = Net::HTTP.new(url.host, url.port)
-    #request = Net::HTTP::Get.new(url.to_s)
-    #request["authorization"] = 'bearer ' + @@access_token
-    #response = http.request(request)
+    # Returns the roles for the client that can be associated with the client's scope
+    # GET /admin/realms/{realm}/clients/{id}/scope-mappings/clients/{client}/available
+    # Get realm-level roles that are available to attach to this client’s scope
+    # http_path = "http://localhost:8081/auth/admin/realms/master/clients/#{client_data['id']}/scope-mappings/realm/available"
+    # url = URI(http_path)
+    # http = Net::HTTP.new(url.host, url.port)
+    # request = Net::HTTP::Get.new(url.to_s)
+    # request["authorization"] = 'bearer ' + @@access_token
+    # response = http.request(request)
   end
 
   def set_service_account_roles(client_data, role_data)
-    puts "CLIENT ID", client_data
-    #Get a user dedicated to the service account
-    #GET /admin/realms/{realm}/clients/{id}/service-account-user
+    # puts "CLIENT ID", client_data
+    # Get a user dedicated to the service account
+    # GET /admin/realms/{realm}/clients/{id}/service-account-user
     http_path = "http://#{@@address.to_s}:#{@@port.to_s}/#{@@uri.to_s}/admin/realms/#{@@realm_name}/clients/#{client_data}/service-account-user"
     url = URI(http_path)
     http = Net::HTTP.new(url.host, url.port)
@@ -851,13 +853,13 @@ class Keycloak < Sinatra::Application
     request["authorization"] = 'bearer ' + @@access_token
 
     response = http.request(request)
-    p "CODE", response.code
-    p "BODY", response.body
+    # p "CODE", response.code
+    # p "BODY", response.body
 
     parsed_user, errors = parse_json(response.body)
 
     # Add role from roles to user_id
-    ##POST rest-api/admin/realms/{realm}/users/{id}/role-mappings/realm
+    ## POST rest-api/admin/realms/{realm}/users/{id}/role-mappings/realm
     http_path = "http://#{@@address.to_s}:#{@@port.to_s}/#{@@uri.to_s}/admin/realms/#{@@realm_name}/users/#{parsed_user['id']}/role-mappings/realm"
     url = URI(http_path)
     http = Net::HTTP.new(url.host, url.port)
@@ -868,8 +870,8 @@ class Keycloak < Sinatra::Application
     request.body = (body << role_data).to_json
 
     response = http.request(request)
-    p "CODE", response.code
-    p "BODY", response.body
+    # p "CODE", response.code
+    # p "BODY", response.body
 
     if response.code == '204'
       return
@@ -879,12 +881,12 @@ class Keycloak < Sinatra::Application
   end
 
   def delete_realm_role(role)
-    #Delete a role by name
-    #DELETE /admin/realms/{realm}/roles/{role-name}
+    # Delete a role by name
+    # DELETE /admin/realms/{realm}/roles/{role-name}
   end
 
   def update_client()
-    #TODO: Implement
+    # TODO: Implement
     # Update the client
     # PUT /admin/realms/{realm}/clients/{id}
     # Body rep = ClientRepresentation
@@ -892,11 +894,11 @@ class Keycloak < Sinatra::Application
   end
 
   def get_groups(query=nil)
-    puts "GET_GROUPS_QUERY", query
-    #GET /admin/realms/{realm}/groups
+    # puts "GET_GROUPS_QUERY", query
+    # GET /admin/realms/{realm}/groups
     # GroupRepresentation
     # id, name, path, attributes, realmRoles, clientRoles, subGroups
-    #TODO: IT ONLY SUPPORTS QUERIES BY ID, NAME (GROUPID)
+    # TODO: IT ONLY SUPPORTS QUERIES BY ID, NAME (GROUPID)
     url = URI("http://#{@@address.to_s}:#{@@port.to_s}/#{@@uri.to_s}/admin/realms/#{@@realm_name}/groups")
     http = Net::HTTP.new(url.host, url.port)
     request = Net::HTTP::Get.new(url.to_s)
@@ -904,12 +906,12 @@ class Keycloak < Sinatra::Application
     request["content-type"] = 'application/json'
 
     response = http.request(request)
-    #p "RESPONSE", response.body
-    p "CODE", response.code
-    p "RESPONSE.read_body222", parse_json(response.read_body)[0]
+    # p "RESPONSE", response.body
+    # p "CODE", response.code
+    # p "RESPONSE.read_body222", parse_json(response.read_body)[0]
     group_list = parse_json(response.read_body)[0]
     if query['name']
-      puts "NAME PRESENT?", query['name']
+      # puts "NAME PRESENT?", query['name']
       group_data = group_list.find {|group| group['name'] == query['name'] }
       return group_data.to_json
     else
@@ -918,7 +920,7 @@ class Keycloak < Sinatra::Application
   end
 
   def get_clients(query=nil)
-    #TODO: IT ONLY SUPPORTS QUERIES BY NAME (CLIENTID)
+    # TODO: IT ONLY SUPPORTS QUERIES BY NAME (CLIENTID)
     url = URI("http://#{@@address.to_s}:#{@@port.to_s}/#{@@uri.to_s}/admin/realms/#{@@realm_name}/clients")
     http = Net::HTTP.new(url.host, url.port)
     request = Net::HTTP::Get.new(url.to_s)
@@ -926,12 +928,12 @@ class Keycloak < Sinatra::Application
     request["content-type"] = 'application/json'
 
     response = http.request(request)
-    #p "RESPONSE", response.body
-    p "CODE", response.code
-    p "RESPONSE.read_body222", parse_json(response.read_body)[0]
+    # p "RESPONSE", response.body
+    # p "CODE", response.code
+    # p "RESPONSE.read_body222", parse_json(response.read_body)[0]
     client_list = parse_json(response.read_body)[0]
     if query['name']
-      puts "NAME PRESENT?", query['name']
+      # puts "NAME PRESENT?", query['name']
       client_data = client_list.find {|client| client['clientId'] == query['name'] }
       return client_data.to_json
     else
@@ -954,46 +956,46 @@ class Keycloak < Sinatra::Application
     request["authorization"] = 'Bearer ' + @@access_token
 
     response = http.request(request)
-    #p "RESPONSE.read_body", response.read_body
-    p "CODE", response.code
+    # p "RESPONSE.read_body", response.read_body
+    # p "CODE", response.code
     parsed_res, code = parse_json(response.body)
-    p "RESPONSE_PARSED", parsed_res
+    # p "RESPONSE_PARSED", parsed_res
     response.body
   end
 
   def get_client_roles(client, keyed_query=nil)
-    #Get all roles for the realm or client
+    # Get all roles for the realm or client
     url = URI("http://#{@@address.to_s}:#{@@port.to_s}/#{@@uri.to_s}/admin/realms/#{@@realm_name}/clients/#{client}/roles")
     http = Net::HTTP.new(url.host, url.port)
     request = Net::HTTP::Get.new(url.to_s)
     request["authorization"] = 'Bearer ' + @@access_token
 
     response = http.request(request)
-    #p "RESPONSE.read_body", response.read_body
-    p "CODE", response.code
+    # p "RESPONSE.read_body", response.read_body
+    # p "CODE", response.code
     parsed_res, code = parse_json(response.body)
-    p "RESPONSE_PARSED", parsed_res
+    # p "RESPONSE_PARSED", parsed_res
     parsed_res
   end
 
   def get_role_details(role)
-    #url = URI("http://localhost:8081/auth/admin/realms/#{realm}/clients/#{id}/roles/#{role}")
+    # url = URI("http://localhost:8081/auth/admin/realms/#{realm}/clients/#{id}/roles/#{role}")
     url = URI("http://#{@@address.to_s}:#{@@port.to_s}/#{@@uri.to_s}/admin/realms/#{@@realm_name}/roles/#{role}")
     http = Net::HTTP.new(url.host, url.port)
     request = Net::HTTP::Get.new(url.to_s)
     request["authorization"] = 'Bearer ' + @@access_token
 
     response = http.request(request)
-    #p "RESPONSE.read_body", response.read_body
-    p "CODE", response.code
+    # p "RESPONSE.read_body", response.read_body
+    # p "CODE", response.code
     parsed_res, code = parse_json(response.body)
-    p "RESPONSE_PARSED", parsed_res
+    # p "RESPONSE_PARSED", parsed_res
     parsed_res
   end
 
   def get_users(keyed_query)
-    puts "KEYED_QUERY", keyed_query
-    #Get all users for the realm
+    # puts "KEYED_QUERY", keyed_query
+    # Get all users for the realm
     query = Rack::Utils.build_query(keyed_query)
     uri = "http://#{@@address.to_s}:#{@@port.to_s}/#{@@uri.to_s}/admin/realms/#{@@realm_name}/users?" + query
     url = URI(uri)
@@ -1002,22 +1004,22 @@ class Keycloak < Sinatra::Application
     request["authorization"] = 'Bearer ' + @@access_token
 
     response = http.request(request)
-    p "CODE", response.code
+    # p "CODE", response.code
     parsed_res, code = parse_json(response.body)
-    p "RESPONSE_PARSED", parsed_res
+    # p "RESPONSE_PARSED", parsed_res
     response.body
   end
 
   def is_active?(introspect_res)
-    puts "JSON PARSING"
+    # puts "JSON PARSING"
     token_evaluation = JSON.parse(introspect_res)
-    puts "token_evaluation", token_evaluation.to_s
+    # puts "token_evaluation", token_evaluation.to_s
     case token_evaluation['active']
       when true
-        p "ACTIVE CONTENTS TRUE", token_evaluation['active']
+        # p "ACTIVE CONTENTS TRUE", token_evaluation['active']
         true
       else
-        p "ACTIVE CONTENTS FALSE", token_evaluation['active']
+        # p "ACTIVE CONTENTS FALSE", token_evaluation['active']
         false
     end
   end
@@ -1026,8 +1028,8 @@ class Keycloak < Sinatra::Application
     public_key = get_public_key
     begin
       decoded_payload, decoded_header = JWT.decode @@access_token, public_key, true, { :algorithm => 'RS256' }
-      puts "DECODED_HEADER: ", decoded_header
-      puts "DECODED_PAYLOAD: ", decoded_payload
+      # puts "DECODED_HEADER: ", decoded_header
+      # puts "DECODED_PAYLOAD: ", decoded_payload
       response = 'OK'
     # if expired token, refresh adapter token
     rescue JWT::DecodeError
@@ -1044,26 +1046,26 @@ class Keycloak < Sinatra::Application
   def process_request(uri, method)
     # Parse uri path
     path = URI(uri).path.split('/')[1]
-    p "path", path
+    # p "path", path
 
     # Find mapped resource to path
     # TODO: check this -->
     resources = @@auth_mappings['resources']
-    p "RESOURCES", resources
+    # p "RESOURCES", resources
 
     resource = nil
-    p "PATHS", @@auth_mappings['paths']
+    # p "PATHS", @@auth_mappings['paths']
     @@auth_mappings['paths'].each { |k, v|
-      puts "k, v", k, v
+      # puts "k, v", k, v
       v.each { |kk, vv|
-        puts "kk, vv", kk, vv
+        # puts "kk, vv", kk, vv
         if kk == path
-          p "Resource found", k, kk
+          # p "Resource found", k, kk
           resource = [k, kk]
           break
         end
       }
-      p "FOUND", resource
+      # p "FOUND", resource
       if resource
         break
       end
@@ -1076,7 +1078,7 @@ class Keycloak < Sinatra::Application
       json_error(403, 'The resource operation is not available')
     else
       operation = @@auth_mappings['paths'][resource[0]][resource[1]][method]
-      puts "OPERATION", operation
+      # puts "OPERATION", operation
       request = {"resource" => resource[0], "type" => resource[1], "operation" => operation}
     end
   end

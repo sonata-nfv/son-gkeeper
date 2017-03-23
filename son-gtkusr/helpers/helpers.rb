@@ -1,3 +1,30 @@
+##
+## Copyright (c) 2015 SONATA-NFV
+## ALL RIGHTS RESERVED.
+##
+## Licensed under the Apache License, Version 2.0 (the "License");
+## you may not use this file except in compliance with the License.
+## You may obtain a copy of the License at
+##
+##     http://www.apache.org/licenses/LICENSE-2.0
+##
+## Unless required by applicable law or agreed to in writing, software
+## distributed under the License is distributed on an "AS IS" BASIS,
+## WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+## See the License for the specific language governing permissions and
+## limitations under the License.
+##
+## Neither the name of the SONATA-NFV
+## nor the names of its contributors may be used to endorse or promote
+## products derived from this software without specific prior written
+## permission.
+##
+## This work has been performed in the framework of the SONATA project,
+## funded by the European Commission under Grant number 671517 through
+## the Horizon 2020 and 5G-PPP programmes. The authors would like to
+## acknowledge the contributions of their colleagues of the SONATA
+## partner consortium (www.sonata-nfv.eu).
+
 require 'json'
 require 'sinatra'
 require 'net/http'
@@ -215,9 +242,6 @@ class Adapter < Sinatra::Application
     #Other Keycloak credentials that might be configured
   end
 
-
-
-
 #Comment about ROLES
 =begin
 Large number of roles approach will quickly become unmanageable and it
@@ -229,39 +253,8 @@ group of resources, rather than 'user-a' has read access to 'resource-a'.
 =end
 end
 
-class JwtAuth
-
-  def initialize app
-    @app = app
-  end
-
-  def call env
-    begin
-      options = {algorithm: 'HS256', iss: ENV['JWT_ISSUER']}
-      p options
-      bearer = env.fetch('HTTP_AUTHORIZATION', '').slice(7..-1)
-      p bearer
-      payload, header = JWT.decode bearer, ENV['JWT_SECRET'], true, options
-
-      env[:scopes] = payload['scopes']
-      env[:user] = payload['user']
-
-      @app.call env
-    rescue JWT::DecodeError
-      [401, { 'Content-Type' => 'text/plain' }, ['A token must be passed.']] # Even if it expires, shows this error
-    rescue JWT::ExpiredSignature
-      [403, { 'Content-Type' => 'text/plain' }, ['The token has expired.']]
-    rescue JWT::InvalidIssuerError
-      [403, { 'Content-Type' => 'text/plain' }, ['The token does not have a valid issuer.']]
-    rescue JWT::InvalidIatError
-      [403, { 'Content-Type' => 'text/plain' }, ['The token does not have a valid "issued at" time.']]
-    end
-  end
-end
-
-
 def create_public_key
-    # turn keycloak realm pub key into an actual openssl compat pub key.
+  # turn keycloak realm pub key into an actual openssl compat pub key.
   keycloak_yml = YAML.load_file('config/keycloak.yml')
   keycloak_config = JSON.parse(File.read('config/keycloak.json'))
   @s = "-----BEGIN PUBLIC KEY-----\n"
@@ -273,5 +266,5 @@ def create_public_key
   set :keycloak_url, keycloak_config['auth-server-url'] + '/' + keycloak_config['realm'] + '/'
 
   # Print token settings
-  puts "settings.keycloak_pub_key: ", settings.keycloak_pub_key
+  # puts "settings.keycloak_pub_key: ", settings.keycloak_pub_key
 end

@@ -88,7 +88,7 @@ adapter_cid=$(echo $create_client_out | awk -F id= '{print $2}')
 #echo "adapter_cid=$adapter_cid"
 
 # Creating a realm role:
-create_realm_role $SONATA_REALM GK "see_catalogues, see_repositories"
+create_realm_role $SONATA_REALM son-gkeeper "\${role_access-catalogue},\${role_access-repositories}"
 create_realm_role $SONATA_REALM son-catalogues ""
 create_realm_role $SONATA_REALM son-repositories "\${role_read-catalogue}"
 create_realm_role $SONATA_REALM customer "\${role_read-repositories},\${role_write-repositories},\${role_execute-catalogue}"
