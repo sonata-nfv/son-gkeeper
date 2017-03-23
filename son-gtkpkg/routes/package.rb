@@ -41,10 +41,10 @@ class GtkPkg < Sinatra::Base
     if package 
       logger.debug(log_message) {"package=#{package.inspect}"}
       descriptor = package.from_file()
-      logger.info(log_message) {"descriptor is #{descriptor}"}
       if descriptor
+        logger.info(log_message) {"descriptor is #{descriptor}"}
         if descriptor.key?('uuid')
-          logger.info("Storing son-package in catalogue")
+          logger.debug("Storing son-package in catalogue")
           son_package = Package.new(catalogue: settings.son_packages_catalogue, logger: logger, params: {io: params[:package][:tempfile][:tempfile]})
           son_package = son_package.store_package_file()
           if son_package && son_package['uuid']
@@ -63,8 +63,9 @@ class GtkPkg < Sinatra::Base
             json_error 400, 'Error storing son-package.', log_message         
           end
         elsif descriptor.key?('name') && descriptor.key?('vendor') && descriptor.key?('version')
+          logger.debug(log_message) {"Package is duplicated"}
           error_message = "Version #{descriptor['version']} of package '#{descriptor['name']}' from vendor '#{descriptor['vendor']}' already exists"
-          halt 409, error_message, log_message
+          json_error 409, error_message, log_message
         else
           json_error 400, 'Oops.. something terribly wrong happened here!', log_message      
         end
@@ -92,15 +93,21 @@ class GtkPkg < Sinatra::Base
     json_error 400, 'No package UUID specified', log_message   
   end
   
-  get '/packages/:uuid/package?' do
+  get '/packages/:uuid/file/?' do
+    MESSAGE = "GtkPkg::GET /packages/:uuid/package"
+    logger.debug(MESSAGE) {'entered with uuid='+params[:uuid]}
     unless params[:uuid].nil?
-      logger.debug "GtkPkg: entered GET /packages/#{params[:uuid]}/package"
-      file_dir = File.join('public','packages',params[:uuid])
-      entries = Dir.entries(file_dir) - %w(. ..)
-      logger.debug "GtkPkg: entries are #{entries}"
-      send_file File.join('public','packages',params[:uuid], entries[0]) if entries.size
+      # curl -i -X POST -H "Content-Type: multipart/form-data" -F "image=@./image" -F "data=@./imagedata.json" http://localhost:4567/images
+      # TODO: save the file and use send_file, don't use send_data
+      package_file = Package.fetch_package_file(params[:uuid])
+      if package_file
+        send_file package_file
+      else
+        logger.debug(MESSAGE) {"leaving with \"No package UUID specified\""}
+        json_error 400, 'No package file found'
+      end
     end
-    logger.debug("GtkPkg GET /packages/#{params[:uuid]}/package") {"leaving with \"No package UUID specified\""}
+    logger.debug(MESSAGE) {"leaving with \"No package UUID specified\""}
     json_error 400, 'No package UUID specified'
   end
 

@@ -33,12 +33,22 @@ class User < ManagerService
   LOG_MESSAGE = 'GtkApi::' + self.name
   USERS_URL = '/users/'
   
+  attr_accessor :uuid, :name, :session
+  
   def self.config(url:)
     method = LOG_MESSAGE + "#config(url=#{url})"
     raise ArgumentError.new('UserManagerService can not be configured with nil url') if url.nil?
     raise ArgumentError.new('UserManagerService can not be configured with empty url') if url.empty?
     @@url = url
     GtkApi.logger.debug(method) {'entered'}
+  end
+  
+  def initialize(params)
+    method = LOG_MESSAGE + "##{__method__}"
+    GtkApi.logger.debug(method) {"entered with params #{params}"}
+    @name = params[:name]
+    @password = params[:password]
+    @session = @uuid = nil
   end
 
   def self.create(params)
@@ -57,59 +67,61 @@ class User < ManagerService
     end
   end
 
-  def self.create_session(params)
-    method = LOG_MESSAGE + "##{__method__}(#{params})"
-    GtkApi.logger.debug(method) {'entered'}
-    #headers = {'Content-Type'=>'application/x-www-form-urlencoded'}
-    headers ={}
-    begin
-      session = postCurb(url: @@url+USERS_URL, body: params, headers: headers)
-      GtkApi.logger.debug(method) {"session=#{session.body}"}
-      JSON.parse session.body
-    rescue  => e #RestClient::Conflict
-      GtkApi.logger.error(method) {"Error during processing: #{$!}"}
-      GtkApi.logger.error(method) {"Backtrace:\n\t#{e.backtrace.join("\n\t")}"}
-      {error: 'Session not created', user: e.backtrace}
-    end
+  # TODO
+  def authenticated?(params)
+    method = LOG_MESSAGE + "##{__method__}"
+    GtkApi.logger.debug(method) {"entered with password #{params}"}
+    @session = {began_at: Time.now.utc}
+    @name == params[:name] && @password == params[:password] ? self : nil
+  end
+  
+  def logout!
+    session_lasted_for = Time.now.utc - @user_session[:began_at]
+    @user_session = nil
+    session_lasted_for
   end
   
   # TODO
-  def self.authenticate!(user)
+  def authorized?(params)
+    method = LOG_MESSAGE + "##{__method__}"
+    GtkApi.logger.debug(method) {"entered with params #{params}"}
     true
   end
   
   # TODO
-  def self.authorized?(user)
-    true
-  end
-  
-  # TODO
-  def self.valid?(user)
+  def self.valid?(params)
+    method = LOG_MESSAGE + "##{__method__}"
+    GtkApi.logger.debug(method) {"entered with params #{params}"}
     true
   end
   
   def self.find_by_uuid(uuid)
-    user=find(url: @@url + USERS_URL + uuid, log_message: LOG_MESSAGE + "##{__method__}(#{uuid})")
-    user['data'] if user
+    method = LOG_MESSAGE + "##{__method__}(#{params})"
+    user = find(url: @@url + USERS_URL + uuid, log_message: LOG_MESSAGE + "##{__method__}(#{uuid})")
+    user ? User.new(user['data']) : nil
   end
 
   def self.find_by_name(name)
-    user=find(url: @@url + USERS_URL + name, log_message: LOG_MESSAGE + "##{__method__}(#{uuid})")
-    user['data'] if user
+    method = LOG_MESSAGE + "##{__method__}"
+    GtkApi.logger.debug(method) {"entered with name #{name}"}
+    #user=find(url: @@url + USERS_URL + name, log_message: LOG_MESSAGE + "##{__method__}(#{name})")
+    #user ? User.new(user['data']) : nil
+    name=='Unknown' ? User.new({name: 'Unknown', password: 'None'}) : nil
   end
 
   def self.find(params)
     method = LOG_MESSAGE + "##{__method__}(#{params})"
-    users = find(url: @@url + USERS_URL, params: params, log_message: LOG_MESSAGE + "##{__method__}(#{params})")
-    GtkApi.logger.debug(method) {"users=#{users}"}
-    case users[:status]
-    when 200
-      {status: 200, count: users[:items][:data][:licences].count, items: users[:items][:data][:licences], message: "OK"}
-    when 400
-    when 404
-      {status: 200, count: 0, items: [], message: "OK"}
-    else
-      {status: users[:status], count: 0, items: [], message: "Error"}
-    end
+    params[:name]=='Unknown' && params[:password]=='None' ? User.new(params) : nil
+    #users = find(url: @@url + USERS_URL, params: params, log_message: LOG_MESSAGE + "##{__method__}(#{params})")
+    #GtkApi.logger.debug(method) {"users=#{users}"}
+    #case users[:status]
+    #when 200
+    #  {status: 200, count: users[:items][:data][:licences].count, items: users[:items][:data][:licences], message: "OK"}
+    #when 400
+    #when 404
+    #  {status: 200, count: 0, items: [], message: "OK"}
+    #else
+    #  {status: users[:status], count: 0, items: [], message: "Error"}
+    #end
   end
 end

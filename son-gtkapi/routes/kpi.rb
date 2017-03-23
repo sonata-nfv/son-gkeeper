@@ -45,10 +45,10 @@ class GtkApi < Sinatra::Base
       MESSAGE = "GtkApi::GET /api/v2/kpis"+query_string
       
       logger.info(MESSAGE) {"entered"}
-      kpis = KpiManagerService.get_metric(params)
-      logger.debug(MESSAGE) { "kpis= #{kpis}"}
-      if kpis        
-        [200, kpis.to_json]
+      resp = KpiManagerService.get_metric(params)
+      case resp[:status]
+      when 200
+        halt 200, resp[:data].to_json        
       else
         logger.info(MESSAGE) { "leaving GET with 'No get kpis request were created'"}
         json_error 400, 'No get list of kpis request was created'
@@ -61,14 +61,16 @@ class GtkApi < Sinatra::Base
       params = JSON.parse(request.body.read)
       unless params.nil?
         logger.debug(MESSAGE) {"entered with params=#{params}"}
-        new_request = KpiManagerService.update_metric(params)
-        if new_request
-          logger.debug(MESSAGE) {"new_request =#{new_request}"}
-          halt 201, new_request.to_json
+        resp = KpiManagerService.update_metric(params)
+        logger.debug(MESSAGE) {"resp=#{resp.inspect}"}
+        case resp[:status]
+        when 201            
+          halt 201
         else
-          logger.debug(MESSAGE) { "leaving with 'No kpi update request was created'"}
-          json_error 400, 'No kpi update_request was created'
-        end
+          message = "Metric does not updated for update_metric #{params}"
+          logger.error(MESSAGE) {message}
+          json_error resp[:status], message
+        end                
       end
       logger.debug(MESSAGE) { "leaving with 'No request id specified'"}
       json_error 400, 'No params specified for the create request'

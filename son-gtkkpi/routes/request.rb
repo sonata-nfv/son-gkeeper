@@ -26,14 +26,10 @@
 ## acknowledge the contributions of their colleagues of the SONATA 
 ## partner consortium (www.sonata-nfv.eu).
 # encoding: utf-8
-require 'json' 
-require 'pp'
-require 'addressable/uri'
-require 'yaml'
-require 'bunny'
+
 require 'prometheus/client'
 require 'prometheus/client/push'
-require 'net/http'
+require 'json'
 
 class GtkKpi < Sinatra::Base  
   
@@ -42,56 +38,91 @@ class GtkKpi < Sinatra::Base
 
   def self.counter(params, pushgateway, registry)
 
-    # if counter exists, it will be increased
-    if registry.exist?(params[:name].to_sym)
-      counter = registry.get(params[:name])
-      counter.increment(params[:base_labels])
-      Prometheus::Client::Push.new(params[:job], params[:instance], pushgateway).replace(registry)
+    begin
+      if (params[:base_labels] == nil) 
+        base_labels = {}
+      else
+        base_labels = params[:base_labels]                
+      end    
 
-    else
-      # creates a metric type counter
-      counter = Prometheus::Client::Counter.new(params[:name].to_sym, params[:docstring], params[:base_labels])
-      counter.increment(params[:base_labels])
-      # registers counter
-      registry.register(counter)
+      if (params[:value] == nil)
+        factor = 1
+      else
+        factor = params[:value].to_f
+      end
+
+      # if counter exists, it will be increased
+      if registry.exist?(params[:name].to_sym)
+        counter = registry.get(params[:name])
+        counter.increment(base_labels, factor)        
+        Prometheus::Client::Push.new(params[:job], params[:instance], pushgateway).replace(registry)
         
-      # push the registry to the gateway
-      Prometheus::Client::Push.new(params[:job], params[:instance], pushgateway).add(registry) 
-    end      
+      else
+        # creates a metric type counter
+        counter = Prometheus::Client::Counter.new(params[:name].to_sym, params[:docstring], base_labels)
+        counter.increment(base_labels, factor)
+        # registers counter
+        registry.register(counter)
+        
+        # push the registry to the gateway
+        Prometheus::Client::Push.new(params[:job], params[:instance], pushgateway).add(registry) 
+      end
+    rescue Exception => e
+      raise e
+    end
   end
 
   def self.gauge(params, pushgateway, registry)
     
-    # if gauge exists, it will be updated
-    if registry.exist?(params[:name].to_sym)
-      gauge = registry.get(params[:name])
-      value = gauge.get(params[:base_labels])
-        
-      if params[:operation]=='inc'
-        value = value.to_i + 1
+    begin
+      if (params[:base_labels] == nil) 
+        base_labels = {}
       else
-        value = value.to_i - 1
+        base_labels = params[:base_labels]                
       end
 
-      gauge.set(params[:base_labels],value)
+      if (params[:value] == nil)
+        factor = 1
+      else
+        factor = params[:value].to_f
+      end
 
-      Prometheus::Client::Push.new(params[:job], params[:instance], pushgateway).replace(registry)
+      # if gauge exists, it will be updated
+      if registry.exist?(params[:name].to_sym)
+        gauge = registry.get(params[:name])
 
-    else
-      # creates a metric type gauge
-      gauge = Prometheus::Client::Gauge.new(params[:name].to_sym, params[:docstring], params[:base_labels])
-      gauge.set(params[:base_labels], 1)
-      # registers gauge
-      registry.register(gauge)
+        value = gauge.get(base_labels)
         
-      # push the registry to the gateway
-      Prometheus::Client::Push.new(params[:job], params[:instance], pushgateway).add(registry) 
-    end     
+        if value == nil 
+          value = factor         
+        else
+          if params[:operation]=='dec'
+            value = value.to_f - factor
+          else # default operation: inc
+            value = value.to_f + factor          
+          end          
+        end
+
+        gauge.set(base_labels,value)
+        Prometheus::Client::Push.new(params[:job], params[:instance], pushgateway).replace(registry)
+
+      else
+        # creates a metric type gauge
+        gauge = Prometheus::Client::Gauge.new(params[:name].to_sym, params[:docstring], base_labels)
+        gauge.set(base_labels, factor)
+        # registers gauge
+        registry.register(gauge)
+        
+        # push the registry to the gateway
+        Prometheus::Client::Push.new(params[:job], params[:instance], pushgateway).add(registry) 
+      end
+    rescue Exception => e
+      raise e
+    end
   end
   
   put '/kpis/?' do
     original_body = request.body.read
-    logger.info "GtkKpi: entered PUT /kpis with original_body=#{original_body}"
     params = JSON.parse(original_body, :symbolize_names => true)
     logger.info "GtkKpi: PUT /kpis with params=#{params}"    
     pushgateway = 'http://'+settings.pushgateway_host+':'+settings.pushgateway_port.to_s
@@ -110,40 +141,55 @@ class GtkKpi < Sinatra::Base
     rescue Exception => e
       logger.debug(e.message)
       logger.debug(e.backtrace.inspect)
-      halt 500, 'Internal server error'
+      halt 400
     end           
   end
 
   get '/kpis/?' do
-    pushgateway = 'http://'+settings.pushgateway_host+':'+settings.pushgateway_port.to_s
-    prometheus_API_url = 'http://'+settings.pushgateway_host+':'+settings.prometheus_port.to_s+'/api/v1/series?match[]={exported_job="'+settings.prometheus_job_name+'"}' 
+    pushgateway_query = 'http://'+settings.pushgateway_host+':'+settings.pushgateway_port.to_s    
     begin
       if params.empty?
-        #get all sonata metrics
-        url = URI.parse(prometheus_API_url)
-        req = Net::HTTP::Get.new(url.to_s)
-        res = Net::HTTP.start(url.host, url.port) {|http|
-          http.request(req)
-        }
-        halt 200, res.body
+        cmd = 'prom2json '+pushgateway_query+'/metrics | jq -c .'
+        res = %x( #{cmd} )
+
+        halt 200, res
         logger.info 'GtkKpi: sonata metrics list retrieved'
       else
-        base_labels = JSON.parse(eval("#{params[:base_labels]}").to_json, :symbolize_names => true)
-        logger.info "GtkKpi: entered GET /kpis with metric name=#{params[:name]} and labels=#{base_labels}"        
 
-          if registry.exist?(params[:name].to_sym)
-            metric = registry.get(params[:name])
-            value = metric.get(base_labels)
-          end
+        if params[:base_labels] == nil        
+          logger.info "GtkKpi: entered GET /kpis with params=#{params}"        
+          pushgateway_query = pushgateway_query + '/metrics | jq -c \'.[]|select(.name=="'+params[:name]+'")\''
 
-        logger.info 'GtkKpi: '+params[:name].to_s+' metric value retrieved: '+value.to_s
-        response = {'value' => value}
-        halt 200, response.to_json
+          cmd = 'prom2json '+pushgateway_query
+          res = %x( #{cmd} )
+        else
+          # jq -c '.[]|select(.name=="counter1")|.metrics|.[]|select(.labels=={"instance":"gtkkpi","job":"sonata","label1":"value1","label2":"value2","label3":"value3"})|.value'          
+          base_labels = params['base_labels']
+          metric_name = params['name']
+          params.delete('base_labels')
+          params.delete('name')
+          labels = "{"+params.to_s[1..-2]+', '+base_labels.to_s[1..-2]+"}"          
+          labels = labels.gsub('=>',':')
+          labels = labels.gsub(' ','')
+          pushgateway_query = pushgateway_query + '/metrics | jq -c \'.[]|select(.name=="'+metric_name+'")|.metrics|.[]|select(.labels=='+labels+')\''
+          logger.debug "prom2json query: "+pushgateway_query
+
+          cmd = 'prom2json '+pushgateway_query
+          res = %x( #{cmd} )
+
+          res = JSON.parse(eval(res).to_json)
+          res["name"] = metric_name
+          res = res.to_s
+          res = res.gsub('=>',':')          
+        end
+
+        logger.info 'GtkKpi: '+metric_name.to_s+' retrieved: '+res
+        halt 200, res
       end
     rescue Exception => e
       logger.debug(e.message)
       logger.debug(e.backtrace.inspect)
-      halt 500, 'Internal server error'
+      halt 400
     end
   end
 end

@@ -25,10 +25,14 @@
 ## acknowledge the contributions of their colleagues of the SONATA 
 ## partner consortium (www.sonata-nfv.eu).
 # encoding: utf-8
+require "sinatra/base"
 require 'sinatra/namespace'
+require "sinatra/streaming"
+
 class GtkApi < Sinatra::Base
 
   register Sinatra::Namespace
+  helpers Sinatra::Streaming
   
   namespace '/api/v2/packages' do
     # POST of packages
@@ -69,6 +73,8 @@ class GtkApi < Sinatra::Base
 
   # GET a specific package
     get '/:uuid/?' do
+      began_at = Time.now.utc
+      KPI_DESC = "how many single package have been requested"
       log_message = 'GtkApi::GET /api/v2/packages/:uuid/?'
       logger.debug(log_message) {'entered'}
       unless params[:uuid].nil?
@@ -77,16 +83,46 @@ class GtkApi < Sinatra::Base
         package = PackageManagerService.find_by_uuid(params[:uuid])
         if package
           logger.debug(log_message) {"leaving with package #{package}"}
-          halt 200, package
+          count_single_package_queries(desc: KPI_DESC, labels: {result: "ok", uuid: params[:uuid], elapsed_time: (Time.now.utc-began_at).to_s})
+          halt 200, package.to_json
         else
           logger.debug(log_message) {"leaving with \"No package with UUID=#{params[:uuid]} was found\""}
+          count_single_package_queries(desc: KPI_DESC, labels: {result: "not found", uuid: params[:uuid], elapsed_time: (Time.now.utc-began_at).to_s})
           json_error 404, "No package with UUID=#{params[:uuid]} was found"
         end
       end
       logger.debug(log_message) {"leaving with \"No package UUID specified\""}
+      count_single_package_queries(desc: KPI_DESC, labels: {result: "bad request", uuid: params[:uuid], elapsed_time: (Time.now.utc-began_at).to_s})
       json_error 400, 'No package UUID specified'      
     end
   
+    # GET a specific package's file
+      get '/:uuid/download/?' do
+        began_at = Time.now.utc
+        KPI_DESC = "how many package file downloads have been requested"
+        log_message = 'GtkApi::GET /api/v2/packages/:uuid/download/?'
+        logger.debug(log_message) {'entered with uuid='+params['uuid']}
+        unless params[:uuid].nil?
+          logger.debug(log_message) {"params[:uuid]=#{params[:uuid]}"}
+          json_error 400, 'Invalid Package UUID' unless valid? params['uuid']
+          package = PackageManagerService.find_by_uuid(params[:uuid])
+          if package
+            logger.debug(log_message) {"Found package #{package}"}
+            logger.debug(log_message) {"Looking for the package file name for package file #{package[:son_package_uuid]}..."}
+            file_name = PackageManagerService.download(package[:son_package_uuid])
+            count_package_downloads(desc: KPI_DESC, labels: {result: "ok", uuid: params[:uuid], elapsed_time: (Time.now.utc-began_at).to_s})
+            send_file file_name
+          else
+            count_package_downloads(desc: KPI_DESC, labels: {result: "not found", uuid: params[:uuid], elapsed_time: (Time.now.utc-began_at).to_s})
+            logger.debug(log_message) {"leaving with \"No package with UUID=#{params[:uuid]} was found\""}
+            json_error 404, "No package with UUID=#{params[:uuid]} was found"
+          end
+        end
+        count_package_downloads(desc: KPI_DESC, labels: {result: "bad request", uuid: params[:uuid], elapsed_time: (Time.now.utc-began_at).to_s})
+        logger.debug(log_message) {"leaving with \"No package UUID specified\""}
+        json_error 400, 'No package UUID specified'      
+      end
+
     # GET potentially many packages
     get '/?' do
       log_message = 'GtkApi::GET /api/v2/packages/?'
@@ -100,7 +136,7 @@ class GtkApi < Sinatra::Base
         logger.debug(log_message) { "leaving with #{packages}"}
         # TODO: total must be returned from the PackageManagement service
         links = build_pagination_headers(url: request_url, limit: @limit.to_i, offset: @offset.to_i, total: packages.size)
-        [200, {'Link' => links}, packages]
+        [200, {'Link' => links}, packages.to_json]
       else
         error_message = 'No packages found' + (query_string.empty? ? '' : ' with parameters '+query_string)
         json_error 404, error_message, log_message
@@ -146,6 +182,16 @@ class GtkApi < Sinatra::Base
       headers 'Content-Type' => 'text/plain; charset=utf8', 'Location' => '/'
       halt 200, log #.to_s
     end
+  end
+  
+  def count_package_downloads(desc:, labels:)
+    name = __method__.to_s.split('_')[1..-1].join('_')
+    PackageManagerService.counter_kpi({name: name, docstring: desc, base_labels: labels.merge({method: 'GET', module: 'packages'})})
+  end
+  
+  def count_single_package_queries(desc:, labels:)
+    name = __method__.to_s.split('_')[1..-1].join('_')
+    PackageManagerService.counter_kpi({name: name, docstring: desc, base_labels: labels.merge({method: 'GET', module: 'packages'})})
   end
 end
 

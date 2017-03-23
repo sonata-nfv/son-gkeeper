@@ -29,7 +29,6 @@ require './models/manager_service.rb'
 
 class KpiManagerService < ManagerService
   
-  JSON_HEADERS = { 'Accept'=> 'application/json', 'Content-Type'=>'application/json'}
   LOG_MESSAGE = 'GtkApi::' + self.name
   
   def self.config(url:)
@@ -47,11 +46,16 @@ class KpiManagerService < ManagerService
     begin
       GtkApi.logger.debug(method) {"url = "+@@url}      
       response = putCurb(url: @@url+'/kpis', body: params)      
-      response
+      case response
+      when 201
+        { status: response, data: {}, message: 'Metric updated'}        
+      else
+        { status: response, data: {}, message: 'Metric was not updated'}
+      end      
     rescue => e
       GtkApi.logger.error(method) {"Error during processing: #{$!}"}
       GtkApi.logger.error(method) {"Backtrace:\n\t#{e.backtrace.join("\n\t")}"}
-      nil 
+      { status: 500, data: {}, message: e.backtrace.join("\n\t")}
     end      
   end
 
@@ -62,12 +66,16 @@ class KpiManagerService < ManagerService
     begin
       GtkApi.logger.debug(method) {"url = "+@@url}
       response = getCurb(url: @@url+'/kpis', params: params, headers:JSON_HEADERS)      
-      GtkApi.logger.debug(method) {'response='+response.to_s}
-      JSON.parse response[:items].to_json
+      case response[:status]
+      when 200
+        { status: response[:status], data: JSON.parse(response[:items].to_json, :symbolize_names => true) }
+      else
+        { status: response[:status], data: {}, message: 'Metric does not retrieved'}
+      end   
     rescue => e
       GtkApi.logger.error(method) {"Error during processing: #{$!}"}
       GtkApi.logger.error(method) {"Backtrace:\n\t#{e.backtrace.join("\n\t")}"}
-      nil 
+      { status: 500, message: e.backtrace.join("\n\t")}
     end      
   end
 end

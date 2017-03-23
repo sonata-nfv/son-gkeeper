@@ -62,7 +62,7 @@ class GtkApi < Sinatra::Base
   set :public_folder, File.join(File.dirname(__FILE__), 'public')
   set :bind, '0.0.0.0'
   set :files, File.join(settings.public_folder, 'files')
-  set :time_at_startup, Time.now.utc
+  set :began_at, Time.now.utc
   set :environments, %w(development test integration qualification demonstration)
   set :environment, ENV['RACK_ENV'] || :development
   config_file File.join(root, 'config', 'services.yml')
@@ -79,22 +79,16 @@ class GtkApi < Sinatra::Base
   set :logger, Logger.new(logfile)
   raise 'Can not proceed without a logger file' if settings.logger.nil?
   set :logger_level, (ENV['LOGGER_LEVEL'] || settings.level ||= 'debug').to_sym # can be debug, fatal, error, warn, or info
-  settings.logger.info(MODULE) {"Started at #{settings.time_at_startup}"}
+  settings.logger.info(MODULE) {"Started at #{settings.began_at}"}
   settings.logger.info(MODULE) {"Logger level at :#{settings.logger_level} level"}
   
   enable :cross_origin
   #enable :method_override
 
-  # TODO: make this relationship loosely coupled
-  # TODO: logger could be a global variable
-  PackageManagerService.config(url: ENV['PACKAGE_MANAGEMENT_URL'] || settings.pkgmgmt)
-  ServiceManagerService.config(url: ENV['SERVICE_MANAGEMENT_URL'] || settings.srvmgmt)
-  FunctionManagerService.config(url: ENV['FUNCTION_MANAGEMENT_URL'] || settings.fnctmgmt)
-  RecordManagerService.config(url: ENV['RECORD_MANAGEMENT_URL'] || settings.recmgmt)
-  LicenceManagerService.config(url: ENV['LICENCE_MANAGEMENT_URL'] || settings.licmgmt)
-  VimManagerService.config(url: ENV['VIM_MANAGEMENT_URL'] || settings.vimmgmt)
-  KpiManagerService.config(url: ENV['KPI_MANAGEMENT_URL'] || settings.kpimgmt)
-  
+  settings.services.each do |service, properties|
+    Object.const_get(properties['model']).config(url: ENV[properties['environment']] || properties['url'])
+  end  
+
   Zip.setup do |c|
     c.unicode_names = true
     c.on_exists_proc = true
@@ -110,6 +104,6 @@ class GtkApi < Sinatra::Base
   def request_url
     log_message = 'GtkApi::request_url'
     settings.logger.debug(log_message) {"Schema=#{request.env['rack.url_scheme']}, host=#{request.env['HTTP_HOST']}, path=#{request.env['REQUEST_PATH']}"}
-    request.env['rack.url_scheme']+'://'+request.env['HTTP_HOST']+request.env['REQUEST_PATH']
+    "#{request.env['rack.url_scheme']}://#{request.env['HTTP_HOST']}#{request.env['REQUEST_PATH']}"
   end
 end
