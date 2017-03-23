@@ -30,6 +30,7 @@ class ManagerService
   JSON_HEADERS = { 'Accept'=> 'application/json', 'Content-Type'=>'application/json'}
   CLASS_NAME = self.name
   LOG_MESSAGE = 'GtkApi::' + CLASS_NAME
+  BASE_KPI_PARAMS = { "job": "sonata", "instance": "gtkapi"}
   
   def initialize(url, logger)
     method = 'GtkApi::' + CLASS_NAME + ".new(url=#{url}, logger=#{logger})"
@@ -194,5 +195,13 @@ class ManagerService
       items: hash[:items].is_a?(Hash) ? [hash[:items]] : hash[:items], 
       message: hash[:message]
     }
+  end
+  
+  def self.counter_kpi(params)
+    # params should have
+    #  "name": "example_counter"
+    #  "docstring": "metric counter test"
+    #  "base_labels": {"result": "ok", "time-taken": (Time.now.utc-began_at).to_s} --> examples
+    KpiManagerService.update_metric(BASE_KPI_PARAMS.merge(params).merge({metric_type: "counter"}))
   end
 end

@@ -29,7 +29,6 @@ require './models/manager_service.rb'
 
 class KpiManagerService < ManagerService
   
-  JSON_HEADERS = { 'Accept'=> 'application/json', 'Content-Type'=>'application/json'}
   LOG_MESSAGE = 'GtkApi::' + self.name
   
   def self.config(url:)
@@ -49,9 +48,9 @@ class KpiManagerService < ManagerService
       response = putCurb(url: @@url+'/kpis', body: params)      
       case response
       when 201
-        { status: response, data: {}, message: 'Metric Updated'}        
+        { status: response, data: {}, message: 'Metric updated'}        
       else
-        { status: response, data: {}, message: 'Metric does not updated'}
+        { status: response, data: {}, message: 'Metric was not updated'}
       end      
     rescue => e
       GtkApi.logger.error(method) {"Error during processing: #{$!}"}
