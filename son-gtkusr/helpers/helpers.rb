@@ -28,9 +28,7 @@
 require 'json'
 require 'sinatra'
 require 'net/http'
-# require 'openssl'
 require 'yaml'
-# require 'open-uri'
 
 # Checks if a JSON message is valid
 # @param [JSON] message some JSON message

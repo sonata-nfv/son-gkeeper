@@ -34,7 +34,6 @@ require 'jwt'
 require 'resolv'
 require 'uri'
 require_relative 'helpers'
-# require 'openssl'
 
 
 def parse_json(message)
@@ -187,14 +186,6 @@ class Keycloak < Sinatra::Application
     end
   end
 
-  #    # Policies
-  # OK = Proc.new { halt 200 }
-  # FORBIDDEN = Proc.new {
-  #  halt 401 unless is_loggedin?(user)
-  #  halt 403
-  # }
-  # LOGGEDIN = Proc.new { halt 401 unless is_loggedin?(user) }
-
   def decode_token(token, keycloak_pub_key)
     begin
       decoded_payload, decoded_header = JWT.decode token, keycloak_pub_key, true, { :algorithm => 'RS256' }
@@ -281,23 +272,6 @@ class Keycloak < Sinatra::Application
   end
 
   def register_user(user_form) #, username,firstname, lastname, email, credentials)
-    # schema = {"username" => "tester",
-    #         "enabled" => true,
-    #         "totp" => false,
-    #         "emailVerified" => false,
-    #         "firstName" => "User",
-    #         "lastName" => "Sample",
-    #         "email" => "tester.sample@email.com.br",
-    #         "credentials" => [
-    #             {"type" => "password",
-    #              "value" => "1234"}
-    #         ],
-    #         "requiredActions" => [],
-    #         "federatedIdentities" => [],
-    #         "attributes" => {"tester" => ["true"],"admin" => ["false"]},
-    #         "realmRoles" => [],
-    #         "clientRoles" => {},
-    #         "groups" => []}
     refresh_adapter # Refresh admin token if expired
     body = user_form
 
@@ -339,10 +313,6 @@ class Keycloak < Sinatra::Application
 
     credentials = user_form['credentials'][0]
     credentials['temporary'] = 'false'
-
-    # credentials = {"type" => "password",
-    #               "value" => "1234",
-    #               "temporary" => "false"}
 
     request.body = credentials.to_json
     response = http.request(request)
