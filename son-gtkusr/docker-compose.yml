@@ -4,7 +4,7 @@ services:
   adapter:
     build:
       context: ./
-      dockerfile: dockerfile-gtkusr
+      dockerfile: Dockerfile
     ports: 
       - "5600:4021"
     links:
@@ -19,7 +19,7 @@ services:
   keycloak:
     build:
       context: ./
-      dockerfile: dockerfile-keycloak
+      dockerfile: Dockerfile-Keycloak
     ports:
       - "5601:8080"
     environment:
