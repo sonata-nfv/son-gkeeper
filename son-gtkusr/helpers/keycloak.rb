@@ -182,6 +182,7 @@ class Keycloak < Sinatra::Application
     parsed_response, code = parse_json(response.body)
     # puts response.read_body # <-- save endpoints file
     File.open('config/keycloak.yml', 'a') do |f|
+      f.puts "\n"
       f.puts "realm_public_key: #{parsed_response['public_key']}"
     end
   end
@@ -208,8 +209,12 @@ class Keycloak < Sinatra::Application
     # turn keycloak realm pub key into an actual openssl compat pub key.
     # keycloak_config = JSON.parse(File.read('config/keycloak.json'))
     keycloak_yml = YAML.load_file('config/keycloak.yml')
+    unless keycloak_yml['realm_public_key']
+      Keycloak.get_realm_public_key
+      keycloak_yml = YAML.load_file('config/keycloak.yml')
+      # puts "KEYCLOAK PUBLIC KEY IS", keycloak_yml['realm_public_key']
+    end
     @s = "-----BEGIN PUBLIC KEY-----\n"
-    #@s += keycloak_config['realm-public-key'].scan(/.{1,64}/).join("\n")
     @s += keycloak_yml['realm_public_key'].scan(/.{1,64}/).join("\n")
     @s += "\n-----END PUBLIC KEY-----\n"
     key = OpenSSL::PKey::RSA.new @s
