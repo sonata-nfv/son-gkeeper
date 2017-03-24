@@ -76,8 +76,6 @@ class User < ManagerService
     @session = {began_at: Time.now.utc}
     #@username == params[:username] && @secret == params[:secret] ? self : nil
     decoded_secret = Base64.decode64(secret).split(':')
-    GtkApi.logger.debug(method) {"name=#{decoded_secret[0]} (@username=#{@username}), password=#{decoded_secret[1]}"}
-    GtkApi.logger.debug(method) {"#{@username == decoded_secret[0]} && #{@secret} #{secret}"}
     (@username == decoded_secret[0] && @secret == secret) ? self : nil
   end
   

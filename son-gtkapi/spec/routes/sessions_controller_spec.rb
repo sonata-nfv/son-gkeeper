@@ -29,37 +29,40 @@ require 'json'
 require 'securerandom'
 require 'pp'
 require 'rspec/its'
+require 'base64'
 
 RSpec.describe GtkApi, type: :controller do
   include Rack::Test::Methods
   def app() GtkApi end
 
   describe 'POST /api/v2/sessions' do
-    let(:auth_info) {{name: 'Unknown', password: 'None'}}
-    let(:user_spied) {spy('user', uuid: SecureRandom.uuid, session: 'session')}
-    let(:user_info) {{uuid: user_spied.uuid, password: auth_info[:password]}}
+    let(:now) {Time.now.utc}
+    let(:secret) {Base64.strict_encode64('Unknown:None')}
+    let(:auth_info) {{username: 'Unknown', secret: secret}}
+    let(:user_spied) {spy('user', uuid: SecureRandom.uuid, session: {began_at: now}, username: 'Unknown', secret: secret)}
+    let(:user_info) {{uuid: user_spied.uuid, session: user_spied.session, username: user_spied.username, secret: user_spied.secret}}
     context 'with user name and password given,' do
       context 'and user is authenticated,' do
         before(:each) do
-          allow(user_spied).to receive(:authenticate!).and_return(user_spied.session)
-          allow(User).to receive(:find_by_name).with(auth_info[:name]).and_return(user_spied)
+          allow(user_spied).to receive(:authenticated?).and_return(user_spied)
+          allow(User).to receive(:find_by_name).with(auth_info[:username]).and_return(user_spied)
           post '/api/v2/sessions/', auth_info.to_json
         end
         it 'returns Ok (200)' do
           expect(last_response.status).to eq(200)
         end
-        it 'calls user.authenticate!' do
-          expect(user_spied).to have_received(:authenticate!)
+        it 'calls user.authenticated?' do
+          expect(user_spied).to have_received(:authenticated?)
         end
       end
       context 'but user is not authenticated,' do
         before(:each) do
-          allow(user_spied).to receive(:authenticate!).and_return(nil)
-          allow(User).to receive(:find_by_name).with(auth_info[:name]).and_return(user_spied)
+          allow(user_spied).to receive(:authenticated?).and_return(nil)
+          allow(User).to receive(:find_by_name).with(auth_info[:username]).and_return(user_spied)
           post '/api/v2/sessions/', auth_info.to_json
         end
-        it 'calls User.authenticate!' do
-          expect(user_spied).to have_received(:authenticate!)
+        it 'calls user.authenticated?' do
+          expect(user_spied).to have_received(:authenticated?)
         end
         it 'returns Unauthorized (401)' do
           expect(last_response.status).to eq(401)
@@ -69,27 +72,28 @@ RSpec.describe GtkApi, type: :controller do
     end
     context 'without' do
       it 'user name given returns Unprocessable Entity (400)' do
-        post '/api/v2/sessions/', {name: '', password: 'None'}.to_json
+        post '/api/v2/sessions/', {username: '', secret: secret}.to_json
         expect(last_response.status).to eq(400)
       end
       it 'password given returns Unprocessable Entity (400)' do
-        post '/api/v2/sessions/', {name: 'Unknown', password: ''}.to_json
+        post '/api/v2/sessions/', {username: 'Unknown', secret: ''}.to_json
         expect(last_response.status).to eq(400)
       end
     end
   end
   
   describe 'DELETE /api/v2/sessions/:user_name' do
+    let(:secret) {Base64.strict_encode64('Unknown:None')}
     context 'with user name given' do
-      let(:auth_info) {{name: 'Unknown', password: 'None'}}
-      let(:user_spied) {spy('user', uuid: SecureRandom.uuid, session: 'session', name: auth_info[:name])}
-      let(:user_info) {{uuid: user_spied.uuid, password: auth_info[:password]}}
+      let(:auth_info) {{username: 'Unknown', secret: secret}}
+      let(:user_spied) {spy('user', uuid: SecureRandom.uuid, session: 'session', username: auth_info[:username])}
+      let(:user_info) {{uuid: user_spied.uuid, password: auth_info[:secret]}}
       context 'and found' do
         context 'and is successfully deleted' do
           before(:each) do
             allow(user_spied).to receive(:logout!)
-            allow(User).to receive(:find_by_name).with(auth_info[:name]).and_return(user_spied)
-            delete '/api/v2/sessions/'+auth_info[:name]
+            allow(User).to receive(:find_by_name).with(auth_info[:username]).and_return(user_spied)
+            delete '/api/v2/sessions/'+auth_info[:username]
           end
           it 'returns Ok (200)' do
             expect(last_response.status).to eq(200)
@@ -100,13 +104,13 @@ RSpec.describe GtkApi, type: :controller do
         end
       end
       it 'but not found, returns Not Found (404)' do
-        allow(User).to receive(:find_by_name).with(auth_info[:name]).and_return(nil)
-        delete '/api/v2/sessions/'+auth_info[:name]
+        allow(User).to receive(:find_by_name).with(auth_info[:username]).and_return(nil)
+        delete '/api/v2/sessions/'+auth_info[:username]
         expect(last_response.status).to eq(404)
       end
     end
     it 'without user name given' do
-      post '/api/v2/sessions/', {name: '', password: 'None'}.to_json
+      post '/api/v2/sessions/', {username: '', secret: secret}.to_json
       expect(last_response.status).to eq(400)
     end
   end
