@@ -15,7 +15,7 @@ services:
       - KEYCLOAK_PATH=auth
       - SONATA_REALM=sonata
       - CLIENT_NAME=adapter
-    container_name: sonata-gtkusr
+    container_name: son-gtkusr
   keycloak:
     build:
       context: ./
