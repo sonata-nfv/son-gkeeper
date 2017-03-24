@@ -34,8 +34,14 @@ paths:
                  GET: read
 
     gatekeeper:
+        resource:
+                 GET: read
+                 POST: write
+                 PUT: write
+                 DEL: write
     monitoring:
-    bss:
-    gui:
-
-
+        resource:
+                 GET: read
+                 POST: write
+                 PUT: write
+                 DEL: write

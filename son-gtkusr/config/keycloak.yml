@@ -1,9 +1,7 @@
 ---
+#scheme://host:port/relativeURI
 address: localhost
 port: 8081
 uri: auth
-#scheme://host:port/relativeURI
-realm: master
+realm: sonata
 client: adapter
-secret: df7e816d-0337-4fbe-a3f4-7b5263eaba9f
-realm_public_key: MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAkIx5hraBVUpDeaoUACIzqZ4QtHW9HmnbG1CX+B5vy+XUFGouYCqurbKm/caebviBRzpq9N1Sli1pnRnh8ZKsI6uth5ayrW2f+zshDatLHLjkl6rBPcjoLAsqrvzFuvjRvoCLqXZsgwMimU3Hl8279AABuh6YXIzPRh9FcfIFdGH9CtJHG+A3Saa0rxOs6H9q47pBXdiUyhGGJU2m+UNbUM15QBX4vPC8Gdv63UYH45LG4n2jGxun9TTrgrLelH0EmksK4d4bjj1kpUvmYX6ghKMHJprsnYTtsm0Ed+bHjc8lxnjhVOHzubyP9dS+uS+Js8a8H6fkI0nVCHtNA09rxQIDAQAB

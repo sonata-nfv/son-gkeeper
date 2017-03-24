@@ -95,7 +95,6 @@ class Keycloak < Sinatra::Application
     # Return if content-type is not valid
     logger.info "Content-Type is " + request.media_type
     halt 415 unless (request.content_type == 'application/x-www-form-urlencoded' or request.content_type == 'application/json')
-    #payload?={"id":"123123","auth_code":"191331","required_amount":101,"timestamp":1407775713,"status":"completed","total_amount":101}
 
     # Compatibility support for form-urlencoded content-type
     case request.content_type
@@ -145,7 +144,6 @@ class Keycloak < Sinatra::Application
 
     # puts "SETTING CLIENT ROLES"
     client_data, role_data = set_service_roles(parsed_form['clientId'])
-    #puts "CLIENT_DATA!!", client_data
     # puts "SETTING SERVICE ACCOUNT ROLES"
     set_service_account_roles(client_data['id'], role_data)
     halt 201
@@ -161,7 +159,6 @@ class Keycloak < Sinatra::Application
     pass = request.env["HTTP_AUTHORIZATION"].split(' ').last
     plain_pass  = Base64.decode64(pass)
 
-    # puts "USER_PASS", plain_pass
     # puts  "PLAIN", plain_user_pass.split(':').first
     # puts  "PLAIN", plain_user_pass.split(':').last
     username = plain_pass.split(':').first # params[:username]
