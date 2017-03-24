@@ -26,6 +26,7 @@
 ## partner consortium (www.sonata-nfv.eu).
 # encoding: utf-8
 require './models/manager_service.rb'
+require 'base64'
 
 class User < ManagerService
   
@@ -33,7 +34,7 @@ class User < ManagerService
   LOG_MESSAGE = 'GtkApi::' + self.name
   USERS_URL = '/users/'
   
-  attr_accessor :uuid, :name, :session
+  attr_accessor :uuid, :username, :session, :secret
   
   def self.config(url:)
     method = LOG_MESSAGE + "#config(url=#{url})"
@@ -46,9 +47,10 @@ class User < ManagerService
   def initialize(params)
     method = LOG_MESSAGE + "##{__method__}"
     GtkApi.logger.debug(method) {"entered with params #{params}"}
-    @name = params[:name]
-    @password = params[:password]
-    @session = @uuid = nil
+    @username = params[:username]
+    @secret = params[:secret]
+    @session = nil
+    @uuid = SecureRandom.uuid # TODO: temporary, before being SAVED!
   end
 
   def self.create(params)
@@ -68,11 +70,13 @@ class User < ManagerService
   end
 
   # TODO
-  def authenticated?(params)
+  def authenticated?(secret)
     method = LOG_MESSAGE + "##{__method__}"
-    GtkApi.logger.debug(method) {"entered with password #{params}"}
+    GtkApi.logger.debug(method) {"entered with secret=#{secret}"}
     @session = {began_at: Time.now.utc}
-    @name == params[:name] && @password == params[:password] ? self : nil
+    #@username == params[:username] && @secret == params[:secret] ? self : nil
+    decoded_secret = Base64.decode64(secret).split(':')
+    (@username == decoded_secret[0] && @secret == secret) ? self : nil
   end
   
   def logout!
@@ -106,12 +110,12 @@ class User < ManagerService
     GtkApi.logger.debug(method) {"entered with name #{name}"}
     #user=find(url: @@url + USERS_URL + name, log_message: LOG_MESSAGE + "##{__method__}(#{name})")
     #user ? User.new(user['data']) : nil
-    name=='Unknown' ? User.new({name: 'Unknown', password: 'None'}) : nil
+    name=='Unknown' ? User.new({username: 'Unknown', secret: Base64.strict_encode64('Unknown:None')}) : nil
   end
 
   def self.find(params)
     method = LOG_MESSAGE + "##{__method__}(#{params})"
-    params[:name]=='Unknown' && params[:password]=='None' ? User.new(params) : nil
+    params[:username]=='Unknown' && Base64.decode64(params[:secret]).split(':')[1]=='None' ? self.new_user(params) : self.no_users()
     #users = find(url: @@url + USERS_URL, params: params, log_message: LOG_MESSAGE + "##{__method__}(#{params})")
     #GtkApi.logger.debug(method) {"users=#{users}"}
     #case users[:status]
@@ -123,5 +127,15 @@ class User < ManagerService
     #else
     #  {status: users[:status], count: 0, items: [], message: "Error"}
     #end
+  end
+  
+  private 
+  
+  def self.new_user(params)
+    {status: 200, count: 1, items: [User.new(params)]}
+  end
+  
+  def self.no_users()
+    {status: 200, count: 0, items: []}
   end
 end
