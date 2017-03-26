@@ -25,9 +25,10 @@
 ## acknowledge the contributions of their colleagues of the SONATA 
 ## partner consortium (www.sonata-nfv.eu).
 # encoding: utf-8
-require "sinatra/base"
+require 'sinatra/base'
 require 'sinatra/namespace'
-require "sinatra/streaming"
+require 'sinatra/streaming'
+require 'base64'
 
 class GtkApi < Sinatra::Base
 
@@ -43,7 +44,7 @@ class GtkApi < Sinatra::Base
       unless params[:package].nil?
         if params[:package][:tempfile]
           # TODO: we're fixing the user here, but it should come from the request
-          resp = PackageManagerService.create(params.merge({user: {name: 'Unknown', password: 'None'}}))
+          resp = PackageManagerService.create(params.merge({user: {username: 'Unknown', secret: Base64.strict_encode64('Unknown:None')}}))
           logger.debug(log_message) {"resp=#{resp.inspect}"}
           case resp[:status]
           when 201
