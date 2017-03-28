@@ -36,7 +36,7 @@ desc 'Start the service'
 task :start do
   puts 'SON-GTKUSR ADAPTER STARTING...'
   conf = File.expand_path('config.ru', File.dirname(__FILE__))
-  exec("puma #{conf} -b tcp://0.0.0.0:4021")
+  exec("puma #{conf} -b tcp://0.0.0.0:5600")
 end
 
 desc 'Run Unit Tests'
