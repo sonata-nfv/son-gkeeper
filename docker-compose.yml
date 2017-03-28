@@ -170,6 +170,10 @@ services:
         driver: gelf
         options:
           gelf-address: "udp://logs.sonata-nfv.eu:12900"
+      networks:
+            main:
+              aliases:
+               - son-gtkusr
 
   postgres:
     image: ntboes/postgres-uuid
@@ -218,8 +222,12 @@ services:
     environment:
      - KEYCLOAK_USER=admin
      - KEYCLOAK_PASSWORD=admin
-    links:
-     - son-gtkusr
+    networks:
+      main:
+        aliases:
+         - keycloak
+    # links:
+    #  - son-gtkusr
 
   influx:
    image: registry.sonata-nfv.eu:5000/son-monitor-influxdb
