@@ -43,13 +43,14 @@ class GtkPkg < Sinatra::Base
       descriptor = package.from_file()
       if descriptor
         logger.info(log_message) {"descriptor is #{descriptor}"}
-        if descriptor.key?('uuid')
+        if descriptor.key?('uuid') # && descriptor.key?('vendor') && descriptor.key?('name') && descriptor.key?('version')
           logger.debug("Storing son-package in catalogue")
-          son_package = Package.new(catalogue: settings.son_packages_catalogue, logger: logger, params: {io: params[:package][:tempfile][:tempfile]})
-          son_package = son_package.store_package_file()
+          son_package_ins = Package.new(catalogue: settings.son_packages_catalogue, logger: logger, params: {io: params[:package][:tempfile][:tempfile]})
+          son_package = son_package_ins.store_package_file(descriptor) #<-----filename
           if son_package && son_package['uuid']
+            son_package_ins.set_sonpackage_trio_meta(son_package['uuid'], descriptor)
             package = Package.new(catalogue: settings.packages_catalogue, logger: logger, params: {io: params[:package][:tempfile][:tempfile]})
-            response = package.add_sonpackage_id(descriptor['uuid'], son_package['uuid'])
+            response = package.add_sonpackage_id(descriptor['uuid'], son_package['uuid']) # Replace descriptor['uuid'] by descriptor
             if response.nil?
               descriptor.store("son-package-uuid", son_package['uuid'])
               logger.info(log_message) {"leaving with package #{descriptor.to_json}"}
