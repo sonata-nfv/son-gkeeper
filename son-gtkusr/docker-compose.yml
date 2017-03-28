@@ -6,12 +6,12 @@ services:
       context: ./
       dockerfile: Dockerfile
     ports: 
-      - "5600:4021"
+      - "5600:5600"
     links:
       - keycloak
     environment:
       - KEYCLOAK_ADDRESS=keycloak
-      - KEYCLOAK_PORT=5801
+      - KEYCLOAK_PORT=5601
       - KEYCLOAK_PATH=auth
       - SONATA_REALM=sonata
       - CLIENT_NAME=adapter

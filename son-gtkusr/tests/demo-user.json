@@ -1,0 +1,17 @@
+{"username": "tester",
+"enabled": true,
+"totp": false,
+"emailVerified": false,
+"firstName": "User",
+"lastName": "Sample",
+"email": "tester.sample@email.com.br",
+"credentials": [
+{"type": "password",
+"value": "1234"}
+],
+"requiredActions": [],
+"federatedIdentities": [],
+"attributes": {"tester": ["true"],"admin": ["false"]},
+"realmRoles": [],
+"clientRoles": {},
+"groups": []}

@@ -5,15 +5,17 @@ services:
     links:
      - son-gtkpkg
      - son-gtksrv
+     - son-gtkusr
     environment:
      - RACK_ENV=integration
-     - PACKAGE_MANAGEMENT_URL=http://son-gtkpkg:5100
-     - SERVICE_MANAGEMENT_URL=http://son-gtksrv:5300
-     - FUNCTION_MANAGEMENT_URL=http://son-gtkfnct:5500 # 5600?
-     - VIM_MANAGEMENT_URL=http://son-gtkvim:5700
-     - RECORD_MANAGEMENT_URL=http://son-gtkrec:5800
-     - KPI_MANAGEMENT_URL=http://son-gtkkpi:5400
-     - LICENCE_MANAGEMENT_URL=http://son-gtklic:5900
+     - PACKAGE_MANAGEMENT_URL=http://son-gtkpkg:5100 # OK
+     - SERVICE_MANAGEMENT_URL=http://son-gtksrv:5300 # OK
+     - FUNCTION_MANAGEMENT_URL=http://son-gtkfnct:5500 # OK
+     - VIM_MANAGEMENT_URL=http://son-gtkvim:5700 # OK
+     - RECORD_MANAGEMENT_URL=http://son-gtkrec:5800 # OK
+     - KPI_MANAGEMENT_URL=http://son-gtkkpi:5400 # OK
+     - LICENCE_MANAGEMENT_URL=http://son-gtklic:5900 # 6000?
+     - USER_MANAGEMENT_URL http://son-gtkusr:5600 # OK
     ports:
       - "32001:5000"
     restart: always
@@ -140,7 +142,34 @@ services:
     logging:
       driver: gelf
       options:
-        gelf-address: "udp://logs.sonata-nfv.eu:12900"        
+        gelf-address: "udp://logs.sonata-nfv.eu:12900"
+
+  son-gtkusr:
+      image: registry.sonata-nfv.eu:5000/son-gtkusr
+      # links:
+       # - keycloak
+       # - mongodb
+      ports:
+        - "5600:5600"
+      restart: always
+      environment:
+       - RACK_ENV=integration
+       # - MONGO_PASSWORD=sonata
+       # - MONGO_USER=sonatatest
+       # - DATABASE_HOST=
+       # - DATABASE_PORT=
+       # - KEYCLOAK_URL=http://sp.int.sonata-nfv.eu:5601/
+       - KEYCLOAK_ADDRESS=keycloak
+       - KEYCLOAK_PORT=5601
+       - KEYCLOAK_PATH=auth
+       - SONATA_REALM=sonata
+       - CLIENT_NAME=adapter
+      #depends_on:
+      # - mongo
+      logging:
+        driver: gelf
+        options:
+          gelf-address: "udp://logs.sonata-nfv.eu:12900"
 
   postgres:
     image: ntboes/postgres-uuid
@@ -177,7 +206,21 @@ services:
       driver: gelf
       options:
         gelf-address: "udp://logs.sonata-nfv.eu:12900"
-        
+
+  # keycloak:
+    # build:
+    #  context: ./
+    #  dockerfile: son-gtkusr/Dockerfile-Keycloak
+    # image: jboss/keycloak
+    # restart: always
+    # ports:
+     # - "5601:8080"
+    # environment:
+    # - KEYCLOAK_USER=admin
+    # - KEYCLOAK_PASSWORD=admin
+    # links:
+    #  - son-gtkusr
+
   influx:
    image: registry.sonata-nfv.eu:5000/son-monitor-influxdb
    restart: always
