@@ -146,8 +146,8 @@ services:
 
   son-gtkusr:
       image: registry.sonata-nfv.eu:5000/son-gtkusr
-      links:
-       - keycloak
+      # links:
+       # - keycloak
        # - mongodb
       ports:
         - "5600:5600"
@@ -207,17 +207,17 @@ services:
       options:
         gelf-address: "udp://logs.sonata-nfv.eu:12900"
 
-  keycloak:
-    build:
-      context: ./
-      dockerfile: son-gtkusr/Dockerfile-Keycloak
+  # keycloak:
+    # build:
+    #  context: ./
+    #  dockerfile: son-gtkusr/Dockerfile-Keycloak
     # image: jboss/keycloak
     # restart: always
-    ports:
-     - "5601:8080"
-    environment:
-     - KEYCLOAK_USER=admin
-     - KEYCLOAK_PASSWORD=admin
+    # ports:
+     # - "5601:8080"
+    # environment:
+    # - KEYCLOAK_USER=admin
+    # - KEYCLOAK_PASSWORD=admin
     # links:
     #  - son-gtkusr
 
