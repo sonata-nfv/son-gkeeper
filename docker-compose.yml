@@ -210,17 +210,17 @@ services:
 
   keycloak:
     build:
-        context: ./
-        dockerfile: son-gtkusr/Dockerfile-Keycloak
-  #    image: jboss/keycloak
-  #    restart: always
-      ports:
-       - "5601:8080"
-      environment:
-       - KEYCLOAK_USER=admin
-       - KEYCLOAK_PASSWORD=admin
-      links:
-       - son-gtkusr
+      context: ./
+      dockerfile: son-gtkusr/Dockerfile-Keycloak
+    # image: jboss/keycloak
+    # restart: always
+    ports:
+     - "5601:8080"
+    environment:
+     - KEYCLOAK_USER=admin
+     - KEYCLOAK_PASSWORD=admin
+    links:
+     - son-gtkusr
 
   influx:
    image: registry.sonata-nfv.eu:5000/son-monitor-influxdb
