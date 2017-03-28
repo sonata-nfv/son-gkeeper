@@ -147,7 +147,6 @@ services:
   son-gtkusr:
       image: registry.sonata-nfv.eu:5000/son-gtkusr
       links:
-       - son-gtkapi
        - keycloak
        # - mongodb
       ports:
