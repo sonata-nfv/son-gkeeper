@@ -64,8 +64,14 @@ development: &common_settings
       model: Catalogue
       environment: CATALOGUES_URL
   level: debug
-  default_page_size: 10
-  default_page_number: 0
+  defaults:
+    page:
+      size: 10
+      number: 0
+    throttle:
+      max_value: 1
+      value: 1
+      unit: minute
 
 test:
   <<: *common_settings
