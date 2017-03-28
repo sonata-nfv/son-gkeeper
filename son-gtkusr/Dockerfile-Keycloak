@@ -2,7 +2,8 @@ FROM jboss/keycloak:latest
 
 USER root
 RUN yum install -y supervisor
-COPY supervisord.conf /etc/supervisor/conf.d/supervisord.conf
+#COPY supervisord.conf /etc/supervisor/conf.d/supervisord.conf
+COPY son-gtkusr/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 
 RUN mkdir -p /var/log/supervisor
 
