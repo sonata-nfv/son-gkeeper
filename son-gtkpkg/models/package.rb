@@ -209,10 +209,21 @@ class Package
   def add_sonpackage_id(desc_uuid, sonp_uuid)
     response = @@catalogue.set_sonpackage_id(desc_uuid, sonp_uuid)
     if response.nil?
-      @logger.debug('Package.add_sonpackage_id'){'Updated descriptor with params : descriptor_uuid=' + desc_uuid + ', sonpackage_uuid=' + sonp_uuid}
+      @logger.debug('Package.add_sonpackage_id'){'Updated descriptor with params: descriptor_uuid=' + desc_uuid + ', sonpackage_uuid=' + sonp_uuid}
       nil
     else
-      @logger.debug('Package.add_sonpackage_id'){'failed to store son-package-uuid in package descriptor'}
+      @logger.debug('Package.add_sonpackage_id'){'Failed to store son-package-uuid in package descriptor'}
+      response
+    end
+  end
+
+  def add_sonpackage_meta(sonp_uuid, desc)
+    response = @@catalogue.set_sonpackage_trio_meta(sonp_uuid, desc)
+    if response.nil?
+      @logger.debug('Package.add_sonpackage_meta'){'Updated descriptor with params: sonp_uuid= '+sonp_uuid+', desc_vendor= '+desc['vendor']+', desc_name= '+desc['name']+', desc_version= '+desc['version']}
+      nil
+    else
+      @logger.debug('Package.add_sonpackage_meta'){'Failed to store son-package-uuid in package descriptor'}
       response
     end
   end
