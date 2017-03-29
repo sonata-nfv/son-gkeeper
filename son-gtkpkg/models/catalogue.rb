@@ -163,16 +163,16 @@ class Catalogue
 
   def set_sonpackage_trio_meta(sonp_uuid, desc)
     method = CLASS + __method__.to_s
-    @logger.debug(method) {"sonp_uuid=#{sonp_uuid}, desc_vendor=#{desc['vendor']}, desc_name=#{desc['name']}, desc_version=#{desc['version']}"}
+    @logger.debug(method) {"Catalogue.set_sonpackage_trio_meta: sonp_uuid=#{sonp_uuid}, desc_vendor=#{desc['vendor']}, desc_name=#{desc['name']}, desc_version=#{desc['version']}"}
     headers = {'Content-Type'=>'application/json'}
     begin
-      uri = URI(@url + '/' + sonp_uuid.to_s + '?vendor=' + desc['vendor'].to_s + '?name=' + desc['name'].to_s + '?version=' + desc['version'].to_s)
+      uri = URI(@url + '/' + sonp_uuid.to_s + '?vendor=' + desc['vendor'].to_s + '&name=' + desc['name'].to_s + '&version=' + desc['version'].to_s)
       req = Net::HTTP::Put.new(uri)
       req.content_type = 'application/json'
       response = Net::HTTP.start(uri.hostname, uri.port) { |http|
         http.request(req)
       }
-      @logger.debug(method) {"response was #{response}"}
+      @logger.debug(method) {"Catalogue.set_sonpackage_trio_meta: response was #{response}"}
       nil
     rescue => e
       @logger.error format_error(e.backtrace)
