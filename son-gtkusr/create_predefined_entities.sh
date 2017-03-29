@@ -1,12 +1,11 @@
 #!/bin/bash
 
 
-KEYCLOAK_PORT=8080
+KEYCLOAK_PORT=5601
 KEYCLOAK_USER=admin
 KEYCLOAK_PASSWORD=admin
 KEYCLOAK_URL=http://localhost:$KEYCLOAK_PORT
 KEYCLOAK_OPENID_TOKEN_ENDPOINT=$KEYCLOAK_URL/auth/realms/sonata/protocol/openid-connect/token
-#ADAPTER_URL=http://adapter:4021/api/v1/config
 ADAPTER_URL=http://son-gtkusr:5600/api/v1/config
 KCADMIN_SCRIPT=/opt/jboss/keycloak/bin/kcadm.sh
 
