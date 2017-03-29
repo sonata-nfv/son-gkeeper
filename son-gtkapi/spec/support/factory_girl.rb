@@ -23,31 +23,12 @@
 ## the Horizon 2020 and 5G-PPP programmes. The authors would like to 
 ## acknowledge the contributions of their colleagues of the SONATA 
 ## partner consortium (www.sonata-nfv.eu).
-# spec/spec_helper.rb
-require 'rack/test'
-require 'rspec'
-require 'webmock/rspec'
-require 'json'
-require 'securerandom'
-require 'pp'
-require 'support/factory_girl'
-
-ENV['RACK_ENV'] = 'test'
-
-require File.dirname(__FILE__) + '/../gtk_api.rb'
-
+# spec/support/factory_girl.rb
+require 'factory_girl'
 RSpec.configure do |config|
-  config.include Rack::Test::Methods
-  config.mock_with :rspec do |configuration|
-    #configuration.syntax = [:expect, :should]
-    #configuration.syntax = :should
-    configuration.syntax = :expect
-  end
-  config.order = 'random'
-  #config.color_enabled = true
-  config.tty = true
-  config.formatter = :documentation
-  config.profile_examples = 3
-end
+  config.include FactoryGirl::Syntax::Methods
 
-WebMock.disable_net_connect!() #allow_localhost: true)
+  config.before(:suite) do
+    FactoryGirl.find_definitions
+  end
+end

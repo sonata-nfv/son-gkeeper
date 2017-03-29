@@ -69,9 +69,7 @@ class GtkApi < Sinatra::Base
   
   use Rack::Session::Cookie, key: 'rack.session', domain: 'foo.com', path: '/', expire_after: 2592000, secret: '$0nata'
   
-  # Logging  
-  MODULE = 'GtkApi'
-
+  # Logging
 	enable :logging
   FileUtils.mkdir(File.join(settings.root, 'log')) unless File.exists? File.join(settings.root, 'log')
   logfile = File.open(File.join('log', ENV['RACK_ENV'])+'.log', 'a+')
@@ -79,8 +77,8 @@ class GtkApi < Sinatra::Base
   set :logger, Logger.new(logfile)
   raise 'Can not proceed without a logger file' if settings.logger.nil?
   set :logger_level, (ENV['LOGGER_LEVEL'] || settings.level ||= 'debug').to_sym # can be debug, fatal, error, warn, or info
-  settings.logger.info(MODULE) {"Started at #{settings.began_at}"}
-  settings.logger.info(MODULE) {"Logger level at :#{settings.logger_level} level"}
+  settings.logger.info('GtkApi') {"Started at #{settings.began_at}"}
+  settings.logger.info('GtkApi') {"Logger level at :#{settings.logger_level} level"}
   
   enable :cross_origin
   #enable :method_override

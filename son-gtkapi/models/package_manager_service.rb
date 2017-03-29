@@ -144,6 +144,9 @@ class PackageManagerService < ManagerService
     
     GtkApi.logger.debug(method) {'entered with uuid='+uuid}
     
+    # TODO: validate user permission
+    # TODO: validate throttle
+    
     #package_file_meta_data = self.find_package_file_meta_data_by_uuid(uuid)
     #GtkApi.logger.debug(method) {"package_file_meta_data=#{package_file_meta_data}"}
     #raise 'No package file meta-data found with package file uuid='+uuid if package_file_meta_data.empty?
