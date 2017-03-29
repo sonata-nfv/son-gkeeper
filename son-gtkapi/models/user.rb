@@ -29,12 +29,13 @@ require './models/manager_service.rb'
 require 'base64'
 
 class User < ManagerService
-  
-  JSON_HEADERS = { 'Accept'=> 'application/json', 'Content-Type'=>'application/json'}
+
   LOG_MESSAGE = 'GtkApi::' + self.name
   USERS_URL = '/users/'
   
   attr_accessor :uuid, :username, :session, :secret
+  
+  # {"username" => "sampleuser", "enabled" => true, "totp" => false, "emailVerified" => false, "firstName" => "User", "lastName" => "Sample", "email" => "user.sample@email.com.br", "credentials" => [ {"type" => "password", "value" => "1234"} ], "requiredActions" => [], "federatedIdentities" => [], "attributes" => {"developer" => ["true"], "customer" => ["false"], "admin" => ["false"]}, "realmRoles" => [], "clientRoles" => {}, "groups" => ["developers"]}
   
   def self.config(url:)
     method = LOG_MESSAGE + "#config(url=#{url})"
@@ -47,21 +48,22 @@ class User < ManagerService
   def initialize(params)
     method = LOG_MESSAGE + "##{__method__}"
     GtkApi.logger.debug(method) {"entered with params #{params}"}
+    raise ArgumentError.new('UserManagerService can not be instantiated without a user name') unless (params.key?(:username) && !params[:username].empty?)
+    raise ArgumentError.new('UserManagerService can not be instantiated without a password') unless (params.key?(:credentials) && !params[:credentials][0][:value].empty?)
     @username = params[:username]
-    @secret = params[:secret]
+    @secret = Base64.strict_encode64(params[:username]+':'+params[:credentials][0][:value])
     @session = nil
     @uuid = SecureRandom.uuid # TODO: temporary, before being SAVED!
   end
 
   def self.create(params)
-    method = LOG_MESSAGE + "##{__method__}(#{params})"
-    GtkApi.logger.debug(method) {'entered'}
-    #headers = {'Content-Type'=>'application/x-www-form-urlencoded'}
-    headers ={}
+    method = LOG_MESSAGE + "##{__method__}"
+    GtkApi.logger.debug(method) {"entered with #{params}"}
+
     begin
-      user = postCurb(url: @@url+USERS_URL, body: params, headers: headers)
-      GtkApi.logger.debug(method) {"user=#{user.body}"}
-      JSON.parse user.body
+      user = postCurb(url: @@url+'/api/v1/register/user', body: params, headers: {})
+      GtkApi.logger.debug(method) {"user=#{user}"}
+      user
     rescue  => e #RestClient::Conflict
       GtkApi.logger.error(method) {"Error during processing: #{$!}"}
       GtkApi.logger.error(method) {"Backtrace:\n\t#{e.backtrace.join("\n\t")}"}
@@ -80,7 +82,7 @@ class User < ManagerService
   end
   
   def logout!
-    session_lasted_for = Time.now.utc - @user_session[:began_at]
+    session_lasted_for = Time.now.utc - @session[:began_at]
     @user_session = nil
     session_lasted_for
   end
@@ -110,7 +112,7 @@ class User < ManagerService
     GtkApi.logger.debug(method) {"entered with name #{name}"}
     #user=find(url: @@url + USERS_URL + name, log_message: LOG_MESSAGE + "##{__method__}(#{name})")
     #user ? User.new(user['data']) : nil
-    name=='Unknown' ? User.new({username: 'Unknown', secret: Base64.strict_encode64('Unknown:None')}) : nil
+    name=='Unknown' ? User.new({username: 'Unknown', credentials: [ {type: 'password', value: 'None'}]}) : nil
   end
 
   def self.find(params)

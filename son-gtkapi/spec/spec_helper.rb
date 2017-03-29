@@ -30,6 +30,7 @@ require 'webmock/rspec'
 require 'json'
 require 'securerandom'
 require 'pp'
+require 'support/factory_girl'
 
 ENV['RACK_ENV'] = 'test'
 

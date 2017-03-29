@@ -44,7 +44,7 @@ class GtkApi < Sinatra::Base
     
     # GET many services
     get '/?' do
-      log_message = MODULE+' GET /api/v2/services'
+      log_message = 'GtkApi:: GET /api/v2/services'
     
       logger.debug(log_message) {'entered with '+query_string}
     
@@ -72,7 +72,7 @@ class GtkApi < Sinatra::Base
   
     # GET a specific service
     get '/:uuid/?' do
-      log_message = MODULE+' GET /api/v2/services/:uuid'
+      log_message = 'GtkApi:: GET /api/v2/services/:uuid'
       logger.debug(log_message) {"entered with #{params}"}
     
       if valid?(params[:uuid])

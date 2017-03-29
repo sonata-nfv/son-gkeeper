@@ -56,7 +56,7 @@ development: &common_settings
       model: KpiManagerService
       environment: KPI_MANAGEMENT_URL
     users:
-      url: http://localhost:5800
+      url: http://localhost:5700
       model: User
       environment: USER_MANAGEMENT_URL
     catalogue:
