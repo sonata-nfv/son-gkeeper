@@ -31,17 +31,45 @@ class GtkApi < Sinatra::Base
   register Sinatra::Namespace
   helpers GtkApiHelper
   
-  namespace '/api/v2' do
-    options '/users/?' do
+  namespace '/api/v2/users' do
+    options '/?' do
       response.headers['Access-Control-Allow-Origin'] = '*'
       response.headers['Access-Control-Allow-Methods'] = 'POST,PUT'      
       response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Access-Control-Allow-Headers, Authorization, X-Requested-With'
       halt 200
     end
     
+    # POST new users
+    post '/?' do
+      log_message = 'GtkApi::POST /api/v2/users/?'
+      params = JSON.parse(request.body.read, symbolize_names: true)
+      
+      logger.info(log_message) {"entered with params=#{params}"}
+      
+      # {"username" => "sampleuser", "enabled" => true, "totp" => false, "emailVerified" => false, "firstName" => "User", "lastName" => "Sample", "email" => "user.sample@email.com.br", "credentials" => [ {"type" => "password", "value" => "1234"} ], "requiredActions" => [], "federatedIdentities" => [], "attributes" => {"developer" => ["true"], "customer" => ["false"], "admin" => ["false"]}, "realmRoles" => [], "clientRoles" => {}, "groups" => ["developers"]}
+      
+      json_error 400, 'User name is missing' unless (params.key?(:username) && params[:username].empty? == false)
+      json_error 400, 'User email is missing' unless (params.key?(:email) && params[:email].empty? == false)
+      json_error 400, 'User credentials are missing' unless (params.key?(:credentials) && params[:credentials].empty? == false)
+      params[:credentials].each do |cred|
+        json_error 400, 'User password is missing' if (cred[:type] == 'password' && (cred[:value].nil? || cred[:value].empty?))
+      end
+    
+      user = User.create(params)
+      
+      if user
+        logger.info(log_message) {"leaving with user #{user.inspect}"}
+        headers 'Location'=> User.class_variable_get(:@@url)+"/api/v2/users/#{user.uuid}", 'Content-Type'=> 'application/json'
+        halt 201, user.to_json
+      else
+        headers 'Content-Type'=> 'application/json'
+        json_error 400, "Error creating user #{params}", log_message
+      end
+    end
+    
     # GET many users
-    get '/users/?' do
-      log_message = MODULE+' GET /api/v2/users'
+    get '/?' do
+      log_message = 'GtkApi:: GET /api/v2/users'
     
       logger.debug(log_message) {'entered with '+query_string}
     
@@ -68,8 +96,8 @@ class GtkApi < Sinatra::Base
     end
   
     # GET a specific user
-    get 'users/:name/?' do
-      log_message = MODULE+' GET /api/v2/services/:name'
+    get '/:name/?' do
+      log_message = 'GtkApi:: GET /api/v2/services/:name'
       logger.debug(log_message) {"entered with #{params}"}
     
       if valid?(params[:name])
