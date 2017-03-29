@@ -195,6 +195,7 @@ class Package
   end
 
   def store_package_file() # <----  Filename
+    GtkPkg.logger.debug "Entered Package.store_package_file"
     message = "Package.#{__method__}"
     saved_zip = @@catalogue.create_zip(@package_file) # <----  Filename
     if saved_zip

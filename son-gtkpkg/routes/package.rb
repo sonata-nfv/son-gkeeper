@@ -44,8 +44,9 @@ class GtkPkg < Sinatra::Base
       if descriptor
         logger.info(log_message) {"descriptor is #{descriptor}"}
         if descriptor.key?('uuid') # && descriptor.key?('vendor') && descriptor.key?('name') && descriptor.key?('version')
-          logger.debug("Storing son-package in catalogue")
+          logger.debug("Storing son-package contents in catalogue")
           son_package_inst = Package.new(catalogue: settings.son_packages_catalogue, logger: logger, params: {io: params[:package][:tempfile][:tempfile]})
+          logger.debug("son-package contents stored in catalogue")
           son_package = son_package_inst.store_package_file(descriptor) #<-----filename
           if son_package && son_package['uuid']
             logger.debug("Adding meta-data info #{descriptor} to son-package file #{son_package['uuid']}")
