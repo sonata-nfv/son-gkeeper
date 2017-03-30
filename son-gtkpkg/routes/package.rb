@@ -47,7 +47,7 @@ class GtkPkg < Sinatra::Base
           logger.debug("Storing son-package contents in catalogue")
           son_package_inst = Package.new(catalogue: settings.son_packages_catalogue, logger: logger, params: {io: params[:package][:tempfile][:tempfile]})
           logger.debug("son-package contents stored in catalogue")
-          son_package = son_package_inst.store_package_file(descriptor) #<-----filename
+          son_package = son_package_inst.store_package_file() #<----- add filename?
           if son_package && son_package['uuid']
             logger.debug("Adding meta-data info #{descriptor} to son-package file #{son_package['uuid']}")
             response = son_package_inst.add_sonpackage_meta(descriptor['uuid'], son_package['uuid'])
