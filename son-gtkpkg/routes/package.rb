@@ -37,6 +37,8 @@ class GtkPkg < Sinatra::Base
   post '/packages/?' do
     log_message = LOG_MESSAGE + ' POST /packages'
     logger.info(log_message) {"params = #{params}"}
+    package_filename = params['package']['filename']
+    logger.info(log_message) {"filename = #{package_filename}"}
     package = Package.new(catalogue: settings.packages_catalogue, logger: logger, params: {io: params[:package][:tempfile][:tempfile]})
     if package 
       logger.debug(log_message) {"package=#{package.inspect}"}
