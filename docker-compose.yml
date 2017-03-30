@@ -28,7 +28,7 @@ services:
     image: registry.sonata-nfv.eu:5000/son-gtkpkg
     environment:
      - RACK_ENV=integration
-     - CATALOGUES_URL=http://sp.int.sonata-nfv.eu:4002/catalogues
+     - CATALOGUES_URL=http://sp.int.sonata-nfv.eu:4002/catalogues/api/v2
     ports:
       - "5100"
     restart: always
@@ -44,7 +44,7 @@ services:
     restart: always
     environment:
      - RACK_ENV=integration
-     - CATALOGUES_URL=http://sp.int.sonata-nfv.eu:4002/catalogues
+     - CATALOGUES_URL=http://sp.int.sonata-nfv.eu:4002/catalogues/api/v2
     logging:
       driver: gelf
       options:
@@ -65,7 +65,7 @@ services:
      - DATABASE_HOST=postgres
      - DATABASE_PORT=5432
      - MQSERVER=amqp://guest:guest@broker:5672
-     - CATALOGUES_URL=http://sp.int.sonata-nfv.eu:4002/catalogues
+     - CATALOGUES_URL=http://sp.int.sonata-nfv.eu:4002/catalogues/api/v2
     depends_on:
      - postgres
     logging:
