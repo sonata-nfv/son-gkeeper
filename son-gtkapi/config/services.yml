@@ -60,7 +60,7 @@ development: &common_settings
       model: User
       environment: USER_MANAGEMENT_URL
     catalogue:
-      url: http://sp.int3.sonata-nfv.eu:4002/catalogues
+      url: http://sp.int3.sonata-nfv.eu:4002/catalogues/api/v2
       model: Catalogue
       environment: CATALOGUES_URL
   level: debug
