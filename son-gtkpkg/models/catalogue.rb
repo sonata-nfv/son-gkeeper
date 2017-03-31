@@ -56,7 +56,7 @@ class Catalogue
     end
   end
 
-  def create_zip(zip) #<---- filename should be passed to the method
+  def create_zip(zip, filename) #<---- filename should be passed to the method
     #url = URI("http://api.int.sonata-nfv.eu:4002/catalogues/son-packages")
     url = URI(@url)
     http = Net::HTTP.new(url.host, url.port)
@@ -65,7 +65,8 @@ class Catalogue
     request.body = data
     # These fields are mandatory
     request["content-type"] = 'application/zip'
-    request["content-disposition"] = 'attachment; filename=<filename.son>' # Remove hardcoded filename
+    # request["content-disposition"] = 'attachment; filename=<filename.son>' # Remove hardcoded filename
+    request["content-disposition"] = 'attachment; filename=' + filename.to_s
     response = http.request(request)
     @logger.debug("Catalogue response: " + response.read_body)
     response.read_body

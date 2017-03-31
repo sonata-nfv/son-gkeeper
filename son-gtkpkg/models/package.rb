@@ -194,10 +194,10 @@ class Package
     @@catalogue.delete(uuid)
   end
 
-  def store_package_file() # <----  Filename
+  def store_package_file(filename) # <----  Filename
     GtkPkg.logger.debug "Entered Package.store_package_file"
     message = "Package.#{__method__}"
-    saved_zip = @@catalogue.create_zip(@package_file) # <----  Filename
+    saved_zip = @@catalogue.create_zip(@package_file, filename) # <----  Filename
     if saved_zip
       GtkPkg.logger.debug(message) {"catalogue_response is #{saved_zip}"}
       JSON.parse(saved_zip)
