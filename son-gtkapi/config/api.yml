@@ -414,7 +414,7 @@
             $ref: "#/responses/RequiredRecordDoesNotExistResponse"
           500: 
             $ref: "#/responses/Standard500ErrorResponse"
-    /instances: 
+    /records: 
       get: 
         summary: "Get the list of all the instances registered"
         description: ""
@@ -441,7 +441,7 @@
               $ref: "#/definitions/ServiceInstances"
           500: 
             $ref: "#/responses/Standard500ErrorResponse"
-    /instances/{instanceId}: 
+    /records/{instanceId}: 
       get: 
         summary: "Gets a registered instance."
         description: "Returns data on a sigle service instance"
@@ -461,6 +461,52 @@
         responses: 
           200: 
             description: "Instance data is returned"
+            schema: 
+              $ref: "#/definitions/ServiceInstance"
+          404: 
+            $ref: "#/responses/RequiredRecordDoesNotExistResponse"
+          500: 
+            $ref: "#/responses/Standard500ErrorResponse"
+    /micro-services: 
+      get: 
+        summary: "Get the list of all the registered micro-services"
+        description: ""
+        operationId: "find"
+        produces: 
+          - "application/json"
+        parameters: 
+          - 
+            in: "header"
+            name: "Authorization"
+            description: "The type of authorization required"
+            required: false
+            type: "string"
+          - 
+            $ref: "#/parameters/offset"
+          - 
+            $ref: "#/parameters/limit"
+        tags: 
+          - "Micro-Services"
+        responses: 
+          200: 
+            description: "Instances list returned"
+            schema: 
+              $ref: "#/definitions/ServiceInstances"
+          500: 
+            $ref: "#/responses/Standard500ErrorResponse"
+    /micro-services/public-key: 
+      get: 
+        summary: "Gets User Management module public key."
+        description: "Returns User Management module public key, so that 'client' modules can decryt token"
+        operationId: "getPublicKey"
+        produces: 
+          - "application/json"
+        tags: 
+          - "Micro-Services"
+          - "Public Key"
+        responses: 
+          200: 
+            description: "Public Key is returned"
             schema: 
               $ref: "#/definitions/ServiceInstance"
           404: 
