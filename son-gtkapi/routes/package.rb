@@ -137,7 +137,8 @@ class GtkApi < Sinatra::Base
         logger.debug(log_message) { "leaving with #{packages}"}
         # TODO: total must be returned from the PackageManagement service
         links = build_pagination_headers(url: request_url, limit: @limit.to_i, offset: @offset.to_i, total: packages.size)
-        [200, {'Link' => links}, packages.to_json]
+        headers 'Content-Type'=>'application/json', 'Link'=> links
+        halt 200, packages.to_json
       else
         error_message = 'No packages found' + (query_string.empty? ? '' : ' with parameters '+query_string)
         json_error 404, error_message, log_message
