@@ -43,6 +43,16 @@ function create_realm_role() {
 	return $ret
 }
 
+# Param: $1 = realm, $2 = group name
+function create_group() {
+	$KCADMIN_SCRIPT create groups -r $1 -s name=$2 -i > /dev/null
+	ret=$?
+	if [ $ret -eq 0 ]; then
+        	echo "Created group [$2] for realm [$1]"
+	fi
+	return $ret
+}
+
 # Params: $1 = realm, $2 = client id
 function get_client_secret() {
 # Attempt to retrieve the client secret
@@ -93,6 +103,11 @@ create_realm_role $SONATA_REALM son-catalogues ""
 create_realm_role $SONATA_REALM son-repositories "\${role_read-catalogue}"
 create_realm_role $SONATA_REALM customer "\${role_read-repositories},\${role_write-repositories},\${role_execute-catalogue}"
 create_realm_role $SONATA_REALM developer "\${role_read-catalogue},\${role_write-catalogue}"
+
+# Creating realm groups:
+create_group $SONATA_REALM developers
+create_group $SONATA_REALM customers
+#create_group $SONATA_REALM admins
 
 # Capture the adapter client secret for the next set of operations
 adapter_secret=$(get_client_secret $SONATA_REALM $adapter_cid)
