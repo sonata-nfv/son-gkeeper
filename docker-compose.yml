@@ -149,7 +149,7 @@ services:
     ports:
       - "5600:5600"
     links:
-     - keycloak
+     - son-gtkusr-keycloak
     environment:
       - KEYCLOAK_ADDRESS=keycloak
       - KEYCLOAK_PORT=5601
@@ -158,7 +158,7 @@ services:
       - CLIENT_NAME=adapter
     container_name: son-gtkusr
 
-  songtkusr-keycloak:
+  son-gtkusr-keycloak:
     image: registry.sonata-nfv.eu:5000/son-gtkusr-keycloak
     ports:
       - "5601:5601"
