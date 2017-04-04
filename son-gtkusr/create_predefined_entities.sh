@@ -129,13 +129,13 @@ $KCADMIN_SCRIPT add-roles -r $SONATA_REALM --uusername service-account-$ADAPTER_
 if [ "$ADAPTER_URL" ]; then 
     echo
     echo "------------------------------------------------------------------------"
-    echo "*** Waiting for Adapter server is up and listening on $ADAPTER_URL"
+    echo "*** Waiting for adapter server is up and listening on $ADAPTER_URL"
     retries=0
     until [ $(curl -X POST -o /dev/null -s -w "%{http_code}" -d "secret=$adapter_secret" $ADAPTER_URL) -eq 200 ]; do
 	sleep 20
 	let retries="$retries+1"
 	if [ $retries -eq 12 ]; then
-	    echo "Timeout waiting for Keycloak on $ADAPTER_URL"
+	    echo "Timeout waiting for adapter on $ADAPTER_URL"
 	    exit 1
 	fi
     done
