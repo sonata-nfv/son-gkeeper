@@ -66,6 +66,10 @@ class Keycloak < Sinatra::Application
   @@realm_name = ENV['SONATA_REALM']
   @@client_name = ENV['CLIENT_NAME']
 
+  # TODO: Add admin custom credentials
+  # @@admin_name = ENV['ADMIN_NAME']
+  # @@admin_password = ENV['ADMIN_PASSWORD']
+
   ## TODO: remove this or comment
   #@@port = 8081
   #@@uri = 'auth'
@@ -265,8 +269,8 @@ class Keycloak < Sinatra::Application
 
     # request.body = body.to_json
 
-    res = Net::HTTP.post_form(url, 'client_id' => 'adapter',
-                              'client_secret' => 'df7e816d-0337-4fbe-a3f4-7b5263eaba9f',
+    res = Net::HTTP.post_form(url, 'client_id' => @@client_name,
+                              'client_secret' => @@client_secret,
                               'grant_type' => 'client_credentials', 'token' => token)
 
     # puts "RESPONSE_INTROSPECT", res.read_body
@@ -678,18 +682,22 @@ class Keycloak < Sinatra::Application
   end
 
   def refresh_adapter()
-    #=> Check if token.expired?
-    code = is_expired?
-    case code
-      when 'OK'
-        # puts "OK"
-        #@@access_token = Keycloak.get_adapter_token
-        return
-      else
-        #=> Then GET new token
-        puts "REFRESHING TOKEN..."
-        @@access_token = Keycloak.get_adapter_token
+    puts "CHEKING TOKEN AVAILABILITY..."
+    if defined?@@access_token
+      #=> Check if token.expired?
+      code = is_expired?
+      case code
+        when 'OK'
+          # puts "OK"
+          #@@access_token = Keycloak.get_adapter_token
+          return
+        else
+          #=> Then GET new token
+          puts "REFRESHING TOKEN..."
+          @@access_token = Keycloak.get_adapter_token
+      end
     end
+    puts "NO TOKEN FOUND"
   end
 
   def set_user_roles(user_type, user_id)
@@ -779,6 +787,7 @@ class Keycloak < Sinatra::Application
     response = http.request(request)
     # p "REALM AVAILABLE SCOPE", parse_json(response.body)[0]
 
+    # TODO: Rework this process (predefined service roles)
     role_data = parse_json(response.body)[0].find {|role| role['name'] == query['name'] }
     # p "ROLE DATA", role_data
     unless role_data

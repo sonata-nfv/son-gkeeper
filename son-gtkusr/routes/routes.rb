@@ -87,7 +87,12 @@ class Keycloak < Sinatra::Application
     # This endpoint returns the Keycloak public key
     logger.debug 'Adapter: entered POST /public-key'
     keycloak_yml = YAML.load_file('config/keycloak.yml')
-    keycloak_yml['realm_public_key']
+    unless keycloak_yml['realm_public_key']
+      Keycloak.get_realm_public_key
+      keycloak_yml = YAML.load_file('config/keycloak.yml')
+    end
+    # TODO: FIX blank response!
+    halt 200, keycloak_yml['realm_public_key'].to_s
   end
 
 
@@ -403,7 +408,7 @@ class Keycloak < Sinatra::Application
   end
 
   get '/roles' do
-    #TODO: QUERIES NOT SUPPORTED
+    #TODO: QUERIES NOT SUPPORTED -> Check alternatives!!
     # This endpoint allows queries for the next fields:
     # search, lastName, firstName, email, username, first, max
     logger.debug 'Adapter: entered POST /users'
