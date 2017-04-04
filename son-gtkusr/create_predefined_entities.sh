@@ -127,10 +127,17 @@ echo Adding realm-admin role to adapter service account...
 $KCADMIN_SCRIPT add-roles -r $SONATA_REALM --uusername service-account-$ADAPTER_CLIENT --cclientid realm-management --rolename realm-admin
 
 if [ "$ADAPTER_URL" ]; then 
-	#echo "adapter_secret=$adapter_secret"
-	if [ $(curl -X POST -o /dev/null -s -w "%{http_code}" -d "secret=$adapter_secret" $ADAPTER_URL) -eq 200 ]; then
-		echo "Secret of client [$ADAPTER_CLIENT] successfully POSTed to $ADAPTER_URL"
-	else
-		echo "Unable to POST secret to $ADAPTER_URL"
+    echo
+    echo "------------------------------------------------------------------------"
+    echo "*** Waiting for Adapter server is up and listening on $ADAPTER_URL"
+    retries=0
+    until [ $(curl -X POST -o /dev/null -s -w "%{http_code}" -d "secret=$adapter_secret" $ADAPTER_URL) -eq 200 ]; do
+	sleep 20
+	let retries="$retries+1"
+	if [ $retries -eq 12 ]; then
+	    echo "Timeout waiting for Keycloak on $ADAPTER_URL"
+	    exit 1
 	fi
+    done
+    echo "Secret of client [$ADAPTER_CLIENT] successfully POSTed to $ADAPTER_URL"
 fi
