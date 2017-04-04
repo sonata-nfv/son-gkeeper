@@ -151,7 +151,7 @@ services:
     links:
      - son-gtkusr-keycloak
     environment:
-      - KEYCLOAK_ADDRESS=keycloak
+      - KEYCLOAK_ADDRESS=son-gtkusr-keycloak
       - KEYCLOAK_PORT=5601
       - KEYCLOAK_PATH=auth
       - SONATA_REALM=sonata
