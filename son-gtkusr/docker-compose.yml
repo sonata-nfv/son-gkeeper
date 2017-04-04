@@ -7,8 +7,8 @@ services:
       dockerfile: Dockerfile
     ports: 
       - "5600:5600"
-    links:
-      - keycloak
+    #links:
+    #  - keycloak
     environment:
       - KEYCLOAK_ADDRESS=keycloak
       - KEYCLOAK_PORT=5601
