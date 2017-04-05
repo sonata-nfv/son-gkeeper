@@ -52,8 +52,8 @@ class GtkPkg < Sinatra::Base
           # son_package = son_package_inst.store_package_file() #<----- add filename?
           son_package = son_package_inst.store_package_file(package_filename) #<----- add filename?
           if son_package && son_package['uuid']
-            logger.debug("Adding meta-data info #{descriptor} to son-package file #{son_package['uuid']}")
-            response = son_package_inst.add_sonpackage_meta(son_package['uuid'], descriptor)
+            logger.debug("Adding meta-data info from #{descriptor} to son-package file #{son_package['uuid']}")
+            response = son_package_inst.add_sonpackage_meta(son_package['uuid'], descriptor['pd'])
             logger.debug("Meta-data info for son-package file #{son_package['uuid']} response: #{response}")
             package = Package.new(catalogue: settings.packages_catalogue, logger: logger, params: {io: params[:package][:tempfile][:tempfile]})
             response = package.add_sonpackage_id(descriptor['uuid'], son_package['uuid'])
@@ -69,9 +69,9 @@ class GtkPkg < Sinatra::Base
           else
             json_error 400, 'Error storing son-package.', log_message         
           end
-        elsif descriptor.key?('name') && descriptor.key?('vendor') && descriptor.key?('version')
+        elsif descriptor['pd'].key?('name') && descriptor['pd'].key?('vendor') && descriptor['pd'].key?('version')
           logger.debug(log_message) {"Package is duplicated"}
-          error_message = "Version #{descriptor['version']} of package '#{descriptor['name']}' from vendor '#{descriptor['vendor']}' already exists"
+          error_message = "Version #{descriptor['pd']['version']} of package '#{descriptor['pd']['name']}' from vendor '#{descriptor['pd']['vendor']}' already exists"
           json_error 409, error_message, log_message
         else
           json_error 400, 'Oops.. something terribly wrong happened here!', log_message      
