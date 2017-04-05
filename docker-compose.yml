@@ -158,14 +158,14 @@ services:
       - CLIENT_NAME=adapter
     container_name: son-gtkusr
 
-  son-keycloak:
-    image: registry.sonata-nfv.eu:5000/son-keycloak
-    ports:
-      - "5601:5601"
-    environment:
-      - KEYCLOAK_USER=admin
-      - KEYCLOAK_PASSWORD=admin
-    container_name: son-keycloak
+  # son-keycloak:
+  #   image: registry.sonata-nfv.eu:5000/son-keycloak
+  #   ports:
+  #     - "5601:5601"
+  #   environment:
+  #     - KEYCLOAK_USER=admin
+  #     - KEYCLOAK_PASSWORD=admin
+  #   container_name: son-keycloak
 
   postgres:
     image: ntboes/postgres-uuid
