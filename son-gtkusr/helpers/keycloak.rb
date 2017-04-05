@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 ##
 ## Copyright (c) 2015 SONATA-NFV
 ## ALL RIGHTS RESERVED.
@@ -96,7 +97,7 @@ class Keycloak < Sinatra::Application
   end
 
   ## Get the ip of keycloak. Only works for docker-compose
-  @@address = Resolv::DNS.new.getaddress("keycloak")
+  @@address = Resolv::DNS.new.getaddress("son-keycloak")
 
   # TODO: remove this or comment
   #@@address = 'localhost'
