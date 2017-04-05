@@ -83,14 +83,14 @@ echo "Keycloak server detected! Creating predefined entities..."
 # Log in to create session:
 $KCADMIN_SCRIPT config credentials --server $KEYCLOAK_URL/auth --realm master --user $KEYCLOAK_USER --password $KEYCLOAK_PASSWORD -o
 
-if [ $? -ne 0 ]; then 
+if [ $? -ne 0 ]; then
 	echo "Unable to login as admin"
 	exit 1
 fi
 
 # Creating a realm:
 create_realm $SONATA_REALM
- 
+
 # Creating a client:
 create_client_out=$(create_client $SONATA_REALM $ADAPTER_CLIENT "http://localhost:8081/adapter")
 echo $create_client_out
@@ -113,7 +113,7 @@ create_group $SONATA_REALM customers
 adapter_secret=$(get_client_secret $SONATA_REALM $adapter_cid)
 
 # Attempt to get access and ID tokens. This serves two purposes:
-# 1. it tests the endpoint: we make sure that the adapter client was created correctly and we have the adapter client secret, and 
+# 1. it tests the endpoint: we make sure that the adapter client was created correctly and we have the adapter client secret, and
 # 2. it has the side effect of creating the adapter "service account" user, upon which we would like to assign roles that allow us to create users.
 echo "Testing adapter client token endpoint: $KEYCLOAK_OPENID_TOKEN_ENDPOINT"
 curl -k -s -o /dev/null -X POST -H "Content-Type: application/x-www-form-urlencoded" -d "grant_type=client_credentials&client_id=$ADAPTER_CLIENT&client_secret=$adapter_secret" "$KEYCLOAK_OPENID_TOKEN_ENDPOINT"
@@ -126,7 +126,7 @@ curl -k -s -o /dev/null -X POST -H "Content-Type: application/x-www-form-urlenco
 echo Adding realm-admin role to adapter service account...
 $KCADMIN_SCRIPT add-roles -r $SONATA_REALM --uusername service-account-$ADAPTER_CLIENT --cclientid realm-management --rolename realm-admin
 
-if [ "$ADAPTER_URL" ]; then 
+if [ "$ADAPTER_URL" ]; then
     echo
     echo "------------------------------------------------------------------------"
     echo "*** Waiting for adapter server is up and listening on $ADAPTER_URL"
