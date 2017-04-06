@@ -47,6 +47,7 @@ class Adapter < Sinatra::Application
   # Returns contents of log file
   # Management method to get log file of adapter remotely
   get '/log' do
+    logger.debug 'Adapter: entered GET /admin/log'
     headers 'Content-Type' => 'text/plain; charset=utf8'
     filename = 'log/development.log'
     # filename = 'log/production.log'
@@ -62,12 +63,31 @@ class Adapter < Sinatra::Application
 
     halt 200, txt.read.to_s
   end
+
+  get '/config' do
+    # This endpoint returns the Keycloak public key
+    logger.debug 'Adapter: entered GET /admin/config'
+
+    begin
+      keycloak_yml = YAML.load_file('config/keycloak.yml')
+    rescue => err
+      logger.error "Error loading config file: #{err}"
+      halt 500, json_error("Error loading config file: #{err}")
+    end
+    halt 200, keycloak_yml.to_json
+  end
 end
 
 # Adapter-Keycloak API class
 class Keycloak < Sinatra::Application
   
   post '/config' do
+    log_file = File.new("#{settings.root}/log/#{settings.environment}.log", 'a+')
+    STDOUT.reopen(log_file)
+    STDOUT.sync = true
+    puts "REQUEST.IP:", request.ip.to_s
+    puts "@@ADDRESS:", @@address.to_s
+    STDOUT.sync = false
     # Check if the request comes from keycloak docker.
     if request.ip.to_s != @@address.to_s
       halt 401
@@ -85,14 +105,15 @@ class Keycloak < Sinatra::Application
 
   get '/public-key' do
     # This endpoint returns the Keycloak public key
-    logger.debug 'Adapter: entered POST /public-key'
+    logger.debug 'Adapter: entered GET /public-key'
     keycloak_yml = YAML.load_file('config/keycloak.yml')
     unless keycloak_yml['realm_public_key']
       Keycloak.get_realm_public_key
       keycloak_yml = YAML.load_file('config/keycloak.yml')
     end
-    # TODO: FIX blank response!
-    halt 200, keycloak_yml['realm_public_key'].to_s
+
+    response = {"public-key" => keycloak_yml['realm_public_key'].to_s}
+    halt 200, response.to_json
   end
 
 
