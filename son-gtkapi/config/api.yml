@@ -7,7 +7,7 @@
   host: "sp.sonata-nfv.eu"
   schemes: 
     - "https"
-  basePath: "/api"
+  basePath: "/api/v2"
   produces: 
     - "application/json"
   paths: 
@@ -495,6 +495,52 @@
           500: 
             $ref: "#/responses/Standard500ErrorResponse"
     /micro-services/public-key: 
+      get: 
+        summary: "Gets User Management module public key."
+        description: "Returns User Management module public key, so that 'client' modules can decryt token"
+        operationId: "getPublicKey"
+        produces: 
+          - "application/json"
+        tags: 
+          - "Micro-Services"
+          - "Public Key"
+        responses: 
+          200: 
+            description: "Public Key is returned"
+            schema: 
+              $ref: "#/definitions/ServiceInstance"
+          404: 
+            $ref: "#/responses/RequiredRecordDoesNotExistResponse"
+          500: 
+            $ref: "#/responses/Standard500ErrorResponse"
+    /users: 
+      get: 
+        summary: "Get the list of all the registered users"
+        description: ""
+        operationId: "find"
+        produces: 
+          - "application/json"
+        parameters: 
+          - 
+            in: "header"
+            name: "Authorization"
+            description: "The type of authorization required"
+            required: false
+            type: "string"
+          - 
+            $ref: "#/parameters/offset"
+          - 
+            $ref: "#/parameters/limit"
+        tags: 
+          - "Users"
+        responses: 
+          200: 
+            description: "Instances list returned"
+            schema: 
+              $ref: "#/definitions/ServiceInstances"
+          500: 
+            $ref: "#/responses/Standard500ErrorResponse"
+    /users/public-key: 
       get: 
         summary: "Gets User Management module public key."
         description: "Returns User Management module public key, so that 'client' modules can decryt token"

@@ -109,7 +109,7 @@ class ManagerService
         {status: nil, count: nil, items: nil, message: "Error processing #{$!}: \n\t#{e.backtrace.join("\n\t")}"}
       end
     when 400..499
-      {status: status, count: nil, items: nil, message: "Status #{status}: cold not process"}
+      {status: status, count: nil, items: nil, message: "Status #{status}: could not process"}
     else
       {status: status, count: nil, items: nil, message: "Status #{status} unknown"}
     end
@@ -182,8 +182,7 @@ class ManagerService
       when 200
         res.body
       else
-        GtkApi.logger.error(log_message) {"Error during processing: #{$!}"}
-        GtkApi.logger.error(log_message) {"Backtrace:\n\t#{e.backtrace.join("\n\t")}"}
+        GtkApi.logger.error(log_message) {"Error retrieving logs"}
         nil
       end
   end
