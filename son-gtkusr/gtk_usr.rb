@@ -47,11 +47,17 @@ Bundler.require :default, ENV['RACK_ENV'].to_sym
 
 configure do
   # Configuration for logging
+
   enable :logging
   Dir.mkdir("#{settings.root}/log") unless File.exist?("#{settings.root}/log")
   log_file = File.new("#{settings.root}/log/#{settings.environment}.log", 'a+')
   log_file.sync = true
   use Rack::CommonLogger, log_file
+
+  #STDOUT.reopen(log_file)
+  STDERR.reopen(log_file)
+  #STDOUT.sync = true
+  STDERR.sync = true
 
   class Keycloak < Sinatra::Application
     register Sinatra::ConfigFile
@@ -63,7 +69,6 @@ configure do
     # self.get_adapter_install_json
     # @@access_token = self.get_adapter_token
   end
-
 
   # set up the rest of sinatra config stuff
   # @key = create_public_key

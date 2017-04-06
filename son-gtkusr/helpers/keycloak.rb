@@ -97,6 +97,7 @@ class Keycloak < Sinatra::Application
   end
 
   ## Get the ip of keycloak. Only works for docker-compose
+  #@@address = Resolv::DNS.new.getaddress("son-keycloak")
   @@address = ENV['KEYCLOAK_ADDRESS']
 
   # TODO: remove this or comment
