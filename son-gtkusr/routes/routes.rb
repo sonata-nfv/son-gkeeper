@@ -87,9 +87,15 @@ class Keycloak < Sinatra::Application
     STDOUT.sync = true
     puts "REQUEST.IP:", request.ip.to_s
     puts "@@ADDRESS:", @@address.to_s
+    keycloak_address = nil
+    begin
+      keycloak_address = Resolv::Hosts.new.getaddress(ENV['KEYCLOAK_ADDRESS'])
+    rescue
+      keycloak_address = Resolv::DNS.new.getaddress(ENV['KEYCLOAK_ADDRESS'])
+    end
     STDOUT.sync = false
     # Check if the request comes from keycloak docker.
-    if request.ip.to_s != @@address.to_s
+    if request.ip.to_s !=  keycloak_address.to_s
       halt 401
     end
     if defined? @@client_secret
