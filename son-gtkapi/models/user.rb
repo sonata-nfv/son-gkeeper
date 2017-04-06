@@ -28,6 +28,10 @@
 require './models/manager_service.rb'
 require 'base64'
 
+class UserNotCreatedError < StandardError; end
+class UserNotFoundError < StandardError; end
+class UsersNotFoundError < StandardError; end
+
 class User < ManagerService
 
   LOG_MESSAGE = 'GtkApi::' + self.name
@@ -49,9 +53,9 @@ class User < ManagerService
     method = LOG_MESSAGE + "##{__method__}"
     GtkApi.logger.debug(method) {"entered with params #{params}"}
     raise ArgumentError.new('UserManagerService can not be instantiated without a user name') unless (params.key?(:username) && !params[:username].empty?)
-    raise ArgumentError.new('UserManagerService can not be instantiated without a password') unless (params.key?(:credentials) && !params[:credentials][0][:value].empty?)
+    raise ArgumentError.new('UserManagerService can not be instantiated without a password') unless (params.key?(:password) && !params[:password].empty?)
     @username = params[:username]
-    @secret = Base64.strict_encode64(params[:username]+':'+params[:credentials][0][:value])
+    @secret = Base64.strict_encode64(params[:username]+':'+params[:password])
     @session = nil
     @uuid = SecureRandom.uuid # TODO: temporary, before being SAVED!
   end
@@ -60,18 +64,35 @@ class User < ManagerService
     method = LOG_MESSAGE + "##{__method__}"
     GtkApi.logger.debug(method) {"entered with #{params}"}
 
+    # Transform password
+    password = params.delete(:password)
+    params[:credentials] = [{type: 'password', value: password}]
+    
+    # Transform user type
+    user_type = params.delete(:user_type)
+    GtkApi.logger.debug(method) {"user type is #{user_type}"}
+    params[:attributes] = {}
+    params[:attributes][user_type.to_sym] = ['true']
+    GtkApi.logger.debug(method) {"params = #{params}"}
+    
     begin
-      user = postCurb(url: @@url+'/api/v1/register/user', body: params, headers: {})
+      resp = postCurb(url: @@url+'/api/v1/register/user', body: params, headers: {'Content-Type'=>'application/json'})
+      user = resp[:items]
       GtkApi.logger.debug(method) {"user=#{user}"}
-      user
-    rescue  => e #RestClient::Conflict
+      User.new({
+        username: user[:username], password: user[:credentials][0][:value],
+        lastName: user[:lastName], firstName: user[:firstName],
+        email: user[:email], token: user[:token],
+        user_type: user[:attributes].key(['true']) # returns the first one to be true
+      })
+    rescue  => e
       GtkApi.logger.error(method) {"Error during processing: #{$!}"}
       GtkApi.logger.error(method) {"Backtrace:\n\t#{e.backtrace.join("\n\t")}"}
-      {error: 'User not created', user: e.backtrace}
+      raise UserNotCreatedError.new "User not created with params #{params}"
     end
   end
 
-  # TODO
+  # TODO from here down
   def authenticated?(secret)
     method = LOG_MESSAGE + "##{__method__}"
     GtkApi.logger.debug(method) {"entered with secret=#{secret}"}
@@ -87,14 +108,12 @@ class User < ManagerService
     session_lasted_for
   end
   
-  # TODO
   def authorized?(params)
     method = LOG_MESSAGE + "##{__method__}"
     GtkApi.logger.debug(method) {"entered with params #{params}"}
     true
   end
   
-  # TODO
   def self.valid?(params)
     method = LOG_MESSAGE + "##{__method__}"
     GtkApi.logger.debug(method) {"entered with params #{params}"}
@@ -131,8 +150,23 @@ class User < ManagerService
     #end
   end
   
+  def self.public_key
+    method = LOG_MESSAGE + "##{__method__}"
+    GtkApi.logger.debug(method) {'entered'}
+    begin
+      p_key = getCurb(url: @@url+'/api/v1/public-key', params: {}, headers: {})
+      GtkApi.logger.debug(method) {"p_key=#{p_key}"}
+      p_key
+    rescue  => e
+      GtkApi.logger.error(method) {"Error during processing: #{$!}"}
+      GtkApi.logger.error(method) {"Backtrace:\n\t#{e.backtrace.join("\n\t")}"}
+      raise PublicKeyNotFoundError.new('No public key received from User Management micro-service')
+    end
+  end
+
   private 
   
+  # these are temporary, waiting for the integration with the User Management
   def self.new_user(params)
     {status: 200, count: 1, items: [User.new(params)]}
   end

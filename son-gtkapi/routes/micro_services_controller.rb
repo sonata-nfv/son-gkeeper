@@ -110,7 +110,7 @@ class GtkApi < Sinatra::Base
 
     # GET .../api/v2/micro-services/users/public-key: To get the UM's public-key:
     get '/public-key/?' do
-      log_message = 'GtkApi:: GET /api/v2/micro-services/users/public-key'
+      log_message = 'GtkApi:: GET /api/v2/micro-services/public-key'
       logger.debug(log_message) {"entered with #{params}"}
     
       begin
