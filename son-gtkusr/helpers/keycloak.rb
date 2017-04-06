@@ -72,6 +72,16 @@ class Keycloak < Sinatra::Application
   # @@admin_name = ENV['ADMIN_NAME']
   # @@admin_password = ENV['ADMIN_PASSWORD']
 
+  # TODO: remove this or comment enable/disable local testing
+  #@@address = 'localhost'
+  #@@client_secret = 'df7e816d-0337-4fbe-a3f4-7b5263eaba9f'
+  #@@access_token = Keycloak.get_adapter_token
+  ## TODO: remove this or comment enable/disable local testing
+  #@@port = 8081
+  #@@uri = 'auth'
+  #@@realm_name = 'master'
+  #@@client_name = 'adapter'
+
   begin
     keycloak_yml = YAML.load_file('config/keycloak.yml')
     keycloak_yml['address'] = @@address
@@ -85,12 +95,6 @@ class Keycloak < Sinatra::Application
   rescue
     puts "Error updating config file"
   end
-
-  ## TODO: remove this or comment
-  #@@port = 8081
-  #@@uri = 'auth'
-  #@@realm_name = 'master'
-  #@@client_name = 'adapter'
 
   def Keycloak.get_adapter_token
     url = URI("http://#{@@address.to_s}:#{@@port.to_s}/#{@@uri.to_s}/realms/#{@@realm_name}/protocol/openid-connect/token")
@@ -110,11 +114,6 @@ class Keycloak < Sinatra::Application
       parsed_res['access_token']
     end
   end
-
-  # TODO: remove this or comment enable/disable local testing
-  #@@address = 'localhost'
-  #@@client_secret = 'df7e816d-0337-4fbe-a3f4-7b5263eaba9f'
-  #@@access_token = Keycloak.get_adapter_token
 
   def get_oidc_endpoints
     # Call http://localhost:8081/auth/realms/master/.well-known/openid-configuration to obtain endpoints
