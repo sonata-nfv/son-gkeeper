@@ -98,10 +98,11 @@ class Keycloak < Sinatra::Application
 
   ## Get the ip of keycloak. Only works for docker-compose
   #@@address = Resolv::DNS.new.getaddress("son-keycloak")
+  @@address = ENV['KEYCLOAK_ADDRESS']
 
   # TODO: remove this or comment
-  @@address = 'localhost'
-  @@client_secret = 'df7e816d-0337-4fbe-a3f4-7b5263eaba9f'
+  #@@address = 'localhost'
+  #@@client_secret = 'df7e816d-0337-4fbe-a3f4-7b5263eaba9f'
   #@@access_token = Keycloak.get_adapter_token
 
   def get_oidc_endpoints

@@ -46,23 +46,19 @@ class GtkApi < Sinatra::Base
       
       logger.info(log_message) {"entered with params=#{params}"}
       
-      # {"username" => "sampleuser", "enabled" => true, "totp" => false, "emailVerified" => false, "firstName" => "User", "lastName" => "Sample", "email" => "user.sample@email.com.br", "credentials" => [ {"type" => "password", "value" => "1234"} ], "requiredActions" => [], "federatedIdentities" => [], "attributes" => {"developer" => ["true"], "customer" => ["false"], "admin" => ["false"]}, "realmRoles" => [], "clientRoles" => {}, "groups" => ["developers"]}
+      # {"username" => "sampleuser", "firstName" => "User", "lastName" => "Sample", "email" => "user.sample@email.com.br", "password" => "1234", "user_type" => "developer"|"customer"|"admin"}
       
-      json_error 400, 'User name is missing' unless (params.key?(:username) && params[:username].empty? == false)
-      json_error 400, 'User email is missing' unless (params.key?(:email) && params[:email].empty? == false)
-      json_error 400, 'User credentials are missing' unless (params.key?(:credentials) && params[:credentials].empty? == false)
-      params[:credentials].each do |cred|
-        json_error 400, 'User password is missing' if (cred[:type] == 'password' && (cred[:value].nil? || cred[:value].empty?))
-      end
+      json_error 400, 'User name is missing' unless (params.key?(:username) && !params[:username].empty?)
+      json_error 400, 'User password is missing' unless (params.key?(:password) && !params[:password].empty?)
+      json_error 400, 'User email is missing' unless (params.key?(:email) && !params[:email].empty?)
+      json_error 400, 'User type is missing' unless (params.key?(:user_type) && !params[:user_type].empty?)
     
-      user = User.create(params)
-      
-      if user
+      begin
+        user = User.create(params)
         logger.info(log_message) {"leaving with user #{user.inspect}"}
         headers 'Location'=> User.class_variable_get(:@@url)+"/api/v2/users/#{user.uuid}", 'Content-Type'=> 'application/json'
-        halt 201, user.to_json
-      else
-        headers 'Content-Type'=> 'application/json'
+        halt 201, user.to_json(only: [:token])
+      rescue UserNotCreatedError
         json_error 400, "Error creating user #{params}", log_message
       end
     end
@@ -78,20 +74,17 @@ class GtkApi < Sinatra::Base
       logger.debug(log_message) {"offset=#{@offset}, limit=#{@limit}"}
       logger.debug(log_message) {"params=#{params}"}
     
-      users = User.find(params)
-      logger.debug(log_message) {"Found users #{users}"}
-      case users[:status]
-      when 200
-        logger.debug(log_message) {"links: request_url=#{request_url}, limit=#{@limit}, offset=#{@offset}, total=#{users[:count]}"}
-        links = build_pagination_headers(url: request_url, limit: @limit.to_i, offset: @offset.to_i, total: users[:count].to_i)
+      begin
+        users = User.find(params)
+        logger.debug(log_message) {"Found users #{users}"}
+        logger.debug(log_message) {"links: request_url=#{request_url}, limit=#{@limit}, offset=#{@offset}, total=#{users.count}"}
+        links = build_pagination_headers(url: request_url, limit: @limit.to_i, offset: @offset.to_i, total: users.count)
         logger.debug(log_message) {"links: #{links}"}
-        headers 'Link'=> links, 'Record-Count'=> users[:count].to_s
-        status 200
-        halt users[:items].to_json
-      else
-        message = "No users with #{params} were found"
-        logger.debug(log_message) {"leaving with message '"+message+"'"}
-        json_error 404, message
+        headers 'Link'=> links, 'Record-Count'=> users.count.to_s
+        halt 200, users.to_json
+      rescue UsersNotFoundError
+        logger.debug(log_message) {"Users not found"}
+        halt 200, '[]'
       end
     end
   
@@ -118,14 +111,27 @@ class GtkApi < Sinatra::Base
       end
     end
   
+    # GET .../api/v2/micro-services/users/public-key: To get the UM's public-key:
+    get '/public-key/?' do
+      log_message = 'GtkApi:: GET /api/v2/users/public-key'
+      logger.debug(log_message) {"entered with #{params}"}
+    
+      begin
+        pk = User.public_key
+        logger.debug(log_message) {"leaving with #{pk}"}
+        halt 200, pk.to_json
+      rescue PublicKeyNotFoundError
+        json_error 404, "No public key for the User Management micro-service was found", log_message
+      end
+    end
+  end
 
-    #get '/admin/users/logs/?' do
-    #  log_message = 'GtkApi::GET /admin/services/logs'
-    #  logger.debug(log_message) {'entered'}
-    #  headers 'Content-Type' => 'text/plain; charset=utf8', 'Location' => '/'
-    #  log = ServiceManagerService.get_log(url:ServiceManagerService.class_variable_get(:@@url)+'/admin/logs', log_message:log_message)
-    #  logger.debug(log_message) {'leaving with log='+log}
-    #  halt 200, log
-    #end
+  get '/api/v2/admin/users/logs/?' do
+    log_message = 'GtkApi::GET /admin/users/logs'
+    logger.debug(log_message) {'entered'}
+    headers 'Content-Type' => 'text/plain; charset=utf8', 'Location' => '/'
+    log = User.get_log(url:User.class_variable_get(:@@url)+'/admin/logs', log_message:log_message)
+    logger.debug(log_message) {"leaving with log=#{log}"}
+    halt 200, log
   end
 end

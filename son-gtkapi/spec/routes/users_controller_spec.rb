@@ -33,17 +33,23 @@ require 'base64'
 RSpec.describe GtkApi, type: :controller do
   include Rack::Test::Methods
   def app() GtkApi end
+    # expect(@object).to be_a Shirt
 
   describe 'POST /api/v2/users' do
     let(:user_basic_info) {{
-      enabled: true, totp: false, emailVerified: false,
       firstName: "Un", lastName: "Known",
-      requiredActions: [], federatedIdentities: [],
-      attributes: {developer: ["true"], customer: ["false"], admin: ["false"]}, 
-      realmRoles: [], clientRoles: {}, groups: ["developers"]}
-    }
-    let(:user_info) {user_basic_info.merge({username: "Unknown", email: "user.sample@email.com.br", credentials: [ {type: "password", value: "1234"} ]})}
-    let(:user_with_no_name) {user_basic_info.merge({username: "", email: "user.sample@email.com.br", credentials: [ {type: "password", value: "1234"} ]})}
+      user_type: "developer"
+      }}
+    let(:user_info) {user_basic_info.merge({username: "Unknown", email: "un@known.com", password: "1234"})}
+    let(:created_user) {{
+      uuid:SecureRandom.uuid,
+      firstName: "Un", lastName: "Known",
+      username: "Unknown", email: "un@known.com",
+      credentials: [{type: 'password', value: '1234'}],
+      attributes: {developer:['true']},
+      token: '123'
+    }}
+    let(:user_with_no_name) {user_basic_info.merge({username: "", email: "un@known.com", password: "1234"})}
     it 'without user name given returns Unprocessable Entity (400)' do
       post '/api/v2/users/', user_with_no_name.to_json
       expect(last_response.status).to eq(400)
