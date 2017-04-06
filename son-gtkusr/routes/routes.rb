@@ -49,8 +49,8 @@ class Adapter < Sinatra::Application
   get '/log' do
     logger.debug 'Adapter: entered GET /admin/log'
     headers 'Content-Type' => 'text/plain; charset=utf8'
-    filename = 'log/development.log'
-    # filename = 'log/production.log'
+    #filename = 'log/development.log'
+    filename = 'log/production.log'
 
     # For testing purposes only
     begin
