@@ -59,17 +59,32 @@ class Keycloak < Sinatra::Application
 
   # puts "MAPPINGS CONTENT", @@auth_mappings
 
-  # p keycloak_config
-  # p "ISSUER", ENV['JWT_ISSUER']
-
   @@port = ENV['KEYCLOAK_PORT']
   @@uri = ENV['KEYCLOAK_PATH']
   @@realm_name = ENV['SONATA_REALM']
   @@client_name = ENV['CLIENT_NAME']
 
+  ## Get the ip of keycloak. Only works for docker-compose
+  #@@address = Resolv::DNS.new.getaddress("son-keycloak")
+  @@address = ENV['KEYCLOAK_ADDRESS']
+
   # TODO: Add admin custom credentials
   # @@admin_name = ENV['ADMIN_NAME']
   # @@admin_password = ENV['ADMIN_PASSWORD']
+
+  begin
+    keycloak_yml = YAML.load_file('config/keycloak.yml')
+    keycloak_yml['address'] = @@address
+    keycloak_yml['port'] = @@port
+    keycloak_yml['uri'] = @@uri
+    keycloak_yml['realm'] = @@realm_name
+    keycloak_yml['client'] = @@client_name
+    File.open('config/keycloak.yml', 'w') do |f|
+      f.puts keycloak_yml.to_yaml
+    end
+  rescue
+    puts "Error updating config file"
+  end
 
   ## TODO: remove this or comment
   #@@port = 8081
@@ -96,11 +111,7 @@ class Keycloak < Sinatra::Application
     end
   end
 
-  ## Get the ip of keycloak. Only works for docker-compose
-  #@@address = Resolv::DNS.new.getaddress("son-keycloak")
-  @@address = ENV['KEYCLOAK_ADDRESS']
-
-  # TODO: remove this or comment
+  # TODO: remove this or comment enable/disable local testing
   #@@address = 'localhost'
   #@@client_secret = 'df7e816d-0337-4fbe-a3f4-7b5263eaba9f'
   #@@access_token = Keycloak.get_adapter_token
