@@ -145,31 +145,27 @@ services:
         gelf-address: "udp://logs.sonata-nfv.eu:12900"
 
   son-gtkusr:
-      image: registry.sonata-nfv.eu:5000/son-gtkusr
-      # links:
-       # - keycloak
-       # - mongodb
-      ports:
-        - "5600:5600"
-      restart: always
-      environment:
-       - RACK_ENV=integration
-       # - MONGO_PASSWORD=sonata
-       # - MONGO_USER=sonatatest
-       # - DATABASE_HOST=
-       # - DATABASE_PORT=
-       # - KEYCLOAK_URL=http://sp.int.sonata-nfv.eu:5601/
-       - KEYCLOAK_ADDRESS=keycloak
-       - KEYCLOAK_PORT=5601
-       - KEYCLOAK_PATH=auth
-       - SONATA_REALM=sonata
-       - CLIENT_NAME=adapter
-      #depends_on:
-      # - mongo
-      logging:
-        driver: gelf
-        options:
-          gelf-address: "udp://logs.sonata-nfv.eu:12900"
+    image: registry.sonata-nfv.eu:5000/son-gtkusr
+    ports:
+      - "5600:5600"
+    links:
+     - son-keycloak
+    environment:
+      - KEYCLOAK_ADDRESS=son-keycloak
+      - KEYCLOAK_PORT=5601
+      - KEYCLOAK_PATH=auth
+      - SONATA_REALM=sonata
+      - CLIENT_NAME=adapter
+    container_name: son-gtkusr
+
+  son-keycloak:
+    image: registry.sonata-nfv.eu:5000/son-keycloak
+    ports:
+      - "5601:5601"
+    environment:
+      - KEYCLOAK_USER=admin
+      - KEYCLOAK_PASSWORD=admin
+    container_name: son-keycloak
 
   postgres:
     image: ntboes/postgres-uuid
@@ -206,20 +202,6 @@ services:
       driver: gelf
       options:
         gelf-address: "udp://logs.sonata-nfv.eu:12900"
-
-  # keycloak:
-    # build:
-    #  context: ./
-    #  dockerfile: son-gtkusr/Dockerfile-Keycloak
-    # image: jboss/keycloak
-    # restart: always
-    # ports:
-     # - "5601:8080"
-    # environment:
-    # - KEYCLOAK_USER=admin
-    # - KEYCLOAK_PASSWORD=admin
-    # links:
-    #  - son-gtkusr
 
   influx:
    image: registry.sonata-nfv.eu:5000/son-monitor-influxdb
