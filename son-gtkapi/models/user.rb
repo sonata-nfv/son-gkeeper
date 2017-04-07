@@ -72,7 +72,8 @@ class User < ManagerService
     user_type = params.delete(:user_type)
     GtkApi.logger.debug(method) {"user type is #{user_type}"}
     params[:attributes] = {}
-    params[:attributes][user_type.to_sym] = ['true']
+    # :attributes=>{:userType=>["developer"]}
+    params[:attributes][:userType] = [user_type]
     GtkApi.logger.debug(method) {"params = #{params}"}
     
     begin
