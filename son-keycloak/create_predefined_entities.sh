@@ -7,6 +7,7 @@ KEYCLOAK_PASSWORD=admin
 KEYCLOAK_URL=http://localhost:$KEYCLOAK_PORT
 KEYCLOAK_OPENID_TOKEN_ENDPOINT=$KEYCLOAK_URL/auth/realms/sonata/protocol/openid-connect/token
 ADAPTER_URL=http://son-gtkusr:5600/api/v1/config
+ADAPTER_ADMIN=http://son-gtkusr:5600/admin
 KCADMIN_SCRIPT=/opt/jboss/keycloak/bin/kcadm.sh
 
 SONATA_REALM=sonata
@@ -130,15 +131,20 @@ $KCADMIN_SCRIPT add-roles -r $SONATA_REALM --uusername service-account-$ADAPTER_
 if [ "$ADAPTER_URL" ]; then
     echo
     echo "------------------------------------------------------------------------"
-    echo "*** Waiting for adapter server is up and listening on $ADAPTER_URL"
+    echo "*** Waiting for adapter server is up and listening on $ADAPTER_ADMIN"
     retries=0
-    until [ $(curl -X POST -o /dev/null -s -w "%{http_code}" -d "secret=$adapter_secret" $ADAPTER_URL) -eq 200 ]; do
+    until [ $(curl -X GET -o /dev/null -s -w "%{http_code}" $ADAPTER_ADMIN) -eq 200 ]; do
 	sleep 20
 	let retries="$retries+1"
 	if [ $retries -eq 12 ]; then
-	    echo "Timeout waiting for adapter on $ADAPTER_URL"
+	    echo "Timeout waiting for adapter on $ADAPTER_ADMIN"
 	    exit 1
 	fi
     done
-    echo "Secret of client [$ADAPTER_CLIENT] successfully POSTed to $ADAPTER_URL"
+    echo "Trying to post the secret on adapter $ADAPTER_URL"
+    if [ $(curl -X POST -o /dev/null -s -w "%{http_code}" -d "secret=$adapter_secret" $ADAPTER_URL) -eq 200 ]; then
+	echo "Secret of client [$ADAPTER_CLIENT] successfully POSTed to $ADAPTER_URL"
+    else
+	echo "Unable to POST secret to $ADAPTER_URL"
+    fi
 fi
