@@ -87,7 +87,6 @@ class Keycloak < Sinatra::Application
     STDOUT.sync = true
     puts "REQUEST.IP:", request.ip.to_s
     puts "@@ADDRESS:", @@address.to_s
-    keycloak_address = nil
     begin
       keycloak_address = Resolv::Hosts.new.getaddress(ENV['KEYCLOAK_ADDRESS'])
     rescue
