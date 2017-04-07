@@ -147,16 +147,26 @@ class Keycloak < Sinatra::Application
     end
     user_id = register_user(form)
 
-    #query = {:'username' => form['username']}
-    #user_data = get_users(query)
-    #puts "USER_DATA", user_data
+    if user_id.nil?
+      delete_user(form['username'])
+      halt 400, json_error("User registration failed")
+    end
 
     form['attributes']['userType'].each { |attr|
       # puts "SETTING_USER_ROLE", attr
-      set_user_groups(attr, user_id)
-      set_user_roles(attr, user_id)
+      res = set_user_groups(attr, user_id)
+      if res.nil?
+        delete_user(form['username'])
+        halt 400, json_error("User registration failed")
+      end
+      res = set_user_roles(attr, user_id)
+      if res.nil?
+        delete_user(form['username'])
+        halt 400, json_error("User registration failed")
+      end
     }
-    halt 201
+    response = {'username' => form['username'], 'userId' => user_id.to_s}
+    halt 201, response.to_json
   end
 
   post '/register/service' do
@@ -239,7 +249,7 @@ class Keycloak < Sinatra::Application
       end
   end
 
-  post '/authorize' do
+  get '/authorize' do
     logger.debug 'Adapter: entered POST /authorize'
     # Return if Authorization is invalid
     halt 400 unless request.env["HTTP_AUTHORIZATION"]
@@ -296,7 +306,7 @@ class Keycloak < Sinatra::Application
         keyed_params = keyed_hash(form)
         halt 401 unless (keyed_params[:'path'] and keyed_params[:'method'])
       else
-        #QUERY TYPE
+        #Request is a QUERY TYPE
         # Get request parameters
         keyed_params = keyed_hash(params)
         # puts "KEYED_PARAMS", keyed_params
