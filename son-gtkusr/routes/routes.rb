@@ -278,6 +278,10 @@ class Keycloak < Sinatra::Application
     end
 
     # Return if content-type is not valid
+    log_file = File.new("#{settings.root}/log/#{settings.environment}.log", 'a+')
+    STDOUT.reopen(log_file)
+    STDOUT.sync = true
+    puts "Content-Type is " + request.content_type
     if request.content_type
       logger.info "Content-Type is " + request.content_type
     end
@@ -299,8 +303,9 @@ class Keycloak < Sinatra::Application
 
         # Request is a QUERY TYPE
         # Get request parameters
+        puts "Input params", params
         keyed_params = keyed_hash(params)
-        # puts "KEYED_PARAMS", keyed_params
+        puts "KEYED_PARAMS", keyed_params
         # params examples: {:path=>"catalogues", :method=>"GET"}
         # Halt if 'path' and 'method' are not included
         halt 401 unless (keyed_params[:'path'] and keyed_params[:'method'])
@@ -314,7 +319,15 @@ class Keycloak < Sinatra::Application
         keyed_params = keyed_hash(form)
         halt 401 unless (keyed_params[:'path'] and keyed_params[:'method'])
       else
-        halt 401, json_error("Invalid Content-type")
+        # Request is a QUERY TYPE
+        # Get request parameters
+        puts "Input params", params
+        keyed_params = keyed_hash(params)
+        puts "KEYED_PARAMS", keyed_params
+        # params examples: {:path=>"catalogues", :method=>"GET"}
+        # Halt if 'path' and 'method' are not included
+        halt 401 unless (keyed_params[:'path'] and keyed_params[:'method'])
+        # halt 401, json_error("Invalid Content-type")
       end
 
     # TODO: Improve path and method parse (include it in body?)
@@ -326,6 +339,7 @@ class Keycloak < Sinatra::Application
     puts "Ready to authorize"
     # Authorization process
     authorize?(user_token, request)
+    STDOUT.sync = false
   end
 
   post '/userinfo' do
