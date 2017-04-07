@@ -474,15 +474,4 @@ class Keycloak < Sinatra::Application
     }
     get_realm_roles(keyed_params)
   end
-
-  get '/secret-defined' do
-    begin
-      if defined? @@client_secret
-        halt 200, 'Client secret defined'
-      else
-        halt 503, 'Client secret not defined yet'
-      end
-    end
-  end
-
 end
