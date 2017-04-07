@@ -287,14 +287,22 @@ class Keycloak < Sinatra::Application
     case request.content_type
       when 'application/x-www-form-urlencoded'
         # Validate format
-        form_encoded, errors = request.body.read
-        halt 400, errors.to_json if errors
+        # form_encoded, errors = request.body.read
+        # halt 400, errors.to_json if errors
 
         # p "FORM PARAMS", form_encoded
-        form = Hash[URI.decode_www_form(form_encoded)]
-        # TODO: Validate Hash format
+        # form = Hash[URI.decode_www_form(form_encoded)]
+        # mat
         # p "FORM", form
-        keyed_params = keyed_hash(form)
+        # keyed_params = keyed_hash(form)
+        # halt 401 unless (keyed_params[:'path'] and keyed_params[:'method'])
+
+        # Request is a QUERY TYPE
+        # Get request parameters
+        keyed_params = keyed_hash(params)
+        # puts "KEYED_PARAMS", keyed_params
+        # params examples: {:path=>"catalogues", :method=>"GET"}
+        # Halt if 'path' and 'method' are not included
         halt 401 unless (keyed_params[:'path'] and keyed_params[:'method'])
 
       when 'application/json'
@@ -306,15 +314,8 @@ class Keycloak < Sinatra::Application
         keyed_params = keyed_hash(form)
         halt 401 unless (keyed_params[:'path'] and keyed_params[:'method'])
       else
-        #Request is a QUERY TYPE
-        # Get request parameters
-        keyed_params = keyed_hash(params)
-        # puts "KEYED_PARAMS", keyed_params
-        # params examples:
-        # {:uri=>"catalogues", :method=>"GET"}
-        # Return if 'uri' and 'method' are not included
-        halt 401 unless (keyed_params[:'path'] and keyed_params[:'method'])
-    end
+        halt 401, json_error("Invalid Content-type")
+      end
 
     # TODO: Improve path and method parse (include it in body?)
     # puts "PATH", keyed_params[:'path']
