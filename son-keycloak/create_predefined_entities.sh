@@ -99,10 +99,11 @@ adapter_cid=$(echo $create_client_out | awk -F id= '{print $2}')
 
 # Creating a realm role:
 create_realm_role $SONATA_REALM son-gkeeper "\${role_access-catalogue},\${role_access-repositories}"
-create_realm_role $SONATA_REALM son-catalogues ""
+create_realm_role $SONATA_REALM son-catalogue ""
 create_realm_role $SONATA_REALM son-repositories "\${role_read-catalogue}"
+create_realm_role $SONATA_REALM son-monitor "\${role_read-catalogue},\${role_read-repositories}"
 create_realm_role $SONATA_REALM customer "\${role_read-repositories},\${role_write-repositories},\${role_execute-catalogue}"
-create_realm_role $SONATA_REALM developer "\${role_read-catalogue},\${role_write-catalogue}"
+create_realm_role $SONATA_REALM developer "\${role_read-catalogue},\${role_write-catalogue},\${role_read-monitor}"
 
 # Creating realm groups:
 create_group $SONATA_REALM developers
