@@ -70,7 +70,7 @@ class ServiceManagerService < ManagerService
 
     begin
       GtkApi.logger.debug(method) {"@url = "+@@url}
-      response = self.postCurb(url: @@url+'/requests', body: params.to_json) ## TODO: check if this tests ok!! 
+      response = self.postCurb(url: @@url+'/requests', body: params) ## TODO: check if this tests ok!! 
       GtkApi.logger.debug(method) {"response=#{response}"}
       response
     rescue => e
@@ -87,7 +87,7 @@ class ServiceManagerService < ManagerService
     begin
       GtkApi.logger.debug(message) {"@url = "+@@url}
       #response = RestClient.put(@url+'/services/'+nsr_uuid, nsd.to_json, content_type: :json, accept: :json) 
-      response = self.postCurb(url: @@url+'/services/'+nsr_uuid, body: nsd.to_json) 
+      response = self.postCurb(url: @@url+'/services/'+nsr_uuid, body: nsd) 
       GtkApi.logger.debug(message) {"response="+response}
       response
     rescue => e

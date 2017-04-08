@@ -78,30 +78,31 @@ RSpec.describe User, type: :model do
   describe '#create' do
     # expect(@object).to be_a Shirt
     let(:users_url) {User.class_variable_get(:@@url)+'/api/v1/register/user'}
-    let(:user_basic_info) {{
-      firstName: "Un", lastName: "Known",
+    let(:to_be_created_user) {{
+      firstName: "Un", lastName: "Known", username: "Unknown", email: "un@known.com", 
+      password: "1234",
       user_type: "developer"
-      }}
-    let(:user_info) {user_basic_info.merge({username: "Unknown", email: "un@known.com", password: "1234"})}
+    }}
+    let(:user_info) {{
+      firstName: "Un", lastName: "Known", username: "Unknown", email: "un@known.com", 
+      credentials: [{type: "password", value: "1234"}],
+      attributes: {userType:["developer"]}
+    }}
     let(:created_user) {{
-      uuid:SecureRandom.uuid,
-      firstName: "Un", lastName: "Known",
-      username: "Unknown", email: "un@known.com",
-      credentials: [{type: 'password', value: '1234'}],
-      attributes: {developer:['true']},
-      token: '123'
+      uuid: SecureRandom.uuid,
+      username: "Unknown"
     }}
       
     context 'successfuly' do
       before(:each) do
         resp = OpenStruct.new(header_str: "HTTP/1.1 201 OK\nRecord-Count: 1", body: created_user.to_json)            
-        allow(Curl).to receive(:post).with(users_url, user_info).and_return(resp) 
+        allow(Curl).to receive(:post).with(users_url, user_info.to_json).and_return(resp) 
       end
-      it 'should return 201' do
-        expect(User.create(user_info)).to be_a User #eq({status: 201, count: 1, items: created_user, message: "OK"})
+      it 'should return a User' do
+        expect(User.create(to_be_created_user)).to be_a User
       end
       it 'should call User Management Service' do
-        User.create(user_info)
+        User.create(to_be_created_user)
         expect(Curl).to have_received(:post)
       end
     end

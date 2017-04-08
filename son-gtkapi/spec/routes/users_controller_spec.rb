@@ -42,12 +42,8 @@ RSpec.describe GtkApi, type: :controller do
       }}
     let(:user_info) {user_basic_info.merge({username: "Unknown", email: "un@known.com", password: "1234"})}
     let(:created_user) {{
-      uuid:SecureRandom.uuid,
-      firstName: "Un", lastName: "Known",
-      username: "Unknown", email: "un@known.com",
-      credentials: [{type: 'password', value: '1234'}],
-      attributes: {developer:['true']},
-      token: '123'
+      uuid: SecureRandom.uuid,
+      username: "Unknown"
     }}
     let(:user_with_no_name) {user_basic_info.merge({username: "", email: "un@known.com", password: "1234"})}
     it 'without user name given returns Unprocessable Entity (400)' do
@@ -56,9 +52,8 @@ RSpec.describe GtkApi, type: :controller do
     end
 
     context 'with user name ' do
-      let(:user_with_no_password) {user_basic_info.merge({username: "Unknown", email: "user.sample@email.com.br", credentials: [ {type: "password", value: ""} ]})}
-      let(:user_with_no_email) {user_basic_info.merge({username: "Unknown", email: "", credentials: [ {type: "password", value: "1234"} ]})}
-      let(:created_user) { user_info.merge({uuid:SecureRandom.uuid})}
+      let(:user_with_no_password) {user_basic_info.merge({username: "Unknown", email: "user.sample@email.com.br", password: ""} )}
+      let(:user_with_no_email) {user_basic_info.merge({username: "Unknown", email: "", password: "1234"})}
       it 'given, but no password, returns Unprocessable Entity (400)' do
         post '/api/v2/users/', user_with_no_password.to_json
         expect(last_response.status).to eq(400)
@@ -68,7 +63,7 @@ RSpec.describe GtkApi, type: :controller do
         expect(last_response.status).to eq(400)
       end
       it 'and password given returns Ok (201)' do
-        user = double('User', uuid: created_user[:uuid])
+        user = double('User', uuid: created_user[:uuid], username: created_user[:username])
         allow(User).to receive(:create).with(user_info).and_return(user)
         post '/api/v2/users/', user_info.to_json
         expect(last_response.status).to eq(201)

@@ -61,7 +61,7 @@ class VimManagerService < ManagerService
 
     begin
       GtkApi.logger.debug(method) {"@url = " + @@url}
-      response = postCurb(url:@@url+'/vim', body: params.to_json)
+      response = postCurb(url:@@url+'/vim', body: params)
       GtkApi.logger.debug(method) {"response="+response.to_s}
       response
     rescue => e
