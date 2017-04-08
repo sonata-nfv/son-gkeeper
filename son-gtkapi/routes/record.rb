@@ -50,7 +50,7 @@ class GtkApi < Sinatra::Base
       @offset ||= params[:offset] ||= DEFAULT_OFFSET 
       @limit ||= params[:limit] ||= DEFAULT_LIMIT
   
-      records = RecordManagerService.find_records(params)
+      records = RecordManagerService.find(params)
       case records[:status]
       when 200
         logger.debug(log_message) {"leaving with #{records}"}
@@ -69,7 +69,7 @@ class GtkApi < Sinatra::Base
       unless params[:uuid].nil?
         logger.debug(method) {'entered'}
         json_error 400, 'Invalid Instance UUID' unless valid? params[:uuid]
-        record = RecordManagerService.find_record_by_uuid(params[:uuid])
+        record = RecordManagerService.find_by_uuid(params[:uuid])
         case record[:status]
         when 200
           logger.debug(log_message) {"leaving with #{record}"}
