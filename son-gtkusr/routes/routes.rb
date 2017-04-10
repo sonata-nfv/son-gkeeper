@@ -270,8 +270,7 @@ class Keycloak < Sinatra::Application
     # Get authorization token
     user_token = request.env["HTTP_AUTHORIZATION"].split(' ').last
     unless user_token
-      error = {"ERROR" => "Access token is not provided"}
-      halt 400, error.to_json
+      json_error(400, 'Access token is not provided')
     end
 
     # Check token validation
