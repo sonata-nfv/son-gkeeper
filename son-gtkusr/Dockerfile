@@ -8,8 +8,10 @@ COPY Gemfile /app/
 WORKDIR /app
 RUN bundle install
 COPY . /app
+ADD ./setenv.sh /
+ADD ./docker-entrypoint.sh /
 ENV PORT 5600
 EXPOSE 5600
 WORKDIR /app
 ENV USER_MANAGEMENT_URL http://son-gtkusr:5600
-CMD ["rake", "start"]
+CMD ["/docker-entrypoint.sh"]
