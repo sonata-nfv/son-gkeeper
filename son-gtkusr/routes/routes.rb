@@ -148,7 +148,8 @@ class Keycloak < Sinatra::Application
 
     if user_id.nil?
       delete_user(form['username'])
-      json_error(error_code, error_msg)
+      # json_error(error_code, error_msg)
+      halt error_code, {'Content-type' => 'application/json'}, error_msg
     end
 
     form['attributes']['userType'].each { |attr|
@@ -224,6 +225,7 @@ class Keycloak < Sinatra::Application
     # puts  "PLAIN", plain_user_pass.split(':').last
     username = plain_pass.split(':').first # params[:username]
     password = plain_pass.split(':').last # params[:password]
+    logger.info "User #{username} has accessed to login"
 
     credentials = {"type" => "password", "value" => password.to_s}
     login(username, credentials)
