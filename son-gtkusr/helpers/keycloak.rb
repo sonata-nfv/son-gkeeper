@@ -307,7 +307,7 @@ class Keycloak < Sinatra::Application
     # puts "REG CODE", response.code
     # puts "REG BODY", response.body
     if response.code.to_i != 201
-      return nil, response.code.to_i, response.body.to_s
+      return nil, response.code.to_i, response.body
     end
 
     # GET new registered user Id
