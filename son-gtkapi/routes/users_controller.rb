@@ -55,9 +55,11 @@ class GtkApi < Sinatra::Base
     
       begin
         user = User.create(params)
-        logger.info(log_message) {"leaving with user #{user.inspect}"}
+        logger.info(log_message) {"leaving with user name #{user.username}"}
         headers 'Location'=> User.class_variable_get(:@@url)+"/api/v2/users/#{user.uuid}", 'Content-Type'=> 'application/json'
-        halt 201, user.to_json(only: [:token])
+        halt 201, { username: user.username, uuid: user.uuid}.to_json
+      rescue UserNameAlreadyInUseError
+        json_error 409, "User name #{params[:username]} already in use", log_message
       rescue UserNotCreatedError
         json_error 400, "Error creating user #{params}", log_message
       end

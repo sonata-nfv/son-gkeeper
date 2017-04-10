@@ -31,6 +31,7 @@ require 'base64'
 class UserNotCreatedError < StandardError; end
 class UserNotFoundError < StandardError; end
 class UsersNotFoundError < StandardError; end
+class UserNameAlreadyInUseError < StandardError; end
 
 class User < ManagerService
 
@@ -57,13 +58,15 @@ class User < ManagerService
     @username = params[:username]
     @secret = Base64.strict_encode64(params[:username]+':'+params[:password])
     @session = nil
-    @uuid = SecureRandom.uuid # TODO: temporary, before being SAVED!
+    @uuid = params[:uuid]
   end
 
   def self.create(params)
     method = LOG_MESSAGE + "##{__method__}"
     GtkApi.logger.debug(method) {"entered with #{params}"}
 
+    saved_params = params.dup
+    
     # Transform password
     password = params.delete(:password)
     params[:credentials] = [{type: 'password', value: password}]
@@ -72,19 +75,37 @@ class User < ManagerService
     user_type = params.delete(:user_type)
     GtkApi.logger.debug(method) {"user type is #{user_type}"}
     params[:attributes] = {}
-    params[:attributes][user_type.to_sym] = ['true']
+    # :attributes=>{:userType=>["developer"]}
+    params[:attributes][:userType] = [user_type]
     GtkApi.logger.debug(method) {"params = #{params}"}
     
+    # This doesn't work:
+    # {"username":"test","email":"a@example.com","credentials":[{"type":"password","value":"123"}],"attributes":{"userType":["developer"]}}
+    # This woks:
+    # {"username":"user05","email":"test.jenkins@email.com","credentials":[{"type":"password","value":"1234"}],"attributes":{"userType": ["developer", "customer"]}}
     begin
-      resp = postCurb(url: @@url+'/api/v1/register/user', body: params, headers: {'Content-Type'=>'application/json'})
-      user = resp[:items]
-      GtkApi.logger.debug(method) {"user=#{user}"}
-      User.new({
-        username: user[:username], password: user[:credentials][0][:value],
-        lastName: user[:lastName], firstName: user[:firstName],
-        email: user[:email], token: user[:token],
-        user_type: user[:attributes].key(['true']) # returns the first one to be true
-      })
+      resp = postCurb(url: @@url+'/api/v1/register/user', body: params)
+      case resp[:status]
+      when 200..202
+        user = resp[:items]
+        GtkApi.logger.debug(method) {"user=#{user}"}
+        saved_params[:uuid] = user[:userId] unless user.empty?
+        User.new(saved_params)
+        #  (){username: user[:username], password: user[:credentials][0][:value],
+        #  lastName: user[:lastName], firstName: user[:firstName],
+        #  email: user[:email], token: user[:token],
+        #  user_type: user[:attributes].key(['true']) # returns the first one to be true
+        #})
+      when 409
+        GtkApi.logger.error(method) {"Status #{resp[:status]}"} 
+        User.find_by_name params[:username]
+      when 403
+        GtkApi.logger.error(method) {"Why return 403?!?"} 
+        raise UserNameAlreadyInUseError.new "Why return 403?!? with params #{params}"
+      else
+        GtkApi.logger.error(method) {"Status #{resp[:status]}"} 
+        raise UserNotCreatedError.new "User not created with params #{params}"
+      end
     rescue  => e
       GtkApi.logger.error(method) {"Error during processing: #{$!}"}
       GtkApi.logger.error(method) {"Backtrace:\n\t#{e.backtrace.join("\n\t")}"}
@@ -131,7 +152,7 @@ class User < ManagerService
     GtkApi.logger.debug(method) {"entered with name #{name}"}
     #user=find(url: @@url + USERS_URL + name, log_message: LOG_MESSAGE + "##{__method__}(#{name})")
     #user ? User.new(user['data']) : nil
-    name=='Unknown' ? User.new({username: 'Unknown', credentials: [ {type: 'password', value: 'None'}]}) : nil
+    name=='Unknown' ? User.new({username: 'Unknown', password: 'None'}) : nil
   end
 
   def self.find(params)
@@ -163,7 +184,7 @@ class User < ManagerService
       raise PublicKeyNotFoundError.new('No public key received from User Management micro-service')
     end
   end
-
+  
   private 
   
   # these are temporary, waiting for the integration with the User Management

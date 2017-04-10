@@ -85,7 +85,7 @@ class ManagerService
   def self.postCurb(url:, body:, headers: {})
     log_message=LOG_MESSAGE+"##{__method__}"
     GtkApi.logger.debug(log_message) {"entered with url=#{url}, body=#{body}"}
-    res=Curl.post(url, body) do |req|
+    res=Curl.post(url, body.to_json) do |req|
       if headers.empty?
         req.headers['Content-type'] = req.headers['Accept'] = 'application/json'
       else
@@ -101,7 +101,7 @@ class ManagerService
     when 200..202
       begin
         parsed_response = JSON.parse(res.body, symbolize_names: true)
-        GtkApi.logger.debug(log_message) {"parsed_response=#{parsed_response}"}
+        GtkApi.logger.debug(log_message) {"status #{status}, parsed_response=#{parsed_response}"}
         {status: status, count: 1, items: parsed_response, message: "OK"}
       rescue => e
         GtkApi.logger.error(log_message) {"Error during processing: #{$!}"} 
@@ -109,8 +109,10 @@ class ManagerService
         {status: nil, count: nil, items: nil, message: "Error processing #{$!}: \n\t#{e.backtrace.join("\n\t")}"}
       end
     when 400..499
+      GtkApi.logger.error(log_message) {"Status #{status}"} 
       {status: status, count: nil, items: nil, message: "Status #{status}: could not process"}
     else
+      GtkApi.logger.error(log_message) {"Status #{status}"} 
       {status: status, count: nil, items: nil, message: "Status #{status} unknown"}
     end
   end  
