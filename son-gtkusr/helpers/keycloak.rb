@@ -750,9 +750,12 @@ class Keycloak < Sinatra::Application
     request.body = (body << role_data).to_json
 
     response = http.request(request)
-    # p "CODE", response.code
-    # p "BODY", response.body
-
+    log_file = File.new("#{settings.root}/log/#{settings.environment}.log", 'a+')
+    STDOUT.reopen(log_file)
+    STDOUT.sync = true
+    p "CODE", response.code
+    p "BODY", response.body
+    STDOUT.sync = false
     if response.code.to_i == 204
       return response.code, nil
     else
