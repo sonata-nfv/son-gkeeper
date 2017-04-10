@@ -8,8 +8,8 @@ COPY Gemfile /app/
 WORKDIR /app
 RUN bundle install
 COPY . /app
-ADD ./setenv.sh /
-ADD ./docker-entrypoint.sh /
+ADD setenv.sh /
+ADD docker-entrypoint.sh /
 ENV PORT 5600
 EXPOSE 5600
 WORKDIR /app
