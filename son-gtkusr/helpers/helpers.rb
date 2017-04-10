@@ -52,8 +52,13 @@ def keyed_hash(hash)
 end
 
 def json_error(code, message)
+  log_file = File.new("#{settings.root}/log/#{settings.environment}.log", 'a+')
+  STDOUT.reopen(log_file)
+  STDOUT.sync = true
   msg = {'error' => message}
+  puts message
   logger.error msg.to_s
+  STDOUT.sync = false
   halt code, {'Content-type' => 'application/json'}, msg.to_json
 end
 
