@@ -496,14 +496,14 @@ class Keycloak < Sinatra::Application
     # puts "LOG BODY", response.body
 
     unless response.code == '200'
-      halt response.code.to_i, response.body
+      return response.code.to_i, response.body
     end
 
     parsed_res, errors = parse_json(response.body)
     # p "RESPONSE BODY"
     # puts parsed_res[0]['access_token']
     # halt 200, parsed_res['access_token'].to_json
-    halt 200, response.body
+    return 200, response.body
   end
 
   # "token_endpoint":"http://localhost:8081/auth/realms/master/protocol/openid-connect/token"
