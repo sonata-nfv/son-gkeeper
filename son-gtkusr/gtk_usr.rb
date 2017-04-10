@@ -63,6 +63,13 @@ configure do
     register Sinatra::ConfigFile
     # Load configurations
     config_file 'config/keycloak.yml'
+    configure {
+      enable :logging
+    }
+
+    before {
+      env['rack.logger'] = Logger.new "#{settings.root}/log/#{settings.environment}.log"
+    }
 
     #self.get_realm_public_key
     # self.get_oidc_endpoints
@@ -89,4 +96,11 @@ class Adapter < Sinatra::Application
   register Sinatra::ConfigFile
   # Load configurations
   config_file 'config/config.yml'
+  configure {
+    enable :logging
+  }
+
+  before {
+    env['rack.logger'] = Logger.new "#{settings.root}/log/#{settings.environment}.log"
+  }
 end
