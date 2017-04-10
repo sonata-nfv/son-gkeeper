@@ -147,6 +147,9 @@ class Keycloak < Sinatra::Application
     user_id, error_code, error_msg = register_user(form)
 
     if user_id.nil?
+      if error_code == 409
+        halt error_code, {'Content-type' => 'application/json'}, error_msg
+      end
       delete_user(form['username'])
       # json_error(error_code, error_msg)
       halt error_code, {'Content-type' => 'application/json'}, error_msg
@@ -228,7 +231,8 @@ class Keycloak < Sinatra::Application
     logger.info "User #{username} has accessed to login"
 
     credentials = {"type" => "password", "value" => password.to_s}
-    login(username, credentials)
+    log_code, log_msg = login(username, credentials)
+    halt log_code
   end
 
   post '/login/service' do
@@ -241,9 +245,11 @@ class Keycloak < Sinatra::Application
 
     client_id = plain_pass.split(':').first
     secret = plain_pass.split(':').last
+    logger.info "Service #{client_id} has accessed to login"
 
     credentials = {"type" => "client_credentials", "value" => secret.to_s}
-    login(client_id, credentials)
+    log_code, log_msg = login(client_id, credentials)
+    halt log_code
   end
 
   post '/authenticate' do
