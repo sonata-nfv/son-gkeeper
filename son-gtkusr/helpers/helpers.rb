@@ -68,6 +68,16 @@ class Adapter < Sinatra::Application
             'method' => 'GET',
             'purpose' => 'REST API root'
         },
+        {
+            'uri' => '/log',
+            'method' => 'GET',
+            'purpose' => 'User Management log'
+        },
+        {
+            'uri' => '/config',
+            'method' => 'GET',
+            'purpose' => 'User Management configuration'
+        },
     ]
   end
 

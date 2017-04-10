@@ -58,7 +58,7 @@ class Adapter < Sinatra::Application
 
     rescue => err
       logger.error "Error reading log file: #{err}"
-      return 500, "Error reading log file: #{err}"
+      json_error(500, "Error reading log file: #{err}")
     end
 
     halt 200, txt.read.to_s
@@ -72,7 +72,7 @@ class Adapter < Sinatra::Application
       keycloak_yml = YAML.load_file('config/keycloak.yml')
     rescue => err
       logger.error "Error loading config file: #{err}"
-      halt 500, json_error("Error loading config file: #{err}")
+      json_error(500, "Error loading config file: #{err}")
     end
     halt 200, keycloak_yml.to_json
   end
@@ -122,7 +122,6 @@ class Keycloak < Sinatra::Application
     halt 200, response.to_json
   end
 
-
   post '/register/user' do
     # Return if content-type is not valid
     logger.info "Content-Type is " + request.media_type
@@ -145,24 +144,24 @@ class Keycloak < Sinatra::Application
         form, errors = parse_json(request.body.read)
         halt 400, errors.to_json if errors
     end
-    user_id = register_user(form)
+    user_id, error_code, error_msg = register_user(form)
 
     if user_id.nil?
       delete_user(form['username'])
-      halt 400, json_error("User registration failed")
+      json_error(error_code, error_msg)
     end
 
     form['attributes']['userType'].each { |attr|
       # puts "SETTING_USER_ROLE", attr
-      res = set_user_groups(attr, user_id)
-      if res.nil?
+      res_code, res_msg = set_user_groups(attr, user_id)
+      if res_code != 204
         delete_user(form['username'])
-        halt 400, json_error("User registration failed")
+        json_error(res_code, res_msg)
       end
-      res = set_user_roles(attr, user_id)
-      if res.nil?
+      res_code, res_msg = set_user_roles(attr, user_id)
+      if res_code != 204
         delete_user(form['username'])
-        halt 400, json_error("User registration failed")
+        json_error(res_code, res_msg)
       end
     }
     response = {'username' => form['username'], 'userId' => user_id.to_s}
@@ -182,12 +181,27 @@ class Keycloak < Sinatra::Application
     halt 400, errors.to_json if errors
 
     # puts "REGISTERING NEW CLIENT"
-    register_client(parsed_form)
+    client_id = register_client(parsed_form)
+
+    if client_id.nil?
+      delete_client(parsed_form['clientId'])
+      json_error(400, "Service registration failed")
+    end
+
+    # TODO: To solve predefined roles dependency, create a new role based on client registration
 
     # puts "SETTING CLIENT ROLES"
-    client_data, role_data = set_service_roles(parsed_form['clientId'])
+    client_data, role_data, error_code, error_msg = set_service_roles(parsed_form['clientId'])
+    if error_code != nil
+      delete_client(parsed_form['clientId'])
+      json_error(error_code, error_msg)
+    end
     # puts "SETTING SERVICE ACCOUNT ROLES"
-    set_service_account_roles(client_data['id'], role_data)
+    code, error_msg = set_service_account_roles(client_data['id'], role_data)
+    if code != 204
+      delete_client(parsed_form['clientId'])
+      json_error(code, error_msg)
+    end
     halt 201
   end
 
@@ -349,15 +363,14 @@ class Keycloak < Sinatra::Application
 
     user_token = request.env["HTTP_AUTHORIZATION"].split(' ').last
     unless user_token
-      error = {"ERROR" => "Access token is not provided"}
-      halt 400, error.to_json
+      json_error(400, 'Access token is not provided')
     end
 
     # Validate token
     res, code = token_validation(user_token)
     if code == '200'
       result = is_active?(res)
-      puts "RESULT", result
+      # puts "RESULT", result
       case result
         when false
           json_error(401, 'Token not active')
@@ -365,12 +378,46 @@ class Keycloak < Sinatra::Application
           # continue
       end
     else
-      halt 400, res
+      json_error(400, res.to_s)
     end
 
     # puts "RESULT", user_token
     user_info = userinfo(user_token)
     halt 200, user_info
+  end
+
+  post '/userid' do
+    logger.debug 'Adapter: entered POST /userid'
+    # Return if Authorization is invalid
+    halt 400 unless request.env["HTTP_AUTHORIZATION"]
+
+    user_token = request.env["HTTP_AUTHORIZATION"].split(' ').last
+    unless user_token
+      json_error(400, 'Access token is not provided')
+    end
+
+    # Validate token
+    res, code = token_validation(user_token)
+    if code == '200'
+      result = is_active?(res)
+      case result
+        when false
+          json_error(401, 'Token not active')
+        else
+          # continue
+      end
+    else
+      json_error(400, res.to_s)
+    end
+
+    keyed_params = params
+    if keyed_params.include? :'username'
+      user_id = get_user_id(keyed_params[:'username'])
+      response = {'userId' => user_id}
+      halt 200, response.to_json
+    else
+      json_error(400, 'Incorrect username')
+    end
   end
 
   post '/logout' do
@@ -382,8 +429,7 @@ class Keycloak < Sinatra::Application
     # puts "headers", request.env["HTTP_AUTHORIZATION"]
 
     unless user_token
-      error = {"ERROR" => "Access token is not provided"}
-      halt 400, error.to_json
+      json_error(400, 'Access token is not provided')
     end
 
     # Validate token
@@ -400,7 +446,7 @@ class Keycloak < Sinatra::Application
           # continue
       end
     else
-      halt 400, res
+      json_error(400, res.to_s)
     end
 
     # if headers['Authorization']
@@ -439,7 +485,8 @@ class Keycloak < Sinatra::Application
         json_error(400, 'Bad query')
       end
     }
-    get_users(keyed_params)
+    reg_users = get_users(keyed_params)
+    halt 200, reg_users.to_json
   end
 
   get '/services' do
@@ -456,7 +503,8 @@ class Keycloak < Sinatra::Application
         json_error(400, 'Bad query')
       end
     }
-    get_clients(keyed_params)
+    reg_clients = get_clients(keyed_params)
+    halt 200, reg_clients.to_json
   end
 
   get '/roles' do
@@ -473,6 +521,7 @@ class Keycloak < Sinatra::Application
         json_error(400, 'Bad query')
       end
     }
-    get_realm_roles(keyed_params)
+    realm_roles = get_realm_roles(keyed_params)
+    halt 200, realm_roles
   end
 end

@@ -1,8 +1,8 @@
 ---
 servicename: son-gtkusr
-environment: development
+environment: production
 #address: 0.0.0.0
-#port: 4013
+#port: 5600
 #max_conns: 1024
 #timeout: 30
 #max_persistent_conns: 512
