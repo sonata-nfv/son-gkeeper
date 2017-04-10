@@ -153,19 +153,20 @@ class Keycloak < Sinatra::Application
 
     form['attributes']['userType'].each { |attr|
       # puts "SETTING_USER_ROLE", attr
-      logger.info "Adding new user to groups"
+      logger.debug "Adding new user to groups"
       res_code, res_msg = set_user_groups(attr, user_id)
       if res_code != 204
         delete_user(form['username'])
         json_error(res_code, res_msg)
       end
-      logger.info "Adding new user roles"
+      logger.debug "Adding new user roles"
       res_code, res_msg = set_user_roles(attr, user_id)
       if res_code != 204
         delete_user(form['username'])
         json_error(res_code, res_msg)
       end
     }
+    logger.info "New user #{form['username']} has been registered"
     response = {'username' => form['username'], 'userId' => user_id.to_s}
     halt 201, response.to_json
   end
@@ -183,11 +184,12 @@ class Keycloak < Sinatra::Application
     halt 400, errors.to_json if errors
 
     # puts "REGISTERING NEW CLIENT"
+    logger.info 'Registering new Service client'
     client_id = register_client(parsed_form)
 
     if client_id.nil?
       delete_client(parsed_form['clientId'])
-      json_error(400, "Service registration failed")
+      json_error(400, 'Service client registration failed')
     end
 
     # TODO: To solve predefined roles dependency, create a new role based on client registration
@@ -204,6 +206,7 @@ class Keycloak < Sinatra::Application
       delete_client(parsed_form['clientId'])
       json_error(code, error_msg)
     end
+    logger.info "New Service client #{parsed_form['clientId']} registered"
     halt 201
   end
 

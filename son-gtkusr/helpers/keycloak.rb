@@ -753,7 +753,7 @@ class Keycloak < Sinatra::Application
     # p "CODE", response.code
     # p "BODY", response.body
 
-    if response.code == '204'
+    if response.code.to_i == 204
       return response.code, nil
     else
       # json_error(response.code.to_i, response.body.to_s)
@@ -886,7 +886,7 @@ class Keycloak < Sinatra::Application
     # p "CODE", response.code
     # p "BODY", response.body
 
-    if response.code == '204'
+    if response.code.to_i == 204
       return response.code.to_i, nil
     else
       return response.code.to_i, response.body.to_s
