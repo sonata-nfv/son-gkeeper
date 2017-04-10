@@ -1,5 +1,4 @@
 #!/bin/bash
-/setenv.sh
 if [ -f /etc/nginx/cert/sonata.crt ] && [ -f /etc/nginx/cert/sonata.key ]
 then
    echo "Starting SONATA SP" > /dev/stdout
