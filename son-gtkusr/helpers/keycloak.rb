@@ -708,7 +708,7 @@ class Keycloak < Sinatra::Application
   end
 
   def refresh_adapter()
-    puts "CHEKING TOKEN AVAILABILITY..."
+    puts "CHECKING TOKEN AVAILABILITY..."
     if defined?@@access_token
       #=> Check if token.expired?
       code = is_expired?
