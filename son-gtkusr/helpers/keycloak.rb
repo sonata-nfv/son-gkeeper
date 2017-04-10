@@ -733,8 +733,6 @@ class Keycloak < Sinatra::Application
     # p "ROLE DATA", role_data
     # Compare user_type with roles
     unless role_data
-      # TODO: return error_code and message
-      #json_error(401, 'User type not allowed')
       return 401, 'User type is not allowed'
     end
 
@@ -750,17 +748,17 @@ class Keycloak < Sinatra::Application
     request.body = (body << role_data).to_json
 
     response = http.request(request)
-    log_file = File.new("#{settings.root}/log/#{settings.environment}.log", 'a+')
-    STDOUT.reopen(log_file)
-    STDOUT.sync = true
-    p "CODE", response.code
-    p "BODY", response.body
-    STDOUT.sync = false
-    if response.code.to_i == 204
-      return response.code, nil
-    else
+    # log_file = File.new("#{settings.root}/log/#{settings.environment}.log", 'a+')
+    # STDOUT.reopen(log_file)
+    # STDOUT.sync = true
+    # p "CODE", response.code
+    # p "BODY", response.body
+    # STDOUT.sync = false
+    if response.code.to_i != 204
       # json_error(response.code.to_i, response.body.to_s)
       return response.code.to_i, response.body.to_s
+    else
+      return response.code.to_i, nil
     end
   end
 
