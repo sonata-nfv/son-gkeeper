@@ -143,6 +143,7 @@ class Keycloak < Sinatra::Application
         form, errors = parse_json(request.body.read)
         halt 400, errors.to_json if errors
     end
+    logger.info "Registering new user"
     user_id, error_code, error_msg = register_user(form)
 
     if user_id.nil?
@@ -152,11 +153,13 @@ class Keycloak < Sinatra::Application
 
     form['attributes']['userType'].each { |attr|
       # puts "SETTING_USER_ROLE", attr
+      logger.info "Adding new user to groups"
       res_code, res_msg = set_user_groups(attr, user_id)
       if res_code != 204
         delete_user(form['username'])
         json_error(res_code, res_msg)
       end
+      logger.info "Adding new user roles"
       res_code, res_msg = set_user_roles(attr, user_id)
       if res_code != 204
         delete_user(form['username'])
