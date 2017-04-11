@@ -82,17 +82,19 @@ end
 class Keycloak < Sinatra::Application
   
   post '/config' do
-    log_file = File.new("#{settings.root}/log/#{settings.environment}.log", 'a+')
-    STDOUT.reopen(log_file)
-    STDOUT.sync = true
-    puts "REQUEST.IP:", request.ip.to_s
-    puts "@@ADDRESS:", @@address.to_s
+    logger.debug 'Adapter: entered POST /config'
+    # log_file = File.new("#{settings.root}/log/#{settings.environment}.log", 'a+')
+    # STDOUT.reopen(log_file)
+    # STDOUT.sync = true
+    # puts "REQUEST.IP:", request.ip.to_s
+    # puts "@@ADDRESS:", @@address.to_s
+    logger.debug "Checking #{request.ip.to_s} with #{keycloak_address.to_s}"
     begin
       keycloak_address = Resolv::Hosts.new.getaddress(ENV['KEYCLOAK_ADDRESS'])
     rescue
       keycloak_address = Resolv::DNS.new.getaddress(ENV['KEYCLOAK_ADDRESS'])
     end
-    STDOUT.sync = false
+    # STDOUT.sync = false
     # Check if the request comes from keycloak docker.
     if request.ip.to_s !=  keycloak_address.to_s
       halt 401
@@ -105,6 +107,7 @@ class Keycloak < Sinatra::Application
     get_oidc_endpoints
     get_adapter_install_json
     @@access_token = self.get_adapter_token
+    logger.debug 'Adapter: exit POST /config with secret and access_token configured'
     halt 200
   end
 
@@ -122,6 +125,7 @@ class Keycloak < Sinatra::Application
   end
 
   post '/register/user' do
+    logger.debug 'Adapter: entered POST /register/user'
     # Return if content-type is not valid
     logger.info "Content-Type is " + request.media_type
     halt 415 unless (request.content_type == 'application/x-www-form-urlencoded' or request.content_type == 'application/json')
@@ -228,11 +232,18 @@ class Keycloak < Sinatra::Application
     # puts  "PLAIN", plain_user_pass.split(':').last
     username = plain_pass.split(':').first # params[:username]
     password = plain_pass.split(':').last # params[:password]
-    logger.info "User #{username} has accessed to login"
+    logger.info "User #{username} has accessed to log-in"
 
     credentials = {"type" => "password", "value" => password.to_s}
     log_code, log_msg = login(username, credentials)
-    halt log_code
+    if log_code != 200
+      logger.info "User #{username} has failed to log-in"
+      logger.debug 'Adapter: exit POST /login/user'
+      halt log_code, log_msg
+    end
+    logger.info "User #{username} has logged-in succesfully"
+    logger.debug 'Adapter: exit POST /login/user'
+    halt log_code, {'Content-type' => 'application/json'}, log_msg
   end
 
   post '/login/service' do
@@ -245,11 +256,18 @@ class Keycloak < Sinatra::Application
 
     client_id = plain_pass.split(':').first
     secret = plain_pass.split(':').last
-    logger.info "Service #{client_id} has accessed to login"
+    logger.info "Service #{client_id} has accessed to log-in"
 
     credentials = {"type" => "client_credentials", "value" => secret.to_s}
     log_code, log_msg = login(client_id, credentials)
-    halt log_code
+    if log_code != 200
+      logger.info "Service #{client_id} has failed to log-in"
+      logger.debug 'Adapter: exit POST /login/service'
+      halt log_code, log_msg
+    end
+    logger.info "Service #{client_id} has logged-in successfully"
+    logger.debug 'Adapter: exit POST /login/service'
+    halt log_code, {'Content-type' => 'application/json'}, log_msg
   end
 
   post '/authenticate' do
@@ -284,22 +302,26 @@ class Keycloak < Sinatra::Application
     # Get authorization token
     user_token = request.env["HTTP_AUTHORIZATION"].split(' ').last
     unless user_token
+      logger.debug 'Adapter: exit POST /authorize without access token'
       json_error(400, 'Access token is not provided')
     end
 
     # Check token validation
     val_res, val_code = token_validation(user_token)
+    logger.debug "Token evaluation: #{val_code} - #{val_res}"
     # Check token expiration
-    if val_code == '200'
+    if val_code.to_s == '200'
       result = is_active?(val_res)
       # puts "RESULT", result
       case result
         when false
+          logger.debug 'Adapter: exit POST /authorize without valid access token'
           json_error(401, 'Token not active')
         else
           # continue
       end
     else
+      logger.debug 'Adapter: exit POST /authorize with valid access token'
       halt 401, val_res
     end
 
