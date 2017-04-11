@@ -88,12 +88,12 @@ class Keycloak < Sinatra::Application
     # STDOUT.sync = true
     # puts "REQUEST.IP:", request.ip.to_s
     # puts "@@ADDRESS:", @@address.to_s
-    logger.debug "Checking #{request.ip.to_s} with #{keycloak_address.to_s}"
     begin
       keycloak_address = Resolv::Hosts.new.getaddress(ENV['KEYCLOAK_ADDRESS'])
     rescue
       keycloak_address = Resolv::DNS.new.getaddress(ENV['KEYCLOAK_ADDRESS'])
     end
+    logger.debug "Checking #{request.ip.to_s} with #{keycloak_address.to_s}"
     # STDOUT.sync = false
     # Check if the request comes from keycloak docker.
     if request.ip.to_s !=  keycloak_address.to_s
