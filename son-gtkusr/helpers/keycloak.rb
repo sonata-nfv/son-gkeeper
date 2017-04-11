@@ -741,7 +741,7 @@ class Keycloak < Sinatra::Application
 
   def set_user_roles(user_type, user_id)
     # Search roles
-    realm_roles = get_realm_roles
+    code, realm_roles = get_realm_roles
     role_data = parse_json(realm_roles)[0].find {|role| role['name'] == user_type}
     # p "ROLE DATA", role_data
     # Compare user_type with roles
