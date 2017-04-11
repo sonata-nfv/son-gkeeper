@@ -100,7 +100,7 @@ class Keycloak < Sinatra::Application
       halt 401
     end
     if defined? @@client_secret
-      halt 409, "Secret key is already defined."
+      json_error(409, "Secret key is already defined")
     end
     
     @@client_secret = params['secret']
@@ -121,7 +121,7 @@ class Keycloak < Sinatra::Application
     end
 
     response = {"public-key" => keycloak_yml['realm_public_key'].to_s}
-    halt 200, response.to_json
+    halt 200, {'Content-type' => 'application/json'}, response.to_json
   end
 
   post '/register/user' do
@@ -139,13 +139,21 @@ class Keycloak < Sinatra::Application
 
         # p "FORM PARAMS", form_encoded
         form = Hash[URI.decode_www_form(form_encoded)]
-        # TODO: Validate Hash format
+        # Validate Hash format
+        unless form.key?('enabled')
+          enable = {'enabled'=> true}
+          form.merge(enable)
+        end
 
       else
         # Compatibility support for JSON content-type
         # Parses and validates JSON format
         form, errors = parse_json(request.body.read)
-        halt 400, errors.to_json if errors
+        halt 400, {'Content-type' => 'application/json'}, errors.to_json if errors
+        unless form.key?('enabled')
+          enable = {'enabled'=> true}
+          form.merge(enable)
+        end
     end
     logger.info "Registering new user"
     user_id, error_code, error_msg = register_user(form)
@@ -165,18 +173,18 @@ class Keycloak < Sinatra::Application
       res_code, res_msg = set_user_groups(attr, user_id)
       if res_code != 204
         delete_user(form['username'])
-        json_error(res_code, res_msg)
+        halt res_code.to_i, {'Content-type' => 'application/json'}, res_msg
       end
       logger.debug "Adding new user roles"
       res_code, res_msg = set_user_roles(attr, user_id)
       if res_code != 204
         delete_user(form['username'])
-        json_error(res_code, res_msg)
+        halt res_code.to_i, {'Content-type' => 'application/json'}, res_msg
       end
     }
     logger.info "New user #{form['username']} has been registered"
     response = {'username' => form['username'], 'userId' => user_id.to_s}
-    halt 201, response.to_json
+    halt 201, {'Content-type' => 'application/json'}, response.to_json
   end
 
   post '/register/service' do
@@ -206,13 +214,13 @@ class Keycloak < Sinatra::Application
     client_data, role_data, error_code, error_msg = set_service_roles(parsed_form['clientId'])
     if error_code != nil
       delete_client(parsed_form['clientId'])
-      json_error(error_code, error_msg)
+      halt error_code, {'Content-type' => 'application/json'}, error_msg
     end
     # puts "SETTING SERVICE ACCOUNT ROLES"
     code, error_msg = set_service_account_roles(client_data['id'], role_data)
     if code != 204
       delete_client(parsed_form['clientId'])
-      json_error(code, error_msg)
+      halt code, {'Content-type' => 'application/json'}, error_msg
     end
     logger.info "New Service client #{parsed_form['clientId']} registered"
     halt 201
@@ -239,7 +247,7 @@ class Keycloak < Sinatra::Application
     if log_code != 200
       logger.info "User #{username} has failed to log-in"
       logger.debug 'Adapter: exit POST /login/user'
-      halt log_code, log_msg
+      halt log_code, {'Content-type' => 'application/json'}, log_msg
     end
     logger.info "User #{username} has logged-in succesfully"
     logger.debug 'Adapter: exit POST /login/user'
@@ -263,7 +271,7 @@ class Keycloak < Sinatra::Application
     if log_code != 200
       logger.info "Service #{client_id} has failed to log-in"
       logger.debug 'Adapter: exit POST /login/service'
-      halt log_code, log_msg
+      halt log_code, {'Content-type' => 'application/json'}, log_msg
     end
     logger.info "Service #{client_id} has logged-in successfully"
     logger.debug 'Adapter: exit POST /login/service'
@@ -272,6 +280,7 @@ class Keycloak < Sinatra::Application
 
   post '/authenticate' do
     logger.debug 'Adapter: entered POST /authenticate'
+    logger.info 'POST /authenticate is deprecated! It returns an ID token which is currently unused'
     # Return if Authorization is invalid
     halt 400 unless request.env["HTTP_AUTHORIZATION"]
     keyed_params = params
@@ -322,16 +331,16 @@ class Keycloak < Sinatra::Application
       end
     else
       logger.debug 'Adapter: exit POST /authorize with valid access token'
-      halt 401, val_res
+      halt 401, {'Content-type' => 'application/json'}, val_res
     end
-
+    logger.info 'Authorization request received at /authorize'
     # Return if content-type is not valid
-    log_file = File.new("#{settings.root}/log/#{settings.environment}.log", 'a+')
-    STDOUT.reopen(log_file)
-    STDOUT.sync = true
-    puts "Content-Type is " + request.content_type
+    # log_file = File.new("#{settings.root}/log/#{settings.environment}.log", 'a+')
+    # STDOUT.reopen(log_file)
+    # STDOUT.sync = true
+    # puts "Content-Type is " + request.content_type
     if request.content_type
-      logger.info "Content-Type is " + request.content_type
+      logger.info "Request Content-Type is #{request.content_type}"
     end
     # halt 415 unless (request.content_type == 'application/x-www-form-urlencoded' or request.content_type == 'application/json')
     # We will accept both a JSON file, form-urlencoded or query type
@@ -351,12 +360,13 @@ class Keycloak < Sinatra::Application
 
         # Request is a QUERY TYPE
         # Get request parameters
-        puts "Input params", params
+        logger.info "Request parameters are #{params}"
+        # puts "Input params", params
         keyed_params = keyed_hash(params)
-        puts "KEYED_PARAMS", keyed_params
+        # puts "KEYED_PARAMS", keyed_params
         # params examples: {:path=>"catalogues", :method=>"GET"}
         # Halt if 'path' and 'method' are not included
-        halt 401 unless (keyed_params[:'path'] and keyed_params[:'method'])
+        json_error(401, 'Parameters "path=" and "method=" not found') unless (keyed_params[:'path'] and keyed_params[:'method'])
 
       when 'application/json'
         # Compatibility support for JSON content-type
@@ -364,30 +374,36 @@ class Keycloak < Sinatra::Application
         form, errors = parse_json(request.body.read)
         halt 400, errors.to_json if errors
         # p "FORM", form
+        logger.info "Request parameters are #{form.to_s}"
         keyed_params = keyed_hash(form)
-        halt 401 unless (keyed_params[:'path'] and keyed_params[:'method'])
+        json_error(401, 'Parameters "path=" and "method=" not found') unless (keyed_params[:'path'] and keyed_params[:'method'])
       else
         # Request is a QUERY TYPE
         # Get request parameters
-        puts "Input params", params
+        logger.info "Request parameters are #{params}"
         keyed_params = keyed_hash(params)
-        puts "KEYED_PARAMS", keyed_params
+        # puts "KEYED_PARAMS", keyed_params
         # params examples: {:path=>"catalogues", :method=>"GET"}
         # Halt if 'path' and 'method' are not included
-        halt 401 unless (keyed_params[:'path'] and keyed_params[:'method'])
+        json_error(401, 'Parameters "path=" and "method=" not found') unless (keyed_params[:'path'] and keyed_params[:'method'])
         # halt 401, json_error("Invalid Content-type")
       end
 
-    # TODO: Improve path and method parse (include it in body?)
+    # TODO: Handle alternative authorization requests
     # puts "PATH", keyed_params[:'path']
     # puts "METHOD",keyed_params[:'method']
     # Check the provided path to the resource and the HTTP method, then build the request
     request = process_request(keyed_params[:'path'], keyed_params[:'method'])
 
-    puts "Ready to authorize"
+    logger.info 'Evaluating Authorization request'
     # Authorization process
-    authorize?(user_token, request)
-    STDOUT.sync = false
+    auth_code, auth_msg = authorize?(user_token, request)
+    if auth_code.to_i == 200
+      halt auth_code.to_i
+    else
+      json_error(auth_code, auth_msg)
+    end
+    # STDOUT.sync = false
   end
 
   post '/userinfo' do
@@ -417,7 +433,7 @@ class Keycloak < Sinatra::Application
 
     # puts "RESULT", user_token
     user_info = userinfo(user_token)
-    halt 200, user_info
+    halt 200, {'Content-type' => 'application/json'}, user_info
   end
 
   post '/userid' do
@@ -448,7 +464,7 @@ class Keycloak < Sinatra::Application
     if keyed_params.include? :'username'
       user_id = get_user_id(keyed_params[:'username'])
       response = {'userId' => user_id}
-      halt 200, response.to_json
+      halt 200, {'Content-type' => 'application/json'}, response.to_json
     else
       json_error(400, 'Incorrect username')
     end
@@ -480,7 +496,7 @@ class Keycloak < Sinatra::Application
           # continue
       end
     else
-      json_error(400, res.to_s)
+      halt 400, {'Content-type' => 'application/json'}, res
     end
 
     # if headers['Authorization']
@@ -488,11 +504,13 @@ class Keycloak < Sinatra::Application
     # end
     # puts "RESULT", user_token
 
-    logout(user_token, user=nil, realm=nil)
+    log_code = logout(user_token, user=nil, realm=nil)
+    halt log_code
+
   end
 
   post '/refresh' do
-    #TODO: OPTIONAL
+    #TODO: This is OPTIONAL, Users/Services log-in again in order to obtain a new token
     logger.debug 'Adapter: entered POST /refresh'
     # Return if Authorization is invalid
     # halt 400 unless request.env["HTTP_AUTHORIZATION"]
@@ -502,12 +520,13 @@ class Keycloak < Sinatra::Application
 
     # p "ATT", att
     # p "CUSTOM", custom_header_value
+    halt 501
   end
 
   get '/users' do
     # This endpoint allows queries for the next fields:
     # search, lastName, firstName, email, username, first, max
-    logger.debug 'Adapter: entered POST /users'
+    logger.debug 'Adapter: entered GET /users'
     # Return if Authorization is invalid
     halt 400 unless request.env["HTTP_AUTHORIZATION"]
     queriables = %w(search lastName firstName email username first max)
@@ -520,13 +539,13 @@ class Keycloak < Sinatra::Application
       end
     }
     reg_users = get_users(keyed_params)
-    halt 200, reg_users.to_json
+    halt 200, {'Content-type' => 'application/json'}, reg_users
   end
 
   get '/services' do
     # This endpoint allows queries for the next fields:
     # name
-    logger.debug 'Adapter: entered POST /services'
+    logger.debug 'Adapter: entered GET /services'
     # Return if Authorization is invalid
     halt 400 unless request.env["HTTP_AUTHORIZATION"]
     queriables = %w(name first max)
@@ -538,14 +557,14 @@ class Keycloak < Sinatra::Application
       end
     }
     reg_clients = get_clients(keyed_params)
-    halt 200, reg_clients.to_json
+    halt 200, {'Content-type' => 'application/json'}, reg_clients
   end
 
   get '/roles' do
     #TODO: QUERIES NOT SUPPORTED -> Check alternatives!!
     # This endpoint allows queries for the next fields:
     # search, lastName, firstName, email, username, first, max
-    logger.debug 'Adapter: entered POST /users'
+    logger.debug 'Adapter: entered GET /roles'
     # Return if Authorization is invalid
     halt 400 unless request.env["HTTP_AUTHORIZATION"]
     queriables = %w(search id name description first max)
@@ -556,6 +575,32 @@ class Keycloak < Sinatra::Application
       end
     }
     realm_roles = get_realm_roles(keyed_params)
-    halt 200, realm_roles
+    halt 200, {'Content-type' => 'application/json'}, realm_roles.to_json
+  end
+
+  get '/sessions/users' do
+    # Get user sessions for client
+    # Returns a list of user sessions associated with this client
+    # GET /admin/realms/{realm}/clients/{id}/user-sessions
+    logger.debug 'Adapter: entered GET /sessions/users'
+    # Return if Authorization is invalid
+    halt 400 unless request.env["HTTP_AUTHORIZATION"]
+    adapter_id = get_client_id('adapter')
+    ses_code, ses_msg = get_sessions('user', adapter_id)
+
+    halt ses_code, {'Content-type' => 'application/json'}, ses_msg
+  end
+
+  get '/sessions/services' do
+    # Get user sessions for client
+    # Returns a list of user sessions associated with this client
+    # GET /admin/realms/{realm}/clients/{id}/user-sessions
+    logger.debug 'Adapter: entered GET /sessions/services'
+    # Return if Authorization is invalid
+    halt 400 unless request.env["HTTP_AUTHORIZATION"]
+    # adapter_id = get_adapter_id
+    ses_code, ses_msg = get_sessions('service', nil)
+
+    halt ses_code, {'Content-type' => 'application/json'}, ses_msg
   end
 end
