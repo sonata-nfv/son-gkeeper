@@ -962,19 +962,18 @@ class Keycloak < Sinatra::Application
     # Body rep = UserRepresentation
   end
 
-  def update_user_pkey(user_id, pkey, certs)
+  def update_user_pkey(user_id, attrs)
     url = URI("http://#{@@address.to_s}:#{@@port.to_s}/#{@@uri.to_s}/admin/realms/#{@@realm_name}/users/#{user_id}")
     http = Net::HTTP.new(url.host, url.port)
     request = Net::HTTP::Put.new(url.to_s)
     request["authorization"] = 'Bearer ' + @@access_token
     request["content-type"] = 'application/json'
-
-    body = {"attributes" => {"publicKey" => [pkey]}, "certs" => [certs]}
-
+    body = {"attributes" => attrs}
     request.body = body.to_json
     response = http.request(request)
-    # puts "UPD CODE", response.code
-    # puts "UPD BODY", response.body
+    log.debug "update_user_pkey CODE #{response.code}"
+    log.debug "update_user_pkey BODY #{response.body}"
+
     if response.code.to_i != 204
       # halt response.code.to_i, response.body.to_s
       return nil, response.code.to_i, response.body.to_s
