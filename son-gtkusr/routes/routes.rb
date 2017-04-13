@@ -646,9 +646,11 @@ class Keycloak < Sinatra::Application
       unless user_token
         json_error(400, 'Access token is not provided')
       end
+
       # Validate token
       res, code = token_validation(user_token)
       token_contents = JSON.parse(res)
+
       if code == '200'
         result = is_active?(res)
         case result
@@ -660,19 +662,44 @@ class Keycloak < Sinatra::Application
       else
         json_error(400, res.to_s)
       end
+
       if token_contents['sub'] == :username
+        logger.debug "Adapter: #{[:username]} matches Access Token"
         #Translate from username to User_id
         user_id = get_user_id(params[:username])
         if user_id.nil?
           json_error 404, 'Username not found'
         end
+        logger.info "Content-Type is " + request.media_type
+        halt 415 unless (request.content_type == 'application/json')
+
+        form, errors = parse_json(request.body.read)
+        halt 400, {'Content-type' => 'application/json'}, errors.to_json if errors
+
+        unless form.key?('public-key')
+         json_error 400, 'Developer public key not provided'
+        end
+
+        unless form.key? ('certs')
+          form['certs'] = 'null'
+        end
+
         #Get user attributes
-        ses_code, ses_msg = get_user_sessions(user_id)
+        user_data = get_users(user_id)
+        parsed_user_data = JSON.parse(user_data[0])
+        logger.debug "parsed_user_data #{parsed_user_data}"
         #Update attributes
+        new_attributes = {"public-key" => [form['public-key'].to_s], "certificate" => [form['certs'].to_s]}
+        logger.debug "new_attributes #{new_attributes}"
+        user_attributes = parsed_user_data['attributes']
+        logger.debug "user_attributes #{user_attributes}"
+        new_user_attributes = user_attributes.merge(new_attributes)
+        logger.debug "new_user_attributes #{new_user_attributes}"
+        upd_code, upd_msg = update_user_pkey(user_id, new_user_attributes)
       else
         json_error 400, 'Provided username does not match with Access Token'
       end
-      halt ses_code.to_i, {'Content-type' => 'application/json'}, ses_msg
+      halt upd_code.to_i, {'Content-type' => 'application/json'}, upd_msg
     end
     logger.debug 'Adapter: leaving PUT /signatures/ with no username specified'
     json_error 400, 'No username specified'
