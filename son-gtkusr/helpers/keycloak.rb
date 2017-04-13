@@ -1143,15 +1143,28 @@ class Keycloak < Sinatra::Application
     request["authorization"] = 'bearer ' + @@access_token
     response = http.request(request)
     logger.debug "Adapter: Session response code:#{response.code}"
-    logger.debug "Adapter: Session response code:#{response.body}"
+    logger.debug "Adapter: Session response content:#{response.body}"
     # p "CODE_SESSIONS", response.code
     # p "BODY_SESSIONS", response.body
     return response.code, response.body
   end
 
-  def get_user_sessions
+  def get_user_sessions(user_Id)
     # Get sessions associated with the user
     # GET /admin/realms/{realm}/users/{id}/sessions
+    logger.debug 'Adapter: getting client ID'
+    refresh_adapter # Refresh admin token if expired
+    # GET service client Id
+    url = URI("http://#{@@address.to_s}:#{@@port.to_s}/#{@@uri.to_s}/admin/realms/#{@@realm_name}/users/#{user_Id}/sessions")
+    http = Net::HTTP.new(url.host, url.port)
+    request = Net::HTTP::Get.new(url.to_s)
+    request["authorization"] = 'Bearer ' + @@access_token
+    request.body = body.to_json
+
+    response = http.request(request)
+    # puts "ID CODE", response.code
+    # puts "ID BODY", response.body
+    return response.code, response.body
   end
 
   def is_active?(introspect_res)
