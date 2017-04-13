@@ -962,6 +962,31 @@ class Keycloak < Sinatra::Application
     # Body rep = UserRepresentation
   end
 
+  def update_user_pkey(user_id, pkey, certs)
+    # Translate username to userId
+
+
+
+
+
+    url = URI("http://#{@@address.to_s}:#{@@port.to_s}/#{@@uri.to_s}/admin/realms/#{@@realm_name}/users/#{user_id}")
+    http = Net::HTTP.new(url.host, url.port)
+    request = Net::HTTP::Put.new(url.to_s)
+    request["authorization"] = 'Bearer ' + @@access_token
+    request["content-type"] = 'application/json'
+
+    body = {"attributes" => {"publicKey" => [pkey]}, "certs" => [certs]}
+
+    request.body = body.to_json
+    response = http.request(request)
+    # puts "UPD CODE", response.code
+    # puts "UPD BODY", response.body
+    if response.code.to_i != 204
+      # halt response.code.to_i, response.body.to_s
+      return nil, response.code.to_i, response.body.to_s
+    end
+  end
+
   def update_client()
     # TODO: Implement
     # Update the client
@@ -1159,11 +1184,11 @@ class Keycloak < Sinatra::Application
     http = Net::HTTP.new(url.host, url.port)
     request = Net::HTTP::Get.new(url.to_s)
     request["authorization"] = 'Bearer ' + @@access_token
-    request.body = body.to_json
-
     response = http.request(request)
     # puts "ID CODE", response.code
     # puts "ID BODY", response.body
+    logger.debug "Adapter: User session response code:#{response.code}"
+    logger.debug "Adapter: User session response content:#{response.body}"
     return response.code, response.body
   end
 
