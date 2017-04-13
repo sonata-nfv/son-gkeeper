@@ -228,6 +228,7 @@ class Keycloak < Sinatra::Application
 
   def get_public_key
     logger.info 'Building PEM Keycloak Public Key'
+    # TODO: set Public Key as class variable to avoid building PEM every time
     # turn keycloak realm pub key into an actual openssl compat pub key.
     # keycloak_config = JSON.parse(File.read('config/keycloak.json'))
     keycloak_yml = YAML.load_file('config/keycloak.yml')
@@ -1145,11 +1146,11 @@ class Keycloak < Sinatra::Application
     case token_evaluation['active']
       when true
         # p "ACTIVE CONTENTS TRUE", token_evaluation['active']
-        logger.info "Keycloak: Evaluated token is active"
+        logger.info 'Keycloak: Evaluated token is valid and active'
         true
       else
         # p "ACTIVE CONTENTS FALSE", token_evaluation['active']
-        logger.info "Keycloak: Evaluated token is expired"
+        logger.info 'Keycloak: Evaluated token is expired'
         false
     end
   end
