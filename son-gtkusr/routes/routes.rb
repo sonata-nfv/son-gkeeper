@@ -582,8 +582,8 @@ class Keycloak < Sinatra::Application
   end
 
   get '/sessions/users' do
-    # Get user sessions for client
-    # Returns a list of user sessions associated with this client
+    # Get all user sessions
+    # Returns a list of user sessions associated with the adapter client
     # GET /admin/realms/{realm}/clients/{id}/user-sessions
     logger.debug 'Adapter: entered GET /sessions/users'
     # Return if Authorization is invalid
@@ -591,19 +591,41 @@ class Keycloak < Sinatra::Application
     adapter_id = get_client_id('adapter')
     ses_code, ses_msg = get_sessions('user', adapter_id)
 
-    halt ses_code, {'Content-type' => 'application/json'}, ses_msg
+    halt ses_code.to_i, {'Content-type' => 'application/json'}, ses_msg
+  end
+
+  get '/sessions/users/:username/?' do
+    # Get user sessions
+    # Returns a list of sessions associated with the user
+    unless params[:username].nil?
+      logger.debug "Adapter: entered GET /sessions/users/#{params[:username]}"
+
+      # Return if Authorization is invalid
+      halt 400 unless request.env["HTTP_AUTHORIZATION"]
+
+      user_id = get_user_id(params[:username])
+      ses_code, ses_msg = get_user_sessions(user_id)
+
+      halt ses_code.to_i, {'Content-type' => 'application/json'}, ses_msg
+    end
+    logger.debug 'Adapter: leaving GET /sessions/users/ with no username specified'
+    json_error 400, 'No username specified'
   end
 
   get '/sessions/services' do
-    # Get user sessions for client
-    # Returns a list of user sessions associated with this client
-    # GET /admin/realms/{realm}/clients/{id}/user-sessions
+    # Get all service client sessions
+    # Returns a list of service client sessions
     logger.debug 'Adapter: entered GET /sessions/services'
     # Return if Authorization is invalid
     halt 400 unless request.env["HTTP_AUTHORIZATION"]
     # adapter_id = get_adapter_id
     ses_code, ses_msg = get_sessions('service', nil)
 
-    halt ses_code, {'Content-type' => 'application/json'}, ses_msg
+    halt ses_code.to_i, {'Content-type' => 'application/json'}, ses_msg
+  end
+
+  get '/sessions/services/:clientId/?' do
+    # Get service client sessions
+    # Returns a list of sessions associated with the client service user
   end
 end
