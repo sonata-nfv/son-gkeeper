@@ -543,7 +543,8 @@ class Keycloak < Sinatra::Application
         json_error(400, 'Bad query')
       end
     }
-    reg_users = get_users(keyed_params)
+    # reg_users = get_users(keyed_params)
+    reg_users = get_users(params)
     halt 200, {'Content-type' => 'application/json'}, reg_users
   end
 
