@@ -577,8 +577,8 @@ class Keycloak < Sinatra::Application
         json_error(400, 'Bad query')
       end
     }
-    realm_roles = get_realm_roles(keyed_params)
-    halt 200, {'Content-type' => 'application/json'}, realm_roles.to_json
+    code, realm_roles = get_realm_roles(keyed_params)
+    halt code.to_i, {'Content-type' => 'application/json'}, realm_roles
   end
 
   get '/sessions/users' do

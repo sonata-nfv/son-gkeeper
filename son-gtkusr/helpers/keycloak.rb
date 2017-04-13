@@ -974,6 +974,7 @@ class Keycloak < Sinatra::Application
     # GET /admin/realms/{realm}/groups
     # GroupRepresentation
     # id, name, path, attributes, realmRoles, clientRoles, subGroups
+    refresh_adapter # Refresh admin token if expired
     # TODO: IT ONLY SUPPORTS QUERIES BY ID, NAME (GROUPID)
     url = URI("http://#{@@address.to_s}:#{@@port.to_s}/#{@@uri.to_s}/admin/realms/#{@@realm_name}/groups")
     http = Net::HTTP.new(url.host, url.port)
@@ -1024,6 +1025,7 @@ class Keycloak < Sinatra::Application
 
   def get_realm_roles(keyed_query=nil)
     logger.debug 'Adapter: getting realm roles'
+    refresh_adapter # Refresh admin token if expired
     # Get all roles for the realm or client
     # query = Rack::Utils.build_query(keyed_query) # QUERIES NOT SUPPORTED
     url = URI("http://#{@@address.to_s}:#{@@port.to_s}/#{@@uri.to_s}/admin/realms/#{@@realm_name}/roles")
@@ -1039,6 +1041,7 @@ class Keycloak < Sinatra::Application
   end
 
   def get_client_roles(client, keyed_query=nil)
+    logger.debug 'Adapter: getting client roles'
     # Get all roles for the realm or client
     url = URI("http://#{@@address.to_s}:#{@@port.to_s}/#{@@uri.to_s}/admin/realms/#{@@realm_name}/clients/#{client}/roles")
     http = Net::HTTP.new(url.host, url.port)
@@ -1054,6 +1057,8 @@ class Keycloak < Sinatra::Application
   end
 
   def get_role_details(role)
+    logger.debug 'Adapter: getting role details'
+    refresh_adapter # Refresh admin token if expired
     # url = URI("http://localhost:8081/auth/admin/realms/#{realm}/clients/#{id}/roles/#{role}")
     url = URI("http://#{@@address.to_s}:#{@@port.to_s}/#{@@uri.to_s}/admin/realms/#{@@realm_name}/roles/#{role}")
     http = Net::HTTP.new(url.host, url.port)
@@ -1069,6 +1074,8 @@ class Keycloak < Sinatra::Application
   end
 
   def get_users(keyed_query)
+    logger.debug 'Adapter: getting users'
+    refresh_adapter # Refresh admin token if expired
     # puts "KEYED_QUERY", keyed_query
     # Get all users for the realm
     query = Rack::Utils.build_query(keyed_query)
@@ -1086,6 +1093,8 @@ class Keycloak < Sinatra::Application
   end
 
   def get_user_id(username)
+    logger.debug 'Adapter: getting user ID'
+    refresh_adapter # Refresh admin token if expired
     # GET new registered user Id
     url = URI("http://#{@@address.to_s}:#{@@port.to_s}/#{@@uri.to_s}/admin/realms/#{@@realm_name}/users?username=#{username}")
     http = Net::HTTP.new(url.host, url.port)
@@ -1102,6 +1111,8 @@ class Keycloak < Sinatra::Application
   end
 
   def get_client_id(clientId)
+    logger.debug 'Adapter: getting client ID'
+    refresh_adapter # Refresh admin token if expired
     # GET service client Id
     url = URI("http://#{@@address.to_s}:#{@@port.to_s}/#{@@uri.to_s}/admin/realms/#{@@realm_name}/clients?clientId=#{clientId}")
     http = Net::HTTP.new(url.host, url.port)
@@ -1117,6 +1128,8 @@ class Keycloak < Sinatra::Application
   end
 
   def get_sessions(account_type, id)
+    logger.debug 'Adapter: getting sessions'
+    refresh_adapter # Refresh admin token if expired
     case account_type
       when 'user'
         # GET /admin/realms/{realm}/clients/{id}/user-sessions
@@ -1129,6 +1142,8 @@ class Keycloak < Sinatra::Application
     request = Net::HTTP::Get.new(url.to_s)
     request["authorization"] = 'bearer ' + @@access_token
     response = http.request(request)
+    logger.debug "Adapter: Session response code:#{response.code}"
+    logger.debug "Adapter: Session response code:#{response.body}"
     # p "CODE_SESSIONS", response.code
     # p "BODY_SESSIONS", response.body
     return response.code, response.body
@@ -1157,6 +1172,7 @@ class Keycloak < Sinatra::Application
 
   def is_expired?
     public_key = get_public_key
+    logger.debug 'Adapter: Decoding Access Token'
     begin
       decoded_payload, decoded_header = JWT.decode @@access_token, public_key, true, { :algorithm => 'RS256' }
       # puts "DECODED_HEADER: ", decoded_header
