@@ -285,19 +285,19 @@ class Keycloak < Sinatra::Application
     halt 400 unless request.env["HTTP_AUTHORIZATION"]
     keyed_params = params
 
-    case keyed_params[:'grant_type']
+    case keyed_params[:grant_type]
       when 'password' # -> user
-        authenticate(keyed_params[:'client_id'],
-                     keyed_params[:'username'],
-                     keyed_params[:'password'],
-                     keyed_params[:'grant_type'])
+        authenticate(keyed_params[:client_id],
+                     keyed_params[:username],
+                     keyed_params[:password],
+                     keyed_params[:grant_type])
 
 
       when 'client_credentials' # -> service
-        authenticate(keyed_params[:'client_id'],
+        authenticate(keyed_params[:client_id],
                      nil,
-                     keyed_params[:'client_secret'],
-                     keyed_params[:'grant_type'])
+                     keyed_params[:client_secret],
+                     keyed_params[:grant_type])
       else
         json_error(400, 'Bad request')
       end
@@ -366,7 +366,7 @@ class Keycloak < Sinatra::Application
         # puts "KEYED_PARAMS", keyed_params
         # params examples: {:path=>"catalogues", :method=>"GET"}
         # Halt if 'path' and 'method' are not included
-        json_error(401, 'Parameters "path=" and "method=" not found') unless (keyed_params[:'path'] and keyed_params[:'method'])
+        json_error(401, 'Parameters "path=" and "method=" not found') unless (keyed_params[:path] and keyed_params[:method])
 
       when 'application/json'
         # Compatibility support for JSON content-type
@@ -376,7 +376,7 @@ class Keycloak < Sinatra::Application
         # p "FORM", form
         logger.info "Request parameters are #{form.to_s}"
         keyed_params = keyed_hash(form)
-        json_error(401, 'Parameters "path=" and "method=" not found') unless (keyed_params[:'path'] and keyed_params[:'method'])
+        json_error(401, 'Parameters "path=" and "method=" not found') unless (keyed_params[:path] and keyed_params[:method])
       else
         # Request is a QUERY TYPE
         # Get request parameters
@@ -385,7 +385,7 @@ class Keycloak < Sinatra::Application
         # puts "KEYED_PARAMS", keyed_params
         # params examples: {:path=>"catalogues", :method=>"GET"}
         # Halt if 'path' and 'method' are not included
-        json_error(401, 'Parameters "path=" and "method=" not found') unless (keyed_params[:'path'] and keyed_params[:'method'])
+        json_error(401, 'Parameters "path=" and "method=" not found') unless (keyed_params[:path] and keyed_params[:method])
         # halt 401, json_error("Invalid Content-type")
       end
 
@@ -393,7 +393,7 @@ class Keycloak < Sinatra::Application
     # puts "PATH", keyed_params[:'path']
     # puts "METHOD",keyed_params[:'method']
     # Check the provided path to the resource and the HTTP method, then build the request
-    request = process_request(keyed_params[:'path'], keyed_params[:'method'])
+    request = process_request(keyed_params[:path], keyed_params[:method])
 
     logger.info 'Evaluating Authorization request'
     # Authorization process
@@ -436,7 +436,7 @@ class Keycloak < Sinatra::Application
     halt 200, {'Content-type' => 'application/json'}, user_info
   end
 
-  post '/userid' do
+  get '/userid' do
     logger.debug 'Adapter: entered POST /userid'
     # Return if Authorization is invalid
     halt 400 unless request.env["HTTP_AUTHORIZATION"]
@@ -448,6 +448,7 @@ class Keycloak < Sinatra::Application
 
     # Validate token
     res, code = token_validation(user_token)
+    token_contents = JSON.parse(res)
     if code == '200'
       result = is_active?(res)
       case result
@@ -460,13 +461,16 @@ class Keycloak < Sinatra::Application
       json_error(400, res.to_s)
     end
 
-    keyed_params = params
-    if keyed_params.include? :'username'
-      user_id = get_user_id(keyed_params[:'username'])
+    keyed_params = keyed_hash(params)
+    if keyed_params.include? :username
+      user_id = get_user_id(keyed_params[:username])
       response = {'userId' => user_id}
       halt 200, {'Content-type' => 'application/json'}, response.to_json
+    elsif token_contents['sub']
+      response = {'userId' => token_contents['sub']}
+      halt 200, {'Content-type' => 'application/json'}, response.to_json
     else
-      json_error(400, 'Incorrect username')
+      json_error(400, 'Bad token or incorrect username')
     end
   end
 
@@ -506,7 +510,6 @@ class Keycloak < Sinatra::Application
 
     log_code = logout(user_token, user=nil, realm=nil)
     halt log_code
-
   end
 
   post '/refresh' do
@@ -531,7 +534,7 @@ class Keycloak < Sinatra::Application
     halt 400 unless request.env["HTTP_AUTHORIZATION"]
     queriables = %w(search lastName firstName email username first max)
 
-    keyed_params = params
+    keyed_params = keyed_hash(params)
 
     keyed_params.each { |k, v|
       unless queriables.include? k
@@ -550,7 +553,7 @@ class Keycloak < Sinatra::Application
     halt 400 unless request.env["HTTP_AUTHORIZATION"]
     queriables = %w(name first max)
 
-    keyed_params = params
+    keyed_params = keyed_hash(params)
     keyed_params.each { |k, v|
       unless queriables.include? k
         json_error(400, 'Bad query')
@@ -568,7 +571,7 @@ class Keycloak < Sinatra::Application
     # Return if Authorization is invalid
     halt 400 unless request.env["HTTP_AUTHORIZATION"]
     queriables = %w(search id name description first max)
-    keyed_params = params
+    keyed_params = keyed_hash(params)
     keyed_params.each { |k, v|
       unless queriables.include? k
         json_error(400, 'Bad query')
