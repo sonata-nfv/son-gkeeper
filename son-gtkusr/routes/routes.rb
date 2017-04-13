@@ -530,12 +530,13 @@ class Keycloak < Sinatra::Application
     # This endpoint allows queries for the next fields:
     # search, lastName, firstName, email, username, first, max
     logger.debug 'Adapter: entered GET /users'
+    logger.debug "Adapter: Optional query #{params}"
     # Return if Authorization is invalid
     halt 400 unless request.env["HTTP_AUTHORIZATION"]
     queriables = %w(search lastName firstName email username first max)
 
     keyed_params = keyed_hash(params)
-
+    logger.debug "Adapter: Optional query #{keyed_params}"
     keyed_params.each { |k, v|
       unless queriables.include? k
         json_error(400, 'Bad query')
@@ -604,6 +605,9 @@ class Keycloak < Sinatra::Application
       halt 400 unless request.env["HTTP_AUTHORIZATION"]
 
       user_id = get_user_id(params[:username])
+      if user_id.nil?
+        json_error 404, 'Username not found'
+      end
       ses_code, ses_msg = get_user_sessions(user_id)
 
       halt ses_code.to_i, {'Content-type' => 'application/json'}, ses_msg
@@ -627,5 +631,49 @@ class Keycloak < Sinatra::Application
   get '/sessions/services/:clientId/?' do
     # Get service client sessions
     # Returns a list of sessions associated with the client service user
+  end
+
+  put '/signatures/:user/?' do
+    # Update user public key and certificate attributes
+    unless params[:username].nil?
+      logger.debug "Adapter: entered PUT /signatures/#{params[:username]}"
+
+      # Return if Authorization is invalid
+      halt 400 unless request.env["HTTP_AUTHORIZATION"]
+      user_token = request.env["HTTP_AUTHORIZATION"].split(' ').last
+      unless user_token
+        json_error(400, 'Access token is not provided')
+      end
+      # Validate token
+      res, code = token_validation(user_token)
+      token_contents = JSON.parse(res)
+      if code == '200'
+        result = is_active?(res)
+        case result
+          when false
+            json_error(401, 'Token not active')
+          else
+            # continue
+        end
+      else
+        json_error(400, res.to_s)
+      end
+      if token_contents['sub'] == :username
+        #Translate from username to User_id
+        user_id = get_user_id(params[:username])
+        if user_id.nil?
+          json_error 404, 'Username not found'
+        end
+        #Get user attributes
+        ses_code, ses_msg = get_user_sessions(user_id)
+        #Update attributes
+      else
+        json_error 400, 'Provided username does not match with Access Token'
+      end
+      halt ses_code.to_i, {'Content-type' => 'application/json'}, ses_msg
+    end
+    logger.debug 'Adapter: leaving PUT /signatures/ with no username specified'
+    json_error 400, 'No username specified'
+
   end
 end
