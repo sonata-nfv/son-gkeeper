@@ -535,9 +535,10 @@ class Keycloak < Sinatra::Application
     halt 400 unless request.env["HTTP_AUTHORIZATION"]
     queriables = %w(search lastName firstName email username first max)
 
-    keyed_params = keyed_hash(params)
-    logger.debug "Adapter: Optional query #{keyed_params}"
-    keyed_params.each { |k, v|
+    # keyed_params = keyed_hash(params)
+    logger.debug "Adapter: Optional query #{queriables}"
+    # keyed_params.each { |k, v|
+    params.each { |k, v|
       unless queriables.include? k
         json_error(400, 'Bad query')
       end

@@ -963,12 +963,6 @@ class Keycloak < Sinatra::Application
   end
 
   def update_user_pkey(user_id, pkey, certs)
-    # Translate username to userId
-
-
-
-
-
     url = URI("http://#{@@address.to_s}:#{@@port.to_s}/#{@@uri.to_s}/admin/realms/#{@@realm_name}/users/#{user_id}")
     http = Net::HTTP.new(url.host, url.port)
     request = Net::HTTP::Put.new(url.to_s)
