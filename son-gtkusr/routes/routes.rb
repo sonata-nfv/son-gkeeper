@@ -635,7 +635,7 @@ class Keycloak < Sinatra::Application
     # Returns a list of sessions associated with the client service user
   end
 
-  put '/signatures/:user/?' do
+  put '/signatures/:username/?' do
     # Update user public key and certificate attributes
     unless params[:username].nil?
       logger.debug "Adapter: entered PUT /signatures/#{params[:username]}"
