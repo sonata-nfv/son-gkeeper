@@ -27,24 +27,65 @@
 # encoding: utf-8
 require './models/manager_service.rb'
 
+class FunctionNotFoundError < StandardError; end
+
 class FunctionManagerService < ManagerService
     
   #JSON_HEADERS = { 'Accept'=> 'application/json', 'Content-Type'=>'application/json'}
   LOG_MESSAGE = 'GtkApi::' + self.name
   
+  attr_accessor :uuid, :instances
+  
   def self.config(url:)
-    method = LOG_MESSAGE + "#config(url=#{url})"
+    log_message = LOG_MESSAGE + "##{__method__}"
     raise ArgumentError.new('FunctionManagerService can not be configured with nil url') if url.nil?
     raise ArgumentError.new('FunctionManagerService can not be configured with empty url') if url.empty?
     @@url = url
-    GtkApi.logger.debug(method) {'entered'}
+    GtkApi.logger.debug(log_message) {'entered with url='+url}
   end
 
-  def self.find_function_by_uuid(uuid)
+  def initialize(params)
+    log_message = LOG_MESSAGE + "##{__method__}"
+    GtkApi.logger.debug(log_message) {"entered with params #{params}"}
+    raise ArgumentError.new('FunctionManagerService can not be instantiated without a function uuid') unless (params.key?(:uuid) && !params[:uuid].empty?)
+    @uuid = params[:uuid]
+    @instances = params[:instances]
+  end
+  
+  def self.find_by_uuid(uuid)
     find(url: @@url + '/functions/' + uuid, log_message: LOG_MESSAGE + "##{__method__}(#{uuid})")
   end
   
-  def self.find_functions(params)
+  # This version (note the '!') works with exceptions
+  def self.find_by_uuid!(uuid)
+    log_message = LOG_MESSAGE + "##{__method__}"
+    GtkApi.logger.debug(log_message) {'entered with uuid='+uuid}
+    response = getCurb(url: @@url + '/functions/' + uuid, headers: JSON_HEADERS)
+    GtkApi.logger.debug(log_message) {"response=#{response}"}
+    case response[:status]
+    when 200
+      FunctionManagerService.new({uuid: response[:data][:uuid]})
+    else
+      raise FunctionNotFoundError.new 'Function with uuid='+uuid+' not found'
+    end
+  end
+
+  def self.find(params)
     find(url: @@url + '/functions', params: params, log_message: LOG_MESSAGE + "##{__method__}(#{params})")
   end
+  
+  def load_instances(uuid)
+    log_message = LOG_MESSAGE + "##{__method__}"
+    GtkApi.logger.debug(log_message) {'entered with uuid='+uuid}
+    
+    # TODO: this is not right... yet!
+    instances = RecordManagerService.find_records_by_function_uuid(uuid)
+    case instances[:status]
+    when 200
+      @instances = instances[:items]
+    else
+      @instances = nil
+    end
+  end
 end
+

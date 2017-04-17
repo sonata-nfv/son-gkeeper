@@ -40,7 +40,7 @@ class GtkApi < Sinatra::Base
       @limit ||= params[:limit] ||= DEFAULT_LIMIT
       logger.debug(log_message) {"params=#{params}"}
      
-      functions = FunctionManagerService.find_functions(params)
+      functions = FunctionManagerService.find(params)
       if functions
         logger.debug(log_message) {"leaving with #{functions}"}
         links = build_pagination_headers(url: request_url, limit: @limit.to_i, offset: @offset.to_i, total: functions.size)
@@ -58,17 +58,14 @@ class GtkApi < Sinatra::Base
       logger.debug(log_message) {"entered with #{params[:uuid]}"}
     
       if valid?(params[:uuid])
-        function = FunctionManagerService.find_function_by_uuid(params[:uuid])
+        function = FunctionManagerService.find_by_uuid(params[:uuid])
         if function
           logger.debug(log_message) {"leaving with #{function}"}
           halt 200, function.to_json
         else
-          logger.debug(log_message) {"leaving with message 'Service #{params[:uuid]} not found'"}
-          json_error 404, "Function #{params[:uuid]} not found"
+          json_error 404, "Function #{params[:uuid]} not found", log_message
         end
       else
-        message = "Function #{params[:uuid]} not valid"
-        logger.debug(log_message) {"leaving with message '"+message+"'"}
         json_error 404, message
       end
     end

@@ -33,21 +33,30 @@ class RecordManagerService < ManagerService
   LOG_MESSAGE = 'GtkApi::' + self.name
   
   def self.config(url:)
-    method = LOG_MESSAGE + "##{__method__}(url=#{url})"
-    raise ArgumentError.new('RecordManagerService can not be configured with nil url') if url.nil?
-    raise ArgumentError.new('RecordManagerService can not be configured with empty url') if url.empty?
+    method = LOG_MESSAGE + "##{__method__}"
+    raise ArgumentError.new('RecordManagerService can not be configured with nil or empty url') if (url.nil? || url.empty?)
     @@url = url
-    GtkApi.logger.debug(method) {'entered'}
+    GtkApi.logger.debug(method) {'entered with url='+url}
   end
   
-  def self.find(params)
-    #params['kind']
+  def self.find_records(params)
+    method = LOG_MESSAGE + "##{__method__}"
+    GtkApi.logger.debug(method) {"entered with params=#{params}"}
+
     kind = params.delete('kind')
-    records= find(url: @@url + '/' + kind, params: params, log_message: LOG_MESSAGE + "##{__method__}(#{params})")
+    # find(url: @@url + '/records/' + kind, params: params, log_message: LOG_MESSAGE + "##{__method__}(#{params})", logger: @@logger)
+    records= find(url: @@url+'/'+kind, params: params, log_message: LOG_MESSAGE + "##{__method__}(#{params})")
     vectorize_hash records
   end
   
-  def self.find_by_uuid(uuid)
+  def self.find_record_by_uuid(kind: 'services', uuid:)
+    # find(url: @@url + '/services/' + uuid, log_message: LOG_MESSAGE + "##{__method__}(#{uuid})", logger: @@logger)
     find(url: @@url + '/' + kind + '/' + uuid, log_message: LOG_MESSAGE + "##{__method__}(#{uuid})") #+ '/records/' 
+  end
+  
+  def find_records_by_function_uuid(uuid)
+    method = LOG_MESSAGE + "##{__method__}"
+    GtkApi.logger.debug(method) {"entered with uuid=#{uuid}"}
+    find(url: @@url + '/functions?function_uuid=' + uuid, log_message: LOG_MESSAGE + "##{__method__}(#{uuid})") #+ '/records/' 
   end
 end
