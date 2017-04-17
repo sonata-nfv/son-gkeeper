@@ -52,8 +52,14 @@ def keyed_hash(hash)
 end
 
 def json_error(code, message)
+  log_file = File.new("#{settings.root}/log/#{settings.environment}.log", 'a+')
+  STDOUT.reopen(log_file)
+  STDOUT.sync = true
+  puts 'CODE', code.to_s
+  puts 'MESSAGE', message.to_s
   msg = {'error' => message}
   logger.error msg.to_s
+  STDOUT.sync = false
   halt code, {'Content-type' => 'application/json'}, msg.to_json
 end
 
@@ -67,6 +73,16 @@ class Adapter < Sinatra::Application
             'uri' => '/',
             'method' => 'GET',
             'purpose' => 'REST API root'
+        },
+        {
+            'uri' => '/log',
+            'method' => 'GET',
+            'purpose' => 'User Management log'
+        },
+        {
+            'uri' => '/config',
+            'method' => 'GET',
+            'purpose' => 'User Management configuration'
         },
     ]
   end
@@ -97,37 +113,6 @@ class Adapter < Sinatra::Application
   end
 
   def authorize!
-    # curl -d "client_id=admin-cli" -d "username=user1" -d "password=1234" -d "grant_type=password" "http://localhost:8081/auth/realms/SONATA/protocol/openid-connect/token"
-    client_id = "service"
-    @usrname = "user1"
-    pwd = "1234"
-    grt_type = "password"
-    clt_assert = "{JWT_BEARER_TOKEN}"
-    clt_assert_type = "urn:ietf:params:oauth:client-assertion-type:jwt-bearer"
-    http_path = "http://localhost:8081/auth/realms/master/protocol/openid-connect/token"
-    # puts `curl -X POST --data "client_id=#{client_id}&username=#{usrname}"&password=#{pwd}&grant_type=#{grt_type} #{http_path}`
-
-    uri = URI(http_path)
-    res = Net::HTTP.post_form(uri, 'client_id' => client_id,
-                              'username' => @usrname,
-                              'password' => pwd,
-                              'grant_type' => grt_type)
-    #puts "RES.BODY: ", res.body
-
-    if res.body['access_token']
-      #if env['HTTP_AUTHORIZATION']
-      # puts "env: ", env['HTTP_AUTHORIZATION']
-      # access_token = env['HTTP_AUTHORIZATION'].split(' ').last
-      # puts "access_token: ", access_token
-      # {"access_token":"eyJhbGciOiJSUzI1NiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICIyRG1CZm1UaEJEa3NmNElMWVFnVEpSVmNRMDZJWEZYdWNOMzhVWk1rQ0cwIn0.eyJqdGkiOiJjYzY3MmUzYS1mZTVkLTQ4YjItOTQ4My01ZTYxZDNiNGJjMGEiLCJleHAiOjE0NzY0NDQ1OTAsIm5iZiI6MCwiaWF0IjoxNDc2NDQ0MjkwLCJpc3MiOiJodHRwOi8vbG9jYWxob3N0OjgwODEvYXV0aC9yZWFsbXMvU09OQVRBIiwiYXVkIjoiYWRtaW4tY2xpIiwic3ViIjoiYjFiY2M4YmQtOTJhMy00N2RkLTliOGUtZDY3NGQ2ZTU0ZjJjIiwidHlwIjoiQmVhcmVyIiwiYXpwIjoiYWRtaW4tY2xpIiwiYXV0aF90aW1lIjowLCJzZXNzaW9uX3N0YXRlIjoiNTkwYzlhNGUtYzljNC00OTU1LTg1NDAtYTViOTM2ODM5NjEzIiwiYWNyIjoiMSIsImNsaWVudF9zZXNzaW9uIjoiYjhkODI4ZjAtNWQ3Yy00NjI4LWEzOTEtNGQwNTY0MDNkNTRjIiwiYWxsb3dlZC1vcmlnaW5zIjpbXSwicmVzb3VyY2VfYWNjZXNzIjp7fSwibmFtZSI6InNvbmF0YSB1c2VyIHNvbmF0YSB1c2VyIiwicHJlZmVycmVkX3VzZXJuYW1lIjoidXNlcjEiLCJnaXZlbl9uYW1lIjoic29uYXRhIHVzZXIiLCJmYW1pbHlfbmFtZSI6InNvbmF0YSB1c2VyIiwiZW1haWwiOiJzb25hdGF1c2VyQHNvbmF0YS5uZXQifQ.T_GB_kBtZk-gmFNJ5rC2sJpNl4V3TUyhixq76hOi5MbgDbo_FfuKRomxviAeQi-RdJPIEffdzrVmaYXZVQHufpaYx9p90GQd3THQWMyZD50zMY40j-XlungaGKjizWNxaywvGXBMvDE_qYp0hr4Uewm4evO_NRRI1bWQLeaeJ3oHr1_p9vFZf5Kh8tZYR-dQSWuESvHhZrJAqHTzXlYYMRBqfjDyAgUhm8QbbtmDtPr0kkkIh1TmXevkZbm91mrS-9jWrS4zGZE5LiT5KdWnMs9P8FBR1p3vywwIu_z-0MF8_DIMJWa7ApZAXjtrszXAYVfCKsaisjjD9HacgpE-4w","expires_in":300,"refresh_expires_in":1800,"refresh_token":"eyJhbGciOiJSUzI1NiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICIyRG1CZm1UaEJEa3NmNElMWVFnVEpSVmNRMDZJWEZYdWNOMzhVWk1rQ0cwIn0.eyJqdGkiOiIyOTRmZjc5Yy01ZWIxLTQwNDgtYmM1NS03NjcwOGU1Njg1YzMiLCJleHAiOjE0NzY0NDYwOTAsIm5iZiI6MCwiaWF0IjoxNDc2NDQ0MjkwLCJpc3MiOiJodHRwOi8vbG9jYWxob3N0OjgwODEvYXV0aC9yZWFsbXMvU09OQVRBIiwiYXVkIjoiYWRtaW4tY2xpIiwic3ViIjoiYjFiY2M4YmQtOTJhMy00N2RkLTliOGUtZDY3NGQ2ZTU0ZjJjIiwidHlwIjoiUmVmcmVzaCIsImF6cCI6ImFkbWluLWNsaSIsImF1dGhfdGltZSI6MCwic2Vzc2lvbl9zdGF0ZSI6IjU5MGM5YTRlLWM5YzQtNDk1NS04NTQwLWE1YjkzNjgzOTYxMyIsImNsaWVudF9zZXNzaW9uIjoiYjhkODI4ZjAtNWQ3Yy00NjI4LWEzOTEtNGQwNTY0MDNkNTRjIiwicmVzb3VyY2VfYWNjZXNzIjp7fX0.WGHvTiVc08xuVCDM5YLlvIzvBgz0aJ3OY3-VGmKSyI-fDLfbp9LSLkPsIqiKO9mDjybSfEkrNmPBd60lWecUC43DacVhVbiLEU9cJdMnjQjrU0P3wg1HFQmcG8exylJMzWoAbJzm893SP-kgKVYCnbQ55Os1-oT1ClHr3Ts6BHVgz5FWrc3dk6DqOrGAxmoJLQUgNJ5jdF-udt-j81OcBTtC3b-RXFXlRu3AyJ0p-UPiu4_HkKBVdg0pmycuN0v0it-TxR_mlM9lhvdVMGXLD9_-PUgklfc6XisdCrGa_b9r06aQCiekXGWptLoFF1Oz__g2_v4Gsrzla5YKBZzGfA","token_type":"bearer","id_token":"eyJhbGciOiJSUzI1NiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICIyRG1CZm1UaEJEa3NmNElMWVFnVEpSVmNRMDZJWEZYdWNOMzhVWk1rQ0cwIn0.eyJqdGkiOiI5NWVmMGY0Yi1lODIyLTQwMTAtYWU1NS05N2YyYTEzZWViMzkiLCJleHAiOjE0NzY0NDQ1OTAsIm5iZiI6MCwiaWF0IjoxNDc2NDQ0MjkwLCJpc3MiOiJodHRwOi8vbG9jYWxob3N0OjgwODEvYXV0aC9yZWFsbXMvU09OQVRBIiwiYXVkIjoiYWRtaW4tY2xpIiwic3ViIjoiYjFiY2M4YmQtOTJhMy00N2RkLTliOGUtZDY3NGQ2ZTU0ZjJjIiwidHlwIjoiSUQiLCJhenAiOiJhZG1pbi1jbGkiLCJhdXRoX3RpbWUiOjAsInNlc3Npb25fc3RhdGUiOiI1OTBjOWE0ZS1jOWM0LTQ5NTUtODU0MC1hNWI5MzY4Mzk2MTMiLCJhY3IiOiIxIiwibmFtZSI6InNvbmF0YSB1c2VyIHNvbmF0YSB1c2VyIiwicHJlZmVycmVkX3VzZXJuYW1lIjoidXNlcjEiLCJnaXZlbl9uYW1lIjoic29uYXRhIHVzZXIiLCJmYW1pbHlfbmFtZSI6InNvbmF0YSB1c2VyIiwiZW1haWwiOiJzb25hdGF1c2VyQHNvbmF0YS5uZXQifQ.FrwYdv1S8mqivHjsyA93ycl10z2tisVJraUGcBJzle060nCO69ZEa0fzrMMCbSkjY1JAwjP92d7_ixuWpcUVvQLkesxKOgcBc8LVhClyh3__8p46kIwfrJYMZQt0cJ6f6nASX1yaySE9sDgl3ElkW0vz-i9vhEXkIh6m-EuC7lH0ZIIL-39-occssq7G5hDleDUMThno8sEsl8rgtV-GdAfjKIwi-yOB0X8K1RrfDarccwA3XB0R8nHAbInZGsrF114KsBuaEvWjKki4m86xFkfPPuSlvWaVRtCziiTBqrBZ_Qna6wI9FfAOiTzPXE5AfFtDowih6d-26kT_jd_7GA","not-before-policy":0,"session_state":"590c9a4e-c9c4-4955-8540-a5b936839613"}
-
-      parsed_res, code = parse_json(res.body)
-      @access_token = parsed_res['access_token']
-      puts "ACCESS_TOKEN RECEIVED -> FAKE"# , parsed_res['access_token']
-    else
-      halt 401, "ERROR: ACCESS DENIED!"
-    end
-
     # @decoded_token = JWT.decode @access_token, settings.keycloak_pub_key, true, { :algorithm => 'RS256' }
     @decoded_payload, @decoded_header = JWT.decode @access_token, settings.keycloak_pub_key, true, { :algorithm => 'RS256' }
     # puts "DECODED_TOKEN: ", @decoded_token
@@ -151,19 +136,6 @@ class Adapter < Sinatra::Application
     client_access = @decoded_payload["resource_access"].first# [0]["roles"] returns ['son-connect',{'roles'=>['son,...']}]
     @decoded_user_roles = client_access[1]["roles"] # key, value -> [0][1]
     puts "USER_ROLES?", @decoded_user_roles
-
-
-    # user_results = User.find(nil, filters = {:where => "{\"email\":\"#{@email}\"}" })
-    # puts "USER?", user_results.count
-    # halt 401, "Your email address is not unique. Exploding into a million pieces!" if user_results.count != 1
-    # halt 401, "Your email address is not unique. Exploding into a million pieces!" if user_results.count != 1
-    # @user = user_results.first
-    # array = []
-    # array << { :name => 'test01', :id => 'test', :email => @email }
-    @sections = [Sections.new(@usrname, @id, @email)]
-    # puts "HERE", @sections.first.name.to_s
-    puts "USER ADDED!"
-    @access_token
   end
 
   def set_keycloak_config()
