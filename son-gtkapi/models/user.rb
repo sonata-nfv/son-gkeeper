@@ -152,7 +152,7 @@ class User < ManagerService
     GtkApi.logger.debug(method) {"entered with name #{name}"}
     #user=find(url: @@url + USERS_URL + name, log_message: LOG_MESSAGE + "##{__method__}(#{name})")
     #user ? User.new(user['data']) : nil
-    name=='Unknown' ? User.new({username: 'Unknown', credentials: [ {type: 'password', value: 'None'}]}) : nil
+    name=='Unknown' ? User.new({username: 'Unknown', password: 'None'}) : nil
   end
 
   def self.find(params)

@@ -70,6 +70,7 @@ class GtkApi < Sinatra::Base
         logger.debug(method) {'entered'}
         json_error 400, 'Invalid Instance UUID' unless valid? params[:uuid]
         record = RecordManagerService.find_record_by_uuid(kind: 'services', uuid: params[:uuid])
+
         case record[:status]
         when 200
           logger.debug(log_message) {"leaving with #{record}"}

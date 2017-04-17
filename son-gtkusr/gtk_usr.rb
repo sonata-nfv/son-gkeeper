@@ -26,7 +26,7 @@
 ## partner consortium (www.sonata-nfv.eu).
 
 # Set environment
-ENV['RACK_ENV'] ||= 'development'
+ENV['RACK_ENV'] ||= 'production'
 
 require 'sinatra'
 require 'sinatra/base'
@@ -47,23 +47,35 @@ Bundler.require :default, ENV['RACK_ENV'].to_sym
 
 configure do
   # Configuration for logging
+
   enable :logging
   Dir.mkdir("#{settings.root}/log") unless File.exist?("#{settings.root}/log")
   log_file = File.new("#{settings.root}/log/#{settings.environment}.log", 'a+')
   log_file.sync = true
   use Rack::CommonLogger, log_file
 
+  #STDOUT.reopen(log_file)
+  STDERR.reopen(log_file)
+  #STDOUT.sync = true
+  STDERR.sync = true
+
   class Keycloak < Sinatra::Application
     register Sinatra::ConfigFile
     # Load configurations
     config_file 'config/keycloak.yml'
+    configure {
+      enable :logging
+    }
+
+    before {
+      env['rack.logger'] = Logger.new "#{settings.root}/log/#{settings.environment}.log"
+    }
 
     #self.get_realm_public_key
     # self.get_oidc_endpoints
     # self.get_adapter_install_json
     # @@access_token = self.get_adapter_token
   end
-
 
   # set up the rest of sinatra config stuff
   # @key = create_public_key
@@ -84,4 +96,11 @@ class Adapter < Sinatra::Application
   register Sinatra::ConfigFile
   # Load configurations
   config_file 'config/config.yml'
+  configure {
+    enable :logging
+  }
+
+  before {
+    env['rack.logger'] = Logger.new "#{settings.root}/log/#{settings.environment}.log"
+  }
 end
