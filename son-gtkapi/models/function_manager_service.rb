@@ -71,7 +71,12 @@ class FunctionManagerService < ManagerService
   end
 
   def self.find(params)
-    find(url: @@url + '/functions', params: params, log_message: LOG_MESSAGE + "##{__method__}(#{params})")
+    #find(url: @@url + '/functions', params: params, log_message: LOG_MESSAGE + "##{__method__}(#{params})")
+    log_message = LOG_MESSAGE + "##{__method__}"
+    GtkApi.logger.debug(log_message) {"entered with params #{params}"}
+    response = getCurb(url: @@url + '/functions', params: params)
+    GtkApi.logger.debug(log_message) {"response=#{response}"}
+    response
   end
   
   def load_instances(uuid)
