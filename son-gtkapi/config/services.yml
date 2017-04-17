@@ -67,6 +67,10 @@ development: &common_settings
       url: http://sp.int3.sonata-nfv.eu:4002/catalogues/api/v2
       model: Catalogue
       environment: CATALOGUES_URL
+    metrics:
+      url: http://sp.int3.sonata-nfv.eu:8000/api/v1
+      model: Metric
+      environment: METRICS_URL
   level: debug
   defaults:
     page:
