@@ -90,6 +90,7 @@ class User < ManagerService
       case resp[:status]
       when 200..202
         user = resp[:items]
+        raise UserNotCreatedError.new "User not created with params #{params}" unless user.key? :uuid
         GtkApi.logger.debug(method) {"user=#{user}"}
         saved_params[:uuid] = user[:userId] unless user.empty?
         User.new(saved_params)
@@ -118,7 +119,7 @@ class User < ManagerService
   def self.authenticated?(secret)
     method = LOG_MESSAGE + "##{__method__}"
     GtkApi.logger.debug(method) {"entered with secret=#{secret}"}
-    headers = {'Content-type'=>'application/json', 'Accept'=> 'application/json', 'Authorization'=>'Base '+secret}
+    headers = {'Content-type'=>'application/json', 'Accept'=> 'application/json', 'Authorization'=>'Basic '+secret}
     begin
       resp = postCurb(url: @@url+'/api/v1/login/user', body: {}, headers: headers)
       if resp[:status] == 200
