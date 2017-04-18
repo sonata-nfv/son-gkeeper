@@ -29,13 +29,32 @@ RSpec.describe User, type: :model do
   def app() GtkApi end
   let(:user_uuid) {SecureRandom.uuid}
   let(:unknown_user_uuid) {SecureRandom.uuid}
-  let(:user_to_be_created_1) {{name:'name', version:'0.1', vendor:'vendor'}}
-  let(:created_user_1) {user_to_be_created_1.merge({uuid: user_uuid})}
-  let(:response_user_1) {user_to_be_created_1.merge({uuid: user_uuid})}
-  let(:user_to_be_created_2) {{name:'name', version:'0.2', vendor:'vendor'}}
-  let(:created_user_2) {user_to_be_created_2.merge({uuid: user_uuid})}
-  let(:all_users) { [ created_user_1, created_user_2 ]}
+  #let(:user_to_be_created_1) {{name:'name', version:'0.1', vendor:'vendor'}}
+  #let(:created_user_1) {user_to_be_created_1.merge({uuid: user_uuid})}
+  #let(:response_user_1) {user_to_be_created_1.merge({uuid: user_uuid})}
+  #let(:user_to_be_created_2) {{name:'name', version:'0.2', vendor:'vendor'}}
+  #let(:created_user_2) {user_to_be_created_2.merge({uuid: user_uuid})}
+  #let(:all_users) { [ created_user_1, created_user_2 ]}
   let(:users_url) { User.class_variable_get(:@@url)+'/api/v1/register/user' }
+  let(:login_url) { User.class_variable_get(:@@url)+'/api/v1/login/user' }
+  let(:to_be_created_user) {{
+    firstName: "Un", lastName: "Known", username: "Unknown", email: "un@known.com", 
+    password: "1234",
+    user_type: "developer"
+  }}
+  let(:user_info) {{
+    firstName: "Un", lastName: "Known", username: "Unknown", email: "un@known.com", 
+    credentials: [{type: "password", value: "1234"}],
+    attributes: {userType:["developer"]}
+  }}
+  let(:created_user) {{
+    uuid: SecureRandom.uuid,
+    username: "Unknown"
+  }}
+  let(:token) {{token: 'abc'}}
+  let(:secret) {Base64.strict_encode64(to_be_created_user[:username]+':'+to_be_created_user[:password])}
+  let(:invalid_secret) {Base64.strict_encode64('foo:bar')}
+    
   describe '#find' do
   #  it 'with default parameters should return two services' do
   #    resp = OpenStruct.new(header_str: "HTTP/1.1 200 OK\nRecord-Count: 2", body: all_services.to_json)      
@@ -72,27 +91,53 @@ RSpec.describe User, type: :model do
   end
   describe '#find_by_name'
   describe '.valid?'
-  describe '.authen?'
-  describe '.authenticated?'
+  describe '#authenticated?' do
+=begin
+    begin
+      resp = postCurb(url: @@url+'/api/v1/login/user', body: {}, headers: headers)
+      if resp[:status] == 200
+        token = resp[:items]
+        GtkApi.logger.debug(method) {"token=#{token}"}
+        {began_at: Time.now.utc, token: token}
+      else
+        GtkApi.logger.error(method) {"Status #{resp[:status]}"} 
+        raise UserNotAuthenticatedError.new "User not authenticated with params #{secret}"
+      end
+    rescue  => e
+      GtkApi.logger.error(method) {"Error during processing: #{$!}"}
+      GtkApi.logger.error(method) {"Backtrace:\n\t#{e.backtrace.join("\n\t")}"}
+      raise UserNotAuthenticatedError.new "User not authenticated with params #{secret}"
+    end
+  end
+=end
+    context 'yes' do
+      before(:each) do
+        resp = OpenStruct.new(header_str: "HTTP/1.1 200 OK\nRecord-Count: 1", body: token.to_json)            
+        allow(Curl).to receive(:post).with(login_url, '{}').and_return(resp) 
+      end
+      it 'should return a Hash' do
+        expect(User.authenticated?(secret)).to be_a Hash
+      end
+      it 'should call User Management Service' do
+        User.authenticated?(secret)
+        expect(Curl).to have_received(:post)
+      end
+      it 'should return a Hash with a token key' do
+        expect(User.authenticated?(secret)).to have_key(:token)
+      end
+    end
+    context 'no' do
+      before(:each) do
+        resp = OpenStruct.new(header_str: "HTTP/1.1 404 OK\nRecord-Count: 0", body: '{}')            
+        allow(Curl).to receive(:post).with(login_url, '{}').and_return(resp) 
+      end
+      it 'should raise UserNotAuthenticatedError' do
+        expect{User.authenticated?(invalid_secret)}.to raise_error(UserNotAuthenticatedError)
+      end
+    end
+  end
   describe '.logout!'
   describe '#create' do
-    # expect(@object).to be_a Shirt
-    let(:users_url) {User.class_variable_get(:@@url)+'/api/v1/register/user'}
-    let(:to_be_created_user) {{
-      firstName: "Un", lastName: "Known", username: "Unknown", email: "un@known.com", 
-      password: "1234",
-      user_type: "developer"
-    }}
-    let(:user_info) {{
-      firstName: "Un", lastName: "Known", username: "Unknown", email: "un@known.com", 
-      credentials: [{type: "password", value: "1234"}],
-      attributes: {userType:["developer"]}
-    }}
-    let(:created_user) {{
-      uuid: SecureRandom.uuid,
-      username: "Unknown"
-    }}
-      
     context 'successfuly' do
       before(:each) do
         resp = OpenStruct.new(header_str: "HTTP/1.1 201 OK\nRecord-Count: 1", body: created_user.to_json)            
