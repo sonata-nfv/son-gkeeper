@@ -35,12 +35,6 @@ class GtkApi < Sinatra::Base
   namespace '/api/v2' do
     # AKA login
     post '/sessions/?' do
-      # POST http://sp.int3.sonata-nfv.eu:32001/api/v2/sessions
-      # with json body = { "username": "Unknown" , "secret": "VW5rbm93bjpOb25l" }
-      # returns a 400 error code: "Unprocessable entity: missing user name"
-      # trying with { "name": "Unknown" , "password": "VW5rbm93bjpOb25l" }
-      # returns a 500 error code: "#<NoMethodError: undefined method `authenticate!' for #User:0x00556f5415c160>"
-
       log_message = 'GtkApi::POST /sessions/?'
       body = request.body.read
       logger.debug(log_message) {"body=#{body}"}      
@@ -52,21 +46,25 @@ class GtkApi < Sinatra::Base
       params = JSON.parse(body, symbolize_names: true)
       logger.debug(log_message) {"entered with params=#{params}"}
       json_error(400, 'Unprocessable entity: missing user name', log_message) if (params[:username].nil? || params[:username].empty?)
-      json_error(400, 'Unprocessable entity: missing user secret', log_message) if (params[:secret].nil? || params[:secret].empty?)
+      json_error(400, 'Unprocessable entity: missing user password', log_message) if (params[:password].nil? || params[:password].empty?)
 
-      user = User.find_by_name(params[:username])
-      if user
-        logger.debug(log_message) {"user=#{user.inspect}"}
-        session = user.authenticated?(params[:secret])
-        if session
-          logger.debug(log_message) {"leaving with session #{session.inspect}"}
-          halt 200, {userid: user.uuid, username: user.username, session_started_at: user.session[:began_at]}.to_json
-        else
+      # We don't have a find_by_name method, and user_uuid is something hard to tackle by the end user
+      # so this has to be done at the class level, instead of at instance level
+      #user = User.find_by_name(params[:username])
+      #if user
+        #logger.debug(log_message) {"user=#{user.inspect}"}
+        #session = user.authenticated?(params[:secret])
+      begin
+        session = User.authenticated?(Base64.strict_encode64(params[:username]+':'+params[:password]))
+        logger.debug(log_message) {"leaving with session #{session}"}
+          #halt 200, {userid: user.uuid, username: user.username, session_started_at: user.session[:began_at]}.to_json
+        halt 200, {username: params[:username], session_began_at: session[:began_at], token: session[:token]}.to_json
+      rescue UserNotAuthenticatedError
           json_error 401, 'Unauthorized: user '+params[:username]+' not authenticated', log_message
-        end
-      else
-        json_error 404, 'User '+params[:username]+' not found', log_message
       end
+        #else
+        #json_error 404, 'User '+params[:username]+' not found', log_message
+        #end
     end
 
     # AKA logout

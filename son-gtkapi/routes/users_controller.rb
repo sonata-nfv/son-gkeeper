@@ -48,10 +48,10 @@ class GtkApi < Sinatra::Base
       
       # {"username" => "sampleuser", "firstName" => "User", "lastName" => "Sample", "email" => "user.sample@email.com.br", "password" => "1234", "user_type" => "developer"|"customer"|"admin"}
       
-      json_error 400, 'User name is missing' unless (params.key?(:username) && !params[:username].empty?)
-      json_error 400, 'User password is missing' unless (params.key?(:password) && !params[:password].empty?)
-      json_error 400, 'User email is missing' unless (params.key?(:email) && !params[:email].empty?)
-      json_error 400, 'User type is missing' unless (params.key?(:user_type) && !params[:user_type].empty?)
+      json_error(400, 'User name is missing', log_message) unless valid?(params: params, sym: :username)
+      json_error(400, 'User password is missing', log_message) unless valid?(params: params, sym: :password)
+      json_error(400, 'User email is missing', log_message) unless valid?(params: params, sym: :email)
+      json_error(400, 'User type is missing', log_message) unless valid?(params: params, sym: :user_type)
     
       begin
         user = User.create(params)
@@ -135,5 +135,13 @@ class GtkApi < Sinatra::Base
     log = User.get_log(url:User.class_variable_get(:@@url)+'/admin/logs', log_message:log_message)
     logger.debug(log_message) {"leaving with log=#{log}"}
     halt 200, log
+  end
+  
+  private
+  
+  def valid?(params:, sym:)
+    log_message = 'GtkApi::'+__method__.to_s
+    logger.debug(log_message) {"params=#{params}, sym=#{sym}"}
+    params.key?(sym) && !params[sym].empty?
   end
 end

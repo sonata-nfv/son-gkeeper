@@ -29,6 +29,7 @@ require './models/manager_service.rb'
 require 'base64'
 
 class UserNotCreatedError < StandardError; end
+class UserNotAuthenticatedError < StandardError; end
 class UserNotFoundError < StandardError; end
 class UsersNotFoundError < StandardError; end
 class UserNameAlreadyInUseError < StandardError; end
@@ -43,11 +44,10 @@ class User < ManagerService
   # {"username" => "sampleuser", "enabled" => true, "totp" => false, "emailVerified" => false, "firstName" => "User", "lastName" => "Sample", "email" => "user.sample@email.com.br", "credentials" => [ {"type" => "password", "value" => "1234"} ], "requiredActions" => [], "federatedIdentities" => [], "attributes" => {"developer" => ["true"], "customer" => ["false"], "admin" => ["false"]}, "realmRoles" => [], "clientRoles" => {}, "groups" => ["developers"]}
   
   def self.config(url:)
-    method = LOG_MESSAGE + "#config(url=#{url})"
-    raise ArgumentError.new('UserManagerService can not be configured with nil url') if url.nil?
-    raise ArgumentError.new('UserManagerService can not be configured with empty url') if url.empty?
+    method = LOG_MESSAGE + __method__.to_s
+    raise ArgumentError.new('UserManagerService can not be configured with nil or empty url') if (url.nil? || url.empty?)
     @@url = url
-    GtkApi.logger.debug(method) {'entered'}
+    GtkApi.logger.debug(method) {'entered with url='+url}
   end
   
   def initialize(params)
@@ -77,6 +77,8 @@ class User < ManagerService
     params[:attributes] = {}
     # :attributes=>{:userType=>["developer"]}
     params[:attributes][:userType] = [user_type]
+    params[:attributes][:certificate] = params.delete(:certificate) if params[:certificate]
+    params[:attributes][:public_key] = params.delete(:public_key) if params[:public_key]
     GtkApi.logger.debug(method) {"params = #{params}"}
     
     # This doesn't work:
@@ -113,16 +115,27 @@ class User < ManagerService
     end
   end
 
-  # TODO from here down
-  def authenticated?(secret)
+  def self.authenticated?(secret)
     method = LOG_MESSAGE + "##{__method__}"
     GtkApi.logger.debug(method) {"entered with secret=#{secret}"}
-    @session = {began_at: Time.now.utc}
-    #@username == params[:username] && @secret == params[:secret] ? self : nil
-    decoded_secret = Base64.decode64(secret).split(':')
-    (@username == decoded_secret[0] && @secret == secret) ? self : nil
+    headers = {'Content-type'=>'application/json', 'Accept'=> 'application/json', 'Authorization'=>'Base '+secret}
+    begin
+      resp = postCurb(url: @@url+'/api/v1/login/user', body: {}, headers: headers)
+      if resp[:status] == 200
+        token = resp[:items]
+        GtkApi.logger.debug(method) {"token=#{token}"}
+        {began_at: Time.now.utc, token: token}
+      else
+        GtkApi.logger.error(method) {"Status #{resp[:status]}"} 
+        raise UserNotAuthenticatedError.new "User not authenticated with params #{secret}"
+      end
+    rescue  => e
+      GtkApi.logger.error(method) {"Error during processing: #{$!}"}
+      GtkApi.logger.error(method) {"Backtrace:\n\t#{e.backtrace.join("\n\t")}"}
+      raise UserNotAuthenticatedError.new "User not authenticated with params #{secret}"
+    end
   end
-  
+
   def logout!
     session_lasted_for = Time.now.utc - @session[:began_at]
     @user_session = nil
