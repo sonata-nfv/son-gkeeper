@@ -1016,6 +1016,7 @@ class Keycloak < Sinatra::Application
 
   def get_clients(query=nil)
     # TODO: IT ONLY SUPPORTS QUERIES BY NAME (CLIENTID)
+    refresh_adapter # Refresh admin token if expired
     url = URI("http://#{@@address.to_s}:#{@@port.to_s}/#{@@uri.to_s}/admin/realms/#{@@realm_name}/clients")
     http = Net::HTTP.new(url.host, url.port)
     request = Net::HTTP::Get.new(url.to_s)
