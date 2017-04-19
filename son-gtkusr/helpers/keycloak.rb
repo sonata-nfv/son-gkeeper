@@ -103,11 +103,11 @@ class Keycloak < Sinatra::Application
                               'password' => "admin",
                               'grant_type' => "client_credentials")
 
-    parsed_res, code = parse_json(res.body)
+    parsed_res, errors = parse_json(res.body)
 
     if parsed_res['access_token']
       # puts "ACCESS_TOKEN RECEIVED", parsed_res['access_token']
-
+      logger.debug 'Saving new received Access Token'
       File.open('config/token.json', 'w') do |f|
         f.puts parsed_res['access_token']
       end
@@ -737,6 +737,7 @@ class Keycloak < Sinatra::Application
           # => Then GET new token
           logger.debug 'Adapter: Refreshing Adapter token'
           @@access_token = Keycloak.get_adapter_token
+          return
       end
     end
     logger.debug 'Adapter: Adapter token not found'
