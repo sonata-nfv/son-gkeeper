@@ -681,7 +681,7 @@ class Keycloak < Sinatra::Application
         end
 
         unless form.key? ('certs')
-          form['certs'] = 'null'
+          form['certs'] = nil
         end
 
         #Get user attributes
@@ -689,7 +689,7 @@ class Keycloak < Sinatra::Application
         parsed_user_data = JSON.parse(user_data[0])
         logger.debug "parsed_user_data #{parsed_user_data}"
         #Update attributes
-        new_attributes = {"public-key" => [form['public-key'].to_s], "certificate" => [form['certs'].to_s]}
+        new_attributes = {"public-key" => [form['public-key']], "certificate" => [form['certs']]}
         logger.debug "new_attributes #{new_attributes}"
         user_attributes = parsed_user_data['attributes']
         logger.debug "user_attributes #{user_attributes}"
