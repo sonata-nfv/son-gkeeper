@@ -107,7 +107,6 @@ class Keycloak < Sinatra::Application
 
     if parsed_res['access_token']
       # puts "ACCESS_TOKEN RECEIVED", parsed_res['access_token']
-      logger.debug 'Saving new received Access Token'
       File.open('config/token.json', 'w') do |f|
         f.puts parsed_res['access_token']
       end
@@ -317,7 +316,7 @@ class Keycloak < Sinatra::Application
     request.body = body.to_json
     response = http.request(request)
     logger.debug "Keycloak: Registration code #{response.code}"
-    logger.debug "Keycloak: Registration message #{parse_json(response.body).to_s}"
+    logger.debug "Keycloak: Registration message #{parse_json(response.body)}"
     # puts "REG CODE", response.code
     # puts "REG BODY", response.body
     if response.code.to_i != 201
@@ -737,6 +736,7 @@ class Keycloak < Sinatra::Application
           # => Then GET new token
           logger.debug 'Adapter: Refreshing Adapter token'
           @@access_token = Keycloak.get_adapter_token
+          logger.debug "New Access Token saved #{@@access_token}"
           return
       end
     end
