@@ -45,9 +45,13 @@ class ManagerService
     complete_url = params.empty? ? url : url + '?' + Curl::postalize(params)
     GtkApi.logger.debug(log_message) {"complete_url=#{complete_url}"} 
     res=Curl.get(complete_url) do |req|
-      headers.each do |h|
-        GtkApi.logger.debug(log_message) {"header[#{h[0]}]: #{h[1]}"}
-        req.headers[h[0]] = h[1]
+      if headers.empty?
+        req.headers['Content-type'] = req.headers['Accept'] = 'application/json'
+      else
+        headers.each do |h|
+          GtkApi.logger.debug(log_message) {"header[#{h[0]}]: #{h[1]}"}
+          req.headers[h[0]] = h[1]
+        end
       end
     end
     GtkApi.logger.debug(log_message) {"header_str=#{res.header_str}"}
