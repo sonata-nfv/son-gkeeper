@@ -127,8 +127,9 @@ class Keycloak < Sinatra::Application
   get '/refresh' do
     # This endpoint forces the Adapter to resfresh the token
     logger.debug 'Adapter: entered GET /refresh'
-    refresh_adapter
-    logger.debug 'Adapter: exit from GET /refresh'
+    access_token = refresh_adapter
+    # access_token = Keycloak.get_adapter_token
+    logger.debug "Adapter: exit from GET /refresh with token #{access_token}"
   end
 
   post '/register/user' do
@@ -670,10 +671,10 @@ class Keycloak < Sinatra::Application
         json_error(400, res.to_s)
       end
       logger.debug "Adapter: Token contents #{token_contents}"
-      logger.debug "Adapter: Username #{[:username]}"
+      logger.debug "Adapter: Username #{params[:username]}"
       # if token_contents['sub'] == :username
-      if token_contents['preferred_username'].to_s == :username.to_s
-        logger.debug "Adapter: #{[:username]} matches Access Token"
+      if token_contents['username'].to_s == params[:username].to_s
+        logger.debug "Adapter: #{params[:username]} matches Access Token"
         #Translate from username to User_id
         user_id = get_user_id(params[:username])
         if user_id.nil?
