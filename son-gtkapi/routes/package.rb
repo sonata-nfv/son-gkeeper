@@ -85,6 +85,7 @@ class GtkApi < Sinatra::Base
         if package
           logger.debug(log_message) {"leaving with package #{package}"}
           count_single_package_queries(desc: KPI_DESC, labels: {result: "ok", uuid: params[:uuid], elapsed_time: (Time.now.utc-began_at).to_s})
+          content_type :json #headers 'Content-Type'=> 'application/json'
           halt 200, package.to_json
         else
           logger.debug(log_message) {"leaving with \"No package with UUID=#{params[:uuid]} was found\""}
