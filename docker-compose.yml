@@ -240,4 +240,11 @@ services:
    environment:
     - RABBIT_URL=sp.int.sonata-nfv.eu:5672
     - EMAIL_PASS=czBuQHRAX21vbl9zeXNfMTY=
-
+  
+  son-monitor-manager:
+   image: registry.sonata-nfv.eu:5000/son-monitor-manager
+   restart: unless-stopped
+   volumes:
+    - /tmp/monitoring/mgr:/var/log/apache2
+   ports:
+    - "8000:8000"
