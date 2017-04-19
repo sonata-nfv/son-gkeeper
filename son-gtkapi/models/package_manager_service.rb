@@ -51,11 +51,11 @@ class PackageManagerService < ManagerService
     uri = @@url+'/packages'
     raise ArgumentError.new('PackageManagerService can not be created without a user') unless params.key?(:user)
     user_params = params.delete(:user)
-    user = User.find_by_name(user_params[:username])
-    if user
-      if user.authenticated?(user_params[:secret])
+    #user = User.find_by_name(user_params[:username])
+    #if user
+      if User.authenticated?(Base64.strict_encode64(user_params[:username]+':'+user_params[:password]))
         GtkApi.logger.debug(method) {"User #{user_params[:username]} authenticated"}
-        if user.authorized?(user_params)
+        if User.authorized?(user_params)
           GtkApi.logger.debug(method) {"User #{user_params[:username]} authorized"}
           begin
             # from http://www.rubydoc.info/gems/rest-client/1.6.7/frames#Result_handling
@@ -86,10 +86,10 @@ class PackageManagerService < ManagerService
         GtkApi.logger.debug(method) {"user #{params[:user][:name]} not authenticated"}
         { status: 401, count: 0, data: {}, message: 'Unauthorized: user '+params[:user][:name]+' could not be authenticated'}
       end
-    else
-      GtkApi.logger.debug(method) {"user #{params[:user][:name]} not found"}
-      { status: 404, count: 0, data: {}, message: 'User '+params[:user][:name]+' not found'}
-    end
+      #else
+      #GtkApi.logger.debug(method) {"user #{params[:user][:name]} not found"}
+      #{ status: 404, count: 0, data: {}, message: 'User '+params[:user][:name]+' not found'}
+      #end
   end
   
   def self.find_by_uuid(uuid)

@@ -143,7 +143,7 @@ class User < ManagerService
     session_lasted_for
   end
   
-  def authorized?(params)
+  def self.authorized?(params)
     method = LOG_MESSAGE + "##{__method__}"
     GtkApi.logger.debug(method) {"entered with params #{params}"}
     true

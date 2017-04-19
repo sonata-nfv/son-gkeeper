@@ -26,13 +26,36 @@
 require_relative '../spec_helper'
 
 RSpec.describe PackageManagerService, type: :model do
-  describe '.find_by_uuid' do
+  let(:user) {{username: 'Unknown', password: 'None'}}
+  let(:secret) {Base64.strict_encode64(user[:username]+':'+user[:password])}
+  let(:session) {{began_at: Time.now.utc, token: 'abc'}}
+  # Just with the user for the moment
+  let(:package) {{user: user}}
+  
+  describe '#find_by_uuid' do
     it 'should GET /catalogues/packages/:uuid from catalogues'
   end
-  describe '.find' do
+  describe '#find' do
     it 'should GET /catalogues/packages from catalogues'
   end
-  describe '.create' do
+  describe '#create' do
     it 'should POST /catalogues/packages to catalogues'
+    context 'with a valid' do
+      context 'and authorized user' do
+        before(:each) do
+          allow(User).to receive(:authenticated?).with(secret).and_return(session)
+          allow(User).to receive(:authorized?).and_return(true) 
+          allow(RestClient).to receive(:post).and_return(status: 200, body: "", headers: {})
+          PackageManagerService.create(package)
+        end
+        # Just pointers for the moment        
+        it 'checks user authentication' do
+          expect(User).to have_received(:authenticated?)
+        end
+        it 'checks user authorization' do
+          expect(User).to have_received(:authorized?)
+        end
+      end
+    end
   end
 end
