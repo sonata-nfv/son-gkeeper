@@ -669,9 +669,10 @@ class Keycloak < Sinatra::Application
       else
         json_error(400, res.to_s)
       end
-
+      logger.debug "Adapter: Token contents #{token_contents}"
+      logger.debug "Adapter: Username #{[:username]}"
       # if token_contents['sub'] == :username
-      if token_contents['username'].to_s == :username.to_s
+      if token_contents['preferred_username'].to_s == :username.to_s
         logger.debug "Adapter: #{[:username]} matches Access Token"
         #Translate from username to User_id
         user_id = get_user_id(params[:username])
