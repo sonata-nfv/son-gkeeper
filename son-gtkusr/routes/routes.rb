@@ -556,13 +556,13 @@ class Keycloak < Sinatra::Application
     halt 400 unless request.env["HTTP_AUTHORIZATION"]
     queriables = %w(name first max)
 
-    keyed_params = keyed_hash(params)
-    keyed_params.each { |k, v|
+    # keyed_params = keyed_hash(params)
+    params.each { |k, v|
       unless queriables.include? k
         json_error(400, 'Bad query')
       end
     }
-    reg_clients = get_clients(keyed_params)
+    reg_clients = get_clients(params)
     halt 200, {'Content-type' => 'application/json'}, reg_clients
   end
 
@@ -663,7 +663,8 @@ class Keycloak < Sinatra::Application
         json_error(400, res.to_s)
       end
 
-      if token_contents['sub'] == :username
+      # if token_contents['sub'] == :username
+      if token_contents['username'].to_s == :username.to_s
         logger.debug "Adapter: #{[:username]} matches Access Token"
         #Translate from username to User_id
         user_id = get_user_id(params[:username])
