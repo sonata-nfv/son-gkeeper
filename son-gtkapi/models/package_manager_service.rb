@@ -53,10 +53,10 @@ class PackageManagerService < ManagerService
     user_params = params.delete(:user)
     #user = User.find_by_name(user_params[:username])
     #if user
-      if User.authenticated?(Base64.strict_encode64(user_params[:username]+':'+user_params[:password]))
-        GtkApi.logger.debug(method) {"User #{user_params[:username]} authenticated"}
-        if User.authorized?(user_params)
-          GtkApi.logger.debug(method) {"User #{user_params[:username]} authorized"}
+    #  if User.authenticated?(Base64.strict_encode64(user_params[:username]+':'+user_params[:password]))
+    #    GtkApi.logger.debug(method) {"User #{user_params[:username]} authenticated"}
+    #    if User.authorized?(user_params)
+    #      GtkApi.logger.debug(method) {"User #{user_params[:username]} authorized"}
           begin
             # from http://www.rubydoc.info/gems/rest-client/1.6.7/frames#Result_handling
             GtkApi.logger.debug(method) {"POSTing to "+uri+ " with params #{params}"}
@@ -78,14 +78,14 @@ class PackageManagerService < ManagerService
             GtkApi.logger.error(method) {"Backtrace:\n\t#{e.backtrace.join("\n\t")}"}
             { status: 500, count: 0, data: {}, message: e.backtrace.join("\n\t")}
           end
-        else
-          GtkApi.logger.debug(method) {"user #{params[:user][:name]} not authorized"}
-          { status: 403, count: 0, data: {}, message: 'Forbidden: user '+params[:user][:name]+' could not be authorized'}
-        end
-      else
-        GtkApi.logger.debug(method) {"user #{params[:user][:name]} not authenticated"}
-        { status: 401, count: 0, data: {}, message: 'Unauthorized: user '+params[:user][:name]+' could not be authenticated'}
-      end
+     #   else
+      #    GtkApi.logger.debug(method) {"user #{params[:user][:name]} not authorized"}
+      #    { status: 403, count: 0, data: {}, message: 'Forbidden: user '+params[:user][:name]+' could not be authorized'}
+      #  end
+      #else
+      #  GtkApi.logger.debug(method) {"user #{params[:user][:name]} not authenticated"}
+      #  { status: 401, count: 0, data: {}, message: 'Unauthorized: user '+params[:user][:name]+' could not be authenticated'}
+      #end
       #else
       #GtkApi.logger.debug(method) {"user #{params[:user][:name]} not found"}
       #{ status: 404, count: 0, data: {}, message: 'User '+params[:user][:name]+' not found'}
