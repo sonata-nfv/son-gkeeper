@@ -37,7 +37,8 @@ class VFunction
     url = @catalogue.url+"?name=#{name}&vendor=#{vendor}&version=#{version}"
     begin
       response = RestClient.get(url, headers)
-      JSON.parse response.body
+      function=JSON.parse response.body
+      function['vnfd']
     rescue => e
       @logger.error "No function found for "+url
       e.message

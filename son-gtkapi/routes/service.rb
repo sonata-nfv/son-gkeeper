@@ -44,9 +44,9 @@ class GtkApi < Sinatra::Base
     
     # GET many services
     get '/?' do
-      log_message = 'GtkApi:: GET /api/v2/services'
-    
+      log_message = 'GtkApi:: GET /api/v2/services'    
       logger.debug(log_message) {'entered with '+query_string}
+      headers 'Content-Type'=> 'application/json'
     
       @offset ||= params['offset'] ||= DEFAULT_OFFSET
       @limit ||= params['limit'] ||= DEFAULT_LIMIT
@@ -61,8 +61,7 @@ class GtkApi < Sinatra::Base
         links = build_pagination_headers(url: request_url, limit: @limit.to_i, offset: @offset.to_i, total: services[:count].to_i)
         logger.debug(log_message) {"links: #{links}"}
         headers 'Link'=> links, 'Record-Count'=> services[:count].to_s
-        status 200
-        halt services[:items].to_json
+        halt 200, services[:items].to_json
       else
         message = "No services with #{params} were found"
         logger.debug(log_message) {"leaving with message '"+message+"'"}
@@ -74,6 +73,7 @@ class GtkApi < Sinatra::Base
     get '/:uuid/?' do
       log_message = 'GtkApi:: GET /api/v2/services/:uuid'
       logger.debug(log_message) {"entered with #{params}"}
+      headers 'Content-Type'=> 'application/json'
     
       if valid?(params[:uuid])
         uuid = params[:uuid]
@@ -83,7 +83,8 @@ class GtkApi < Sinatra::Base
         service = ServiceManagerService.find_service_by_uuid(uuid: uuid) #, params: params)
         if service[:count] && !service[:items].empty?
           logger.debug(log_message) {"leaving with #{service}"}
-          halt 200, service.to_json
+          headers 'Record-Count'=> '1'
+          halt 200, service[:items].to_json
         else
           logger.debug(log_message) {"leaving with message 'Service #{params[:uuid]} not found'"}
           json_error 404, "Service #{params[:uuid]} not found"
