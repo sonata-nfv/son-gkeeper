@@ -124,6 +124,13 @@ class Keycloak < Sinatra::Application
     halt 200, {'Content-type' => 'application/json'}, response.to_json
   end
 
+  get '/refresh' do
+    # This endpoint forces the Adapter to resfresh the token
+    logger.debug 'Adapter: entered GET /refresh'
+    refresh_adapter
+    logger.debug 'Adapter: exit from GET /refresh'
+  end
+
   post '/register/user' do
     logger.debug 'Adapter: entered POST /register/user'
     # Return if content-type is not valid
@@ -662,9 +669,10 @@ class Keycloak < Sinatra::Application
       else
         json_error(400, res.to_s)
       end
-
+      logger.debug "Adapter: Token contents #{token_contents}"
+      logger.debug "Adapter: Username #{[:username]}"
       # if token_contents['sub'] == :username
-      if token_contents['username'].to_s == :username.to_s
+      if token_contents['preferred_username'].to_s == :username.to_s
         logger.debug "Adapter: #{[:username]} matches Access Token"
         #Translate from username to User_id
         user_id = get_user_id(params[:username])
