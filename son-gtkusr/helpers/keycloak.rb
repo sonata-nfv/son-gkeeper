@@ -316,6 +316,8 @@ class Keycloak < Sinatra::Application
     request["content-type"] = 'application/json'
     request.body = body.to_json
     response = http.request(request)
+    logger.debug "Keycloak: Registration code #{response.code}"
+    logger.debug "Keycloak: Registration message #{parse_json(response.body).to_s}"
     # puts "REG CODE", response.code
     # puts "REG BODY", response.body
     if response.code.to_i != 201
@@ -1125,7 +1127,13 @@ class Keycloak < Sinatra::Application
     response = http.request(request)
     # puts "ID CODE", response.code
     # puts "ID BODY", response.body
-    user_id = parse_json(response.body).first[0]["id"]
+    begin
+      user_id = parse_json(response.body).first[0]["id"]
+    rescue
+      user_id = nil
+    end
+    logger.debug "Adapter: UserId is #{user_id}"
+    user_id
     # puts "USER ID", user_id
   end
 
@@ -1208,16 +1216,21 @@ class Keycloak < Sinatra::Application
     begin
       decoded_payload, decoded_header = JWT.decode @@access_token, public_key, true, { :algorithm => 'RS256' }
       # puts "DECODED_HEADER: ", decoded_header
+      logger.debug 'Adapter: Access Token decoded successfully'
       # puts "DECODED_PAYLOAD: ", decoded_payload
       response = 'OK'
     # if expired token, refresh adapter token
     rescue JWT::DecodeError
+      logger.debug 'Adapter: Decoding Access Token DecodeError'
       response = 'DecodeError'
     rescue JWT::ExpiredSignature
+      logger.debug 'Adapter: Decoding Access Token ExpiredSignature Error'
       response = 'ExpiredSignature'
     rescue JWT::InvalidIssuerError
+      logger.debug 'Adapter: Decoding Access Token InvalidIssuerError'
       response = 'InvalidIssuerError'
     rescue JWT::InvalidIatError
+      logger.debug 'Adapter: Decoding Access Token InvalidIatError'
       response = 'InvalidIatError'
     end
   end

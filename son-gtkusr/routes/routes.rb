@@ -124,6 +124,13 @@ class Keycloak < Sinatra::Application
     halt 200, {'Content-type' => 'application/json'}, response.to_json
   end
 
+  get '/refresh' do
+    # This endpoint forces the Adapter to resfresh the token
+    logger.debug 'Adapter: entered GET /refresh'
+    refresh_adapter
+    logger.debug 'Adapter: exit from GET /refresh'
+  end
+
   post '/register/user' do
     logger.debug 'Adapter: entered POST /register/user'
     # Return if content-type is not valid
