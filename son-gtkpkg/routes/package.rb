@@ -69,9 +69,9 @@ class GtkPkg < Sinatra::Base
           else
             json_error 400, 'Error storing son-package.', log_message         
           end
-        elsif descriptor['pd'].key?('name') && descriptor['pd'].key?('vendor') && descriptor['pd'].key?('version')
+        elsif descriptor.key?('name') && descriptor.key?('vendor') && descriptor.key?('version')
           logger.debug(log_message) {"Package is duplicated"}
-          error_message = "Version #{descriptor['pd']['version']} of package '#{descriptor['pd']['name']}' from vendor '#{descriptor['pd']['vendor']}' already exists"
+          error_message = "Version #{descriptor['version']} of package '#{descriptor['name']}' from vendor '#{descriptor['vendor']}' already exists"
           json_error 409, error_message, log_message
         else
           json_error 400, 'Oops.. something terribly wrong happened here!', log_message      

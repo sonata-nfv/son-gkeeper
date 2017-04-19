@@ -155,7 +155,7 @@ class Package
     GtkPkg.logger.debug(log_message) { "@service is #{@service}"}
     GtkPkg.logger.debug(log_message) { "@functions is #{@functions}"}
     
-    if valid? @descriptor
+    if valid_descriptor(@descriptor)
       stored_descriptor = store_package_service_and_functions()
       if stored_descriptor
         GtkPkg.logger.debug(log_message) { "stored package based on descriptor=#{stored_descriptor}"}
@@ -327,7 +327,7 @@ class Package
     (name =~ /function_descriptors/ || name =~ /service_descriptors/ || name =~ /META-INF/)
   end
   
-  def valid?(descriptor)
+  def valid_descriptor(descriptor)
     true # TODO: validate the descriptor here
   end
   
