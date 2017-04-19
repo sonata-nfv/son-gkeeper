@@ -77,14 +77,11 @@ class User < ManagerService
     params[:attributes] = {}
     # :attributes=>{:userType=>["developer"]}
     params[:attributes][:userType] = [user_type]
-    params[:attributes][:certificate] = params.delete(:certificate) if params[:certificate]
-    params[:attributes][:public_key] = params.delete(:public_key) if params[:public_key]
+    params[:attributes][:phone_number] = [params.delete(:phone_number)] if params[:phone_number]
+    params[:attributes][:certificate] = [params.delete(:certificate)] if params[:certificate]
+    params[:attributes][:public_key] = [params.delete(:public_key)] if params[:public_key]
     GtkApi.logger.debug(method) {"params = #{params}"}
     
-    # This doesn't work:
-    # {"username":"test","email":"a@example.com","credentials":[{"type":"password","value":"123"}],"attributes":{"userType":["developer"]}}
-    # This woks:
-    # {"username":"user05","email":"test.jenkins@email.com","credentials":[{"type":"password","value":"1234"}],"attributes":{"userType": ["developer", "customer"]}}
     begin
       resp = postCurb(url: @@url+'/api/v1/register/user', body: params)
       case resp[:status]
