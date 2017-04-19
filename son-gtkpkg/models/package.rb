@@ -76,7 +76,8 @@ class Package
     
   # Builds a package file from its descriptors, and returns a handle to it
   def to_file()
-    @descriptor = clear_unwanted_parameters @descriptor
+    log_message = 'Package.'+__method__.to_s
+    @descriptor = clear_unwanted_parameters(@descriptor)
     save_package_descriptor()
     GtkPkg.logger.debug "Package.to_file: @descriptor=#{@descriptor}"
     @descriptor[:package_content].each do |p_cont|
@@ -232,11 +233,11 @@ class Package
   private
   
   def duplicate_package?(desc)
-    method = 'Package.duplicate_package?'
-    @logger.debug(method) { "verifying duplication of package with desc=#{desc}"}
-    @logger.debug(method) { "@@catalogue=#{@@catalogue.inspect}"}
+    log_message = 'Package.'+__method__.to_s
+    @logger.debug(log_message) { "verifying duplication of package with desc=#{desc}"}
+    @logger.debug(log_message) { "@@catalogue=#{@@catalogue.inspect}"}
     package = Package.find({vendor: desc['vendor'], version: desc['version'], name: desc['name']}, @logger)
-    @logger.debug(method) { "returned package is #{package.inspect}"}
+    @logger.debug(log_message) { "returned package is #{package.inspect}"}
     package
   end
   

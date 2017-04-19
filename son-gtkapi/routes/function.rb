@@ -39,6 +39,7 @@ class GtkApi < Sinatra::Base
       @offset ||= params[:offset] ||= DEFAULT_OFFSET 
       @limit ||= params[:limit] ||= DEFAULT_LIMIT
       logger.debug(log_message) {"params=#{params}"}
+      headers 'Content-Type'=> 'application/json'
      
       functions = FunctionManagerService.find(params)
       if functions
@@ -56,6 +57,7 @@ class GtkApi < Sinatra::Base
     get '/:uuid/?' do
       log_message = 'GtkApi::GET /api/v2/functions/:uuid/?'
       logger.debug(log_message) {"entered with #{params[:uuid]}"}
+      headers 'Content-Type'=> 'application/json'
     
       if valid?(params[:uuid])
         function = FunctionManagerService.find_by_uuid(params[:uuid])

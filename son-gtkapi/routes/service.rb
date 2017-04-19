@@ -44,9 +44,9 @@ class GtkApi < Sinatra::Base
     
     # GET many services
     get '/?' do
-      log_message = 'GtkApi:: GET /api/v2/services'
-    
+      log_message = 'GtkApi:: GET /api/v2/services'    
       logger.debug(log_message) {'entered with '+query_string}
+      headers 'Content-Type'=> 'application/json'
     
       @offset ||= params['offset'] ||= DEFAULT_OFFSET
       @limit ||= params['limit'] ||= DEFAULT_LIMIT
@@ -74,6 +74,7 @@ class GtkApi < Sinatra::Base
     get '/:uuid/?' do
       log_message = 'GtkApi:: GET /api/v2/services/:uuid'
       logger.debug(log_message) {"entered with #{params}"}
+      headers 'Content-Type'=> 'application/json'
     
       if valid?(params[:uuid])
         uuid = params[:uuid]

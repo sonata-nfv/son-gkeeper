@@ -90,9 +90,9 @@ class GtkPkg < Sinatra::Base
     unless params[:uuid].nil?
       logger.debug(log_message) { "entered with uuid=\"#{params[:uuid]}\""}
       package = settings.packages_catalogue.find_by_uuid( params[:uuid])
-      if package && package.is_a?(Hash) && package['uuid']
+      if package && package.is_a?(Hash) && package['uuid'] && package['pd']
         logger.debug(log_message) { "leaving with package found. Package: #{package}"}
-        halt 200, package.to_json
+        halt 200, package['pd'].to_json
       else
         json_error 400, "No package with UUID=#{params[:uuid]} was found", log_message     
       end

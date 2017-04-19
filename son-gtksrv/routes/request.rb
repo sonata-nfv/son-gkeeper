@@ -88,9 +88,9 @@ class GtkSrv < Sinatra::Base
         service.delete(:status) if service[:status]
         service.delete('status') if service['status']
         
-        start_request['NSD']=service['nsd']
+        start_request['NSD']=service #['nsd']
       
-        service['nsd']['network_functions'].each_with_index do |function, index|
+        service['network_functions'].each_with_index do |function, index|
           logger.debug(log_msg) { "function=[#{function['vnf_name']}, #{function['vnf_vendor']}, #{function['vnf_version']}]"}
           vnfd = VFunction.new(settings.functions_catalogue, logger).find_function(function['vnf_name'],function['vnf_vendor'],function['vnf_version'])
           logger.debug(log_msg) {"function#{index}=#{vnfd}"}
