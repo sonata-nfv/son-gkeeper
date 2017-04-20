@@ -62,7 +62,7 @@ class GtkSrv < Sinatra::Base
     json_requests = json(requests, { root: false })
     logger.info(MODULE) {" leaving GET /requests?#{query_string} with "+json_requests}
     if json_requests
-      headers 'Record-Count'=>requests.size.to_s
+      headers 'Record-Count'=>requests.size.to_s, 'Content-Type'=>'application/json'
       halt 200, json_requests
     end
     json_error 404, 'GtkSrv: No requests were found'
@@ -91,7 +91,7 @@ class GtkSrv < Sinatra::Base
         start_request['NSD']=service #['nsd']
       
         service['network_functions'].each_with_index do |function, index|
-          logger.debug(log_msg) { "function=[#{function['vnf_name']}, #{function['vnf_vendor']}, #{function['vnf_version']}]"}
+          logger.debug(log_msg) { "function=['#{function['vnf_name']}', '#{function['vnf_vendor']}', '#{function['vnf_version']}']"}
           vnfd = VFunction.new(settings.functions_catalogue, logger).find_function(function['vnf_name'],function['vnf_vendor'],function['vnf_version'])
           logger.debug(log_msg) {"function#{index}=#{vnfd}"}
           if vnfd[0]

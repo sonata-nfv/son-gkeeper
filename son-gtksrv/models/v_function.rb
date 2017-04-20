@@ -33,14 +33,19 @@ class VFunction
   end
   
   def find_function(name,vendor,version)
+    log_message = 'VFunction.'+__method__.to_s
     headers = { 'Accept'=> 'application/json', 'Content-Type'=>'application/json'}
     url = @catalogue.url+"?name=#{name}&vendor=#{vendor}&version=#{version}"
+    @logger.debug(log_message) {"url="+url}
     begin
       response = RestClient.get(url, headers)
-      function=JSON.parse response.body
-      function['vnfd']
+      body = response.body
+      @logger.debug(log_message) {"body=#{body}"}
+      function=JSON.parse(body, symbolize_names: true)
+      @logger.debug(log_message) {"function=#{function}"}
+      function[0][:vnfd]
     rescue => e
-      @logger.error "No function found for "+url
+      @logger.error(log_message) {"No function found for "+url}
       e.message
     end
   end
