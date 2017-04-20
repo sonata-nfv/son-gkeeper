@@ -51,6 +51,10 @@ development: &common_settings
       url: http://localhost:5600
       model: VimManagerService
       environment: VIM_MANAGEMENT_URL
+    wims:
+      url: http://localhost:5600
+      model: WimManagerService
+      environment: VIM_MANAGEMENT_URL
     kpis:
       url: http://localhost:5200
       model: KpiManagerService

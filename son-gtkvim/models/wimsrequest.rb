@@ -26,8 +26,8 @@
 # encoding: utf-8
 require 'sinatra/activerecord'
 
-class VimsRequest < ActiveRecord::Base
-
+class WimsRequest < ActiveRecord::Base
+    
   # validations a la Activerecord
   #validates :id, presence: true
 end

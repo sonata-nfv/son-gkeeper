@@ -27,7 +27,7 @@
 # encoding: utf-8
 require './models/manager_service.rb'
 
-class VimManagerService < ManagerService
+class WimManagerService < ManagerService
 
   JSON_HEADERS = { 'Accept'=> 'application/json', 'Content-Type'=>'application/json'}
   CLASS_NAME = self.name
@@ -41,13 +41,11 @@ class VimManagerService < ManagerService
     GtkApi.logger.debug(method) {'entered'}
   end
 
-  # VIM COMPUTE-RESOURCES
-
-  def self.find_vims_comp_rs(params)
+  def self.find_wims(params)
     method = LOG_MESSAGE + "##{__method__}(#{params})"
     GtkApi.logger.debug(method) {'entered'}
     begin
-      response = getCurb(url:@@url+'/vim/compute-resources', headers:JSON_HEADERS)
+      response = getCurb(url:@@url+'/wim', headers:JSON_HEADERS)
       GtkApi.logger.debug(method) {'response='+response.to_s}
       response
     rescue => e
@@ -57,13 +55,13 @@ class VimManagerService < ManagerService
     end
   end
 
-  def self.create_vim_comp_rs(params)
+  def self.create_wim(params)
     method = LOG_MESSAGE + "##{__method__}(#{params})"
     GtkApi.logger.debug(method) {"entered"}
 
     begin
       GtkApi.logger.debug(method) {"@url = " + @@url}
-      response = postCurb(url:@@url+'/vim/compute-resources', body: params)
+      response = postCurb(url:@@url+'/wim', body: params)
       GtkApi.logger.debug(method) {"response="+response.to_s}
       response
     rescue => e
@@ -73,11 +71,11 @@ class VimManagerService < ManagerService
     end
   end
 
-  def self.find_vim_comp_rs_request_by_uuid(uuid)
+  def self.find_wim_request_by_uuid(uuid)
     method = LOG_MESSAGE + "##{__method__}(#{uuid})"
     GtkApi.logger.debug(method) {'entered'}
     begin
-      response = getCurb(url:@@url+'/vim_requests/compute-resources/'+uuid, headers: JSON_HEADERS)
+      response = getCurb(url:@@url+'/wim_requests/'+uuid, headers: JSON_HEADERS)
       GtkApi.logger.debug(method) {"Got response: #{response}"}
       query_response = response[:items][:query_response]
       if query_response
@@ -91,55 +89,4 @@ class VimManagerService < ManagerService
       nil
     end
   end
-
-  # VIM NETWORKING-RESOURCES
-  def self.find_vims_net_rs(params)
-    method = LOG_MESSAGE + "##{__method__}(#{params})"
-    GtkApi.logger.debug(method) {'entered'}
-    begin
-      response = getCurb(url:@@url+'/vim/networking-resources', headers:JSON_HEADERS)
-      GtkApi.logger.debug(method) {'response='+response.to_s}
-      response
-    rescue => e
-      GtkApi.logger.error(method) {"Error during processing: #{$!}"}
-      GtkApi.logger.error(method) {"Backtrace:\n\t#{e.backtrace.join("\n\t")}"}
-      nil
-    end
-  end
-
-  def self.create_vim_net_resources(params)
-    method = LOG_MESSAGE + "##{__method__}(#{params})"
-    GtkApi.logger.debug(method) {"entered"}
-
-    begin
-      GtkApi.logger.debug(method) {"@url = " + @@url}
-      response = postCurb(url:@@url+'/vim/networking-resources', body: params)
-      GtkApi.logger.debug(method) {"response="+response.to_s}
-      response
-    rescue => e
-      GtkApi.logger.error(method) {"Error during processing: #{$!}"}
-      GtkApi.logger.error(method) {"Backtrace:\n\t#{e.backtrace.join("\n\t")}"}
-      nil
-    end
-  end
-
-  def self.find_vim_net_rs_request_by_uuid(uuid)
-    method = LOG_MESSAGE + "##{__method__}(#{uuid})"
-    GtkApi.logger.debug(method) {'entered'}
-    begin
-      response = getCurb(url:@@url+'/vim_requests/networking-resources/'+uuid, headers: JSON_HEADERS)
-      GtkApi.logger.debug(method) {"Got response: #{response}"}
-      query_response = response[:items][:query_response]
-      if query_response
-        query_response
-      else
-        {}
-      end
-    rescue => e
-      GtkApi.logger.error(method) {"Error during processing: #{$!}"}
-      GtkApi.logger.error(method) {"Backtrace:\n\t#{e.backtrace.join("\n\t")}"}
-      nil
-    end
-  end
-
 end
