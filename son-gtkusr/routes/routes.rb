@@ -127,41 +127,43 @@ class Keycloak < Sinatra::Application
   get '/refresh' do
     # This endpoint forces the Adapter to resfresh the token
     logger.debug 'Adapter: entered GET /refresh'
-    refresh_adapter
-    logger.debug 'Adapter: exit from GET /refresh'
+    access_token = refresh_adapter
+    # access_token = Keycloak.get_adapter_token
+    logger.debug "Adapter: exit from GET /refresh with token #{access_token}"
   end
 
   post '/register/user' do
     logger.debug 'Adapter: entered POST /register/user'
     # Return if content-type is not valid
     logger.info "Content-Type is " + request.media_type
-    halt 415 unless (request.content_type == 'application/x-www-form-urlencoded' or request.content_type == 'application/json')
-
+    # halt 415 unless (request.content_type == 'application/x-www-form-urlencoded' or request.content_type == 'application/json')
+    json_error(415, 'Only Content-type: application/json is supported') unless (request.content_type == 'application/json')
     # Compatibility support for form-urlencoded content-type
-    case request.content_type
-      when 'application/x-www-form-urlencoded'
+    # case request.content_type
+      # when 'application/x-www-form-urlencoded'
+        # TODO: VALIDATE HASH OR REMOVE FORM SUPPORT
         # Validate format
-        form_encoded, errors = request.body.read
-        halt 400, errors.to_json if errors
+        # form_encoded, errors = request.body.read
+        # halt 400, errors.to_json if errors
 
         # p "FORM PARAMS", form_encoded
-        form = Hash[URI.decode_www_form(form_encoded)]
+        # form = Hash[URI.decode_www_form(form_encoded)]
         # Validate Hash format
-        unless form.key?('enabled')
-          enable = {'enabled'=> true}
-          form.merge(enable)
-        end
+        # unless form.key?('enabled')
+        #   enable = {'enabled'=> true}
+        #   form.merge(enable)
+        # end
 
-      else
-        # Compatibility support for JSON content-type
-        # Parses and validates JSON format
-        form, errors = parse_json(request.body.read)
-        halt 400, {'Content-type' => 'application/json'}, errors.to_json if errors
-        unless form.key?('enabled')
-          enable = {'enabled'=> true}
-          form.merge(enable)
-        end
+    # Compatibility support for JSON content-type
+    # Parses and validates JSON format
+    form, errors = parse_json(request.body.read)
+    # TODO: VALIDATE HASH FIELDS
+    halt 400, {'Content-type' => 'application/json'}, errors.to_json if errors
+    unless form.key?('enabled')
+      enable = {'enabled'=> true}
+      form.merge(enable)
     end
+
     logger.info "Registering new user"
     user_id, error_code, error_msg = register_user(form)
 
@@ -670,10 +672,10 @@ class Keycloak < Sinatra::Application
         json_error(400, res.to_s)
       end
       logger.debug "Adapter: Token contents #{token_contents}"
-      logger.debug "Adapter: Username #{[:username]}"
+      logger.debug "Adapter: Username #{params[:username]}"
       # if token_contents['sub'] == :username
-      if token_contents['preferred_username'].to_s == :username.to_s
-        logger.debug "Adapter: #{[:username]} matches Access Token"
+      if token_contents['username'].to_s == params[:username].to_s
+        logger.debug "Adapter: #{params[:username]} matches Access Token"
         #Translate from username to User_id
         user_id = get_user_id(params[:username])
         if user_id.nil?

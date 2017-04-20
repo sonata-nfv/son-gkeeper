@@ -316,7 +316,7 @@ class Keycloak < Sinatra::Application
     request.body = body.to_json
     response = http.request(request)
     logger.debug "Keycloak: Registration code #{response.code}"
-    logger.debug "Keycloak: Registration message #{parse_json(response.body)}"
+    logger.debug "Keycloak: Registration message #{response.body.to_s}"
     # puts "REG CODE", response.code
     # puts "REG BODY", response.body
     if response.code.to_i != 201
@@ -730,6 +730,7 @@ class Keycloak < Sinatra::Application
       case code
         when 'OK'
           # puts "OK"
+          logger.debug 'Adapter: Adapter token is active'
           # @@access_token = Keycloak.get_adapter_token
           return
         else
@@ -737,7 +738,7 @@ class Keycloak < Sinatra::Application
           logger.debug 'Adapter: Refreshing Adapter token'
           @@access_token = Keycloak.get_adapter_token
           logger.debug "New Access Token saved #{@@access_token}"
-          return
+          return @@access_token
       end
     end
     logger.debug 'Adapter: Adapter token not found'
