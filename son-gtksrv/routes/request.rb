@@ -73,7 +73,7 @@ class GtkSrv < Sinatra::Base
     log_msg = MODULE + '::POST /requests'
     original_body = request.body.read
     logger.debug(log_msg) {"entered with original_body=#{original_body}"}
-    params = JSON.parse(original_body, :quirks_mode => true)
+    params = JSON.parse(original_body, quirks_mode: true)
     logger.debug(log_msg) {"with params=#{params}"}
     
     begin
@@ -85,29 +85,21 @@ class GtkSrv < Sinatra::Base
       service = NService.new(settings.services_catalogue, logger).find_by_uuid(params['service_uuid'])
       logger.debug(log_msg) { "service=#{service}"}
       if service
-        service.delete(:status) if service[:status]
-        service.delete('status') if service['status']
-        
         start_request['NSD']=service #['nsd']
       
         service['network_functions'].each_with_index do |function, index|
           logger.debug(log_msg) { "function=['#{function['vnf_name']}', '#{function['vnf_vendor']}', '#{function['vnf_version']}']"}
           vnfd = VFunction.new(settings.functions_catalogue, logger).find_function(function['vnf_name'],function['vnf_vendor'],function['vnf_version'])
           logger.debug(log_msg) {"function#{index}=#{vnfd}"}
-          if vnfd[0]
-            vnfd[0].delete(:status) if vnfd[0][:status]
-            vnfd[0].delete('status') if vnfd[0]['status']
-            #vnfd[0].delete(:uuid) if vnfd[0][:uuid]
-            #vnfd[0].delete('uuid') if vnfd[0]['uuid']
-          
-            start_request["VNFD#{index}"]=vnfd[0]  
-            logger.debug(log_msg) {"start_request[\"VNFD#{index}\"]=#{vnfd[0]}"}
+          unless vnfd.empty?
+            start_request["VNFD#{index}"]=vnfd  
+            logger.debug(log_msg) {"start_request[\"VNFD#{index}\"]=#{vnfd}"}
           else
             logger.error(log_msg) {"network function not found"}
           end
         end
-            
-        start_request_yml = YAML.dump(start_request)
+        stringified=start_request.deep_stringify_keys
+        start_request_yml = YAML.dump(stringified)
         logger.debug(log_msg) {"#{params}: "+start_request_yml}
 
         smresponse = settings.mqserver.publish( start_request_yml.to_s, si_request['id'])
@@ -147,5 +139,26 @@ class GtkSrv < Sinatra::Base
     log_message = 'GtkApi::request_url'
     logger.debug(log_message) {"Schema=#{request.env['rack.url_scheme']}, host=#{request.env['HTTP_HOST']}, path=#{request.env['REQUEST_PATH']}"}
     request.env['rack.url_scheme']+'://'+request.env['HTTP_HOST']+request.env['REQUEST_PATH']
+  end
+  
+  class Hash
+  def deep_stringify_keys
+    deep_transform_keys{ |key| key.to_s }
+  end
+  def deep_transform_keys(&block)
+    _deep_transform_keys_in_object(self, &block)
+  end
+  def _deep_transform_keys_in_object(object, &block)
+    case object
+    when Hash
+          object.each_with_object({}) do |(key, value), result|
+            result[yield(key)] = _deep_transform_keys_in_object(value, &block)
+          end
+        when Array
+          object.map {|e| _deep_transform_keys_in_object(e, &block) }
+        else
+          object
+        end
+      end
   end
 end
