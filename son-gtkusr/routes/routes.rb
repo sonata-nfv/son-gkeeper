@@ -136,33 +136,34 @@ class Keycloak < Sinatra::Application
     logger.debug 'Adapter: entered POST /register/user'
     # Return if content-type is not valid
     logger.info "Content-Type is " + request.media_type
-    halt 415 unless (request.content_type == 'application/x-www-form-urlencoded' or request.content_type == 'application/json')
-
+    # halt 415 unless (request.content_type == 'application/x-www-form-urlencoded' or request.content_type == 'application/json')
+    json_error(415, 'Only Content-type: application/json is supported') unless (request.content_type == 'application/json')
     # Compatibility support for form-urlencoded content-type
-    case request.content_type
-      when 'application/x-www-form-urlencoded'
+    # case request.content_type
+      # when 'application/x-www-form-urlencoded'
+        # TODO: VALIDATE HASH OR REMOVE FORM SUPPORT
         # Validate format
-        form_encoded, errors = request.body.read
-        halt 400, errors.to_json if errors
+        # form_encoded, errors = request.body.read
+        # halt 400, errors.to_json if errors
 
         # p "FORM PARAMS", form_encoded
-        form = Hash[URI.decode_www_form(form_encoded)]
+        # form = Hash[URI.decode_www_form(form_encoded)]
         # Validate Hash format
-        unless form.key?('enabled')
-          enable = {'enabled'=> true}
-          form.merge(enable)
-        end
+        # unless form.key?('enabled')
+        #   enable = {'enabled'=> true}
+        #   form.merge(enable)
+        # end
 
-      else
-        # Compatibility support for JSON content-type
-        # Parses and validates JSON format
-        form, errors = parse_json(request.body.read)
-        halt 400, {'Content-type' => 'application/json'}, errors.to_json if errors
-        unless form.key?('enabled')
-          enable = {'enabled'=> true}
-          form.merge(enable)
-        end
+    # Compatibility support for JSON content-type
+    # Parses and validates JSON format
+    form, errors = parse_json(request.body.read)
+    # TODO: VALIDATE HASH FIELDS
+    halt 400, {'Content-type' => 'application/json'}, errors.to_json if errors
+    unless form.key?('enabled')
+      enable = {'enabled'=> true}
+      form.merge(enable)
     end
+
     logger.info "Registering new user"
     user_id, error_code, error_msg = register_user(form)
 
