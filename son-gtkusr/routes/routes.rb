@@ -701,7 +701,9 @@ class Keycloak < Sinatra::Application
 
         user_attributes = parsed_user_data['attributes']
         logger.debug "user_attributes #{user_attributes}"
-        json_error (400, 'User is not a developer') unless user_attributes['userType'][0] == 'developer'
+        unless user_attributes['userType'][0] == 'developer'
+          json_error(400, 'User is not a developer')
+        end
 
         #Update attributes
         new_attributes = {"public-key" => [form['public-key']], "certificate" => [form['certs']]}
