@@ -8,3 +8,6 @@ gem 'yard'
 gem 'rspec'
 gem 'ci_reporter_rspec'
 gem 'sinatra-contrib'
+
+# Database
+gem 'mongoid', '~>4.0' # MongoDB driver
