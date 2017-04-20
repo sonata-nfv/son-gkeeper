@@ -160,8 +160,7 @@ class Keycloak < Sinatra::Application
     # TODO: VALIDATE HASH FIELDS
     halt 400, {'Content-type' => 'application/json'}, errors.to_json if errors
     unless form.key?('enabled')
-      enable = {'enabled'=> true}
-      form.merge(enable)
+      form = form.merge({'enabled'=> true})
     end
 
     logger.info "Registering new user"
@@ -542,7 +541,7 @@ class Keycloak < Sinatra::Application
     logger.debug "Adapter: Optional query #{params}"
     # Return if Authorization is invalid
     halt 400 unless request.env["HTTP_AUTHORIZATION"]
-    queriables = %w(search lastName firstName email username first max)
+    queriables = %w(search id lastName firstName email username first max)
 
     # keyed_params = keyed_hash(params)
     logger.debug "Adapter: Optional query #{queriables}"
@@ -696,14 +695,17 @@ class Keycloak < Sinatra::Application
         end
 
         #Get user attributes
-        user_data = get_users(user_id)
-        parsed_user_data = JSON.parse(user_data[0])
+        user_data = get_users({'id' => user_id})
+        parsed_user_data = JSON.parse(user_data)[0]
         logger.debug "parsed_user_data #{parsed_user_data}"
+
+        user_attributes = parsed_user_data['attributes']
+        logger.debug "user_attributes #{user_attributes}"
+        json_error (400, 'User is not a developer') unless user_attributes['userType'][0] == 'developer'
+
         #Update attributes
         new_attributes = {"public-key" => [form['public-key']], "certificate" => [form['certs']]}
         logger.debug "new_attributes #{new_attributes}"
-        user_attributes = parsed_user_data['attributes']
-        logger.debug "user_attributes #{user_attributes}"
         new_user_attributes = user_attributes.merge(new_attributes)
         logger.debug "new_user_attributes #{new_user_attributes}"
         upd_code, upd_msg = update_user_pkey(user_id, new_user_attributes)
