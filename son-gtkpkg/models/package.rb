@@ -76,7 +76,8 @@ class Package
     
   # Builds a package file from its descriptors, and returns a handle to it
   def to_file()
-    @descriptor = clear_unwanted_parameters @descriptor
+    log_message = 'Package.'+__method__.to_s
+    @descriptor = clear_unwanted_parameters(@descriptor)
     save_package_descriptor()
     GtkPkg.logger.debug "Package.to_file: @descriptor=#{@descriptor}"
     @descriptor[:package_content].each do |p_cont|
@@ -104,6 +105,7 @@ class Package
 
   # Unbuilds a package file from its file, and returns a descriptor to it
   def from_file()
+    log_message = 'Package.'+__method__.to_s
     files = unzip_it @package_file
     #@service = {}
     @functions = []
@@ -113,14 +115,14 @@ class Package
       splited = file.split('/')
       file_name = splited[-1]
       path = File.join(splited.first splited.size-1)
-      GtkPkg.logger.debug('Package.from_file') { "path=#{path}, file_name = #{file_name}"}
+      GtkPkg.logger.debug(log_message) { "path=#{path}, file_name = #{file_name}"}
       if path =~ /META-INF/
         @descriptor = YAML.load_file(file) 
-        GtkPkg.logger.debug('Package.from_file') { "@descriptor=#{@descriptor}"}
+        GtkPkg.logger.debug(log_message) { "@descriptor=#{@descriptor}"}
         break
       end
     end
-    GtkPkg.logger.debug('Package.from_file: ') {" before calling duplicate_package?, @@catalogue=#{@@catalogue.inspect}"}
+    GtkPkg.logger.debug(log_message) {" before calling duplicate_package?, @@catalogue=#{@@catalogue.inspect}"}
     
     unless duplicate_package?(@descriptor).empty?
       dup = {}
@@ -135,16 +137,11 @@ class Package
       splited = file.split('/')
       file_name = splited[-1]
       path = File.join(splited.first splited.size-1)
-      GtkPkg.logger.debug('Package.from_file') { "path=#{path}, file_name = #{file_name}"}
-      
-      # this mved to the above cycle
-      #if path =~ /META-INF/
-      #  @descriptor = YAML.load_file(file) 
-      #  @logger.debug('Package.from_file') { "@descriptor=#{@descriptor}"}
-      #end
+      GtkPkg.logger.debug(log_message) { "path=#{path}, file_name = #{file_name}"}
+
       if path =~ /service_descriptors/
         @service = NService.new(GtkPkg.settings.services_catalogue, @logger, nil)
-        GtkPkg.logger.debug('Package.from_file') { "service=#{@service}"}
+        GtkPkg.logger.debug(log_message) { "service=#{@service}"}
         @service.from_file(file)
       end
       if path =~ /function_descriptors/
@@ -154,21 +151,21 @@ class Package
         @functions << function
       end
     end
-    GtkPkg.logger.debug('Package.from_file') { "@descriptor is #{@descriptor}"}
-    GtkPkg.logger.debug('Package.from_file') { "@service is #{@service}"}
-    GtkPkg.logger.debug('Package.from_file') { "@functions is #{@functions}"}
+    GtkPkg.logger.debug(log_message) { "@descriptor is #{@descriptor}"}
+    GtkPkg.logger.debug(log_message) { "@service is #{@service}"}
+    GtkPkg.logger.debug(log_message) { "@functions is #{@functions}"}
     
-    if valid? @descriptor
+    if valid_descriptor(@descriptor)
       stored_descriptor = store_package_service_and_functions()
       if stored_descriptor
-        GtkPkg.logger.debug('Package.from_file') { "stored package based on descriptor=#{stored_descriptor}"}
+        GtkPkg.logger.debug(log_message) { "stored package based on descriptor=#{stored_descriptor}"}
         stored_descriptor
       else
-        GtkPkg.logger.error('Package.from_file') { "could not store package based on descriptor=#{stored_descriptor}"}
+        GtkPkg.logger.error(log_message) { "could not store package based on descriptor=#{stored_descriptor}"}
         nil
       end     
     else
-      GtkPkg.logger.error('Package.from_file') { "invalid descriptor (#{stored_descriptor})"}
+      GtkPkg.logger.error(log_message) { "invalid descriptor (#{stored_descriptor})"}
       nil
     end
   end
@@ -232,11 +229,11 @@ class Package
   private
   
   def duplicate_package?(desc)
-    method = 'Package.duplicate_package?'
-    @logger.debug(method) { "verifying duplication of package with desc=#{desc}"}
-    @logger.debug(method) { "@@catalogue=#{@@catalogue.inspect}"}
+    log_message = 'Package.'+__method__.to_s
+    @logger.debug(log_message) { "verifying duplication of package with desc=#{desc}"}
+    @logger.debug(log_message) { "@@catalogue=#{@@catalogue.inspect}"}
     package = Package.find({vendor: desc['vendor'], version: desc['version'], name: desc['name']}, @logger)
-    @logger.debug(method) { "returned package is #{package.inspect}"}
+    @logger.debug(log_message) { "returned package is #{package.inspect}"}
     package
   end
   
@@ -330,7 +327,7 @@ class Package
     (name =~ /function_descriptors/ || name =~ /service_descriptors/ || name =~ /META-INF/)
   end
   
-  def valid?(descriptor)
+  def valid_descriptor(descriptor)
     true # TODO: validate the descriptor here
   end
   

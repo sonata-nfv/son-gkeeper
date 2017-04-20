@@ -53,7 +53,11 @@ class FunctionManagerService < ManagerService
   end
   
   def self.find_by_uuid(uuid)
-    find(url: @@url + '/functions/' + uuid, log_message: LOG_MESSAGE + "##{__method__}(#{uuid})")
+    log_message = LOG_MESSAGE + "##{__method__}"
+    GtkApi.logger.debug(log_message) {"entered with uuid #{uuid}"}
+    response = getCurb(url: @@url + '/functions/'+uuid)
+    GtkApi.logger.debug(log_message) {"response=#{response}"}
+    response
   end
   
   # This version (note the '!') works with exceptions

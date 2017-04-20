@@ -37,39 +37,43 @@ class Catalogue
   JSON_HEADERS = {'Accept'=>'application/json', 'Content-Type'=>'application/json'}
   
   def initialize(url, logger)
+    log_message='Catalogue.'+__method__.to_s
     @url = url
     @logger = logger
+    @logger.debug(log_message) {"initiaized: url="+url+", logger=#{logger}"}
   end
     
   def create(descriptor)
-    @logger.debug "Catalogue.create("+descriptor.to_s+")"
+    log_message='Catalogue.'+__method__.to_s
+    @logger.debug(log_message) {"entered with #{descriptor}"}
     begin
       response = RestClient.post( @url, descriptor.to_json, content_type: :json, accept: :json)     
       object = JSON.parse response
-      @logger.debug "Catalogue.create: object=#{object}"
+      @logger.debug(log_message) { "object=#{object}"}
       object
     rescue => e
-      @logger.error format_error(e.backtrace)
+      @logger.error(log_message) { format_error(e.backtrace)}
       nil
     end
   end
   
   def find_by_uuid(uuid)
-    @logger.debug "Catalogue.find_by_uuid(#{uuid})"
+    log_message='Catalogue.'+__method__.to_s
+    @logger.debug(log_message) { "entered with uuid #{uuid})"}
     begin
       _response = RestClient.get(@url+"/#{uuid}", JSON_HEADERS) 
-      @logger.debug "Catalogue.find_by_uuid(#{uuid}): response=#{_response}"
+      @logger.debug(log_message) { "response=#{_response}"}
       parsed_response = JSON.parse _response #.body
-      @logger.debug "Catalogue.find_by_uuid(#{uuid}): parsed_response=#{parsed_response}"
+      @logger.debug(log_message) { "parsed_response=#{parsed_response}"}
       parsed_response
     rescue => e
-      @logger.error format_error(e.backtrace)
+      @logger.error(log_message) { format_error(e.backtrace)}
       e.to_json
     end
   end
   
   def find(params)
-    log_message="Catalogue.find"
+    log_message='Catalogue.'+__method__.to_s
     headers = JSON_HEADERS
     headers[:params] = params unless params.empty?
     @logger.debug(log_message) {"entered, with params #{params} and headers #{headers}"}
@@ -106,18 +110,20 @@ class Catalogue
   end
   
   def update(uuid)
+    log_message='Catalogue.'+__method__.to_s
     @logger.debug "Catalogue.update(#{uuid})"
   end
   
   def delete(uuid)
+    log_message='Catalogue.'+__method__.to_s
     @logger.debug "Catalogue.delete(#{uuid})"
   end
   
   private
   
   def format_error(backtrace)
+    log_message='Catalogue.'+__method__.to_s
     first_line = backtrace[0].split(":")
     "In "+first_line[0].split("/").last+", "+first_line.last+": "+first_line[1]
   end
-  
 end

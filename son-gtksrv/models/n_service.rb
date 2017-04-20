@@ -49,7 +49,7 @@ class NService
     begin
       service = @catalogue.find_by_uuid(uuid)
       @logger.debug "NService.find_by_uuid: #{service}"
-      service
+      service['nsd']
     rescue Exception => e
       @logger.debug(e.message)
       @logger.debug(e.backtrace.inspect)

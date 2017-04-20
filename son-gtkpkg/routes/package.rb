@@ -69,9 +69,9 @@ class GtkPkg < Sinatra::Base
           else
             json_error 400, 'Error storing son-package.', log_message         
           end
-        elsif descriptor['pd'].key?('name') && descriptor['pd'].key?('vendor') && descriptor['pd'].key?('version')
+        elsif descriptor.key?('name') && descriptor.key?('vendor') && descriptor.key?('version')
           logger.debug(log_message) {"Package is duplicated"}
-          error_message = "Version #{descriptor['pd']['version']} of package '#{descriptor['pd']['name']}' from vendor '#{descriptor['pd']['vendor']}' already exists"
+          error_message = "Version #{descriptor['version']} of package '#{descriptor['name']}' from vendor '#{descriptor['vendor']}' already exists"
           json_error 409, error_message, log_message
         else
           json_error 400, 'Oops.. something terribly wrong happened here!', log_message      
@@ -90,9 +90,9 @@ class GtkPkg < Sinatra::Base
     unless params[:uuid].nil?
       logger.debug(log_message) { "entered with uuid=\"#{params[:uuid]}\""}
       package = settings.packages_catalogue.find_by_uuid( params[:uuid])
-      if package && package.is_a?(Hash) && package['uuid']
+      if package && package.is_a?(Hash) && package['uuid'] && package['pd']
         logger.debug(log_message) { "leaving with package found. Package: #{package}"}
-        halt 200, package.to_json
+        halt 200, package['pd'].to_json
       else
         json_error 400, "No package with UUID=#{params[:uuid]} was found", log_message     
       end

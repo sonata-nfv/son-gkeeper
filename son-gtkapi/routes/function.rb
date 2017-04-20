@@ -39,12 +39,13 @@ class GtkApi < Sinatra::Base
       @offset ||= params[:offset] ||= DEFAULT_OFFSET 
       @limit ||= params[:limit] ||= DEFAULT_LIMIT
       logger.debug(log_message) {"params=#{params}"}
+      headers 'Content-Type'=> 'application/json'
      
       functions = FunctionManagerService.find(params)
       if functions
         logger.debug(log_message) {"leaving with #{functions}"}
-        links = build_pagination_headers(url: request_url, limit: @limit.to_i, offset: @offset.to_i, total: functions.size)
-        [200, {'Link' => links}, functions.to_json]
+        links = build_pagination_headers(url: request_url, limit: @limit.to_i, offset: @offset.to_i, total: functions[:count])
+        [200, {'Link' => links}, functions[:items].to_json]
       else
         error_message = "No function with params #{params} was found"
         logger.debug(log_message) {'leaving with "'+error_message+'"'}
@@ -56,12 +57,13 @@ class GtkApi < Sinatra::Base
     get '/:uuid/?' do
       log_message = 'GtkApi::GET /api/v2/functions/:uuid/?'
       logger.debug(log_message) {"entered with #{params[:uuid]}"}
+      headers 'Content-Type'=> 'application/json'
     
       if valid?(params[:uuid])
         function = FunctionManagerService.find_by_uuid(params[:uuid])
         if function
           logger.debug(log_message) {"leaving with #{function}"}
-          halt 200, function.to_json
+          halt 200, function[:items].to_json
         else
           json_error 404, "Function #{params[:uuid]} not found", log_message
         end

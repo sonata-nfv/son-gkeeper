@@ -70,7 +70,7 @@ class GtkSrv < Sinatra::Base
 
   # POSTs an instantiation request, given a service_uuid
   post '/requests/?' do
-    log_msg = MODULE + 'POST /requests'
+    log_msg = MODULE + '::POST /requests'
     original_body = request.body.read
     logger.debug(log_msg) {"entered with original_body=#{original_body}"}
     params = JSON.parse(original_body, :quirks_mode => true)
@@ -83,12 +83,12 @@ class GtkSrv < Sinatra::Base
       si_request = Request.create(params)
       logger.debug(log_msg) { "with service_uuid=#{params['service_uuid']}: #{si_request.inspect}"}
       service = NService.new(settings.services_catalogue, logger).find_by_uuid(params['service_uuid'])
+      logger.debug(log_msg) { "service=#{service}"}
       if service
         service.delete(:status) if service[:status]
         service.delete('status') if service['status']
         
-        start_request['NSD']=service
-        logger.debug(log_msg) { "service=#{service}"}
+        start_request['NSD']=service #['nsd']
       
         service['network_functions'].each_with_index do |function, index|
           logger.debug(log_msg) { "function=[#{function['vnf_name']}, #{function['vnf_vendor']}, #{function['vnf_version']}]"}
