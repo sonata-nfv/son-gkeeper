@@ -160,8 +160,7 @@ class Keycloak < Sinatra::Application
     # TODO: VALIDATE HASH FIELDS
     halt 400, {'Content-type' => 'application/json'}, errors.to_json if errors
     unless form.key?('enabled')
-      enable = {'enabled'=> true}
-      form.merge(enable)
+      form = form.merge({'enabled'=> true})
     end
 
     logger.info "Registering new user"
@@ -542,7 +541,7 @@ class Keycloak < Sinatra::Application
     logger.debug "Adapter: Optional query #{params}"
     # Return if Authorization is invalid
     halt 400 unless request.env["HTTP_AUTHORIZATION"]
-    queriables = %w(search lastName firstName email username first max)
+    queriables = %w(search id lastName firstName email username first max)
 
     # keyed_params = keyed_hash(params)
     logger.debug "Adapter: Optional query #{queriables}"
@@ -696,7 +695,7 @@ class Keycloak < Sinatra::Application
         end
 
         #Get user attributes
-        user_data = get_users(user_id)
+        user_data = get_users({'id' => user_id})
         parsed_user_data = JSON.parse(user_data[0])
         logger.debug "parsed_user_data #{parsed_user_data}"
         #Update attributes
