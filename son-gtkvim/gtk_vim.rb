@@ -83,8 +83,8 @@ class GtkVim < Sinatra::Base
   enable :cross_origin
 
   if settings.mqserver_url
-    SERVER_LIST_QUEUE = 'infrastructure.compute.list'
-    SERVER_ADD_QUEUE = 'infrastructure.compute.add'
+    SERVER_LIST_QUEUE = 'compute.list'
+    SERVER_ADD_QUEUE = 'compute.add'
     set :mqserver_list, MQServer.new(SERVER_LIST_QUEUE,settings.mqserver_url, logger)
     set :mqserver_add, MQServer.new(SERVER_ADD_QUEUE,settings.mqserver_url, logger)
     
