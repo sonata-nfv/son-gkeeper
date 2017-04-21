@@ -127,41 +127,59 @@ class Keycloak < Sinatra::Application
   get '/refresh' do
     # This endpoint forces the Adapter to resfresh the token
     logger.debug 'Adapter: entered GET /refresh'
-    refresh_adapter
-    logger.debug 'Adapter: exit from GET /refresh'
+    access_token = refresh_adapter
+    # access_token = Keycloak.get_adapter_token
+    logger.debug "Adapter: exit from GET /refresh with token #{access_token}"
   end
 
   post '/register/user' do
     logger.debug 'Adapter: entered POST /register/user'
     # Return if content-type is not valid
     logger.info "Content-Type is " + request.media_type
-    halt 415 unless (request.content_type == 'application/x-www-form-urlencoded' or request.content_type == 'application/json')
-
+    # halt 415 unless (request.content_type == 'application/x-www-form-urlencoded' or request.content_type == 'application/json')
+    json_error(415, 'Only Content-type: application/json is supported') unless (request.content_type == 'application/json')
     # Compatibility support for form-urlencoded content-type
-    case request.content_type
-      when 'application/x-www-form-urlencoded'
+    # case request.content_type
+      # when 'application/x-www-form-urlencoded'
+        # TODO: VALIDATE HASH OR REMOVE FORM SUPPORT
         # Validate format
-        form_encoded, errors = request.body.read
-        halt 400, errors.to_json if errors
+        # form_encoded, errors = request.body.read
+        # halt 400, errors.to_json if errors
 
         # p "FORM PARAMS", form_encoded
-        form = Hash[URI.decode_www_form(form_encoded)]
+        # form = Hash[URI.decode_www_form(form_encoded)]
         # Validate Hash format
-        unless form.key?('enabled')
-          enable = {'enabled'=> true}
-          form.merge(enable)
-        end
+        # unless form.key?('enabled')
+        #   enable = {'enabled'=> true}
+        #   form.merge(enable)
+        # end
 
-      else
-        # Compatibility support for JSON content-type
-        # Parses and validates JSON format
-        form, errors = parse_json(request.body.read)
-        halt 400, {'Content-type' => 'application/json'}, errors.to_json if errors
-        unless form.key?('enabled')
-          enable = {'enabled'=> true}
-          form.merge(enable)
-        end
+    # Compatibility support for JSON content-type
+    # Parses and validates JSON format
+    form, errors = parse_json(request.body.read)
+    # TODO: VALIDATE HASH FIELDS
+    halt 400, {'Content-type' => 'application/json'}, errors.to_json if errors
+    unless form.key?('enabled')
+      form = form.merge({'enabled'=> true})
     end
+
+    #if form['attributes'].key?('public-key')
+    begin
+      pkey = {'public-key'=> form['attributes']['public-key']}
+      form['attributes'].delete('public-key')
+    #else
+    rescue
+      pkey = nil
+    end
+    #if form['attributes'].key?('certificate')
+    begin
+      cert = {'certificate'=> form['attributes']['certificate']}
+      form['attributes'].delete('certificate')
+    #else
+    rescue
+      cert = nil
+    end
+
     logger.info "Registering new user"
     user_id, error_code, error_msg = register_user(form)
 
@@ -189,6 +207,39 @@ class Keycloak < Sinatra::Application
         halt res_code.to_i, {'Content-type' => 'application/json'}, res_msg
       end
     }
+
+    # Check if username already exists in the database
+    begin
+      user = Sp_user.find_by({ 'username' => form['username']})
+      delete_user(form['username'])
+      json_error 409, 'Duplicated username'
+    rescue Mongoid::Errors::DocumentNotFound => e
+      # Continue
+    end
+    # Check if user ID already exists in the database
+    begin
+      user = Sp_user.find_by({ '_id' => user_id })
+      delete_user(form['username'])
+      json_error 409, 'Duplicated user ID'
+    rescue Mongoid::Errors::DocumentNotFound => e
+      # Continue
+    end
+
+    # Save to DB
+    begin
+      new_user = {}
+      new_user['_id'] = user_id
+      new_user['username'] = form['username']
+      new_user['pub_key'] = pkey
+      new_user['cert'] = cert
+      user = Sp_user.create!(new_user)
+    rescue Moped::Errors::OperationFailure => e
+      delete_user(form['username'])
+      json_error 409, 'Duplicated user ID' if e.message.include? 'E11000'
+    end
+
+    logger.debug "Database: New user #{form['username']} with ID #{user_id} has been added"
+
     logger.info "New user #{form['username']} has been registered"
     response = {'username' => form['username'], 'userId' => user_id.to_s}
     halt 201, {'Content-type' => 'application/json'}, response.to_json
@@ -298,7 +349,6 @@ class Keycloak < Sinatra::Application
                      keyed_params[:username],
                      keyed_params[:password],
                      keyed_params[:grant_type])
-
 
       when 'client_credentials' # -> service
         authenticate(keyed_params[:client_id],
@@ -519,20 +569,6 @@ class Keycloak < Sinatra::Application
     halt log_code
   end
 
-  post '/refresh' do
-    #TODO: This is OPTIONAL, Users/Services log-in again in order to obtain a new token
-    logger.debug 'Adapter: entered POST /refresh'
-    # Return if Authorization is invalid
-    # halt 400 unless request.env["HTTP_AUTHORIZATION"]
-    # puts "headers", request.env["HTTP_CONTENT_DISPOSITION"]
-    att = request.env['HTTP_CONTENT_DISPOSITION']
-    custom_header_value = request.env['HTTP_CUSTOM_HEADER']
-
-    # p "ATT", att
-    # p "CUSTOM", custom_header_value
-    halt 501
-  end
-
   get '/users' do
     # This endpoint allows queries for the next fields:
     # search, lastName, firstName, email, username, first, max
@@ -540,18 +576,21 @@ class Keycloak < Sinatra::Application
     logger.debug "Adapter: Optional query #{params}"
     # Return if Authorization is invalid
     halt 400 unless request.env["HTTP_AUTHORIZATION"]
-    queriables = %w(search lastName firstName email username first max)
+    queriables = %w(search id lastName firstName email username first max)
 
-    # keyed_params = keyed_hash(params)
     logger.debug "Adapter: Optional query #{queriables}"
-    # keyed_params.each { |k, v|
+
     params.each { |k, v|
       unless queriables.include? k
         json_error(400, 'Bad query')
       end
     }
-    # reg_users = get_users(keyed_params)
+
     reg_users = get_users(params)
+
+    # TODO: ADD PUBLIC KEY AND CERTIFICATES TO EACH USER
+    # Kyecloak.rb METHOD HERE
+
     halt 200, {'Content-type' => 'application/json'}, reg_users
   end
 
@@ -670,10 +709,10 @@ class Keycloak < Sinatra::Application
         json_error(400, res.to_s)
       end
       logger.debug "Adapter: Token contents #{token_contents}"
-      logger.debug "Adapter: Username #{[:username]}"
+      logger.debug "Adapter: Username #{params[:username]}"
       # if token_contents['sub'] == :username
-      if token_contents['preferred_username'].to_s == :username.to_s
-        logger.debug "Adapter: #{[:username]} matches Access Token"
+      if token_contents['username'].to_s == params[:username].to_s
+        logger.debug "Adapter: #{params[:username]} matches Access Token"
         #Translate from username to User_id
         user_id = get_user_id(params[:username])
         if user_id.nil?
@@ -689,29 +728,108 @@ class Keycloak < Sinatra::Application
          json_error 400, 'Developer public key not provided'
         end
 
-        unless form.key? ('certs')
+        unless form.key? ('certificate')
           form['certs'] = nil
         end
 
-        #Get user attributes
-        user_data = get_users(user_id)
-        parsed_user_data = JSON.parse(user_data[0])
-        logger.debug "parsed_user_data #{parsed_user_data}"
-        #Update attributes
-        new_attributes = {"public-key" => [form['public-key']], "certificate" => [form['certs']]}
-        logger.debug "new_attributes #{new_attributes}"
-        user_attributes = parsed_user_data['attributes']
-        logger.debug "user_attributes #{user_attributes}"
-        new_user_attributes = user_attributes.merge(new_attributes)
-        logger.debug "new_user_attributes #{new_user_attributes}"
-        upd_code, upd_msg = update_user_pkey(user_id, new_user_attributes)
+        # Get user public key and certificate
+        # Check if user ID already exists in the database
+        begin
+          user = Sp_user.find_by({ '_id' => user_id })
+        rescue Mongoid::Errors::DocumentNotFound => e
+          json_error 404, 'Username not found'
+        end
+
+        # Add new son-package attribute fields
+        begin
+          user.update_attributes(pub_key: form['public-key'], cert: form['certificate'])
+        rescue Moped::Errors::OperationFailure => e
+          json_error 400, 'Update failed'
+        end
       else
         json_error 400, 'Provided username does not match with Access Token'
       end
-      halt upd_code.to_i, {'Content-type' => 'application/json'}, upd_msg
+      halt 200, {'Content-type' => 'application/json'}, 'User signature successfully updated'
     end
     logger.debug 'Adapter: leaving PUT /signatures/ with no username specified'
     json_error 400, 'No username specified'
+  end
 
+  put '/attributes/:username/?' do
+    # Update user account attributes
+    unless params[:username].nil?
+      logger.debug "Adapter: entered PUT /attributes/#{params[:username]}"
+
+      # Return if Authorization is invalid
+      halt 400 unless request.env["HTTP_AUTHORIZATION"]
+      user_token = request.env["HTTP_AUTHORIZATION"].split(' ').last
+      unless user_token
+        json_error(400, 'Access token is not provided')
+      end
+
+      # Validate token
+      res, code = token_validation(user_token)
+      token_contents = JSON.parse(res)
+
+      if code == '200'
+        result = is_active?(res)
+        case result
+          when false
+            json_error(401, 'Token not active')
+          else
+            # continue
+        end
+      else
+        json_error(400, res.to_s)
+      end
+      logger.debug "Adapter: Token contents #{token_contents}"
+      logger.debug "Adapter: Username #{params[:username]}"
+      # if token_contents['sub'] == :username
+      if token_contents['username'].to_s == params[:username].to_s
+        logger.debug "Adapter: #{params[:username]} matches Access Token"
+        #Translate from username to User_id
+        user_id = get_user_id(params[:username])
+        if user_id.nil?
+          json_error 404, 'Username not found'
+        end
+        logger.info "Content-Type is " + request.media_type
+        halt 415 unless (request.content_type == 'application/json')
+
+        form, errors = parse_json(request.body.read)
+        halt 400, {'Content-type' => 'application/json'}, errors.to_json if errors
+
+        unless form.key?('public-key')
+          json_error 400, 'Developer public key not provided'
+        end
+
+        unless form.key? ('certificate')
+          form['certs'] = nil
+        end
+
+        # Get user attributes
+        # user_data = get_users({'id' => user_id})
+        # parsed_user_data = JSON.parse(user_data)[0]
+        # logger.debug "parsed_user_data #{parsed_user_data}"
+
+        # DEVELOPER'S PUBLIC KEY AND CERTIFICATE WILL BE STORED IN MONGODB
+        # user_attributes = parsed_user_data['attributes']
+        # logger.debug "user_attributes #{user_attributes}"
+        # unless user_attributes['userType'][0] == 'developer'
+        #   json_error 400, 'User is not a developer'
+        # end
+
+        # Update attributes
+        # new_attributes = {"public-key" => [form['public-key']], "certificate" => [form['certificate']]}
+        # logger.debug "new_attributes #{new_attributes}"
+        # new_user_attributes = user_attributes.merge(new_attributes)
+        # logger.debug "new_user_attributes #{new_user_attributes}"
+        # upd_code, upd_msg = update_user_pkey(user_id, new_user_attributes)
+        # else
+        # json_error 400, 'Provided username does not match with Access Token'
+      end
+      # halt upd_code.to_i, {'Content-type' => 'application/json'}, upd_msg
+    end
+    logger.debug 'Adapter: leaving PUT /attributes/ with no username specified'
+    json_error 400, 'No username specified'
   end
 end

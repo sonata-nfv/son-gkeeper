@@ -73,7 +73,7 @@ class GtkSrv < Sinatra::Base
     log_msg = MODULE + '::POST /requests'
     original_body = request.body.read
     logger.debug(log_msg) {"entered with original_body=#{original_body}"}
-    params = JSON.parse(original_body, :quirks_mode => true)
+    params = JSON.parse(original_body, quirks_mode: true)
     logger.debug(log_msg) {"with params=#{params}"}
     
     begin
@@ -97,6 +97,7 @@ class GtkSrv < Sinatra::Base
             vnfd = stored_function[:vnfd]
             vnfd[:uuid] = stored_function[:uuid]
             start_request["VNFD#{index}"]=vnfd 
+
             logger.debug(log_msg) {"start_request[\"VNFD#{index}\"]=#{vnfd}"}
           else
             logger.error(log_msg) {"network function not found"}

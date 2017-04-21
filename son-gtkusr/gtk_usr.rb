@@ -38,7 +38,7 @@ require 'jwt'
 
 require_relative 'helpers/init'
 require_relative 'routes/init'
-# require_relative 'models/init'
+require_relative 'models/init'
 
 # Require the bundler gem and then call Bundler.require to load in all gems
 # listed in Gemfile.
@@ -63,6 +63,7 @@ configure do
     register Sinatra::ConfigFile
     # Load configurations
     config_file 'config/keycloak.yml'
+    Mongoid.load!('config/mongoid.yml')
     configure {
       enable :logging
     }
