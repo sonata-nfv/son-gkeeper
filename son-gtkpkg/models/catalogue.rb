@@ -37,6 +37,7 @@ class Catalogue
   
   attr_accessor :url
   CLASS = self.name
+  JSON_HEADERS = {'Accept'=>'application/json', 'Content-Type'=>'application/json'}
   
   def initialize(url, logger)
     @url = url
@@ -95,10 +96,8 @@ class Catalogue
 
   def find_by_uuid(uuid)
     @logger.debug CLASS+".find_by_uuid(#{uuid})"
-    headers = {'Accept'=>'application/json', 'Content-Type'=>'application/json'}
-    #headers[:params] = uuid
     begin
-      response = RestClient.get(@url+"/#{uuid}", headers) 
+      response = RestClient.get(@url+"/#{uuid}", JSON_HEADERS) 
       JSON.parse response.body
     rescue => e
       @logger.error format_error(e.backtrace)
@@ -108,7 +107,7 @@ class Catalogue
   
   def find(params)
     method = 'Catalogue.find'
-    headers = {'Accept'=>'application/json', 'Content-Type'=>'application/json'}
+    headers = JSON_HEADERS
     headers[:params] = params unless params.empty?
     @logger.debug(method) {"params=#{params}, headers=#{headers}"}
     begin
