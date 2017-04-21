@@ -9,7 +9,7 @@ services:
       - "5600:5600"
     links:
      - keycloak
-     - mongo-gtk:mongo
+     - mongo:mongo
     environment:
       - KEYCLOAK_ADDRESS=keycloak
       - KEYCLOAK_PORT=5601
@@ -32,7 +32,7 @@ services:
     volumes:
       - /data/db
     command: --break-mongo
-  mongo-gtk:
+  mongo:
     image: mongo:3.0.4
     volumes_from:
       - mongodata-gtk
