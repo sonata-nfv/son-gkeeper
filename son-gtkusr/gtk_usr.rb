@@ -36,7 +36,7 @@ require 'json'
 require 'yaml'
 require 'jwt'
 require 'mongoid'
-require 'mongoid-pagination'
+# require 'mongoid-pagination'
 
 require_relative 'models/init'
 require_relative 'helpers/init'
