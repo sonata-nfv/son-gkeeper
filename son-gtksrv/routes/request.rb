@@ -85,14 +85,19 @@ class GtkSrv < Sinatra::Base
       service = NService.new(settings.services_catalogue, logger).find_by_uuid(params['service_uuid'])
       logger.debug(log_msg) { "service=#{service}"}
       if service
-        start_request['NSD']=service #['nsd']
+        nsd = service['nsd']
+        nsd[:uuid] = service['uuid']
+        start_request['NSD']= nsd
       
-        service['network_functions'].each_with_index do |function, index|
+        nsd['network_functions'].each_with_index do |function, index|
           logger.debug(log_msg) { "function=['#{function['vnf_name']}', '#{function['vnf_vendor']}', '#{function['vnf_version']}']"}
-          vnfd = VFunction.new(settings.functions_catalogue, logger).find_function(function['vnf_name'],function['vnf_vendor'],function['vnf_version'])
-          logger.debug(log_msg) {"function#{index}=#{vnfd}"}
-          unless vnfd.empty?
-            start_request["VNFD#{index}"]=vnfd  
+          stored_function = VFunction.new(settings.functions_catalogue, logger).find_function(function['vnf_name'],function['vnf_vendor'],function['vnf_version'])
+          if stored_function
+            logger.debug(log_msg) {"function#{index}=#{stored_function}"}
+            vnfd = stored_function[:vnfd]
+            vnfd[:uuid] = stored_function[:uuid]
+            start_request["VNFD#{index}"]=vnfd 
+
             logger.debug(log_msg) {"start_request[\"VNFD#{index}\"]=#{vnfd}"}
           else
             logger.error(log_msg) {"network function not found"}
@@ -142,23 +147,23 @@ class GtkSrv < Sinatra::Base
   end
   
   class Hash
-  def deep_stringify_keys
-    deep_transform_keys{ |key| key.to_s }
-  end
-  def deep_transform_keys(&block)
-    _deep_transform_keys_in_object(self, &block)
-  end
-  def _deep_transform_keys_in_object(object, &block)
-    case object
-    when Hash
-          object.each_with_object({}) do |(key, value), result|
-            result[yield(key)] = _deep_transform_keys_in_object(value, &block)
-          end
-        when Array
-          object.map {|e| _deep_transform_keys_in_object(e, &block) }
-        else
-          object
+    def deep_stringify_keys
+      deep_transform_keys{ |key| key.to_s }
+    end
+    def deep_transform_keys(&block)
+      _deep_transform_keys_in_object(self, &block)
+    end
+    def _deep_transform_keys_in_object(object, &block)
+      case object
+      when Hash
+        object.each_with_object({}) do |(key, value), result|
+          result[yield(key)] = _deep_transform_keys_in_object(value, &block)
         end
+      when Array
+        object.map {|e| _deep_transform_keys_in_object(e, &block) }
+      else
+        object
       end
+    end
   end
 end

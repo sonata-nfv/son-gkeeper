@@ -43,7 +43,7 @@ class VFunction
       @logger.debug(log_message) {"body=#{body}"}
       function=JSON.parse(body, symbolize_names: true)
       @logger.debug(log_message) {"function=#{function}"}
-      function[0][:vnfd]
+      function[0]
     rescue => e
       @logger.error(log_message) {"No function found for "+url}
       e.message
