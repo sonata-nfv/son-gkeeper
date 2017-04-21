@@ -95,9 +95,8 @@ class PackageManagerService < ManagerService
   def self.find_by_uuid(uuid)
     method = LOG_MESSAGE + "##{__method__}"
     GtkApi.logger.debug(method) {'entered'}
-    headers = { 'Accept'=> '*/*', 'Content-Type'=>'application/json'}
     begin
-      response = RestClient.get(@@url+"/packages/#{uuid}", headers)
+      response = RestClient.get(@@url+"/packages/#{uuid}", JSON_HEADERS)
       GtkApi.logger.debug(method) {"response #{response}"}
       JSON.parse response, symbolize_names: true
     rescue => e
@@ -108,9 +107,8 @@ class PackageManagerService < ManagerService
   def self.find_package_file_name(uuid)
     method = LOG_MESSAGE + "##{__method__}"
     GtkApi.logger.debug(method) {'entered with uuid='+uuid}
-    headers = { 'Accept'=> '*/*', 'Content-Type'=>'application/json'}
     begin
-      response = RestClient.get(@@url+"/son-packages/#{uuid}", headers)
+      response = RestClient.get(@@url+"/son-packages/#{uuid}", JSON_HEADERS)
       GtkApi.logger.debug(method) {"response #{response}"}
       if response.code == 200
         JSON.parse(response, symbolize_names: true)[:grid_fs_name]
@@ -125,8 +123,8 @@ class PackageManagerService < ManagerService
   def self.find(params)
     method = LOG_MESSAGE + "##{__method__}"
     GtkApi.logger.debug(method) {'entered'}
-    headers = { 'Accept'=> 'application/json', 'Content-Type'=>'application/json'}
-    headers[:params] = params
+    headers = JSON_HEADERS
+    headers[:params] = params if params
     begin
       response = RestClient.get(@@url+'/packages', headers)
       GtkApi.logger.debug(method) {"response #{response}"}
