@@ -63,10 +63,10 @@ development: &common_settings
       url: http://localhost:5700
       model: MicroService
       environment: USER_MANAGEMENT_URL
-    catalogue:
-      url: http://sp.int3.sonata-nfv.eu:4002/catalogues/api/v2
-      model: Catalogue
-      environment: CATALOGUES_URL
+#    catalogue:
+#      url: http://sp.int3.sonata-nfv.eu:4002/catalogues/api/v2
+#      model: Catalogue
+#      environment: CATALOGUES_URL
     metrics:
       url: http://sp.int3.sonata-nfv.eu:8000/api/v1
       model: Metric
