@@ -97,7 +97,6 @@ class GtkSrv < Sinatra::Base
             vnfd = stored_function[:vnfd]
             vnfd[:uuid] = stored_function[:uuid]
             start_request["VNFD#{index}"]=vnfd 
-
             logger.debug(log_msg) {"start_request[\"VNFD#{index}\"]=#{vnfd}"}
           else
             logger.error(log_msg) {"network function not found"}
