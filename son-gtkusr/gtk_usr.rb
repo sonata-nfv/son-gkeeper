@@ -35,10 +35,10 @@ require 'sinatra/config_file'
 require 'json'
 require 'yaml'
 require 'jwt'
-#require 'mongoid'
+require 'mongoid'
 # require 'mongoid-pagination'
 
-#require_relative 'models/init'
+require_relative 'models/init'
 require_relative 'helpers/init'
 require_relative 'routes/init'
 
@@ -65,7 +65,7 @@ configure do
     register Sinatra::ConfigFile
     # Load configurations
     config_file 'config/keycloak.yml'
-    #Mongoid.load!('config/mongoid.yml')
+    Mongoid.load!('config/mongoid.yml')
     configure {
       enable :logging
     }
