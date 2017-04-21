@@ -25,7 +25,6 @@
 ## acknowledge the contributions of their colleagues of the SONATA
 ## partner consortium (www.sonata-nfv.eu).
 
-require 'yard'
 require 'rspec/core/rake_task'
 require 'ci/reporter/rake/rspec'
 require './gtk_usr'
@@ -42,10 +41,6 @@ end
 desc 'Run Unit Tests'
 # RSpec::Core::RakeTask.new :specs do |task|
 #   task.pattern = Dir['spec/**/*_spec.rb']
-# end
-
-# YARD::Rake::YardocTask.new do |t|
-#   t.files = %w(main.rb helpers/*.rb routes/*.rb)
 # end
 
 task :default => [:swagger]
