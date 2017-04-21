@@ -30,6 +30,10 @@ require 'tempfile'
 require 'json'
 require 'pp'
 
+class CatalogueRecordNotCreatedError < StandardError; end
+class CatalogueRecordNotFoundError < StandardError; end
+class CatalogueRecordsNotFoundError < StandardError; end
+
 class Catalogue
   
   attr_accessor :url
@@ -52,8 +56,9 @@ class Catalogue
       @logger.debug(log_message) { "object=#{object}"}
       object
     rescue => e
-      @logger.error(log_message) { format_error(e.backtrace)}
-      nil
+      @logger.error(log_message) {"Error during processing: #{$!}"}
+      @logger.error(log_message) {"Backtrace:\n\t#{e.backtrace.join("\n\t")}"}
+      raise CatalogueRecordNotCreatedError.new "There was a problem saving descriptor #{descriptor}"
     end
   end
   
@@ -67,8 +72,9 @@ class Catalogue
       @logger.debug(log_message) { "parsed_response=#{parsed_response}"}
       parsed_response
     rescue => e
-      @logger.error(log_message) { format_error(e.backtrace)}
-      e.to_json
+      @logger.error(log_message) {"Error during processing: #{$!}"}
+      @logger.error(log_message) {"Backtrace:\n\t#{e.backtrace.join("\n\t")}"}
+      raise CatalogueRecordNotFoundError.new 'Record with uuid '+uuid+' was not found'
     end
   end
   
@@ -80,6 +86,7 @@ class Catalogue
     result={}
     begin
       # First fetch all records without any restriction
+      @logger.debug(log_message) {"calling url "+@url+" whith headers #{JSON_HEADERS}"}
       unrestricted = RestClient.get(@url, JSON_HEADERS)
       @logger.debug(log_message) {"unrestricted #{unrestricted}"}
       
@@ -98,14 +105,16 @@ class Catalogue
         result[:count] = json_unrestricted.count
         
         # Now fetch the real result
+        @logger.debug(log_message) {"calling url "+@url+" whith headers #{headers}"}
         records = RestClient.get(@url, headers)
         @logger.debug(log_message) {"records #{records}"}
         result[:items] = JSON.parse records.body
       end
       result
     rescue => e
-      @logger.error(log_message) {format_error(e.backtrace)}
-      []
+      @logger.error(log_message) {"Error during processing: #{$!}"}
+      @logger.error(log_message) {"Backtrace:\n\t#{e.backtrace.join("\n\t")}"}
+      raise CatalogueRecordsNotFoundError.new "Records with params #{params} were not found"
     end
   end
   
