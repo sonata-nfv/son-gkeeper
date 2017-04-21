@@ -10,5 +10,5 @@ gem 'ci_reporter_rspec'
 gem 'sinatra-contrib'
 
 # Database
-gem 'mongoid', '~>4.0' # MongoDB driver
+# gem 'mongoid', '~>4.0' # MongoDB driver
 # gem 'mongoid-pagination', '~>0.2' # Pagination library
