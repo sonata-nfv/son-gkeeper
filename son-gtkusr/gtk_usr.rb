@@ -35,10 +35,12 @@ require 'sinatra/config_file'
 require 'json'
 require 'yaml'
 require 'jwt'
+require 'mongoid'
+# require 'mongoid-pagination'
 
+require_relative 'models/init'
 require_relative 'helpers/init'
 require_relative 'routes/init'
-require_relative 'models/init'
 
 # Require the bundler gem and then call Bundler.require to load in all gems
 # listed in Gemfile.

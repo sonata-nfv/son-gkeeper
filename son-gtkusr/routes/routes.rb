@@ -594,6 +594,52 @@ class Keycloak < Sinatra::Application
     halt 200, {'Content-type' => 'application/json'}, reg_users
   end
 
+  put '/users' do
+    # This endpoint allows queries for the next fields:
+    # search, lastName, firstName, email, username, first, max
+    logger.debug 'Adapter: entered PUT /users'
+    logger.debug "Adapter: Optional query #{params}"
+    # Return if Authorization is invalid
+    halt 400 unless request.env["HTTP_AUTHORIZATION"]
+    queriables = %w(search id lastName firstName email username first max)
+
+    logger.debug "Adapter: Optional query #{queriables}"
+
+    params.each { |k, v|
+      unless queriables.include? k
+        json_error(400, 'Bad query')
+      end
+    }
+
+    reg_users = get_users(params)
+    # TODO: ADD PUBLIC KEY AND CERTIFICATES TO EACH USER
+    # Kyecloak.rb METHOD HERE
+    halt 500
+  end
+
+  delete '/users' do
+    # This endpoint allows queries for the next fields:
+    # search, lastName, firstName, email, username, first, max
+    logger.debug 'Adapter: entered DELETE /users'
+    logger.debug "Adapter: Optional query #{params}"
+    # Return if Authorization is invalid
+    halt 400 unless request.env["HTTP_AUTHORIZATION"]
+    queriables = %w(search id lastName firstName email username first max)
+
+    logger.debug "Adapter: Optional query #{queriables}"
+
+    params.each { |k, v|
+      unless queriables.include? k
+        json_error(400, 'Bad query')
+      end
+    }
+
+    # reg_users = get_users(params)
+    # TODO: ADD PUBLIC KEY AND CERTIFICATES TO EACH USER
+    # Kyecloak.rb METHOD HERE
+    halt 500
+  end
+
   get '/services' do
     # This endpoint allows queries for the next fields:
     # name

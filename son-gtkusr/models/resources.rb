@@ -29,7 +29,7 @@
 class Sp_resource
   include Mongoid::Document
   include Mongoid::Timestamps
-  include Mongoid::Pagination
+  # include Mongoid::Pagination
   include Mongoid::Attributes::Dynamic
   store_in collection: 'sp_resources'
 
@@ -41,7 +41,7 @@ end
 class Sp_user
   include Mongoid::Document
   include Mongoid::Timestamps
-  include Mongoid::Pagination
+  # include Mongoid::Pagination
   include Mongoid::Attributes::Dynamic
   store_in collection: 'sp_users'
 
@@ -49,13 +49,13 @@ class Sp_user
   field :id, type: String
   field :pub_key, type: String
   field :cert, type: String
-  validates :username, :pub_key, :cert, presence: true
+  validates :username, :pub_key, :cert, presence: true, :allow_nil => true
 end
 
 class Sp_permissions
   include Mongoid::Document
   include Mongoid::Timestamps
-  include Mongoid::Pagination
+  # include Mongoid::Pagination
   include Mongoid::Attributes::Dynamic
   store_in collection: 'sp_permissions'
 
