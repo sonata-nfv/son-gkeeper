@@ -9,7 +9,7 @@ services:
       - "5600:5600"
     links:
      - keycloak
-     - mongo
+     - mongo-gtk:mongo
     environment:
       - KEYCLOAK_ADDRESS=keycloak
       - KEYCLOAK_PORT=5601
@@ -27,15 +27,15 @@ services:
       - KEYCLOAK_USER=admin
       - KEYCLOAK_PASSWORD=admin
     container_name: sonata-keycloak
-  mongodata:
+  mongodata-gtk:
     image: mongo:3.0.4
     volumes:
       - /data/db
     command: --break-mongo
-  mongo:
+  mongo-gtk:
     image: mongo:3.0.4
     volumes_from:
-      - mongodata
+      - mongodata-gtk
     ports:
       - "27017"
     command: --smallfiles --rest

@@ -50,6 +50,12 @@ desc 'Run Unit Tests'
 
 task :default => [:swagger]
 
+# namespace :db do
+#   task :load_config do
+#     require './gtk_usr'
+#   end
+# end
+
 # namespace :ci do
 #   task all: %w(ci:setup:rspec specs)
 # end

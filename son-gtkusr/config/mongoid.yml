@@ -3,18 +3,18 @@ development:
     default:
       database: user-management
       hosts:
-      - mongo:27017
+      - mongo-gtk:27017
 
 production:
   sessions:
     default:
       database: user-management
       hosts:
-      - mongo:27017
+      - mongo-gtk:27017
 
 test:
   sessions:
     default:
       database: user-management
       hosts:
-      - mongo:27017
+      - mongo-gtk:27017

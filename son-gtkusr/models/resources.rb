@@ -49,7 +49,7 @@ class Sp_user
   field :id, type: String
   field :pub_key, type: String
   field :cert, type: String
-  validates :username, :pub_key, :cert, presence: true
+  validates :username, :pub_key, :cert, presence: true, :allow_nil => true
 end
 
 class Sp_permissions
