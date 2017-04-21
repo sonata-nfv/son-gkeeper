@@ -28,6 +28,9 @@
 # encoding: utf-8
 require 'json'
 
+class NServiceNotFoundError < StandardError; end
+class NServicesNotFoundError < StandardError; end
+
 class NService
   
   JSON_HEADERS = { 'Accept'=> 'application/json', 'Content-Type'=>'application/json'}
@@ -39,9 +42,13 @@ class NService
   
   def find(params)
     @logger.debug "NService.find(#{params})"
-    services = @catalogue.find(params)
-    @logger.debug "NService.find: #{services}"
-    services
+    begin
+      services = @catalogue.find(params)
+      @logger.debug "NService.find: #{services}"
+      services
+    rescue CatalogueRecordsNotFoundError
+      raise NServicesNotFoundError.new "Services with params #{params} were not found"
+    end
   end
 
   def find_by_uuid(uuid)
@@ -49,7 +56,9 @@ class NService
     begin
       service = @catalogue.find_by_uuid(uuid)
       @logger.debug "NService.find_by_uuid: #{service}"
-      service['nsd']
+      service
+    rescue CatalogueRecordNotFoundError
+      raise NServiceNotFoundError.new 'Service with uuid '+uuid+' was not found'
     rescue Exception => e
       @logger.debug(e.message)
       @logger.debug(e.backtrace.inspect)
