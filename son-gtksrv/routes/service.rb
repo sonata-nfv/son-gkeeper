@@ -42,9 +42,9 @@ class GtkSrv < Sinatra::Base
     logger.debug(log_message) { 'query_string='+query_string}
     logger.debug(log_message) { "params=#{params}"}
     
-    services = NService.new(settings.services_catalogue, logger).find(params)
-    logger.debug(log_message) { "services fetched: #{services}"}
-    unless services.empty?
+    begin
+      services = NService.new(settings.services_catalogue, logger).find(params)
+      logger.debug(log_message) { "services fetched: #{services}"}
       if field_list
         fields = field_list.split(',')
         logger.debug(log_message) { "fields=#{fields}"}
@@ -55,24 +55,21 @@ class GtkSrv < Sinatra::Base
       logger.debug(log_message) { "leaving with #{services[:count]}: #{records}"}
       headers 'Record-Count' => services[:count].to_s
       halt 200, records
-    else
-      logger.debug(log_message) { "leaving with \"No service with params #{query_string} was found\""}
-      json_error 404, "No service with params #{query_string} was found"
+    rescue NServicesNotFoundError
+      json_error 404, "No service with params #{query_string} was found", log_message
     end
   end
   
   get '/services/:uuid' do
-    logger.debug "GtkSrv: entered GET /services/#{params[:uuid]}"
+    log_message="GtkSrv: GET /services/:uuid"
+    logger.debug(log_message) {"entered with #{params[:uuid]}" }
     
-    service = NService.new(settings.services_catalogue, logger).find_by_uuid(params[:uuid])
-    if service
-      logger.debug "GtkSrv: GET /services: #{service}"
-      response = service.to_json
-      logger.debug "GtkSrv: leaving GET /services/#{params[:uuid]} with response="+response
-      halt 200, response
-    else
-      logger.debug "GtkSrv: leaving GET /services/#{params[:uuid]} with \"No service with uuid #{params[:uuid]} was found\""
-      json_error 404, "No service with uuid #{params[:uuid]} was found"
+    begin
+      service = NService.new(settings.services_catalogue, logger).find_by_uuid(params[:uuid])
+      logger.debug(log_message) {"service found #{service}"}
+      halt 200, service.to_json
+    rescue NServiceNotFoundError
+      json_error 404, "No service with uuid #{params[:uuid]} was found", log_message
     end
   end
 
