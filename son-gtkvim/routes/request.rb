@@ -105,7 +105,7 @@ class GtkVim < Sinatra::Base
   end
   end
 
-  
+
   # VIM NETWORKING RESOURCES
   # GETs a vim_request, given an uuid
   get '/vim_requests/networking-resources/:uuid/?' do begin
@@ -244,6 +244,40 @@ class GtkVim < Sinatra::Base
     logger.debug(e.backtrace.inspect)
     halt 500, 'Internal server error'
   end
+  end
+
+  # Attach the WIM to VIM
+  post '/wim/attach?' do original_body = request.body.read
+  logger.info "GtkWim: entered POST /wim/attach with original_body=#{original_body}"
+  params = JSON.parse(original_body, :quirks_mode => true)
+  logger.info "GtkWim: POST /wim/attach with params=#{params}"
+
+  begin
+    start_request={}
+
+    add_request = WimsRequest.create
+    add_request['status']='new'
+    add_request.save
+    start_request=params
+    logger.debug "GtkWim: POST /wim/attach #{params} with #{start_request}"
+    logger.debug "GtkWim: POST /wim/attach #{params} with #{start_request.to_yaml}"
+    settings.mqserver_wan_attach.publish(start_request.to_json, add_request['id'])
+    response=Hash['request_uuid' => add_request['id']]
+    json_request = json(response, {root: false})
+    logger.info 'GtkWim: returning POST /wim with request='+json_request
+    halt 201, json_request
+
+  rescue Exception => e
+    logger.debug(e.message)
+    logger.debug(e.backtrace.inspect)
+    halt 500, 'Internal server error'
+  end
+  end
+
+
+  get '/admin/logs' do
+    logger.debug "GtkSrv: entered GET /admin/logs"
+    File.open('log/'+ENV['RACK_ENV']+'.log', 'r').read
   end
 
 end

@@ -96,6 +96,8 @@ class GtkVim < Sinatra::Base
     WIM_ADD_QUEUE = 'infrastructure.wan.add'
     WIM_REMOVE_QUEUE = 'infrastructure.wan.remove'
 
+    WAN_ATTACH_QUEUE = 'infrastructure.wan.attach'
+
     set :mqserver_vims_compute_list, MQServer.new(COMPUTE_LIST_QUEUE,settings.mqserver_url, logger)
     set :mqserver_vims_compute_add, MQServer.new(COMPUTE_ADD_QUEUE,settings.mqserver_url, logger)
     set :mqserver_vims_compute_remove, MQServer.new(COMPUTE_REMOVE_QUEUE,settings.mqserver_url, logger)
@@ -107,6 +109,8 @@ class GtkVim < Sinatra::Base
     set :mqserver_wims_list, MQServer.new(WIM_LIST_QUEUE,settings.mqserver_url, logger)
     set :mqserver_wims_add, MQServer.new(WIM_ADD_QUEUE,settings.mqserver_url, logger)
     set :mqserver_wims_remove, MQServer.new(WIM_REMOVE_QUEUE,settings.mqserver_url, logger)
+
+    set :mqserver_wan_attach, MQServer.new(WAN_ATTACH_QUEUE,settings.mqserver_url, logger)
     
   else
     puts '    >>>MQServer url not defined, application being terminated!!'
