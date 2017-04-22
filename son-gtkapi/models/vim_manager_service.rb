@@ -41,11 +41,92 @@ class VimManagerService < ManagerService
     GtkApi.logger.debug(method) {'entered'}
   end
 
-  def self.find_vims(params)
+  #General Case Add VIM compute and network
+
+  def self.create_vim_rs(params)
+    method = LOG_MESSAGE + "##{__method__}(#{params})"
+    GtkApi.logger.debug(method) {"entered"}
+
+    saved_params = params.dup
+
+    # Object compute-resources created from params
+    #{"vim_type":String,"configuration":{"tenant_ext_router\":String, "tenant_ext_net":String, "tenant":String},
+    # "city":String,"country":String, "vim_address":String,"username":String,"pass":String}
+
+    cparams = {}
+    cparams[:vim_type] = "Heat"
+    cparams[:configuration] = {}
+    cparams[:configuration][:tenant_ext_router] = params[:compute_configuration][:tenant_ext_router]
+    cparams[:configuration][:tenant_ext_net] = params[:compute_configuration][:tenant_ext_net]
+    cparams[:configuration][:tenant] = params[:compute_configuration][:tenant_id]
+    cparams[:country] = params[:country]
+    cparams[:city] = params[:city]
+    cparams[:vim_address] = params[:compute_configuration][:vim_address]
+    cparams[:username] = params[:compute_configuration][:username]
+    cparams[:pass] = params[:compute_configuration][:pass]
+
+    # Object networking-resources created from params
+    #{"vim_type":"ovs", "vim_address":"10.100.32.200","username":"operator","city":"Athens","country":"Greece","pass":"apass",
+    # "configuration":{"compute_uuid":"ecff9410-4a04-4bd7-82f3-89db93debd4a"}}
+
+    nparams = {}
+    nparams[:vim_type] = "ovs"
+    nparams[:configuration] = {}
+    nparams[:vim_address] = params[:networking_configuration][:vim_address]
+    nparams[:username] = params[:networking_configuration][:username]
+    nparams[:city] = params[:city]
+    nparams[:country] = params[:country]
+    nparams[:pass] = params[:networking_configuration][:pass]
+
+
+    begin
+      GtkApi.logger.debug(method) {"@url = " + @@url}
+      # Creating compute resource
+      response = postCurb(url:@@url+'/vim/compute-resources', body: cparams)
+      GtkApi.logger.debug(method) {"response="+response.to_s}
+      #Wait a bit for the process call
+      sleep 3
+      request_uuid = response[:items][:request_uuid]
+      GtkApi.logger.debug(method) {"request_uuid="+request_uuid.to_s}
+      GtkApi.logger.debug(method) {"@url = " + @@url}
+      sleep 2
+
+      # Finding compute resource uuid
+      response2 = getCurb(url:@@url+'/vim_requests/compute-resources/'+request_uuid, headers: JSON_HEADERS)
+      GtkApi.logger.debug(method) {"response2="+response2.to_s}
+      compute_uuid = response2[:items][:query_response][:uuid]
+      GtkApi.logger.debug(method) {"compute_uuid="+compute_uuid.to_s}
+      nparams[:configuration][:compute_uuid] = compute_uuid
+      GtkApi.logger.debug(method) {"@url = " + @@url}
+
+      # Creating networking resource
+      response3 = postCurb(url:@@url+'/vim/networking-resources', body: nparams)
+      GtkApi.logger.debug(method) {"response3="+response3.to_s}
+
+      # Object WIM ATTACH {"wim_uuid":String, "vim_uuid":String}
+      wparams={}
+      wparams[:wim_uuid] = params[:wim_id]
+      wparams[:vim_uuid] = compute_uuid
+      GtkApi.logger.debug(method) {"@url = " + @@url}
+
+      # Creating link VIM -> WIM
+      response4 = postCurb(url:@@url+'/wim/attach', body: wparams)
+      GtkApi.logger.debug(method) {"response4="+response4.to_s}
+
+    rescue => e
+      GtkApi.logger.error(method) {"Error during processing: #{$!}"}
+      GtkApi.logger.error(method) {"Backtrace:\n\t#{e.backtrace.join("\n\t")}"}
+      nil
+    end
+  end
+
+  # VIM COMPUTE-RESOURCES
+
+  def self.find_vims_comp_rs(params)
     method = LOG_MESSAGE + "##{__method__}(#{params})"
     GtkApi.logger.debug(method) {'entered'}
     begin
-      response = getCurb(url:@@url+'/vim', headers:JSON_HEADERS)
+      response = getCurb(url:@@url+'/vim/compute-resources', headers:JSON_HEADERS)
       GtkApi.logger.debug(method) {'response='+response.to_s}
       response
     rescue => e
@@ -55,13 +136,13 @@ class VimManagerService < ManagerService
     end
   end
 
-  def self.create_vim(params)
+  def self.create_vim_comp_rs(params)
     method = LOG_MESSAGE + "##{__method__}(#{params})"
     GtkApi.logger.debug(method) {"entered"}
 
     begin
       GtkApi.logger.debug(method) {"@url = " + @@url}
-      response = postCurb(url:@@url+'/vim', body: params)
+      response = postCurb(url:@@url+'/vim/compute-resources', body: params)
       GtkApi.logger.debug(method) {"response="+response.to_s}
       response
     rescue => e
@@ -71,17 +152,67 @@ class VimManagerService < ManagerService
     end
   end
 
-  def self.find_vim_request_by_uuid(uuid)
+  def self.find_vim_comp_rs_request_by_uuid(uuid)
     method = LOG_MESSAGE + "##{__method__}(#{uuid})"
     GtkApi.logger.debug(method) {'entered'}
     begin
-      response = getCurb(url:@@url+'/vim_requests/'+uuid, headers: JSON_HEADERS)
+      response = getCurb(url:@@url+'/vim_requests/compute-resources/'+uuid, headers: JSON_HEADERS)
       GtkApi.logger.debug(method) {"Got response: #{response}"}
       query_response = response[:items][:query_response]
       if query_response
         query_response
       else
-        {}
+        []
+      end
+    rescue => e
+      GtkApi.logger.error(method) {"Error during processing: #{$!}"}
+      GtkApi.logger.error(method) {"Backtrace:\n\t#{e.backtrace.join("\n\t")}"}
+      nil
+    end
+  end
+
+  # VIM NETWORKING-RESOURCES
+  def self.find_vims_net_rs(params)
+    method = LOG_MESSAGE + "##{__method__}(#{params})"
+    GtkApi.logger.debug(method) {'entered'}
+    begin
+      response = getCurb(url:@@url+'/vim/networking-resources', headers:JSON_HEADERS)
+      GtkApi.logger.debug(method) {'response='+response.to_s}
+      response
+    rescue => e
+      GtkApi.logger.error(method) {"Error during processing: #{$!}"}
+      GtkApi.logger.error(method) {"Backtrace:\n\t#{e.backtrace.join("\n\t")}"}
+      nil
+    end
+  end
+
+  def self.create_vim_net_resources(params)
+    method = LOG_MESSAGE + "##{__method__}(#{params})"
+    GtkApi.logger.debug(method) {"entered"}
+
+    begin
+      GtkApi.logger.debug(method) {"@url = " + @@url}
+      response = postCurb(url:@@url+'/vim/networking-resources', body: params)
+      GtkApi.logger.debug(method) {"response="+response.to_s}
+      response
+    rescue => e
+      GtkApi.logger.error(method) {"Error during processing: #{$!}"}
+      GtkApi.logger.error(method) {"Backtrace:\n\t#{e.backtrace.join("\n\t")}"}
+      nil
+    end
+  end
+
+  def self.find_vim_net_rs_request_by_uuid(uuid)
+    method = LOG_MESSAGE + "##{__method__}(#{uuid})"
+    GtkApi.logger.debug(method) {'entered'}
+    begin
+      response = getCurb(url:@@url+'/vim_requests/networking-resources/'+uuid, headers: JSON_HEADERS)
+      GtkApi.logger.debug(method) {"Got response: #{response}"}
+      query_response = response[:items][:query_response]
+      if query_response
+        query_response
+      else
+        []
       end
     rescue => e
       GtkApi.logger.error(method) {"Error during processing: #{$!}"}
