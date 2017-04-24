@@ -590,7 +590,6 @@ class Keycloak < Sinatra::Application
 
     reg_users = JSON.parse(get_users(params))
 
-    # TODO: ADD PUBLIC KEY AND CERTIFICATES TO EACH USER
     #reg_users is an array of hashes
     new_reg_users = []
     reg_users.each do |user_data|
@@ -603,7 +602,7 @@ class Keycloak < Sinatra::Application
         logger.debug 'Adapter: Error caused by DocumentNotFound in user database'
         # Continue?
       end
-      user_extra_data = user_extra_data.to_json(:except => [:_id, :username, :updated_at, :created_at])
+      user_extra_data = user_extra_data.to_json(:except => [:_id, :id, :username, :updated_at, :created_at])
       user_extra_data = {'attributes' => parse_json(user_extra_data)[0]}
       merged_user_data = user_data.deep_merge(user_extra_data)
       new_reg_users << merged_user_data
