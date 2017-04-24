@@ -618,43 +618,81 @@ class Keycloak < Sinatra::Application
     logger.debug "Adapter: Optional query #{params}"
     # Return if Authorization is invalid
     # json_error(400, 'Authorization header not set') unless request.env["HTTP_AUTHORIZATION"]
-    queriables = %w(id email username)
+    queriables = %w(id username)
 
     logger.debug "Adapter: Optional query #{queriables}"
 
+    json_error(400, 'Bad query') if params.empty?
     params.each { |k, v|
       unless queriables.include? k
         json_error(400, 'Bad query')
       end
     }
-
-    reg_users = get_users(params)
-    # TODO: ADD PUBLIC KEY AND CERTIFICATES TO EACH USER
-    # Kyecloak.rb METHOD HERE
-    halt 500
+    form, errors = parse_json(request.body.read)
+    #TODO: Check form for public key or certificate
+    if params['id']
+      code, msg = update_user(nil, params['id'], form)
+      # logger.debug "Adapter: delete user message #{msg}"
+    elsif params['username']
+      code, msg = update_user(params['username'], nil, form)
+      # logger.debug "Adapter: delete user message #{msg}"
+    else
+      json_error(400, 'Bad query')
+    end
+    if code.nil?
+      # begin
+      #   user_extra_data = Sp_user.find_by({ '_id' => msg })
+      # rescue Mongoid::Errors::DocumentNotFound => e
+      #   logger.debug 'Adapter: Error caused by DocumentNotFound in user database'
+      #   halt 204
+      #   # Continue?
+      # end
+      #
+      logger.debug 'Adapter: leaving PUT /users'
+      halt 204
+    end
+    halt code
   end
 
   delete '/users' do
     # This endpoint allows queries for the next fields:
     # search, lastName, firstName, email, username, first, max
     logger.debug 'Adapter: entered DELETE /users'
-    logger.debug "Adapter: Optional query #{params}"
+    logger.debug "Adapter: required query #{params}"
     # Return if Authorization is invalid
     # json_error(400, 'Authorization header not set') unless request.env["HTTP_AUTHORIZATION"]
-    queriables = %w(id email username)
+    queriables = %w(id username)
 
-    logger.debug "Adapter: Optional query #{queriables}"
+    logger.debug "Adapter: Available queriables #{queriables}"
 
+    json_error(400, 'Bad query') if params.empty?
     params.each { |k, v|
       unless queriables.include? k
         json_error(400, 'Bad query')
       end
     }
-
-    # reg_users = get_users(params)
-    # TODO: ADD PUBLIC KEY AND CERTIFICATES TO EACH USER
-    # Kyecloak.rb METHOD HERE
-    halt 500
+    if params['id']
+      code, msg = delete_user_by_id(nil, params['id'])
+      # logger.debug "Adapter: delete user message #{msg}"
+    elsif params['username']
+      code, msg = delete_user_by_id(params['username'], nil)
+      # logger.debug "Adapter: delete user message #{msg}"
+    else
+      json_error(400, 'Bad query')
+    end
+    if code.nil?
+      begin
+        user_extra_data = Sp_user.find_by({ '_id' => msg })
+      rescue Mongoid::Errors::DocumentNotFound => e
+        logger.debug 'Adapter: Error caused by DocumentNotFound in user database'
+        halt 204
+        # Continue?
+      end
+      user_extra_data.destroy
+      logger.debug 'Adapter: leaving DELETE /users'
+      halt 204
+    end
+    halt code
   end
 
   get '/services' do
