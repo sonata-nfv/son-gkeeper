@@ -745,6 +745,7 @@ class Keycloak < Sinatra::Application
   end
 
   def set_user_roles(user_type, user_id)
+    refresh_adapter
     # Search roles
     code, realm_roles = get_realm_roles
     role_data = parse_json(realm_roles)[0].find {|role| role['name'] == user_type}
@@ -821,6 +822,7 @@ class Keycloak < Sinatra::Application
   end
 
   def set_service_roles(client_id)
+    refresh_adapter
     # Search client ID by cliendID name
     query = {'name' => client_id}
     client_data, errors = parse_json(get_clients(query))
@@ -875,6 +877,7 @@ class Keycloak < Sinatra::Application
   end
 
   def set_service_account_roles(client_data, role_data)
+    refresh_adapter
     # puts "CLIENT ID", client_data
     # Get a user dedicated to the service account
     # GET /admin/realms/{realm}/clients/{id}/service-account-user
@@ -913,6 +916,7 @@ class Keycloak < Sinatra::Application
   end
 
   def delete_user(username)
+    refresh_adapter
     # GET new registered user Id
     url = URI("http://#{@@address.to_s}:#{@@port.to_s}/#{@@uri.to_s}/admin/realms/#{@@realm_name}/users?username=#{username}")
     http = Net::HTTP.new(url.host, url.port)
@@ -940,6 +944,38 @@ class Keycloak < Sinatra::Application
     end
   end
 
+  def delete_user_by_id(username, user_id)
+    refresh_adapter
+    if user_id.nil?
+     # GET new registered user Id
+      url = URI("http://#{@@address.to_s}:#{@@port.to_s}/#{@@uri.to_s}/admin/realms/#{@@realm_name}/users?username=#{username}")
+      http = Net::HTTP.new(url.host, url.port)
+
+      request = Net::HTTP::Get.new(url.to_s)
+      request["authorization"] = 'Bearer ' + @@access_token
+      request.body = body.to_json
+
+      response = http.request(request)
+      begin
+        user_id = parse_json(response.body).first[0]["id"]
+      rescue
+        return response.code.to_i, response.body.to_json
+      end
+    end
+
+    url = URI("http://#{@@address.to_s}:#{@@port.to_s}/#{@@uri.to_s}/admin/realms/#{@@realm_name}/users/#{user_id}")
+    http = Net::HTTP.new(url.host, url.port)
+    request = Net::HTTP::Delete.new(url.to_s)
+    request["authorization"] = 'Bearer ' + @@access_token
+    request["content-type"] = 'application/json'
+
+    response = http.request(request)
+    if response.code.to_i != 204
+      return response.code.to_i, response.body.to_json
+    end
+    return nil, user_id
+  end
+
   def delete_client(clientId)
     # refresh_adapter # Refresh admin token if expired
     url = URI("http://#{@@address.to_s}:#{@@port.to_s}/#{@@uri.to_s}/admin/realms/#{@@realm_name}/clients/#{clientId}")
@@ -959,11 +995,37 @@ class Keycloak < Sinatra::Application
     # DELETE /admin/realms/{realm}/roles/{role-name}
   end
 
-  def update_user()
-    # TODO: Implement
+  def update_user(username, user_id, body)
+    refresh_adapter
+    if user_id.nil?
+      # GET new registered user Id
+      url = URI("http://#{@@address.to_s}:#{@@port.to_s}/#{@@uri.to_s}/admin/realms/#{@@realm_name}/users?username=#{username}")
+      http = Net::HTTP.new(url.host, url.port)
+      request = Net::HTTP::Get.new(url.to_s)
+      request["authorization"] = 'Bearer ' + @@access_token
+      request.body = body.to_json
+      response = http.request(request)
+      begin
+        user_id = parse_json(response.body).first[0]["id"]
+      rescue
+        return response.code.to_i, response.body.to_json
+      end
+    end
+
     # Update the user
     # PUT /admin/realms/{realm}/clients/{id}/users
     # Body rep = UserRepresentation
+    url = URI("http://#{@@address.to_s}:#{@@port.to_s}/#{@@uri.to_s}/admin/realms/#{@@realm_name}/users/#{user_id}")
+    http = Net::HTTP.new(url.host, url.port)
+    request = Net::HTTP::Put.new(url.to_s)
+    request["authorization"] = 'Bearer ' + @@access_token
+    request["content-type"] = 'application/json'
+    request.body = body.to_json
+    response = http.request(request)
+    if response.code.to_i != 204
+      return response.code.to_i, response.body.to_s
+    end
+    return nil, user_id
   end
 
   def update_user_pkey(user_id, attrs)
