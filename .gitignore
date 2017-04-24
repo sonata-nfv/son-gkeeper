@@ -11,4 +11,4 @@
 **/.bundle
 son-gtksrv/db/postgres
 son-gtkpkg/vendor
-son-gtkvim/.idea/*
+**/.idea/*

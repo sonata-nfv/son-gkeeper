@@ -27,7 +27,7 @@
 require 'sinatra/activerecord'
 
 class VimsRequest < ActiveRecord::Base
-    
+
   # validations a la Activerecord
   #validates :id, presence: true
 end
