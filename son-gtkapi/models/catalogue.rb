@@ -34,8 +34,7 @@ class Catalogue < ManagerService
   
   def self.config(url:)
     method = LOG_MESSAGE + "#config(url=#{url})"
-    raise ArgumentError.new('Catalogue can not be configured with nil url') if url.nil?
-    raise ArgumentError.new('Catalogue can not be configured with empty url') if url.empty?
+    raise ArgumentError.new('Catalogue can not be configured with nil or empty url') if (url.nil? || url.empty?)
     @@url = url
     GtkApi.logger.debug(method) {'entered'}
   end
