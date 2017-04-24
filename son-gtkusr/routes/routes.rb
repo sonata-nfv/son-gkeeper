@@ -603,11 +603,12 @@ class Keycloak < Sinatra::Application
         logger.debug 'Adapter: Error caused by DocumentNotFound in user database'
         # Continue?
       end
-      merged_user_data = user_data['attributes'].merge(Hash(user_extra_data.attributes['pub_key']))
+      user_extra_data = user_extra_data.to_json(:except => [:_id, :updated_at, :created_at])
+      merged_user_data = user_data.merge({'attributes' => Hash(user_extra_data.attributes)})
       new_reg_users << merged_user_data
     end
 
-    halt 200, {'Content-type' => 'application/json'}, new_reg_users.to_json(:except => :_id)
+    halt 200, {'Content-type' => 'application/json'}, new_reg_users.to_json
   end
 
   put '/users' do
