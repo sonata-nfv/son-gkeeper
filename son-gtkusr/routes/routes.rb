@@ -605,7 +605,7 @@ class Keycloak < Sinatra::Application
       end
       user_extra_data = user_extra_data.to_json(:except => [:_id, :updated_at, :created_at])
       # merged_user_data = user_data.merge({'attributes' => Hash(user_extra_data.attributes)})
-      merged_user_data = user_data.merge({'attributes' => Hash(json_parse(user_extra_data)[0])})
+      merged_user_data = user_data.merge({'attributes' => Hash(parse_json(user_extra_data)[0])})
       new_reg_users << merged_user_data
     end
 
