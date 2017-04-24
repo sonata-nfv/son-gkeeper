@@ -163,19 +163,21 @@ class Keycloak < Sinatra::Application
       form = form.merge({'enabled'=> true})
     end
 
-    #if form['attributes'].key?('public-key')
+    # if form['attributes'].key?('public-key')
     begin
-      pkey = {'public-key'=> form['attributes']['public-key']}
+      # pkey = {'public-key'=> form['attributes']['public-key']}
+      pkey = form['attributes']['public-key']
       form['attributes'].delete('public-key')
-    #else
+    # else
     rescue
       pkey = nil
     end
-    #if form['attributes'].key?('certificate')
+    # if form['attributes'].key?('certificate')
     begin
-      cert = {'certificate'=> form['attributes']['certificate']}
+      # cert = {'certificate'=> form['attributes']['certificate']}
+      cert = form['attributes']['certificate']
       form['attributes'].delete('certificate')
-    #else
+    # else
     rescue
       cert = nil
     end
@@ -575,7 +577,7 @@ class Keycloak < Sinatra::Application
     logger.debug 'Adapter: entered GET /users'
     logger.debug "Adapter: Optional query #{params}"
     # Return if Authorization is invalid
-    halt 400 unless request.env["HTTP_AUTHORIZATION"]
+    # json_error(400, 'Authorization header not set') unless request.env["HTTP_AUTHORIZATION"]
     queriables = %w(search id lastName firstName email username first max)
 
     logger.debug "Adapter: Optional query #{queriables}"
@@ -589,9 +591,23 @@ class Keycloak < Sinatra::Application
     reg_users = get_users(params)
 
     # TODO: ADD PUBLIC KEY AND CERTIFICATES TO EACH USER
-    # Kyecloak.rb METHOD HERE
+    #reg_users is an array of hashes
+    new_reg_users = []
+    reg_users.each do |user_data|
+      # call keycloak.rb method here?
+      user_id = user_data['id']
+      # call mongoDB to receive user_extra_data
+      begin
+        user_extra_data = Sp_user.find_by({ '_id' => user_id })
+      rescue Mongoid::Errors::DocumentNotFound => e
+        logger.debug 'Adapter: Error caused by DocumentNotFound in user database'
+        # Continue?
+      end
+      merged_user_data = user_data.merge(user_extra_data)
+      new_reg_users << merged_user_data
+    end
 
-    halt 200, {'Content-type' => 'application/json'}, reg_users
+    halt 200, {'Content-type' => 'application/json'}, new_reg_users
   end
 
   put '/users' do
@@ -600,8 +616,8 @@ class Keycloak < Sinatra::Application
     logger.debug 'Adapter: entered PUT /users'
     logger.debug "Adapter: Optional query #{params}"
     # Return if Authorization is invalid
-    halt 400 unless request.env["HTTP_AUTHORIZATION"]
-    queriables = %w(search id lastName firstName email username first max)
+    # json_error(400, 'Authorization header not set') unless request.env["HTTP_AUTHORIZATION"]
+    queriables = %w(id email username)
 
     logger.debug "Adapter: Optional query #{queriables}"
 
@@ -623,8 +639,8 @@ class Keycloak < Sinatra::Application
     logger.debug 'Adapter: entered DELETE /users'
     logger.debug "Adapter: Optional query #{params}"
     # Return if Authorization is invalid
-    halt 400 unless request.env["HTTP_AUTHORIZATION"]
-    queriables = %w(search id lastName firstName email username first max)
+    # json_error(400, 'Authorization header not set') unless request.env["HTTP_AUTHORIZATION"]
+    queriables = %w(id email username)
 
     logger.debug "Adapter: Optional query #{queriables}"
 
@@ -645,7 +661,7 @@ class Keycloak < Sinatra::Application
     # name
     logger.debug 'Adapter: entered GET /services'
     # Return if Authorization is invalid
-    halt 400 unless request.env["HTTP_AUTHORIZATION"]
+    # json_error(400, 'Authorization header not set') unless request.env["HTTP_AUTHORIZATION"]
     queriables = %w(name first max)
 
     # keyed_params = keyed_hash(params)
@@ -664,7 +680,7 @@ class Keycloak < Sinatra::Application
     # search, lastName, firstName, email, username, first, max
     logger.debug 'Adapter: entered GET /roles'
     # Return if Authorization is invalid
-    halt 400 unless request.env["HTTP_AUTHORIZATION"]
+    # json_error(400, 'Authorization header not set') unless request.env["HTTP_AUTHORIZATION"]
     queriables = %w(search id name description first max)
     keyed_params = keyed_hash(params)
     keyed_params.each { |k, v|
@@ -682,7 +698,7 @@ class Keycloak < Sinatra::Application
     # GET /admin/realms/{realm}/clients/{id}/user-sessions
     logger.debug 'Adapter: entered GET /sessions/users'
     # Return if Authorization is invalid
-    halt 400 unless request.env["HTTP_AUTHORIZATION"]
+    # json_error(400, 'Authorization header not set') unless request.env["HTTP_AUTHORIZATION"]
     adapter_id = get_client_id('adapter')
     ses_code, ses_msg = get_sessions('user', adapter_id)
 
@@ -696,11 +712,11 @@ class Keycloak < Sinatra::Application
       logger.debug "Adapter: entered GET /sessions/users/#{params[:username]}"
 
       # Return if Authorization is invalid
-      halt 400 unless request.env["HTTP_AUTHORIZATION"]
+      # json_error(400, 'Authorization header not set') unless request.env["HTTP_AUTHORIZATION"]
 
       user_id = get_user_id(params[:username])
       if user_id.nil?
-        json_error 404, 'Username not found'
+        json_error(404, 'Username not found')
       end
       ses_code, ses_msg = get_user_sessions(user_id)
 
@@ -715,7 +731,7 @@ class Keycloak < Sinatra::Application
     # Returns a list of service client sessions
     logger.debug 'Adapter: entered GET /sessions/services'
     # Return if Authorization is invalid
-    halt 400 unless request.env["HTTP_AUTHORIZATION"]
+    # json_error(400, 'Authorization header not set') unless request.env["HTTP_AUTHORIZATION"]
     # adapter_id = get_adapter_id
     ses_code, ses_msg = get_sessions('service', nil)
 
@@ -733,7 +749,7 @@ class Keycloak < Sinatra::Application
       logger.debug "Adapter: entered PUT /signatures/#{params[:username]}"
 
       # Return if Authorization is invalid
-      halt 400 unless request.env["HTTP_AUTHORIZATION"]
+      # json_error(400, 'Authorization header not set') unless request.env["HTTP_AUTHORIZATION"]
       user_token = request.env["HTTP_AUTHORIZATION"].split(' ').last
       unless user_token
         json_error(400, 'Access token is not provided')
@@ -756,13 +772,13 @@ class Keycloak < Sinatra::Application
       end
       logger.debug "Adapter: Token contents #{token_contents}"
       logger.debug "Adapter: Username #{params[:username]}"
-      # if token_contents['sub'] == :username
+
       if token_contents['username'].to_s == params[:username].to_s
         logger.debug "Adapter: #{params[:username]} matches Access Token"
-        #Translate from username to User_id
+        # Translate from username to User_id
         user_id = get_user_id(params[:username])
         if user_id.nil?
-          json_error 404, 'Username not found'
+          json_error(404, 'Username not found')
         end
         logger.info "Content-Type is " + request.media_type
         halt 415 unless (request.content_type == 'application/json')
@@ -771,7 +787,7 @@ class Keycloak < Sinatra::Application
         halt 400, {'Content-type' => 'application/json'}, errors.to_json if errors
 
         unless form.key?('public-key')
-         json_error 400, 'Developer public key not provided'
+         json_error(400, 'Developer public key not provided')
         end
 
         unless form.key? ('certificate')
@@ -783,22 +799,22 @@ class Keycloak < Sinatra::Application
         begin
           user = Sp_user.find_by({ '_id' => user_id })
         rescue Mongoid::Errors::DocumentNotFound => e
-          json_error 404, 'Username not found'
+          json_error(404, 'Username not found')
         end
 
         # Add new son-package attribute fields
         begin
           user.update_attributes(pub_key: form['public-key'], cert: form['certificate'])
         rescue Moped::Errors::OperationFailure => e
-          json_error 400, 'Update failed'
+          json_error(400, 'Update failed')
         end
       else
-        json_error 400, 'Provided username does not match with Access Token'
+        json_error(400, 'Provided username does not match with Access Token')
       end
-      halt 200, {'Content-type' => 'application/json'}, 'User signature successfully updated'
+      halt 200 # , {'Content-type' => 'application/json'}, 'User signature successfully updated'
     end
     logger.debug 'Adapter: leaving PUT /signatures/ with no username specified'
-    json_error 400, 'No username specified'
+    json_error(400, 'No username specified')
   end
 
   put '/attributes/:username/?' do
@@ -807,7 +823,7 @@ class Keycloak < Sinatra::Application
       logger.debug "Adapter: entered PUT /attributes/#{params[:username]}"
 
       # Return if Authorization is invalid
-      halt 400 unless request.env["HTTP_AUTHORIZATION"]
+      # halt 400 unless request.env["HTTP_AUTHORIZATION"]
       user_token = request.env["HTTP_AUTHORIZATION"].split(' ').last
       unless user_token
         json_error(400, 'Access token is not provided')
