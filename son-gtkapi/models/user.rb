@@ -38,7 +38,6 @@ class UserNameAlreadyInUseError < StandardError; end
 class User < ManagerService
 
   LOG_MESSAGE = 'GtkApi::' + self.name
-  USERS_URL = '/users'
   
   attr_accessor :uuid, :username, :session, :secret, :created_at, :user_type, :email, :last_name, :first_name
   
@@ -89,7 +88,7 @@ class User < ManagerService
     GtkApi.logger.debug(method) {"params = #{params}"}
     
     begin
-      resp = postCurb(url: @@url+'/register/user', body: params)
+      resp = postCurb(url: @@url+'/api/v1/register/user', body: params)
       case resp[:status]
       when 200..202
         user = resp[:items]
@@ -119,7 +118,7 @@ class User < ManagerService
     GtkApi.logger.debug(method) {"entered with secret=#{secret}"}
     headers = {'Content-type'=>'application/json', 'Accept'=> 'application/json', 'Authorization'=>'Basic '+secret}
     begin
-      resp = postCurb(url: @@url+'/login/user', body: {}, headers: headers)
+      resp = postCurb(url: @@url+'/api/v1/login/user', body: {}, headers: headers)
       if resp[:status] == 200
         token = resp[:items]
         GtkApi.logger.debug(method) {"token=#{token}"}
@@ -157,7 +156,7 @@ class User < ManagerService
     method = LOG_MESSAGE + "##{__method__}"
     GtkApi.logger.debug(method) {"entered with uuid #{uuid}"}
     begin
-      response = getCurb(url:@@url + USERS_URL + '?id=' + uuid, headers: JSON_HEADERS)
+      response = getCurb(url:@@url + '/api/v1/users?id=' + uuid, headers: JSON_HEADERS)
       GtkApi.logger.debug(method) {"Got response: #{response}"}
       case response[:status]
       when 200
@@ -184,7 +183,7 @@ class User < ManagerService
     GtkApi.logger.debug(method) {"entered with name #{name}"}
 
     begin
-      response = getCurb(url:@@url + USERS_URL + '?username=' + name, headers: JSON_HEADERS)
+      response = getCurb(url:@@url + '/api/v1/users?username=' + name, headers: JSON_HEADERS)
       GtkApi.logger.debug(method) {"Got response: #{response}"}
       case response[:status]
       when 200
@@ -211,7 +210,7 @@ class User < ManagerService
     GtkApi.logger.debug(method) {"entered with params #{params}"}
 
     begin
-      response = getCurb(url:@@url + USERS_URL, headers: JSON_HEADERS)
+      response = getCurb(url:@@url + '/api/v1/users', headers: JSON_HEADERS)
       GtkApi.logger.debug(method) {"Got response: #{response}"}
       case response[:status]
       when 200
