@@ -588,7 +588,7 @@ class Keycloak < Sinatra::Application
       end
     }
 
-    reg_users = get_users(params)
+    reg_users = JSON.parse(get_users(params))
 
     # TODO: ADD PUBLIC KEY AND CERTIFICATES TO EACH USER
     #reg_users is an array of hashes
@@ -607,7 +607,7 @@ class Keycloak < Sinatra::Application
       new_reg_users << merged_user_data
     end
 
-    halt 200, {'Content-type' => 'application/json'}, new_reg_users
+    halt 200, {'Content-type' => 'application/json'}, new_reg_users.to_json
   end
 
   put '/users' do
