@@ -17,5 +17,5 @@ ENV VIM_MANAGEMENT_URL http://son-gtkvim:5700
 ENV RECORD_MANAGEMENT_URL http://son-gtkrec:5800
 ENV LICENCE_MANAGEMENT_URL http://son-gtklic:5900
 ENV KPI_MANAGEMENT_URL http://son-gtkkpi:5400
-ENV USER_MANAGEMENT_URL http://son-gtkusr:5600/api/v1
+ENV USER_MANAGEMENT_URL http://son-gtkusr:5600
 CMD ["foreman", "start"]

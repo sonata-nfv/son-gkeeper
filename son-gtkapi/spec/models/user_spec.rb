@@ -35,8 +35,8 @@ RSpec.describe User, type: :model do
   #let(:user_to_be_created_2) {{name:'name', version:'0.2', vendor:'vendor'}}
   #let(:created_user_2) {user_to_be_created_2.merge({uuid: user_uuid})}
   #let(:all_users) { [ created_user_1, created_user_2 ]}
-  let(:users_url) { User.class_variable_get(:@@url)+'/register/user' }
-  let(:login_url) { User.class_variable_get(:@@url)+'/login/user' }
+  let(:users_url) { User.class_variable_get(:@@url)+'/api/v1/register/user' }
+  let(:login_url) { User.class_variable_get(:@@url)+'/api/v1/login/user' }
   let(:to_be_created_user) {{
     firstName: "Un", lastName: "Known", username: "Unknown", email: "un@known.com", 
     password: "1234",
