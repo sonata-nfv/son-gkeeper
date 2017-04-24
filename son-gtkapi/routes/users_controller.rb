@@ -83,7 +83,12 @@ class GtkApi < Sinatra::Base
         links = build_pagination_headers(url: request_url, limit: @limit.to_i, offset: @offset.to_i, total: users.count)
         logger.debug(log_message) {"links: #{links}"}
         headers 'Link'=> links, 'Record-Count'=> users.count.to_s
-        halt 200, users.to_json
+        returned_users = []
+        users.each do |user|
+          returned_users << user.to_h
+        end
+        content_type :json
+        halt 200, returned_users.to_json
       rescue UsersNotFoundError
         logger.debug(log_message) {"Users not found"}
         halt 200, '[]'
@@ -91,25 +96,23 @@ class GtkApi < Sinatra::Base
     end
   
     # GET a specific user
-    get '/:name/?' do
-      log_message = 'GtkApi:: GET /api/v2/services/:name'
+    get '/:uuid/?' do
+      log_message = 'GtkApi:: GET /api/v2/services/:uuid'
       logger.debug(log_message) {"entered with #{params}"}
     
-      if valid?(params[:name])
+      if valid?(params[:uuid])
         # TODO: mind that, besides the URL-based uuid we might as well pass other params, like fields we want to show
         #params.delete :uuid
-        user = User.find_by_name(params[:name])
-        if user[:count] && !user[:items].empty?
+        begin
+          user = User.find_by_uuid(params[:uuid])
           logger.debug(log_message) {"leaving with #{user}"}
-          halt 200, user.to_json
-        else
-          logger.debug(log_message) {"leaving with message 'User #{params[:name]} not found'"}
-          json_error 404, "User #{params[:name]} not found"
+          content_type :json
+          halt 200, user.to_h.to_json
+        rescue UserNotFoundError
+          json_error 404, "User #{params[:uuid]} not found", log_message
         end
       else
-        message = "User #{params[:name]} not valid"
-        logger.debug(log_message) {"leaving with message '"+message+"'"}
-        json_error 404, message
+        json_error 404, "User #{params[:uuid]} not valid", log_message
       end
     end
   
