@@ -1164,6 +1164,7 @@ class Keycloak < Sinatra::Application
     # puts "KEYED_QUERY", keyed_query
     # Get all users for the realm
     query = Rack::Utils.build_query(keyed_query)
+    logger.debug "Adapter: Built query #{query}"
     uri = "http://#{@@address.to_s}:#{@@port.to_s}/#{@@uri.to_s}/admin/realms/#{@@realm_name}/users?" + query
     url = URI(uri)
     http = Net::HTTP.new(url.host, url.port)
@@ -1173,6 +1174,7 @@ class Keycloak < Sinatra::Application
     response = http.request(request)
     # p "CODE", response.code
     parsed_res, code = parse_json(response.body)
+    logger.debug "Adapter: Parsed response #{parsed_res}"
     # p "RESPONSE_PARSED", parsed_res
     response.body
   end
