@@ -603,7 +603,7 @@ class Keycloak < Sinatra::Application
         logger.debug 'Adapter: Error caused by DocumentNotFound in user database'
         # Continue?
       end
-      merged_user_data = user_data.merge(user_extra_data)
+      merged_user_data = user_data.merge(Hash(user_extra_data.attributes))
       new_reg_users << merged_user_data
     end
 
