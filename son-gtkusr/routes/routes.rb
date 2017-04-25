@@ -586,7 +586,11 @@ class Keycloak < Sinatra::Application
       json_error(400, 'Too many arguments')
     end
 
+
+    logger.debug "Adapter: params first #{params.first}"
     k, v = params.first
+    logger.debug "Adapter: k value #{k}"
+    
     unless queriables.include? k
       json_error(400, 'Bad query')
     end
