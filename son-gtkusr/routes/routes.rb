@@ -592,7 +592,7 @@ class Keycloak < Sinatra::Application
     end
     case k
       when 'id'
-        reg_users = JSON.parse(get_user(params))
+        reg_users = JSON.parse(get_user(v))
       else
         reg_users = JSON.parse(get_users(params))
     end
@@ -626,35 +626,80 @@ class Keycloak < Sinatra::Application
     # Return if Authorization is invalid
     # json_error(400, 'Authorization header not set') unless request.env["HTTP_AUTHORIZATION"]
     queriables = %w(id username)
-
+    not_updatables = %w(id username email)
     logger.debug "Adapter: Optional query #{queriables}"
-
     json_error(400, 'Bad query') if params.empty?
-    params.each { |k, v|
-      unless queriables.include? k
-        json_error(400, 'Bad query')
-      end
-    }
-    form, errors = parse_json(request.body.read)
-    #TODO: Check form for public key or certificate
-    if params['id']
-      code, msg = update_user(nil, params['id'], form)
-      # logger.debug "Adapter: delete user message #{msg}"
-    elsif params['username']
-      code, msg = update_user(params['username'], nil, form)
-      # logger.debug "Adapter: delete user message #{msg}"
-    else
+    if params.length > 1
+      json_error(400, 'Too many arguments')
+    end
+
+    k, v = params.first
+    unless queriables.include? k
       json_error(400, 'Bad query')
     end
+    form, errors = parse_json(request.body.read)
+
+    # pkey = nil
+    # cert = nil
+    # Check form keys
+    form.each { |att, val|
+      if not_updatables.includes? att
+        json_error(400, 'Bad query')
+      end
+
+      case att
+        when 'attributes'
+          begin
+            pkey = form['attributes']['public-key']
+            form['attributes'].delete('public-key')
+          rescue
+            pkey = nil
+          end
+          begin
+            cert = form['attributes']['certificate']
+            form['attributes'].delete('certificate')
+          rescue
+            cert = nil
+          end
+        else
+      end
+    }
+
+    case k
+      when 'id'
+        code, msg = update_user(nil, v, form)
+      when 'username'
+        code, msg = update_user(v, nil, form)
+      else
+        code = 400
+        json_error(400, 'Bad query')
+    end
+
     if code.nil?
-      # begin
-      #   user_extra_data = Sp_user.find_by({ '_id' => msg })
-      # rescue Mongoid::Errors::DocumentNotFound => e
-      #   logger.debug 'Adapter: Error caused by DocumentNotFound in user database'
-      #   halt 204
-      #   # Continue?
-      # end
-      #
+      begin
+        user_extra_data = Sp_user.find_by({ '_id' => msg })
+      rescue Mongoid::Errors::DocumentNotFound => e
+        logger.debug 'Adapter: Error caused by DocumentNotFound in user database'
+        halt 204
+      end
+      case pkey
+        when not nil
+          begin
+            user_extra_data.update_attributes(pub_key: pkey)
+          rescue Moped::Errors::OperationFailure => e
+            json_error(400, e)
+          end
+        else
+      end
+      case cert
+        when not nil
+          begin
+            user_extra_data.update_attributes(cert: cert)
+          rescue Moped::Errors::OperationFailure => e
+            json_error(400, e)
+          end
+        else
+      end
       logger.debug 'Adapter: leaving PUT /users'
       halt 204
     end
@@ -673,18 +718,23 @@ class Keycloak < Sinatra::Application
     logger.debug "Adapter: Available queriables #{queriables}"
 
     json_error(400, 'Bad query') if params.empty?
-    params.each { |k, v|
-      unless queriables.include? k
-        json_error(400, 'Bad query')
-      end
-    }
-    if params['id']
-      code, msg = delete_user_by_id(nil, params['id'])
+    if params.length > 1
+      json_error(400, 'Too many arguments')
+    end
+
+    k, v = params.first
+    unless queriables.include? k
+      json_error(400, 'Bad query')
+    end
+
+    case k
+      when 'id'
+      code, msg = delete_user_by_id(nil, v)
       # logger.debug "Adapter: delete user message #{msg}"
-    elsif params['username']
-      code, msg = delete_user_by_id(params['username'], nil)
+      when 'username'
+      code, msg = delete_user_by_id(v, nil)
       # logger.debug "Adapter: delete user message #{msg}"
-    else
+      else
       json_error(400, 'Bad query')
     end
     if code.nil?
