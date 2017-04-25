@@ -1197,7 +1197,7 @@ class Keycloak < Sinatra::Application
     parsed_res, code = parse_json(response.body)
     logger.debug "Adapter: Parsed response #{parsed_res}"
     # p "RESPONSE_PARSED", parsed_res
-    response.body
+    return response.code, response.body
   end
 
   def get_user_id(username)

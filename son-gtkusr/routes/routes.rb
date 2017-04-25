@@ -587,7 +587,7 @@ class Keycloak < Sinatra::Application
     end
 
     # logger.debug "Adapter: params first #{params.first}"
-    if params
+    if params.first
       k, v = params.first
       # logger.debug "Adapter: k value #{k}"
       unless queriables.include? k
@@ -598,7 +598,11 @@ class Keycloak < Sinatra::Application
     end
     case k
       when 'id'
-        reg_users = [JSON.parse(get_user(v))]
+        code, user_data = get_user(v)
+        if code.to_i != 200
+          halt 404
+        end
+        reg_users = [JSON.parse(user_data)]
         logger.debug "Adapter: get_user value #{reg_users}"
       else
         reg_users = JSON.parse(get_users(params))
