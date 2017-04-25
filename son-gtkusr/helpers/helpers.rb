@@ -58,7 +58,7 @@ def json_error(code, message)
   #puts 'CODE', code.to_s
   #puts 'MESSAGE', message.to_s
   msg = {'error' => message}
-  logger.error(code.to_s, msg.to_s)
+  logger.error(code.to_s + ',' + msg.to_s)
   #STDOUT.sync = false
   halt code, {'Content-type' => 'application/json'}, msg.to_json
 end
