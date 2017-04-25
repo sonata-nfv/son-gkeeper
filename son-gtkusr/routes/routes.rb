@@ -578,17 +578,24 @@ class Keycloak < Sinatra::Application
     logger.debug "Adapter: Optional query #{params}"
     # Return if Authorization is invalid
     # json_error(400, 'Authorization header not set') unless request.env["HTTP_AUTHORIZATION"]
-    queriables = %w(search id lastName firstName email username first max)
+    queriables = %w(id lastName firstName email username)
 
     logger.debug "Adapter: Optional query #{queriables}"
 
-    params.each { |k, v|
-      unless queriables.include? k
-        json_error(400, 'Bad query')
-      end
-    }
+    if params.length > 1
+      json_error(400, 'Too many arguments')
+    end
 
-    reg_users = JSON.parse(get_users(params))
+    k, v = params.first
+    unless queriables.include? k
+      json_error(400, 'Bad query')
+    end
+    case k
+      when 'id'
+        reg_users = JSON.parse(get_user(params))
+      else
+        reg_users = JSON.parse(get_users(params))
+    end
 
     #reg_users is an array of hashes
     new_reg_users = []
