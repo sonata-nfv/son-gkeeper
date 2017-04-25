@@ -639,8 +639,8 @@ class Keycloak < Sinatra::Application
     end
     form, errors = parse_json(request.body.read)
 
-    # pkey = nil
-    # cert = nil
+    pkey = nil
+    cert = nil
     # Check form keys
     form.each { |att, val|
       if not_updatables.includes? att
@@ -653,13 +653,13 @@ class Keycloak < Sinatra::Application
             pkey = form['attributes']['public-key']
             form['attributes'].delete('public-key')
           rescue
-            pkey = nil
+            # pkey = nil
           end
           begin
             cert = form['attributes']['certificate']
             form['attributes'].delete('certificate')
           rescue
-            cert = nil
+            # cert = nil
           end
         else
       end
@@ -683,22 +683,22 @@ class Keycloak < Sinatra::Application
         halt 204
       end
       case pkey
-        when not nil
+        when nil
+        else
           begin
             user_extra_data.update_attributes(pub_key: pkey)
           rescue Moped::Errors::OperationFailure => e
             json_error(400, e)
           end
-        else
       end
       case cert
-        when not nil
+        when nil
+        else
           begin
             user_extra_data.update_attributes(cert: cert)
           rescue Moped::Errors::OperationFailure => e
             json_error(400, e)
           end
-        else
       end
       logger.debug 'Adapter: leaving PUT /users'
       halt 204
