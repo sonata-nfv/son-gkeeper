@@ -27,6 +27,7 @@
 # encoding: utf-8
 require './models/manager_service.rb'
 require 'base64'
+require 'date'
 
 class UserNotCreatedError < StandardError; end
 class UserNotAuthenticatedError < StandardError; end
@@ -37,9 +38,8 @@ class UserNameAlreadyInUseError < StandardError; end
 class User < ManagerService
 
   LOG_MESSAGE = 'GtkApi::' + self.name
-  USERS_URL = '/users/'
   
-  attr_accessor :uuid, :username, :session, :secret
+  attr_accessor :uuid, :username, :session, :secret, :created_at, :user_type, :email, :last_name, :first_name
   
   # {"username" => "sampleuser", "enabled" => true, "totp" => false, "emailVerified" => false, "firstName" => "User", "lastName" => "Sample", "email" => "user.sample@email.com.br", "credentials" => [ {"type" => "password", "value" => "1234"} ], "requiredActions" => [], "federatedIdentities" => [], "attributes" => {"developer" => ["true"], "customer" => ["false"], "admin" => ["false"]}, "realmRoles" => [], "clientRoles" => {}, "groups" => ["developers"]}
   
@@ -54,11 +54,16 @@ class User < ManagerService
     method = LOG_MESSAGE + "##{__method__}"
     GtkApi.logger.debug(method) {"entered with params #{params}"}
     raise ArgumentError.new('UserManagerService can not be instantiated without a user name') unless (params.key?(:username) && !params[:username].empty?)
-    raise ArgumentError.new('UserManagerService can not be instantiated without a password') unless (params.key?(:password) && !params[:password].empty?)
+    #raise ArgumentError.new('UserManagerService can not be instantiated without a password') unless (params.key?(:password) && !params[:password].empty?)
     @username = params[:username]
-    @secret = Base64.strict_encode64(params[:username]+':'+params[:password])
+    @secret = Base64.strict_encode64(params[:username]+':'+params[:password]) if params[:password]
     @session = nil
     @uuid = params[:uuid]
+    @created_at = params[:created_at]
+    @user_type = params[:user_type]
+    @email = params[:email]
+    @last_name = params[:last_name] if params[:last_name]
+    @first_name = params[:first_name] if params[:first_name]
   end
 
   def self.create(params)
@@ -91,14 +96,9 @@ class User < ManagerService
         GtkApi.logger.debug(method) {"user=#{user}"}
         saved_params[:uuid] = user[:userId] unless user.empty?
         User.new(saved_params)
-        #  (){username: user[:username], password: user[:credentials][0][:value],
-        #  lastName: user[:lastName], firstName: user[:firstName],
-        #  email: user[:email], token: user[:token],
-        #  user_type: user[:attributes].key(['true']) # returns the first one to be true
-        #})
       when 409
         GtkApi.logger.error(method) {"Status #{resp[:status]}"} 
-        User.find_by_name params[:username]
+        raise UserNameAlreadyInUseError.new "User name #{params[:username]} already in use"
       when 403
         GtkApi.logger.error(method) {"Why return 403?!?"} 
         raise UserNameAlreadyInUseError.new "Why return 403?!? with params #{params}"
@@ -153,33 +153,87 @@ class User < ManagerService
   end
   
   def self.find_by_uuid(uuid)
-    method = LOG_MESSAGE + "##{__method__}(#{params})"
-    user = find(url: @@url + USERS_URL + uuid, log_message: LOG_MESSAGE + "##{__method__}(#{uuid})")
-    user ? User.new(user['data']) : nil
+    method = LOG_MESSAGE + "##{__method__}"
+    GtkApi.logger.debug(method) {"entered with uuid #{uuid}"}
+    begin
+      response = getCurb(url:@@url + '/api/v1/users?id=' + uuid, headers: JSON_HEADERS)
+      GtkApi.logger.debug(method) {"Got response: #{response}"}
+      case response[:status]
+      when 200
+        user = response[:items].first
+        unless user.empty?
+          User.new( User.import(user))
+        else
+          raise UserNotFoundError.new "User with uuid #{uuid} was not found"
+        end
+      when 404
+        raise UserNotFoundError.new 'User with uuid '+uuid+' was not found'
+      else
+        raise UserNotFoundError.new 'User with uuid '+uuid+' was not found'
+      end
+    rescue => e
+      GtkApi.logger.error(method) {"Error during processing: #{$!}"}
+      GtkApi.logger.error(method) {"Backtrace:\n\t#{e.backtrace.join("\n\t")}"}
+      nil
+    end
   end
 
   def self.find_by_name(name)
     method = LOG_MESSAGE + "##{__method__}"
     GtkApi.logger.debug(method) {"entered with name #{name}"}
-    #user=find(url: @@url + USERS_URL + name, log_message: LOG_MESSAGE + "##{__method__}(#{name})")
-    #user ? User.new(user['data']) : nil
-    name=='Unknown' ? User.new({username: 'Unknown', password: 'None'}) : nil
-  end
 
+    begin
+      response = getCurb(url:@@url + '/api/v1/users?username=' + name, headers: JSON_HEADERS)
+      GtkApi.logger.debug(method) {"Got response: #{response}"}
+      case response[:status]
+      when 200
+        user = response[:items].first
+        unless users.empty?
+          User.new( User.import(user))
+        else
+          raise UserNotFoundError.new "User with name #{name} was not found"
+        end
+      when 404
+        raise UserNotFoundError.new "User with name #{name} was not found (code 404)"
+      else
+        raise UserNotFoundError.new 'User named '+name+' was not found'
+      end
+    rescue => e
+      GtkApi.logger.error(method) {"Error during processing: #{$!}"}
+      GtkApi.logger.error(method) {"Backtrace:\n\t#{e.backtrace.join("\n\t")}"}
+      nil
+    end
+  end
+  
   def self.find(params)
-    method = LOG_MESSAGE + "##{__method__}(#{params})"
-    params[:username]=='Unknown' && Base64.decode64(params[:secret]).split(':')[1]=='None' ? self.new_user(params) : self.no_users()
-    #users = find(url: @@url + USERS_URL, params: params, log_message: LOG_MESSAGE + "##{__method__}(#{params})")
-    #GtkApi.logger.debug(method) {"users=#{users}"}
-    #case users[:status]
-    #when 200
-    #  {status: 200, count: users[:items][:data][:licences].count, items: users[:items][:data][:licences], message: "OK"}
-    #when 400
-    #when 404
-    #  {status: 200, count: 0, items: [], message: "OK"}
-    #else
-    #  {status: users[:status], count: 0, items: [], message: "Error"}
-    #end
+    method = LOG_MESSAGE + "##{__method__}"
+    GtkApi.logger.debug(method) {"entered with params #{params}"}
+
+    begin
+      response = getCurb(url:@@url + '/api/v1/users', headers: JSON_HEADERS)
+      GtkApi.logger.debug(method) {"Got response: #{response}"}
+      case response[:status]
+      when 200
+        users = response[:items]
+        unless users.empty?
+          retrieved_users = []
+          users.each do |user|
+            retrieved_users << User.new( User.import(user))
+          end
+          retrieved_users
+        else
+          raise UsersNotFoundError.new "Users with params #{params} were not found"
+        end
+      when 404
+        raise UsersNotFoundError.new "Users with params #{params} were not found (code 404)"
+      else 
+        raise UsersNotFoundError.new "Users with params #{params} were not found(code response[:code])"
+      end
+    rescue => e
+      GtkApi.logger.error(method) {"Error during processing: #{$!}"}
+      GtkApi.logger.error(method) {"Backtrace:\n\t#{e.backtrace.join("\n\t")}"}
+      nil
+    end
   end
   
   def self.public_key
@@ -196,14 +250,35 @@ class User < ManagerService
     end
   end
   
-  private 
-  
-  # these are temporary, waiting for the integration with the User Management
-  def self.new_user(params)
-    {status: 200, count: 1, items: [User.new(params)]}
+  def to_h
+    h={}
+    h[:username]= @username
+    h[:uuid]=@uuid
+    h[:created_at]=@created_at
+    h[:user_type]=@user_type
+    h[:email]=@email
+    h[:last_name]=@last_name
+    h[:first_name]=@first_name
+    # :session, :secret
+    h
   end
   
-  def self.no_users()
-    {status: 200, count: 0, items: []}
+  private 
+  
+  def self.import(original_user)
+    # [{"id":"d6ec8201-3a9e-4cd3-a766-1ec93529c9d2","createdTimestamp":1493025941990,"username":"test5","enabled":true,"totp":false,"emailVerified":false,"firstName":"firstName","lastName":"lastName","email":"mail4@mail.com","attributes":{"phone_number":["654654654"],"userType":["customer"]},"disableableCredentialTypes":["password"],"requiredActions":[]}]
+    user = {}
+    user[:uuid] = original_user[:id]
+    if original_user.key? :createdTimestamp
+      seconds = original_user[:createdTimestamp]/1000
+      user[:created_at] = DateTime.strptime(seconds.to_s,'%s')
+    end
+    user[:username] = original_user[:username]
+    user[:email] = original_user[:email]
+    user[:user_type] = original_user[:attributes][:userType].first
+    user[:first_name] = original_user[:firstName] if original_user[:firstName]
+    user[:last_name] = original_user[:lastName] if original_user[:lastName]
+    user[:phone_number] = original_user[:attributes][:phone_number].first if original_user[:attributes][:phone_number]
+    user
   end
 end
