@@ -74,6 +74,10 @@ configure do
       env['rack.logger'] = Logger.new "#{settings.root}/log/#{settings.environment}.log"
     }
 
+    DEFAULT_OFFSET = '0'
+    DEFAULT_LIMIT = '10'
+    DEFAULT_MAX_LIMIT = '100'
+
     #self.get_realm_public_key
     # self.get_oidc_endpoints
     # self.get_adapter_install_json

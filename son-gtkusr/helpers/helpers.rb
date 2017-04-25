@@ -52,15 +52,21 @@ def keyed_hash(hash)
 end
 
 def json_error(code, message)
-  log_file = File.new("#{settings.root}/log/#{settings.environment}.log", 'a+')
-  STDOUT.reopen(log_file)
-  STDOUT.sync = true
-  puts 'CODE', code.to_s
-  puts 'MESSAGE', message.to_s
+  #log_file = File.new("#{settings.root}/log/#{settings.environment}.log", 'a+')
+  #STDOUT.reopen(log_file)
+  #STDOUT.sync = true
+  #puts 'CODE', code.to_s
+  #puts 'MESSAGE', message.to_s
   msg = {'error' => message}
-  logger.error msg.to_s
-  STDOUT.sync = false
+  logger.error(code.to_s, msg.to_s)
+  #STDOUT.sync = false
   halt code, {'Content-type' => 'application/json'}, msg.to_json
+end
+
+def apply_limit_and_offset(input, offset= nil, limit= nil)
+  @result = input
+  @result = offset ? input.drop(offset.to_i) : @result
+  @result = limit ? @result.first(limit.to_i) : @result
 end
 
 
@@ -77,12 +83,12 @@ class Adapter < Sinatra::Application
         {
             'uri' => '/log',
             'method' => 'GET',
-            'purpose' => 'User Management log'
+            'purpose' => 'User Management API log'
         },
         {
             'uri' => '/config',
             'method' => 'GET',
-            'purpose' => 'User Management configuration'
+            'purpose' => 'User Management current configuration'
         },
     ]
   end

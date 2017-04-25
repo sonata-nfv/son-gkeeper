@@ -166,8 +166,8 @@ class Keycloak < Sinatra::Application
     # if form['attributes'].key?('public-key')
     begin
       # pkey = {'public-key'=> form['attributes']['public-key']}
-      pkey = form['attributes']['public-key']
-      form['attributes'].delete('public-key')
+      pkey = form['attributes']['public_key']
+      form['attributes'].delete('public_key')
     # else
     rescue
       pkey = nil
@@ -232,8 +232,8 @@ class Keycloak < Sinatra::Application
       new_user = {}
       new_user['_id'] = user_id
       new_user['username'] = form['username']
-      new_user['pub_key'] = pkey
-      new_user['cert'] = cert
+      new_user['public_key'] = pkey
+      new_user['certificate'] = cert
       user = Sp_user.create!(new_user)
     rescue Moped::Errors::OperationFailure => e
       delete_user(form['username'])
@@ -575,7 +575,7 @@ class Keycloak < Sinatra::Application
     # This endpoint allows queries for the next fields:
     # search, lastName, firstName, email, username, first, max
     logger.debug 'Adapter: entered GET /users'
-    logger.debug "Adapter: Optional query #{params}"
+    logger.debug "Adapter: Query parameters #{params}"
     # Return if Authorization is invalid
     # json_error(400, 'Authorization header not set') unless request.env["HTTP_AUTHORIZATION"]
     queriables = %w(id lastName firstName email username)
@@ -626,6 +626,9 @@ class Keycloak < Sinatra::Application
       new_reg_users << merged_user_data
     end
 
+    params['offset'] ||= DEFAULT_OFFSET
+    params['limit'] ||= DEFAULT_LIMIT
+    new_reg_users = apply_limit_and_offset(new_reg_users, offset=params[:offset], limit=params[:limit])
     halt 200, {'Content-type' => 'application/json'}, new_reg_users.to_json
   end
 
@@ -633,7 +636,7 @@ class Keycloak < Sinatra::Application
     # This endpoint allows queries for the next fields:
     # search, lastName, firstName, email, username, first, max
     logger.debug 'Adapter: entered PUT /users'
-    logger.debug "Adapter: Optional query #{params}"
+    logger.debug "Adapter: query parameters #{params}"
     # Return if Authorization is invalid
     # json_error(400, 'Authorization header not set') unless request.env["HTTP_AUTHORIZATION"]
     queriables = %w(id username)
@@ -646,6 +649,7 @@ class Keycloak < Sinatra::Application
 
     k, v = params.first
     unless queriables.include? k
+      logger.debug 'Adapter: Query includes forbidden parameter'
       json_error(400, 'Bad query')
     end
     form, errors = parse_json(request.body.read)
@@ -661,8 +665,8 @@ class Keycloak < Sinatra::Application
       case att
         when 'attributes'
           begin
-            pkey = form['attributes']['public-key']
-            form['attributes'].delete('public-key')
+            pkey = form['attributes']['public_key']
+            form['attributes'].delete('public_key')
           rescue
             # pkey = nil
           end
@@ -697,7 +701,7 @@ class Keycloak < Sinatra::Application
         when nil
         else
           begin
-            user_extra_data.update_attributes(pub_key: pkey)
+            user_extra_data.update_attributes(public_key: pkey)
           rescue Moped::Errors::OperationFailure => e
             json_error(400, e)
           end
@@ -706,7 +710,7 @@ class Keycloak < Sinatra::Application
         when nil
         else
           begin
-            user_extra_data.update_attributes(cert: cert)
+            user_extra_data.update_attributes(certificate: cert)
           rescue Moped::Errors::OperationFailure => e
             json_error(400, e)
           end
@@ -778,7 +782,19 @@ class Keycloak < Sinatra::Application
       end
     }
     reg_clients = get_clients(params)
+
+    params['offset'] ||= DEFAULT_OFFSET
+    params['limit'] ||= DEFAULT_LIMIT
+    reg_clients = apply_limit_and_offset(reg_clients, offset=params[:offset], limit=params[:limit])
     halt 200, {'Content-type' => 'application/json'}, reg_clients
+  end
+
+  put '/services' do
+
+  end
+
+  delete '/services' do
+
   end
 
   get '/roles' do
@@ -796,7 +812,19 @@ class Keycloak < Sinatra::Application
       end
     }
     code, realm_roles = get_realm_roles(keyed_params)
+
+    params['offset'] ||= DEFAULT_OFFSET
+    params['limit'] ||= DEFAULT_LIMIT
+    realm_roles = apply_limit_and_offset(realm_roles, offset=params[:offset], limit=params[:limit])
     halt code.to_i, {'Content-type' => 'application/json'}, realm_roles
+  end
+
+  put '/roles' do
+
+  end
+
+  delete '/roles' do
+
   end
 
   get '/sessions/users' do
@@ -809,6 +837,9 @@ class Keycloak < Sinatra::Application
     adapter_id = get_client_id('adapter')
     ses_code, ses_msg = get_sessions('user', adapter_id)
 
+    params['offset'] ||= DEFAULT_OFFSET
+    params['limit'] ||= DEFAULT_LIMIT
+    ses_msg = apply_limit_and_offset(ses_msg, offset=params[:offset], limit=params[:limit])
     halt ses_code.to_i, {'Content-type' => 'application/json'}, ses_msg
   end
 
@@ -827,6 +858,9 @@ class Keycloak < Sinatra::Application
       end
       ses_code, ses_msg = get_user_sessions(user_id)
 
+      params['offset'] ||= DEFAULT_OFFSET
+      params['limit'] ||= DEFAULT_LIMIT
+      ses_msg = apply_limit_and_offset(ses_msg, offset=params[:offset], limit=params[:limit])
       halt ses_code.to_i, {'Content-type' => 'application/json'}, ses_msg
     end
     logger.debug 'Adapter: leaving GET /sessions/users/ with no username specified'
@@ -842,6 +876,9 @@ class Keycloak < Sinatra::Application
     # adapter_id = get_adapter_id
     ses_code, ses_msg = get_sessions('service', nil)
 
+    params['offset'] ||= DEFAULT_OFFSET
+    params['limit'] ||= DEFAULT_LIMIT
+    ses_msg = apply_limit_and_offset(ses_msg, offset=params[:offset], limit=params[:limit])
     halt ses_code.to_i, {'Content-type' => 'application/json'}, ses_msg
   end
 
@@ -894,7 +931,7 @@ class Keycloak < Sinatra::Application
         halt 400, {'Content-type' => 'application/json'}, errors.to_json if errors
 
         halt 400 unless form.is_a?(Hash)
-        unless form.key?('public-key')
+        unless form.key?('public_key')
          json_error(400, 'Developer public key not provided')
         end
 
@@ -912,7 +949,7 @@ class Keycloak < Sinatra::Application
 
         # Add new son-package attribute fields
         begin
-          user.update_attributes(pub_key: form['public-key'], cert: form['certificate'])
+          user.update_attributes(public_key: form['public_key'], certificate: form['certificate'])
         rescue Moped::Errors::OperationFailure => e
           json_error(400, 'Update failed')
         end
@@ -968,7 +1005,8 @@ class Keycloak < Sinatra::Application
         form, errors = parse_json(request.body.read)
         halt 400, {'Content-type' => 'application/json'}, errors.to_json if errors
 
-        unless form.key?('public-key')
+        halt 400 unless form.is_a?(Hash)
+        unless form.key?('public_key')
           json_error 400, 'Developer public key not provided'
         end
 
