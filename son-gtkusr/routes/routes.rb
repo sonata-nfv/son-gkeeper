@@ -600,7 +600,7 @@ class Keycloak < Sinatra::Application
       when 'id'
         code, user_data = get_user(v)
         if code.to_i != 200
-          halt 404
+          halt 200, {'Content-type' => 'application/json'}, []
         end
         reg_users = [JSON.parse(user_data)]
         logger.debug "Adapter: get_user value #{reg_users}"
@@ -893,6 +893,7 @@ class Keycloak < Sinatra::Application
         form, errors = parse_json(request.body.read)
         halt 400, {'Content-type' => 'application/json'}, errors.to_json if errors
 
+        halt 400 unless form.is_a?(Hash)
         unless form.key?('public-key')
          json_error(400, 'Developer public key not provided')
         end
