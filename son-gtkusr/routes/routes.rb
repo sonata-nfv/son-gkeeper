@@ -600,7 +600,7 @@ class Keycloak < Sinatra::Application
       when 'id'
         code, user_data = get_user(v)
         if code.to_i != 200
-          halt 200, {'Content-type' => 'application/json'}, []
+          halt 200, {'Content-type' => 'application/json'}, [].to_json
         end
         reg_users = [JSON.parse(user_data)]
         logger.debug "Adapter: get_user value #{reg_users}"
@@ -654,7 +654,7 @@ class Keycloak < Sinatra::Application
     cert = nil
     # Check form keys
     form.each { |att, val|
-      if not_updatables.includes? att
+      if not_updatables.include? att
         json_error(400, 'Bad query')
       end
 
@@ -714,7 +714,7 @@ class Keycloak < Sinatra::Application
       logger.debug 'Adapter: leaving PUT /users'
       halt 204
     end
-    halt code
+    halt code, {'Content-type' => 'application/json'}, msg
   end
 
   delete '/users' do
