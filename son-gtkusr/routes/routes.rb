@@ -142,23 +142,19 @@ class Keycloak < Sinatra::Application
     # Compatibility support for JSON content-type
     # Parses and validates JSON format
     form, errors = parse_json(request.body.read)
-    # TODO: VALIDATE HASH FIELDS
     halt 400, {'Content-type' => 'application/json'}, errors.to_json if errors
     unless form.key?('enabled')
       form = form.merge({'enabled'=> true})
     end
 
-    # if form['attributes'].key?('public-key')
-    begin
-      # pkey = {'public-key'=> form['attributes']['public-key']}
-      pkey = form['attributes']['public_key']
-      form['attributes'].delete('public_key')
-    # else
-    rescue
-      pkey = nil
-    end
+    # pkey and cert will be nil if they does not exist
+    pkey = form['attributes']['public_key']
+    form['attributes'].delete('public_key')
 
-    if pkey
+    cert = form['attributes']['certificate']
+    form['attributes'].delete('certificate')
+
+    if pkey || cert
       if form['attributes']['userType'].is_a?(Array)
         if form['attributes']['userType'].include?('developer')
           # proceed
@@ -175,15 +171,6 @@ class Keycloak < Sinatra::Application
             json_error(400, 'Bad userType! Only developer role support public_key attribute')
         end
       end
-      # if form['attributes'].key?('certificate')
-    end
-    begin
-      # cert = {'certificate'=> form['attributes']['certificate']}
-      cert = form['attributes']['certificate']
-      form['attributes'].delete('certificate')
-        # else
-    rescue
-      cert = nil
     end
 
     logger.info "Registering new user"
@@ -273,7 +260,7 @@ class Keycloak < Sinatra::Application
     end
 
     # TODO: To solve predefined roles dependency, create a new role based on client registration
-
+    # New role should have Client Id (name) of service
     # puts "SETTING CLIENT ROLES"
     client_data, role_data, error_code, error_msg = set_service_roles(parsed_form['clientId'])
     if error_code != nil
@@ -817,15 +804,18 @@ class Keycloak < Sinatra::Application
     logger.debug 'Adapter: entered GET /services'
     # Return if Authorization is invalid
     # json_error(400, 'Authorization header not set') unless request.env["HTTP_AUTHORIZATION"]
-    queriables = %w(name first max)
+    queriables = %w(name id)
 
-    # keyed_params = keyed_hash(params)
-    params.each { |k, v|
-      unless queriables.include? k
-        json_error(400, 'Bad query')
-      end
-    }
-    reg_clients = get_clients(params)
+    if params.length > 1
+      json_error(400, 'Too many arguments')
+    end
+
+    k, v = params.first
+    unless queriables.include? k
+      json_error(400, 'Bad query')
+    end
+
+    reg_clients = get_clients(params.first)
 
     params['offset'] ||= DEFAULT_OFFSET
     params['limit'] ||= DEFAULT_LIMIT
@@ -838,7 +828,38 @@ class Keycloak < Sinatra::Application
   end
 
   delete '/services' do
+    # This endpoint allows queries for the next fields:
+    # name
+    logger.debug 'Adapter: entered DELETE /services'
+    logger.debug "Adapter: required query #{params}"
+    # Return if Authorization is invalid
+    # json_error(400, 'Authorization header not set') unless request.env["HTTP_AUTHORIZATION"]
+    queriables = %w(name id)
 
+    json_error(400, 'Bad query') if params.empty?
+    if params.length > 1
+      json_error(400, 'Too many arguments')
+    end
+
+    k, v = params.first
+    unless queriables.include? k
+      json_error(400, 'Bad query')
+    end
+
+    case k
+      when 'id'
+        delete_client(v)
+        logger.debug 'Adapter: leaving DELETE /services'
+        halt 204
+      when 'username'
+        reg_client, errors = parse_json(get_clients(params))
+        halt 400, {'Content-type' => 'application/json'}, errors.to_json if errors
+        delete_client(reg_client['id'])
+        logger.debug 'Adapter: leaving DELETE /services'
+        halt 204
+      else
+        json_error(400, 'Bad query')
+    end
   end
 
   get '/roles' do

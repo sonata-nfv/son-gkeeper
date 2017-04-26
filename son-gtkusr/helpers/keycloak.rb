@@ -293,8 +293,7 @@ class Keycloak < Sinatra::Application
     # puts "RESPONSE_INTROSPECT", res.read_body
     # puts "CODE_INTROSPECT", res.code
     # RESPONSE_INTROSPECT:
-    # {"jti":"bc1200e5-3b6d-43f2-a125-dc4ed45c7ced","exp":1486105972,"nbf":0,"iat":1486051972,"iss":"http://localhost:8081/auth/realms/master","aud":"adapter","sub":"67cdf213-349b-4539-bdb2-43351bf3f56e","typ":"Bearer","azp":"adapter","auth_time":0,"session_state":"608a2a72-198d-440b-986f-ddf37883c802","name":"","preferred_username":"service-account-adapter","email":"service-account-adapter@placeholder.org","acr":"1","client_session":"2c31bbd9-c13d-43f1-bb30-d9bd46e3c0ab","allowed-origins":[],"realm_access":{"roles":["create-realm","admin","uma_authorization"]},"resource_access":{"adapter":{"roles":["uma_protection"]},"master-realm":{"roles":["view-identity-providers","view-realm","manage-identity-providers","impersonation","create-client","manage-users","view-authorization","manage-events","manage-realm","view-events","view-users","view-clients","manage-authorization","manage-clients"]},"account":{"roles":["manage-account","view-profile"]}},"clientHost":"127.0.0.1","clientId":"adapter","clientAddress":"127.0.0.1","client_id":"adapter","username":"service-account-adapter","active":true}
-    logger.debug "Keycloak: Token validation code: #{res.code.to_s}"
+      logger.debug "Keycloak: Token validation code: #{res.code.to_s}"
     begin
       logger.debug "Keycloak: Token validation content: #{parse_json(res.body).to_s}"
     rescue
@@ -1081,7 +1080,6 @@ class Keycloak < Sinatra::Application
   end
 
   def get_clients(query=nil)
-    # TODO: IT ONLY SUPPORTS QUERIES BY NAME (CLIENTID)
     refresh_adapter # Refresh admin token if expired
     url = URI("http://#{@@address.to_s}:#{@@port.to_s}/#{@@uri.to_s}/admin/realms/#{@@realm_name}/clients")
     http = Net::HTTP.new(url.host, url.port)
@@ -1096,10 +1094,13 @@ class Keycloak < Sinatra::Application
     client_list = parse_json(response.read_body)[0]
     if query['name']
       # puts "NAME PRESENT?", query['name']
-      client_data = client_list.find {|client| client['clientId'] == query['name'] }
-      return client_data.to_json
+      client_data = client_list.find {|client| client['id'] == query['name'] }
+      client_data.to_json
+    elsif query['id']
+      client_data = client_list.find {|client| client['id'] == query['id'] }
+      client_data.to_json
     else
-      response.body
+      response.body.to_json
     end
   end
 
