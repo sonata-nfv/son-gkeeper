@@ -810,12 +810,15 @@ class Keycloak < Sinatra::Application
       json_error(400, 'Too many arguments')
     end
 
-    k, v = params.first
-    unless queriables.include? k
-      json_error(400, 'Bad query')
+    if params.first
+      k, v = params.first
+      # logger.debug "Adapter: k value #{k}"
+      unless queriables.include? k
+        json_error(400, 'Bad query')
+      end
     end
 
-    reg_clients = get_clients(params.first)
+    reg_clients = get_clients(params)
 
     params['offset'] ||= DEFAULT_OFFSET
     params['limit'] ||= DEFAULT_LIMIT
@@ -824,7 +827,7 @@ class Keycloak < Sinatra::Application
   end
 
   put '/services' do
-
+    # TODO: TO BE IMPLEMENTED
   end
 
   delete '/services' do
