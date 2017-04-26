@@ -293,8 +293,7 @@ class Keycloak < Sinatra::Application
     # puts "RESPONSE_INTROSPECT", res.read_body
     # puts "CODE_INTROSPECT", res.code
     # RESPONSE_INTROSPECT:
-    # {"jti":"bc1200e5-3b6d-43f2-a125-dc4ed45c7ced","exp":1486105972,"nbf":0,"iat":1486051972,"iss":"http://localhost:8081/auth/realms/master","aud":"adapter","sub":"67cdf213-349b-4539-bdb2-43351bf3f56e","typ":"Bearer","azp":"adapter","auth_time":0,"session_state":"608a2a72-198d-440b-986f-ddf37883c802","name":"","preferred_username":"service-account-adapter","email":"service-account-adapter@placeholder.org","acr":"1","client_session":"2c31bbd9-c13d-43f1-bb30-d9bd46e3c0ab","allowed-origins":[],"realm_access":{"roles":["create-realm","admin","uma_authorization"]},"resource_access":{"adapter":{"roles":["uma_protection"]},"master-realm":{"roles":["view-identity-providers","view-realm","manage-identity-providers","impersonation","create-client","manage-users","view-authorization","manage-events","manage-realm","view-events","view-users","view-clients","manage-authorization","manage-clients"]},"account":{"roles":["manage-account","view-profile"]}},"clientHost":"127.0.0.1","clientId":"adapter","clientAddress":"127.0.0.1","client_id":"adapter","username":"service-account-adapter","active":true}
-    logger.debug "Keycloak: Token validation code: #{res.code.to_s}"
+      logger.debug "Keycloak: Token validation code: #{res.code.to_s}"
     begin
       logger.debug "Keycloak: Token validation content: #{parse_json(res.body).to_s}"
     rescue
@@ -399,7 +398,7 @@ class Keycloak < Sinatra::Application
     # puts "BODY", response.body
     response_json, code = parse_json(response.read_body)
     if response.code.to_i != 201
-      json_error(response.code.to_i, response.body)
+      halt response.code.to_i, {'Content-type' => 'application/json'}, response.body.to_json
     end
 
     # GET new registered Client Id
@@ -824,8 +823,11 @@ class Keycloak < Sinatra::Application
   def set_service_roles(client_id)
     refresh_adapter
     # Search client ID by cliendID name
+    logger.debug "Keycloak: Getting roles for #{client_id}"
     query = {'name' => client_id}
     client_data, errors = parse_json(get_clients(query))
+    logger.debug "Keycloak: Client data #{client_data}"
+    return nil, nil, 401, 'Service not allowed' if errors
 
     # Get realm-level roles that are available to attach to this client’s scope
     # GET http://localhost:8081/auth/admin/realms/{realm}/clients/{id}/scope-mappings/realm/available
@@ -839,6 +841,7 @@ class Keycloak < Sinatra::Application
     # p "REALM AVAILABLE SCOPE", parse_json(response.body)[0]
 
     # TODO: Rework this process (predefined service roles)
+    logger.debug "Keycloak: Getting roles for #{parse_json(response.body)}"
     role_data = parse_json(response.body)[0].find {|role| role['name'] == query['name'] }
     # p "ROLE DATA", role_data
     unless role_data
@@ -1081,7 +1084,7 @@ class Keycloak < Sinatra::Application
   end
 
   def get_clients(query=nil)
-    # TODO: IT ONLY SUPPORTS QUERIES BY NAME (CLIENTID)
+    logger.debug "Keycloak: getting clients with query #{query}"
     refresh_adapter # Refresh admin token if expired
     url = URI("http://#{@@address.to_s}:#{@@port.to_s}/#{@@uri.to_s}/admin/realms/#{@@realm_name}/clients")
     http = Net::HTTP.new(url.host, url.port)
@@ -1094,10 +1097,18 @@ class Keycloak < Sinatra::Application
     # p "CODE", response.code
     # p "RESPONSE.read_body222", parse_json(response.read_body)[0]
     client_list = parse_json(response.read_body)[0]
+    logger.debug "Keycloak: clients list #{client_list}"
     if query['name']
       # puts "NAME PRESENT?", query['name']
       client_data = client_list.find {|client| client['clientId'] == query['name'] }
-      return client_data.to_json
+      logger.debug "Keycloak: client data #{client_data}"
+      return [].to_json if client_data.nil?
+      client_data.to_json
+    elsif query['id']
+      client_data = client_list.find {|client| client['id'] == query['id'] }
+      logger.debug "Keycloak: client data #{client_data}"
+      return [].to_json if client_data.nil?
+      client_data.to_json
     else
       response.body
     end
@@ -1179,14 +1190,14 @@ class Keycloak < Sinatra::Application
     response.body
   end
 
-  def get_user(keyed_query)
+  def get_user(id_param)
     logger.debug 'Adapter: getting user info'
     refresh_adapter # Refresh admin token if expired
     # puts "KEYED_QUERY", keyed_query
     # Get all users for the realm
     # query = Rack::Utils.build_query(keyed_query)
-    logger.debug "Adapter: User ID query #{keyed_query}"
-    uri = "http://#{@@address.to_s}:#{@@port.to_s}/#{@@uri.to_s}/admin/realms/#{@@realm_name}/users/#{keyed_query}"
+    logger.debug "Adapter: User ID query #{id_param}"
+    uri = "http://#{@@address.to_s}:#{@@port.to_s}/#{@@uri.to_s}/admin/realms/#{@@realm_name}/users/#{id_param}"
     url = URI(uri)
     http = Net::HTTP.new(url.host, url.port)
     request = Net::HTTP::Get.new(url.to_s)

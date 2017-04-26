@@ -138,48 +138,39 @@ class Keycloak < Sinatra::Application
     logger.info "Content-Type is " + request.media_type
     # halt 415 unless (request.content_type == 'application/x-www-form-urlencoded' or request.content_type == 'application/json')
     json_error(415, 'Only Content-type: application/json is supported') unless (request.content_type == 'application/json')
-    # Compatibility support for form-urlencoded content-type
-    # case request.content_type
-      # when 'application/x-www-form-urlencoded'
-        # TODO: VALIDATE HASH OR REMOVE FORM SUPPORT
-        # Validate format
-        # form_encoded, errors = request.body.read
-        # halt 400, errors.to_json if errors
-
-        # p "FORM PARAMS", form_encoded
-        # form = Hash[URI.decode_www_form(form_encoded)]
-        # Validate Hash format
-        # unless form.key?('enabled')
-        #   enable = {'enabled'=> true}
-        #   form.merge(enable)
-        # end
 
     # Compatibility support for JSON content-type
     # Parses and validates JSON format
     form, errors = parse_json(request.body.read)
-    # TODO: VALIDATE HASH FIELDS
     halt 400, {'Content-type' => 'application/json'}, errors.to_json if errors
     unless form.key?('enabled')
       form = form.merge({'enabled'=> true})
     end
 
-    # if form['attributes'].key?('public-key')
-    begin
-      # pkey = {'public-key'=> form['attributes']['public-key']}
-      pkey = form['attributes']['public_key']
-      form['attributes'].delete('public_key')
-    # else
-    rescue
-      pkey = nil
-    end
-    # if form['attributes'].key?('certificate')
-    begin
-      # cert = {'certificate'=> form['attributes']['certificate']}
-      cert = form['attributes']['certificate']
-      form['attributes'].delete('certificate')
-    # else
-    rescue
-      cert = nil
+    # pkey and cert will be nil if they does not exist
+    pkey = form['attributes']['public_key']
+    form['attributes'].delete('public_key')
+
+    cert = form['attributes']['certificate']
+    form['attributes'].delete('certificate')
+
+    if pkey || cert
+      if form['attributes']['userType'].is_a?(Array)
+        if form['attributes']['userType'].include?('developer')
+          # proceed
+        else
+          logger.debug 'Adapter: leaving POST /register/user with userType error'
+          json_error(400, 'Registration failed! Only developer role support public_key attribute')
+        end
+      elsif form['attributes']['userType']
+        case form['attributes']['userType']
+          when 'developer'
+            # proceed
+          else
+            logger.debug 'Adapter: leaving POST /register/user with userType error'
+            json_error(400, 'Bad userType! Only developer role support public_key attribute')
+        end
+      end
     end
 
     logger.info "Registering new user"
@@ -269,8 +260,9 @@ class Keycloak < Sinatra::Application
     end
 
     # TODO: To solve predefined roles dependency, create a new role based on client registration
-
+    # New role should have Client Id (name) of service
     # puts "SETTING CLIENT ROLES"
+
     client_data, role_data, error_code, error_msg = set_service_roles(parsed_form['clientId'])
     if error_code != nil
       delete_client(parsed_form['clientId'])
@@ -682,17 +674,57 @@ class Keycloak < Sinatra::Application
 
     case k
       when 'id'
-        code, msg = update_user(nil, v, form)
+        code, @msg = update_user(nil, v, form)
       when 'username'
-        code, msg = update_user(v, nil, form)
+        code, @msg = update_user(v, nil, form)
       else
         code = 400
         json_error(400, 'Bad query')
     end
 
+    if form['attributes']['userType'].is_a?(Array)
+      if form['attributes']['userType'].include?('developer')
+        # proceed
+      else
+        logger.debug 'Adapter: leaving PUT /users'
+        halt 204
+      end
+    elsif form['attributes']['userType']
+      case form['attributes']['userType']
+        when 'developer'
+          # proceed
+        else
+          logger.debug 'Adapter: leaving PUT /users'
+          halt 204
+      end
+    else
+      # Check userType in user stored data
+      u_code, u_data = get_user(@msg)
+      if u_code.to_i != 200
+        json_error(400, 'Update failed')
+      else
+        if u_data['attributes']['userType'].is_a?(Array)
+          if u_data['attributes']['userType'].include?('developer')
+            # proceed
+          else
+            logger.debug 'Adapter: leaving PUT /users'
+            halt 204
+          end
+        elsif u_data['attributes']['userType']
+          case u_data['attributes']['userType']
+            when 'developer'
+              # proceed
+            else
+              logger.debug 'Adapter: leaving PUT /users'
+              halt 204
+          end
+        end
+      end
+    end
+
     if code.nil?
       begin
-        user_extra_data = Sp_user.find_by({ '_id' => msg })
+        user_extra_data = Sp_user.find_by({ '_id' => @msg })
       rescue Mongoid::Errors::DocumentNotFound => e
         logger.debug 'Adapter: Error caused by DocumentNotFound in user database'
         halt 204
@@ -718,7 +750,7 @@ class Keycloak < Sinatra::Application
       logger.debug 'Adapter: leaving PUT /users'
       halt 204
     end
-    halt code, {'Content-type' => 'application/json'}, msg
+    halt code, {'Content-type' => 'application/json'}, @msg
   end
 
   delete '/users' do
@@ -773,28 +805,76 @@ class Keycloak < Sinatra::Application
     logger.debug 'Adapter: entered GET /services'
     # Return if Authorization is invalid
     # json_error(400, 'Authorization header not set') unless request.env["HTTP_AUTHORIZATION"]
-    queriables = %w(name first max)
+    queriables = %w(name id)
 
-    # keyed_params = keyed_hash(params)
-    params.each { |k, v|
+    if params.length > 1
+      json_error(400, 'Too many arguments')
+    end
+
+    if params.first
+      k, v = params.first
+      # logger.debug "Adapter: k value #{k}"
       unless queriables.include? k
         json_error(400, 'Bad query')
       end
-    }
-    reg_clients = get_clients(params)
+    end
+
+    reg_clients = JSON.parse(get_clients(params))
+    logger.debug "Keycloak: registered clients #{reg_clients}"
+    reg_clients = [reg_clients] unless reg_clients.is_a?(Array)
 
     params['offset'] ||= DEFAULT_OFFSET
     params['limit'] ||= DEFAULT_LIMIT
     reg_clients = apply_limit_and_offset(reg_clients, offset=params[:offset], limit=params[:limit])
-    halt 200, {'Content-type' => 'application/json'}, reg_clients
+    logger.debug 'Adapter: leaving GET /services'
+    halt 200, {'Content-type' => 'application/json'}, reg_clients.to_json
   end
 
   put '/services' do
-
+    # TODO: TO BE IMPLEMENTED
   end
 
   delete '/services' do
+    # This endpoint allows queries for the next fields:
+    # name
+    logger.debug 'Adapter: entered DELETE /services'
+    logger.debug "Adapter: required query #{params}"
+    # Return if Authorization is invalid
+    # json_error(400, 'Authorization header not set') unless request.env["HTTP_AUTHORIZATION"]
+    queriables = %w(name id)
 
+    json_error(400, 'Bad query') if params.empty?
+    if params.length > 1
+      json_error(400, 'Too many arguments')
+    end
+
+    k, v = params.first
+    unless queriables.include? k
+      json_error(400, 'Bad query')
+    end
+
+    case k
+      when 'id'
+        reg_client, errors = parse_json(get_clients(params))
+        halt 400, {'Content-type' => 'application/json'}, errors.to_json if errors
+        if reg_client['clientId'] == 'adapter'
+          halt 400
+        end
+        delete_client(v)
+        logger.debug 'Adapter: leaving DELETE /services'
+        halt 204
+      when 'username'
+        if v == 'adapter'
+          halt 400
+        end
+        reg_client, errors = parse_json(get_clients(params))
+        halt 400, {'Content-type' => 'application/json'}, errors.to_json if errors
+        delete_client(reg_client['id'])
+        logger.debug 'Adapter: leaving DELETE /services'
+        halt 204
+      else
+        json_error(400, 'Bad query')
+    end
   end
 
   get '/roles' do
