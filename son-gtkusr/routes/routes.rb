@@ -262,6 +262,7 @@ class Keycloak < Sinatra::Application
     # TODO: To solve predefined roles dependency, create a new role based on client registration
     # New role should have Client Id (name) of service
     # puts "SETTING CLIENT ROLES"
+
     client_data, role_data, error_code, error_msg = set_service_roles(parsed_form['clientId'])
     if error_code != nil
       delete_client(parsed_form['clientId'])

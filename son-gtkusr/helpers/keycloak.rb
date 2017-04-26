@@ -823,8 +823,11 @@ class Keycloak < Sinatra::Application
   def set_service_roles(client_id)
     refresh_adapter
     # Search client ID by cliendID name
+    logger.debug "Keycloak: Getting roles for #{client_id}"
     query = {'name' => client_id}
     client_data, errors = parse_json(get_clients(query))
+    logger.debug "Keycloak: Client data #{client_data}"
+    return nil, nil, 401, 'Service not allowed' if errors
 
     # Get realm-level roles that are available to attach to this client’s scope
     # GET http://localhost:8081/auth/admin/realms/{realm}/clients/{id}/scope-mappings/realm/available
@@ -838,6 +841,7 @@ class Keycloak < Sinatra::Application
     # p "REALM AVAILABLE SCOPE", parse_json(response.body)[0]
 
     # TODO: Rework this process (predefined service roles)
+    logger.debug "Keycloak: Getting roles for #{parse_json(response.body)}"
     role_data = parse_json(response.body)[0].find {|role| role['name'] == query['name'] }
     # p "ROLE DATA", role_data
     unless role_data
