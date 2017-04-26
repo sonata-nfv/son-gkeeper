@@ -398,7 +398,7 @@ class Keycloak < Sinatra::Application
     # puts "BODY", response.body
     response_json, code = parse_json(response.read_body)
     if response.code.to_i != 201
-      json_error(response.code.to_i, response.body)
+      halt response.code.to_i, {'Content-type' => 'application/json'}, response.body.to_json
     end
 
     # GET new registered Client Id
@@ -1098,7 +1098,7 @@ class Keycloak < Sinatra::Application
     client_list = parse_json(response.read_body)[0]
     if query['name']
       # puts "NAME PRESENT?", query['name']
-      client_data = client_list.find {|client| client['id'] == query['name'] }
+      client_data = client_list.find {|client| client['clientId'] == query['name'] }
       client_data.to_json
     elsif query['id']
       client_data = client_list.find {|client| client['id'] == query['id'] }
