@@ -1104,7 +1104,7 @@ class Keycloak < Sinatra::Application
       client_data = client_list.find {|client| client['id'] == query['id'] }
       client_data.to_json
     else
-      response.body.to_json
+      response.body
     end
   end
 

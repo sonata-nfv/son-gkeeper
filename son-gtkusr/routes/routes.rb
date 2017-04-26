@@ -819,12 +819,13 @@ class Keycloak < Sinatra::Application
       end
     end
 
-    reg_clients = get_clients(params)
+    reg_clients = JSON.parse(get_clients(params))
 
     params['offset'] ||= DEFAULT_OFFSET
     params['limit'] ||= DEFAULT_LIMIT
     reg_clients = apply_limit_and_offset(reg_clients, offset=params[:offset], limit=params[:limit])
-    halt 200, {'Content-type' => 'application/json'}, reg_clients
+    logger.debug 'Adapter: leaving GET /services'
+    halt 200, {'Content-type' => 'application/json'}, reg_clients.to_json
   end
 
   put '/services' do
