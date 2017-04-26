@@ -820,6 +820,7 @@ class Keycloak < Sinatra::Application
     end
 
     reg_clients = JSON.parse(get_clients(params))
+    logger.debug "Keycloak: registered clients #{reg_clients}"
 
     params['offset'] ||= DEFAULT_OFFSET
     params['limit'] ||= DEFAULT_LIMIT

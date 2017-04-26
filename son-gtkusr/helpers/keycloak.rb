@@ -1084,6 +1084,7 @@ class Keycloak < Sinatra::Application
   end
 
   def get_clients(query=nil)
+    logger.debug "Keycloak: getting clients with query #{query}"
     refresh_adapter # Refresh admin token if expired
     url = URI("http://#{@@address.to_s}:#{@@port.to_s}/#{@@uri.to_s}/admin/realms/#{@@realm_name}/clients")
     http = Net::HTTP.new(url.host, url.port)
@@ -1096,12 +1097,15 @@ class Keycloak < Sinatra::Application
     # p "CODE", response.code
     # p "RESPONSE.read_body222", parse_json(response.read_body)[0]
     client_list = parse_json(response.read_body)[0]
+    logger.debug "Keycloak: clients list #{client_list}"
     if query['name']
       # puts "NAME PRESENT?", query['name']
       client_data = client_list.find {|client| client['clientId'] == query['name'] }
+      logger.debug "Keycloak: client data #{client_data}"
       client_data.to_json
     elsif query['id']
       client_data = client_list.find {|client| client['id'] == query['id'] }
+      logger.debug "Keycloak: client data #{client_data}"
       client_data.to_json
     else
       response.body
