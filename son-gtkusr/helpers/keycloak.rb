@@ -1102,10 +1102,12 @@ class Keycloak < Sinatra::Application
       # puts "NAME PRESENT?", query['name']
       client_data = client_list.find {|client| client['clientId'] == query['name'] }
       logger.debug "Keycloak: client data #{client_data}"
+      return [].to_json if client_data.nil?
       client_data.to_json
     elsif query['id']
       client_data = client_list.find {|client| client['id'] == query['id'] }
       logger.debug "Keycloak: client data #{client_data}"
+      return [].to_json if client_data.nil?
       client_data.to_json
     else
       response.body
