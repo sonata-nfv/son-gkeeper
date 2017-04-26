@@ -1179,14 +1179,14 @@ class Keycloak < Sinatra::Application
     response.body
   end
 
-  def get_user(keyed_query)
+  def get_user(id_param)
     logger.debug 'Adapter: getting user info'
     refresh_adapter # Refresh admin token if expired
     # puts "KEYED_QUERY", keyed_query
     # Get all users for the realm
     # query = Rack::Utils.build_query(keyed_query)
-    logger.debug "Adapter: User ID query #{keyed_query}"
-    uri = "http://#{@@address.to_s}:#{@@port.to_s}/#{@@uri.to_s}/admin/realms/#{@@realm_name}/users/#{keyed_query}"
+    logger.debug "Adapter: User ID query #{id_param}"
+    uri = "http://#{@@address.to_s}:#{@@port.to_s}/#{@@uri.to_s}/admin/realms/#{@@realm_name}/users/#{id_param}"
     url = URI(uri)
     http = Net::HTTP.new(url.host, url.port)
     request = Net::HTTP::Get.new(url.to_s)

@@ -138,21 +138,6 @@ class Keycloak < Sinatra::Application
     logger.info "Content-Type is " + request.media_type
     # halt 415 unless (request.content_type == 'application/x-www-form-urlencoded' or request.content_type == 'application/json')
     json_error(415, 'Only Content-type: application/json is supported') unless (request.content_type == 'application/json')
-    # Compatibility support for form-urlencoded content-type
-    # case request.content_type
-      # when 'application/x-www-form-urlencoded'
-        # TODO: VALIDATE HASH OR REMOVE FORM SUPPORT
-        # Validate format
-        # form_encoded, errors = request.body.read
-        # halt 400, errors.to_json if errors
-
-        # p "FORM PARAMS", form_encoded
-        # form = Hash[URI.decode_www_form(form_encoded)]
-        # Validate Hash format
-        # unless form.key?('enabled')
-        #   enable = {'enabled'=> true}
-        #   form.merge(enable)
-        # end
 
     # Compatibility support for JSON content-type
     # Parses and validates JSON format
@@ -172,12 +157,31 @@ class Keycloak < Sinatra::Application
     rescue
       pkey = nil
     end
-    # if form['attributes'].key?('certificate')
+
+    if pkey
+      if form['attributes']['userType'].is_a?(Array)
+        if form['attributes']['userType'].include?('developer')
+          # proceed
+        else
+          logger.debug 'Adapter: leaving POST /register/user with userType error'
+          json_error(400, 'Registration failed! Only developer role support public_key attribute')
+        end
+      elsif form['attributes']['userType']
+        case form['attributes']['userType']
+          when 'developer'
+            # proceed
+          else
+            logger.debug 'Adapter: leaving POST /register/user with userType error'
+            json_error(400, 'Bad userType! Only developer role support public_key attribute')
+        end
+      end
+      # if form['attributes'].key?('certificate')
+    end
     begin
       # cert = {'certificate'=> form['attributes']['certificate']}
       cert = form['attributes']['certificate']
       form['attributes'].delete('certificate')
-    # else
+        # else
     rescue
       cert = nil
     end
@@ -682,17 +686,57 @@ class Keycloak < Sinatra::Application
 
     case k
       when 'id'
-        code, msg = update_user(nil, v, form)
+        code, @msg = update_user(nil, v, form)
       when 'username'
-        code, msg = update_user(v, nil, form)
+        code, @msg = update_user(v, nil, form)
       else
         code = 400
         json_error(400, 'Bad query')
     end
 
+    if form['attributes']['userType'].is_a?(Array)
+      if form['attributes']['userType'].include?('developer')
+        # proceed
+      else
+        logger.debug 'Adapter: leaving PUT /users'
+        halt 204
+      end
+    elsif form['attributes']['userType']
+      case form['attributes']['userType']
+        when 'developer'
+          # proceed
+        else
+          logger.debug 'Adapter: leaving PUT /users'
+          halt 204
+      end
+    else
+      # Check userType in user stored data
+      u_code, u_data = get_user(@msg)
+      if u_code.to_i != 200
+        json_error(400, 'Update failed')
+      else
+        if u_data['attributes']['userType'].is_a?(Array)
+          if u_data['attributes']['userType'].include?('developer')
+            # proceed
+          else
+            logger.debug 'Adapter: leaving PUT /users'
+            halt 204
+          end
+        elsif u_data['attributes']['userType']
+          case u_data['attributes']['userType']
+            when 'developer'
+              # proceed
+            else
+              logger.debug 'Adapter: leaving PUT /users'
+              halt 204
+          end
+        end
+      end
+    end
+
     if code.nil?
       begin
-        user_extra_data = Sp_user.find_by({ '_id' => msg })
+        user_extra_data = Sp_user.find_by({ '_id' => @msg })
       rescue Mongoid::Errors::DocumentNotFound => e
         logger.debug 'Adapter: Error caused by DocumentNotFound in user database'
         halt 204
@@ -718,7 +762,7 @@ class Keycloak < Sinatra::Application
       logger.debug 'Adapter: leaving PUT /users'
       halt 204
     end
-    halt code, {'Content-type' => 'application/json'}, msg
+    halt code, {'Content-type' => 'application/json'}, @msg
   end
 
   delete '/users' do
