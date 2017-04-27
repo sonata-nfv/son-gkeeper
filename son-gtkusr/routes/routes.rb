@@ -856,6 +856,7 @@ class Keycloak < Sinatra::Application
     case k
       when 'id'
         reg_client, errors = parse_json(get_clients(params))
+        logger.debug "Keycloak: delete request for client #{reg_client}"
         halt 400, {'Content-type' => 'application/json'}, errors.to_json if errors
         if reg_client['clientId'] == 'adapter'
           halt 400
@@ -863,7 +864,8 @@ class Keycloak < Sinatra::Application
         delete_client(v)
         logger.debug 'Adapter: leaving DELETE /services'
         halt 204
-      when 'username'
+      when 'name'
+        logger.debug "Keycloak: delete request for client #{v}"
         if v == 'adapter'
           halt 400
         end
