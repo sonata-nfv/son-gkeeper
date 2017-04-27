@@ -842,6 +842,7 @@ class Keycloak < Sinatra::Application
     # Return if Authorization is invalid
     # json_error(400, 'Authorization header not set') unless request.env["HTTP_AUTHORIZATION"]
     queriables = %w(name id)
+    protected_services = %w(account adapter admin-cli broker realm-management security-admin-console)
 
     json_error(400, 'Bad query') if params.empty?
     if params.length > 1
@@ -856,18 +857,18 @@ class Keycloak < Sinatra::Application
     case k
       when 'id'
         reg_client, errors = parse_json(get_clients(params))
+        logger.debug "Keycloak: delete request for client #{reg_client}"
         halt 400, {'Content-type' => 'application/json'}, errors.to_json if errors
-        if reg_client['clientId'] == 'adapter'
-          halt 400
-        end
+        halt 400 if reg_client.empty?
+        halt 400 if protected_services.include?(reg_client['clientId'])
         delete_client(v)
         logger.debug 'Adapter: leaving DELETE /services'
         halt 204
-      when 'username'
-        if v == 'adapter'
-          halt 400
-        end
+      when 'name'
+        logger.debug "Keycloak: delete request for client #{v}"
+        halt 400 if protected_services.include?(v)
         reg_client, errors = parse_json(get_clients(params))
+        halt 400 if reg_client.empty?
         halt 400, {'Content-type' => 'application/json'}, errors.to_json if errors
         delete_client(reg_client['id'])
         logger.debug 'Adapter: leaving DELETE /services'
