@@ -45,6 +45,11 @@ RSpec.describe GtkApi, type: :controller do
       uuid: SecureRandom.uuid
     }}
     let(:user_with_no_name) {user_basic_info.merge({username: "", email: "un@known.com", password: "1234", user_type: "developer"})}
+
+    before(:each) do
+      allow(User).to receive(:counter_kpi)
+    end
+    
     it 'without user name given returns Unprocessable Entity (400)' do
       post '/api/v2/users/', user_with_no_name.to_json
       expect(last_response.status).to eq(400)
