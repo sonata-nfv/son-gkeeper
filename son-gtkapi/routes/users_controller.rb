@@ -41,6 +41,7 @@ class GtkApi < Sinatra::Base
     
     # POST new users
     post '/?' do
+      began_at = Time.now.utc
       log_message = 'GtkApi::POST /api/v2/users/?'
       params = JSON.parse(request.body.read, symbolize_names: true)
       
@@ -48,19 +49,34 @@ class GtkApi < Sinatra::Base
       
       # {"username" => "sampleuser", "firstName" => "User", "lastName" => "Sample", "email" => "user.sample@email.com.br", "password" => "1234", "user_type" => "developer"|"customer"|"admin"}
       
-      json_error(400, 'User name is missing', log_message) unless valid_param?(params: params, sym: :username)
-      json_error(400, 'User password is missing', log_message) unless valid_param?(params: params, sym: :password)
-      json_error(400, 'User email is missing', log_message) unless valid_param?(params: params, sym: :email)
-      json_error(400, 'User type is missing', log_message) unless valid_param?(params: params, sym: :user_type)
+      unless valid_param?(params: params, sym: :username)
+        count_user_registrations(labels: {result: "bad request", uuid: '', elapsed_time: (Time.now.utc-began_at).to_s})
+        json_error(400, 'User name is missing', log_message)
+      end
+      unless valid_param?(params: params, sym: :password)
+        count_user_registrations(labels: {result: "bad request", uuid: '', elapsed_time: (Time.now.utc-began_at).to_s})
+        json_error(400, 'User password is missing', log_message)
+      end
+      unless valid_param?(params: params, sym: :email)
+        count_user_registrations(labels: {result: "bad request", uuid: '', elapsed_time: (Time.now.utc-began_at).to_s})
+        json_error(400, 'User email is missing', log_message)
+      end
+      unless valid_param?(params: params, sym: :user_type)
+        count_user_registrations(labels: {result: "bad request", uuid: '', elapsed_time: (Time.now.utc-began_at).to_s})
+        json_error(400, 'User type is missing', log_message)
+      end
     
       begin
         user = User.create(params)
+        count_user_registrations(labels: {result: "ok", uuid: user.uuid, elapsed_time: (Time.now.utc-began_at).to_s})
         logger.info(log_message) {"leaving with user name #{user.username}"}
         headers 'Location'=> User.class_variable_get(:@@url)+"/api/v2/users/#{user.uuid}", 'Content-Type'=> 'application/json'
         halt 201, { username: user.username, uuid: user.uuid}.to_json
       rescue UserNameAlreadyInUseError
+        count_user_registrations(labels: {result: "duplicate", uuid: '', elapsed_time: (Time.now.utc-began_at).to_s})
         json_error 409, "User name #{params[:username]} already in use", log_message
       rescue UserNotCreatedError
+        count_user_registrations(labels: {result: "bad request", uuid: '', elapsed_time: (Time.now.utc-began_at).to_s})
         json_error 400, "Error creating user #{params}", log_message
       end
     end
@@ -147,4 +163,11 @@ class GtkApi < Sinatra::Base
     logger.debug(log_message) {"params=#{params}, sym=#{sym}"}
     params.key?(sym) && !params[sym].empty?
   end
+  
+  def count_user_registrations(labels:)
+    name = __method__.to_s.split('_')[1..-1].join('_')
+    desc = "how many users have been regiestered"
+    User.counter_kpi({name: name, docstring: desc, base_labels: labels.merge({method: 'POST', module: 'users'})})
+  end
+  
 end

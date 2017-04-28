@@ -188,7 +188,7 @@ class GtkApi < Sinatra::Base
   def count_package_on_boardings(labels:)
     name = __method__.to_s.split('_')[1..-1].join('_')
     desc = "how many packages have been on-boarded"
-    PackageManagerService.counter_kpi({name: name, docstring: desc, base_labels: labels.merge({method: 'GET', module: 'packages'})})
+    PackageManagerService.counter_kpi({name: name, docstring: desc, base_labels: labels.merge({method: 'POST', module: 'packages'})})
   end
   def count_package_downloads(labels:)
     name = __method__.to_s.split('_')[1..-1].join('_')
