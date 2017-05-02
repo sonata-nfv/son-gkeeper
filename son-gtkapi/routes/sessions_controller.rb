@@ -57,6 +57,7 @@ class GtkApi < Sinatra::Base
       begin
         session = User.authenticated?(Base64.strict_encode64(params[:username]+':'+params[:password]))
         logger.debug(log_message) {"leaving with session #{session}"}
+        content_type :json
           #halt 200, {userid: user.uuid, username: user.username, session_started_at: user.session[:began_at]}.to_json
         halt 200, {username: params[:username], session_began_at: session[:began_at], token: session[:token]}.to_json
       rescue UserNotAuthenticatedError
