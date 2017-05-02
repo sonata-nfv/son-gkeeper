@@ -107,6 +107,7 @@ class GtkApi < Sinatra::Base
         halt 200, returned_users.to_json
       rescue UsersNotFoundError
         logger.debug(log_message) {"Users not found"}
+        content_type :json
         halt 200, '[]'
       end
     end
@@ -166,7 +167,7 @@ class GtkApi < Sinatra::Base
   
   def count_user_registrations(labels:)
     name = __method__.to_s.split('_')[1..-1].join('_')
-    desc = "how many users have been regiestered"
+    desc = "how many users have been registered"
     User.counter_kpi({name: name, docstring: desc, base_labels: labels.merge({method: 'POST', module: 'users'})})
   end
   
