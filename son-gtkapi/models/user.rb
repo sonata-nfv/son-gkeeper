@@ -111,14 +111,20 @@ class User < ManagerService
 
   def self.authenticated?(secret)
     method = LOG_MESSAGE + "##{__method__}"
+    raise ArgumentError.new 'Authentication needs the user secret' if (secret.nil? || secret.empty?)
+    
     GtkApi.logger.debug(method) {"entered with secret=#{secret}"}
     headers = {'Content-type'=>'application/json', 'Accept'=> 'application/json', 'Authorization'=>'Basic '+secret}
     begin
       resp = postCurb(url: @@url+'/api/v1/login/user', body: {}, headers: headers)
-      if resp[:status] == 200
+      case resp[:status]
+      when 200
         token = resp[:items]
         GtkApi.logger.debug(method) {"token=#{token}"}
         {began_at: Time.now.utc, token: token}
+      when 401
+        GtkApi.logger.error(method) {"Status 401"} 
+        raise UserNotAuthenticatedError.new "User not authenticated with params #{secret}"
       else
         GtkApi.logger.error(method) {"Status #{resp[:status]}"} 
         raise UserNotAuthenticatedError.new "User not authenticated with params #{secret}"
@@ -218,12 +224,12 @@ class User < ManagerService
           end
           retrieved_users
         else
-          raise UsersNotFoundError.new "Users with params #{params} were not found"
+          raise UsersNotFoundError.new "No users with params #{params} were found"
         end
       when 404
         raise UsersNotFoundError.new "Users with params #{params} were not found (code 404)"
       else 
-        raise UsersNotFoundError.new "Users with params #{params} were not found(code response[:code])"
+        raise UsersNotFoundError.new "Users with params #{params} were not found(code #{response[:code]})"
       end
     rescue => e
       GtkApi.logger.error(method) {"Error during processing: #{$!}"}
