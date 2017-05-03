@@ -111,6 +111,8 @@ class Keycloak < Sinatra::Application
         f.puts parsed_res['access_token']
       end
       parsed_res['access_token']
+    else
+      halt res.code.to_i, {'Content-type' => 'application/json'}, res.body
     end
   end
 
@@ -193,12 +195,18 @@ class Keycloak < Sinatra::Application
     http = Net::HTTP.new(url.host, url.port)
     request = Net::HTTP::Get.new(url.to_s)
 
-    response = http.request(request)
-    parsed_response, code = parse_json(response.body)
-    # puts response.read_body # <-- save endpoints file
-    File.open('config/keycloak.yml', 'a') do |f|
-      f.puts "\n"
-      f.puts "realm_public_key: #{parsed_response['public_key']}"
+    begin
+      response = http.request(request)
+      parsed_response, code = parse_json(response.body)
+      # puts response.read_body # <-- save endpoints file
+      File.open('config/keycloak.yml', 'a') do |f|
+        f.puts "\n"
+        f.puts "realm_public_key: #{parsed_response['public_key']}"
+      end
+    rescue Errno::ECONNREFUSED
+      # logger.info 'Retrieving Keycloak Public Key failed!'
+       msg = {'ERROR' => 'Connection refused'}
+      halt 400, {'Content-type' => 'application/json'}, msg.to_json
     end
   end
 

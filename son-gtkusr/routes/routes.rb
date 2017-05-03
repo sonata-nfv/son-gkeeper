@@ -80,6 +80,8 @@ end
 
 # Adapter-Keycloak API class
 class Keycloak < Sinatra::Application
+
+  @@access_token = nil
   
   post '/config' do
     logger.debug 'Adapter: entered POST /config'
@@ -108,6 +110,7 @@ class Keycloak < Sinatra::Application
     get_adapter_install_json
     @@access_token = self.get_adapter_token
     logger.debug 'Adapter: exit POST /config with secret and access_token configured'
+    logger.info 'User Management is configured and ready'
     halt 200
   end
 
@@ -287,11 +290,15 @@ class Keycloak < Sinatra::Application
     #p "@client_secret", self.client_secret
     pass = request.env["HTTP_AUTHORIZATION"].split(' ').last
     plain_pass  = Base64.decode64(pass)
+    #logger.debug "Adapter: ENCODING #{plain_pass.enconding}"
+
+    # plain_pass = plain_pass.to_s.force_encoding('UTF-8')
 
     # puts  "PLAIN", plain_user_pass.split(':').first
     # puts  "PLAIN", plain_user_pass.split(':').last
     username = plain_pass.split(':').first # params[:username]
     password = plain_pass.split(':').last # params[:password]
+
     logger.info "User #{username} has accessed to log-in"
 
     credentials = {"type" => "password", "value" => password.to_s}
@@ -896,8 +903,8 @@ class Keycloak < Sinatra::Application
 
     params['offset'] ||= DEFAULT_OFFSET
     params['limit'] ||= DEFAULT_LIMIT
-    realm_roles = apply_limit_and_offset(realm_roles, offset=params[:offset], limit=params[:limit])
-    halt code.to_i, {'Content-type' => 'application/json'}, realm_roles
+    realm_roles = apply_limit_and_offset(JSON.parse(realm_roles), offset=params[:offset], limit=params[:limit])
+    halt code.to_i, {'Content-type' => 'application/json'}, realm_roles.to_json
   end
 
   put '/roles' do
@@ -920,8 +927,8 @@ class Keycloak < Sinatra::Application
 
     params['offset'] ||= DEFAULT_OFFSET
     params['limit'] ||= DEFAULT_LIMIT
-    ses_msg = apply_limit_and_offset(ses_msg, offset=params[:offset], limit=params[:limit])
-    halt ses_code.to_i, {'Content-type' => 'application/json'}, ses_msg
+    ses_msg = apply_limit_and_offset(JSON.parse(ses_msg), offset=params[:offset], limit=params[:limit])
+    halt ses_code.to_i, {'Content-type' => 'application/json'}, ses_msg.to_json
   end
 
   get '/sessions/users/:username/?' do
@@ -941,8 +948,8 @@ class Keycloak < Sinatra::Application
 
       params['offset'] ||= DEFAULT_OFFSET
       params['limit'] ||= DEFAULT_LIMIT
-      ses_msg = apply_limit_and_offset(ses_msg, offset=params[:offset], limit=params[:limit])
-      halt ses_code.to_i, {'Content-type' => 'application/json'}, ses_msg
+      ses_msg = apply_limit_and_offset(JSON.parse(ses_msg), offset=params[:offset], limit=params[:limit])
+      halt ses_code.to_i, {'Content-type' => 'application/json'}, ses_msg.to_json
     end
     logger.debug 'Adapter: leaving GET /sessions/users/ with no username specified'
     json_error 400, 'No username specified'
@@ -959,8 +966,8 @@ class Keycloak < Sinatra::Application
 
     params['offset'] ||= DEFAULT_OFFSET
     params['limit'] ||= DEFAULT_LIMIT
-    ses_msg = apply_limit_and_offset(ses_msg, offset=params[:offset], limit=params[:limit])
-    halt ses_code.to_i, {'Content-type' => 'application/json'}, ses_msg
+    ses_msg = apply_limit_and_offset(JSON.parse(ses_msg), offset=params[:offset], limit=params[:limit])
+    halt ses_code.to_i, {'Content-type' => 'application/json'}, ses_msg.to_json
   end
 
   get '/sessions/services/:clientId/?' do
