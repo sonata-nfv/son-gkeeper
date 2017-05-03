@@ -55,6 +55,7 @@ class GtkApi < Sinatra::Base
       when 200
         logger.debug(log_message) {"leaving with #{records}"}
         links = build_pagination_headers(url: request_url, limit: @limit.to_i, offset: @offset.to_i, total: records[:count])
+        content_type :json
         headers 'Link' => links
         halt 200, records[:items].to_json
       else
@@ -74,6 +75,7 @@ class GtkApi < Sinatra::Base
         case record[:status]
         when 200
           logger.debug(log_message) {"leaving with #{record}"}
+          content_type :json
           halt 200, record[:items].to_json
         else
           logger.debug(log_message) {"No #{params[:kind]} record with uuid #{params[:uuid]} found"}

@@ -72,16 +72,15 @@ class User < ManagerService
 
     saved_params = params.dup
     
+    params[:firstName] = params.delete(:first_name) if params[:first_name]
+    params[:lastName] = params.delete(:last_name) if params[:last_name]
+    
     # Transform password
-    password = params.delete(:password)
-    params[:credentials] = [{type: 'password', value: password}]
+    params[:credentials] = [{type: 'password', value: params.delete(:password)}]
     
     # Transform user type
-    user_type = params.delete(:user_type)
-    GtkApi.logger.debug(method) {"user type is #{user_type}"}
     params[:attributes] = {}
-    # :attributes=>{:userType=>["developer"]}
-    params[:attributes][:userType] = [user_type]
+    params[:attributes][:userType] = [params.delete(:user_type)]
     params[:attributes][:phone_number] = [params.delete(:phone_number)] if params[:phone_number]
     params[:attributes][:certificate] = [params.delete(:certificate)] if params[:certificate]
     params[:attributes][:public_key] = [params.delete(:public_key)] if params[:public_key]
@@ -92,16 +91,13 @@ class User < ManagerService
       case resp[:status]
       when 200..202
         user = resp[:items]
-        raise UserNotCreatedError.new "User not created with params #{params}" unless user.key? :uuid
+        raise UserNotCreatedError.new "User not created with params #{params}" unless user.key? :userId
         GtkApi.logger.debug(method) {"user=#{user}"}
         saved_params[:uuid] = user[:userId] unless user.empty?
         User.new(saved_params)
       when 409
-        GtkApi.logger.error(method) {"Status #{resp[:status]}"} 
+        GtkApi.logger.error(method) {"Status 409"} 
         raise UserNameAlreadyInUseError.new "User name #{params[:username]} already in use"
-      when 403
-        GtkApi.logger.error(method) {"Why return 403?!?"} 
-        raise UserNameAlreadyInUseError.new "Why return 403?!? with params #{params}"
       else
         GtkApi.logger.error(method) {"Status #{resp[:status]}"} 
         raise UserNotCreatedError.new "User not created with params #{params}"
@@ -115,14 +111,20 @@ class User < ManagerService
 
   def self.authenticated?(secret)
     method = LOG_MESSAGE + "##{__method__}"
+    raise ArgumentError.new 'Authentication needs the user secret' if (secret.nil? || secret.empty?)
+    
     GtkApi.logger.debug(method) {"entered with secret=#{secret}"}
     headers = {'Content-type'=>'application/json', 'Accept'=> 'application/json', 'Authorization'=>'Basic '+secret}
     begin
       resp = postCurb(url: @@url+'/api/v1/login/user', body: {}, headers: headers)
-      if resp[:status] == 200
+      case resp[:status]
+      when 200
         token = resp[:items]
         GtkApi.logger.debug(method) {"token=#{token}"}
         {began_at: Time.now.utc, token: token}
+      when 401
+        GtkApi.logger.error(method) {"Status 401"} 
+        raise UserNotAuthenticatedError.new "User not authenticated with params #{secret}"
       else
         GtkApi.logger.error(method) {"Status #{resp[:status]}"} 
         raise UserNotAuthenticatedError.new "User not authenticated with params #{secret}"
@@ -222,12 +224,12 @@ class User < ManagerService
           end
           retrieved_users
         else
-          raise UsersNotFoundError.new "Users with params #{params} were not found"
+          raise UsersNotFoundError.new "No users with params #{params} were found"
         end
       when 404
         raise UsersNotFoundError.new "Users with params #{params} were not found (code 404)"
       else 
-        raise UsersNotFoundError.new "Users with params #{params} were not found(code response[:code])"
+        raise UsersNotFoundError.new "Users with params #{params} were not found(code #{response[:code]})"
       end
     rescue => e
       GtkApi.logger.error(method) {"Error during processing: #{$!}"}

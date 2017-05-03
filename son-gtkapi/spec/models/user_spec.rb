@@ -38,18 +38,16 @@ RSpec.describe User, type: :model do
   let(:users_url) { User.class_variable_get(:@@url)+'/api/v1/register/user' }
   let(:login_url) { User.class_variable_get(:@@url)+'/api/v1/login/user' }
   let(:to_be_created_user) {{
-    firstName: "Un", lastName: "Known", username: "Unknown", email: "un@known.com", 
-    password: "1234",
-    user_type: "developer"
+    username: "Unknown", email: "un@known.com", first_name: "Un", last_name: "Known", 
+    password: "1234", user_type: "developer"
   }}
   let(:user_info) {{
-    firstName: "Un", lastName: "Known", username: "Unknown", email: "un@known.com", 
-    credentials: [{type: "password", value: "1234"}],
-    attributes: {userType:["developer"]}
+    username: "Unknown", email: "un@known.com", firstName: "Un", lastName: "Known", 
+    credentials: [{type: "password", value: "1234"}], attributes: {userType:["developer"]}
   }}
   let(:created_user) {{
-    uuid: SecureRandom.uuid,
-    username: "Unknown"
+    username: "Unknown",
+    userId: SecureRandom.uuid
   }}
   let(:token) {{token: 'abc'}}
   let(:secret) {Base64.strict_encode64(to_be_created_user[:username]+':'+to_be_created_user[:password])}
