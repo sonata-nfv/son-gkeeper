@@ -69,17 +69,29 @@ class GtkApi < Sinatra::Base
     end
 
     # AKA logout
-    delete '/sessions/:user_name/?' do
+    delete '/sessions/?' do
       log_message = 'GtkApi::DELETE /sessions/?'
-      logger.debug(log_message) {'entered with user_name='+params[:user_name]}      
-      json_error(400, 'Unprocessable entity: missing user name', log_message) if (params[:user_name].nil? || params[:user_name].empty?)
-      user = User.find_by_name(params[:user_name])
-      if user
-        logger.debug(log_message) {"user=#{user.inspect}"}
-        session_duration = user.logout!
-        halt 200, "{'session_lasted_for':'"+session_duration.to_s+"'}"
-      else
-        json_error 404, 'User '+params[:user_name]+' not found', log_message
+
+      json_error(400, 'Unprocessable entity: missing authorization header', log_message) if (request.env['HTTP_AUTHORIZATION'].nil? || request.env['HTTP_AUTHORIZATION'].empty?)
+      logger.debug(log_message) {"entered with request.env['HTTP_AUTHORIZATION']="+request.env['HTTP_AUTHORIZATION']}
+
+      authorization=request.env['HTTP_AUTHORIZATION']
+      logger.debug(log_message) {'authorization='+authorization}
+
+      bearer_token = authorization.split(' ')
+      json_error(400, 'Unprocessable entity: authorization header must be "Bearer <token>"', log_message) unless (bearer_token.size == 2 && bearer_token[0].downcase == 'bearer')
+      
+      begin
+        User.logout! bearer_token[1]
+        logger.debug(log_message) {"User successfuly logged out"}
+        content_type :json
+        halt 204
+      rescue ArgumentError
+        json_error 400, 'Unprocessable entity: problem with token', log_message
+      rescue UserTokenNotActiveError
+        json_error 401, 'Unauthorized: user token not active', log_message
+      rescue UserNotLoggedOutError
+        json_error 400, 'Unprocessable entity: problem logging out user', log_message
       end
     end
   end
