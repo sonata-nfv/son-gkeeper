@@ -97,22 +97,26 @@ class Keycloak < Sinatra::Application
   end
 
   def Keycloak.get_adapter_token
-    url = URI("http://#{@@address.to_s}:#{@@port.to_s}/#{@@uri.to_s}/realms/#{@@realm_name}/protocol/openid-connect/token")
-    res = Net::HTTP.post_form(url, 'client_id' => @@client_name, 'client_secret' => @@client_secret,
-                              'username' => "admin",
-                              'password' => "admin",
-                              'grant_type' => "client_credentials")
+    begin
+      url = URI("http://#{@@address.to_s}:#{@@port.to_s}/#{@@uri.to_s}/realms/#{@@realm_name}/protocol/openid-connect/token")
+      res = Net::HTTP.post_form(url, 'client_id' => @@client_name, 'client_secret' => @@client_secret,
+                                'username' => "admin",
+                                'password' => "admin",
+                                'grant_type' => "client_credentials")
 
-    parsed_res, errors = parse_json(res.body)
+      parsed_res, errors = parse_json(res.body)
 
-    if parsed_res['access_token']
-      # puts "ACCESS_TOKEN RECEIVED", parsed_res['access_token']
-      File.open('config/token.json', 'w') do |f|
-        f.puts parsed_res['access_token']
+      if parsed_res['access_token']
+        # puts "ACCESS_TOKEN RECEIVED", parsed_res['access_token']
+        File.open('config/token.json', 'w') do |f|
+          f.puts parsed_res['access_token']
+        end
+        return parsed_res['access_token']
+      else
+        halt res.code.to_i, {'Content-type' => 'application/json'}, res.body
       end
-      parsed_res['access_token']
-    else
-      halt res.code.to_i, {'Content-type' => 'application/json'}, res.body
+    rescue
+      halt 503
     end
   end
 
@@ -738,14 +742,13 @@ class Keycloak < Sinatra::Application
         when 'OK'
           # puts "OK"
           logger.debug 'Adapter: Adapter token is active'
-          # @@access_token = Keycloak.get_adapter_token
-          return
+          return 200, @@access_token
         else
           # => Then GET new token
           logger.debug 'Adapter: Refreshing Adapter token'
           @@access_token = Keycloak.get_adapter_token
           logger.debug "New Access Token saved #{@@access_token}"
-          return @@access_token
+          return 200, @@access_token
       end
     end
     logger.debug 'Adapter: Adapter token not found'

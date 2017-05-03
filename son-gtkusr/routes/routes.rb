@@ -130,9 +130,10 @@ class Keycloak < Sinatra::Application
   get '/refresh' do
     # This endpoint forces the Adapter to resfresh the token
     logger.debug 'Adapter: entered GET /refresh'
-    access_token = refresh_adapter
+    code, access_token = refresh_adapter
     # access_token = Keycloak.get_adapter_token
     logger.debug "Adapter: exit from GET /refresh with token #{access_token}"
+    halt code.to_i
   end
 
   post '/register/user' do
