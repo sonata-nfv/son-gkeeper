@@ -23,6 +23,16 @@ function create_realm() {
 	return $ret
 }
 
+# Param: $1 = realm name
+function update_realm() {
+    $KCADMIN_SCRIPT update -r $1 -s accessTokenLifespan=600 -i > /dev/null
+	ret=$?
+	if [ $ret -eq 0 ]; then
+        	echo "Updated realm [$1] token lifespan"
+	fi
+	return $ret
+}
+
 # Params: $1 = realm, $2 = client name, $3 = redirect URI
 function create_client() {
 	cid=$($KCADMIN_SCRIPT create clients -r $1 -s clientId=$2 -s "redirectUris=[\"$3\"]" -s serviceAccountsEnabled=true -s authorizationServicesEnabled=true -s directAccessGrantsEnabled=true -i)
