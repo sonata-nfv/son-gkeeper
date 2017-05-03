@@ -34,6 +34,8 @@ class UserNotAuthenticatedError < StandardError; end
 class UserNotFoundError < StandardError; end
 class UsersNotFoundError < StandardError; end
 class UserNameAlreadyInUseError < StandardError; end
+class UserNotLoggedOutError < StandardError; end
+class UserTokenNotActiveError < StandardError; end
 
 class User < ManagerService
 
@@ -136,10 +138,24 @@ class User < ManagerService
     end
   end
 
-  def logout!
-    session_lasted_for = Time.now.utc - @session[:began_at]
-    @user_session = nil
-    session_lasted_for
+  def self.logout!(token)
+    method = LOG_MESSAGE + "##{__method__}"
+    raise ArgumentError.new 'Logging out requires the login token' if (token.nil? || token.empty?)
+    GtkApi.logger.debug(method) {"entered"}
+    headers = {'Content-type'=>'application/json', 'Accept'=> 'application/json', 'Authorization'=>'Bearer '+token}
+
+    resp = postCurb(url: @@url+'/api/v1/logout', body: {}, headers: headers)
+    case resp[:status]
+    when 204
+      GtkApi.logger.debug(method) {"User logged out"}
+      {lasted_for: Time.now.utc}
+    when 401
+      GtkApi.logger.error(method) {"Status 401: token not active"} 
+      raise UserTokenNotActiveError.new "User token was not active"
+    else
+      GtkApi.logger.error(method) {"Status #{resp[:status]}"} 
+      raise UserNotLoggedOutError.new "User not logged out with the given token"
+    end
   end
   
   def self.authorized?(params)
@@ -216,16 +232,12 @@ class User < ManagerService
       GtkApi.logger.debug(method) {"Got response: #{response}"}
       case response[:status]
       when 200
-        users = response[:items]
-        unless users.empty?
-          retrieved_users = []
-          users.each do |user|
-            retrieved_users << User.new( User.import(user))
-          end
-          retrieved_users
-        else
-          raise UsersNotFoundError.new "No users with params #{params} were found"
+        raise UsersNotFoundError.new "No users with params #{params} were found" if response[:items].empty?
+        retrieved_users = []
+        response[:items].each do |user|
+          retrieved_users << User.new( User.import(user))
         end
+        retrieved_users
       when 404
         raise UsersNotFoundError.new "Users with params #{params} were not found (code 404)"
       else 
