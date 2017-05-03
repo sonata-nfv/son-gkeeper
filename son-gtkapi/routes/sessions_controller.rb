@@ -33,6 +33,15 @@ class GtkApi < Sinatra::Base
   helpers GtkApiHelper
   
   namespace '/api/v2' do
+    before do
+      if request.request_method == 'OPTIONS'
+        response.headers['Access-Control-Allow-Origin'] = '*'
+        response.headers['Access-Control-Allow-Methods'] = 'POST,DELETE'      
+        response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Access-Control-Allow-Headers, Authorization, X-Requested-With'
+        halt 200
+      end
+    end
+    
     # AKA login
     post '/sessions/?' do
       log_message = 'GtkApi::POST /sessions/?'
