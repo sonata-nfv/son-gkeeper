@@ -113,10 +113,10 @@ class Keycloak < Sinatra::Application
         end
         return parsed_res['access_token']
       else
-        halt res.code.to_i, {'Content-type' => 'application/json'}, res.body
+        return res.code.to_i
       end
     rescue
-      halt 503
+      return 503
     end
   end
 
@@ -209,8 +209,6 @@ class Keycloak < Sinatra::Application
       end
     rescue Errno::ECONNREFUSED
       # logger.info 'Retrieving Keycloak Public Key failed!'
-       msg = {'ERROR' => 'Connection refused'}
-      halt 400, {'Content-type' => 'application/json'}, msg.to_json
     end
   end
 
@@ -247,6 +245,9 @@ class Keycloak < Sinatra::Application
       Keycloak.get_realm_public_key
       keycloak_yml = YAML.load_file('config/keycloak.yml')
       # puts "KEYCLOAK PUBLIC KEY IS", keycloak_yml['realm_public_key']
+    end
+    unless keycloak_yml['realm_public_key']
+      return nil
     end
     @s = "-----BEGIN PUBLIC KEY-----\n"
     @s += keycloak_yml['realm_public_key'].scan(/.{1,64}/).join("\n")
@@ -739,14 +740,18 @@ class Keycloak < Sinatra::Application
       #=> Check if token.expired?
       code = is_expired?
       case code
-        when 'OK'
+        when 200
           # puts "OK"
           logger.debug 'Adapter: Adapter token is active'
           return 200, @@access_token
         else
           # => Then GET new token
           logger.debug 'Adapter: Refreshing Adapter token'
-          @@access_token = Keycloak.get_adapter_token
+          result = Keycloak.get_adapter_token
+          if result.is_a?(Integer)
+            halt result
+          end
+          @@access_token = result
           logger.debug "New Access Token saved #{@@access_token}"
           return 200, @@access_token
       end
@@ -1327,7 +1332,7 @@ class Keycloak < Sinatra::Application
       # puts "DECODED_HEADER: ", decoded_header
       logger.debug 'Adapter: Access Token decoded successfully'
       # puts "DECODED_PAYLOAD: ", decoded_payload
-      response = 'OK'
+      response = 200
     # if expired token, refresh adapter token
     rescue JWT::DecodeError
       logger.debug 'Adapter: Decoding Access Token DecodeError'
@@ -1342,6 +1347,7 @@ class Keycloak < Sinatra::Application
       logger.debug 'Adapter: Decoding Access Token InvalidIatError'
       response = 'InvalidIatError'
     end
+    response
   end
 
   def process_request(uri, method)
