@@ -32,7 +32,7 @@ class GtkApi < Sinatra::Base
   register Sinatra::Namespace
   helpers GtkApiHelper
   
-  namespace '/api/v2' do
+  namespace '/api/v2/sessions' do
     before do
       if request.request_method == 'OPTIONS'
         response.headers['Access-Control-Allow-Origin'] = '*'
@@ -43,7 +43,7 @@ class GtkApi < Sinatra::Base
     end
     
     # AKA login
-    post '/sessions/?' do
+    post '/?' do
       log_message = 'GtkApi::POST /sessions/?'
       body = request.body.read
       logger.debug(log_message) {"body=#{body}"}      
@@ -78,7 +78,7 @@ class GtkApi < Sinatra::Base
     end
 
     # AKA logout
-    delete '/sessions/?' do
+    delete '/?' do
       log_message = 'GtkApi::DELETE /sessions/?'
 
       json_error(400, 'Unprocessable entity: missing authorization header', log_message) if (request.env['HTTP_AUTHORIZATION'].nil? || request.env['HTTP_AUTHORIZATION'].empty?)
