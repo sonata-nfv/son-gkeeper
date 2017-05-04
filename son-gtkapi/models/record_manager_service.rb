@@ -56,7 +56,7 @@ class RecordManagerService < ManagerService
     find(url: @@url + '/' + kind + '/' + uuid, log_message: LOG_MESSAGE + "##{__method__}(#{uuid})") #+ '/records/' 
   end
   
-  def find_records_by_function_uuid(uuid)
+  def self.find_records_by_function_uuid(uuid)
     method = LOG_MESSAGE + "##{__method__}"
     GtkApi.logger.debug(method) {"entered with uuid=#{uuid}"}
     find(url: @@url + '/functions?function_uuid=' + uuid, log_message: LOG_MESSAGE + "##{__method__}(#{uuid})") #+ '/records/' 
