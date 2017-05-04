@@ -29,19 +29,16 @@ require 'sinatra/namespace'
 class GtkApi < Sinatra::Base
   
   register Sinatra::Namespace
-  namespace '/api/v2' do
-    #options '/' do
-    before do
-      if request.request_method == 'OPTIONS'
-        response.headers['Access-Control-Allow-Origin'] = '*'
-        response.headers['Access-Control-Allow-Methods'] = 'POST,PUT'      
-        response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Access-Control-Allow-Headers, Authorization, X-Requested-With'
-        halt 200
-      end
+  namespace '/api/v2/licences' do
+    options '/?' do
+      response.headers['Access-Control-Allow-Origin'] = '*'
+      response.headers['Access-Control-Allow-Methods'] = 'POST,PUT'      
+      response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Access-Control-Allow-Headers, Authorization, X-Requested-With'
+      halt 200
     end
 
     # GET many licences
-    get '/licences/?' do
+    get '/?' do
       # TODO
       log_message = 'GtkApi::GET /api/v2/licences/?'
     
@@ -68,7 +65,7 @@ class GtkApi < Sinatra::Base
     end
 
     # GET a specific licence
-    get '/licences/:uuid/?' do
+    get '/:uuid/?' do
       log_message = MODULE+' GET /api/v2/licences/:uuid'
       logger.debug(log_message) {"entered with #{params[:uuid]}"}
     
@@ -88,7 +85,7 @@ class GtkApi < Sinatra::Base
       end
     end
     
-    post '/licences/?' do
+    post '/?' do
       log_message = 'GtkApi::POST /licences/?'
       body = request.body.read
       
