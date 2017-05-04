@@ -45,13 +45,13 @@ class GtkApi < Sinatra::Base
       MESSAGE = "GtkApi::GET /api/v2/kpis"+query_string
       
       logger.info(MESSAGE) {"entered"}
-      resp = KpiManagerService.get_metric(params)
+      resp = KpiManagerService.find(params)
       case resp[:status]
       when 200
+        logger.debug(MESSAGE) {"leaving with #{resp[:data].count} items"}
         halt 200, resp[:data].to_json        
       else
-        logger.info(MESSAGE) { "leaving GET with 'No get kpis request were created'"}
-        json_error 400, 'No get list of kpis request was created'
+        json_error 400, 'No list of KPIs was returned', MESSAGE
       end      
     end
 

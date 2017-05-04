@@ -66,12 +66,12 @@ class KpiManagerService < ManagerService
 
     # POST .../api/v1/prometheus/metrics/data with body {"name":"user_registrations","start": "2017-05-03T11:41:22Z", "end": "2017-05-03T11:51:11Z", "step": "10s", "labels":[]}    
     begin
-      response = postCurb(url: @@url+'/kpis', params: params)      
+      response = getCurb(url: @@url+'/kpis', params: params)      
       case response[:status]
       when 200
-        { status: response[:status], data: JSON.parse(response[:items].to_json, :symbolize_names => true) }
+        { status: response[:status], data: response[:items] }
       else
-        { status: response[:status], data: {}, message: 'Metric does not retrieved'}
+        { status: response[:status], data: {}, message: 'Metric were not retrieved'}
       end   
     rescue => e
       GtkApi.logger.error(method) {"Error during processing: #{$!}"}
