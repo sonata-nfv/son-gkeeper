@@ -19,6 +19,7 @@ gem 'sinatra-logger', '0.1.1'
 gem 'sinatra-active-model-serializers', '0.2.2'
 gem 'bunny', '2.5.1'
 gem 'pg', '0.18.4'
+gem 'curb', '0.9.3'
 
 gemspec
 

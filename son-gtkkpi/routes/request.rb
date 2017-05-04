@@ -146,6 +146,44 @@ class GtkKpi < Sinatra::Base
   end
 
   get '/kpis/?' do
+    log_message = 'GtkKpi::GET /kpis/?'
+    logger.debug(log_message) {"entered with params=#{params}"}
+    
+    json_error(400, 'The KPI name must be given', log_message) if (params[:name].nil? || params[:name].empty?)
+    json_error(400, 'The KPI start date must be given', log_message) if (params[:start].nil? || params[:start].empty?)
+    json_error(400, 'The KPI end date must be given', log_message) if (params[:end].nil? || params[:end].empty?)
+    json_error(400, 'The KPI step must be given', log_message) if (params[:step].nil? || params[:step].empty?)
+    
+    # POST .../api/v1/prometheus/metrics/data with body {"name":"user_registrations","start": "2017-05-03T11:41:22Z", "end": "2017-05-03T11:51:11Z", "step": "10s", "labels":[]}
+    url = 'http://'+settings.pushgateway_host+':'+settings.pushgateway_port.to_s
+    body = {"name": params[:name],"start": params[:start], "end": params[:end], "step": params[:step], "labels":[]}
+    # 200 with metrics
+    # 400 Bad request when json data have syntax error
+    # 415 on missinh header
+    begin
+      resp = PushGateway.postCurb( url+'/api/v1/prometheus/metrics/data', body)
+      case resp[:status]
+      when 200
+        GtkApi.logger.debug(log_message) {"#{resp[:items].count} metrics were received"}
+        resp[:items].to_json
+      when 400
+        GtkApi.logger.debug(log_message) {'415 (Unsupported Media Type) returned from the PushGateway'}
+        json_error(415, 'Error collecting the KPIs', log_message)
+      when 415
+        GtkApi.logger.debug(log_message) {'415 (Unsupported Media Type) returned from the PushGateway'}
+        json_error(415, 'Error collecting the KPIs', log_message)
+      else
+        GtkApi.logger.error(method) {"Status #{resp[:status]} returned from the PushGateway"} 
+        raise UserNotCreatedError.new "User not created with params #{params}"
+      end
+    rescue Exception => e
+      logger.debug(e.message)
+      logger.debug(e.backtrace.inspect)
+      json_error(400, 'Error collecting the KPIs', log_message)
+    end
+  end
+  
+  get '/original-kpis/?' do
     pushgateway_query = 'http://'+settings.pushgateway_host+':'+settings.pushgateway_port.to_s    
     begin
       if params.empty?
