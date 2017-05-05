@@ -60,26 +60,26 @@ class GtkApi < Sinatra::Base
         halt 201, '' #micro_service.client_id
       rescue MicroServiceNotCreatedError => e 
         json_error 400, "Error creating micro-service #{params}", log_message
+      rescue MicroServiceAlreadyCreatedError => e
+        json_error 409, "Micro-service #{params} was already created", log_message
       end
     end
 
     # GET .../api/v2/micro-services: To get the token (both login and refresh), providing Authorization header: 'basic <clientId:secret>
     get '/?' do
       log_message = 'GtkApi:: GET /api/v2/micro-services'
-      if env['HTTP_AUTHORIZATION']
-        logger.debug(log_message) {'authorization='+env['HTTP_AUTHORIZATION']}
-        credentials = basic_authentication env['HTTP_AUTHORIZATION']
-        unless credentials.empty?
-          begin
-            micro_service = MicroService.find_by_credentials(credentials)
-            logger.debug(log_message) {"Found micro-service #{micro_service}"}
-            headers content_type: :json
-            halt 200, micro_service.to_json(only: [:token])
-          rescue MicroServiceNotFoundError => e
-            json_error 400, 'No micro-service with basic authentication '+credentials+' was found', log_message
-          end
-        else
-          json_error 400, 'Micro-service basic authentication is needed', log_message
+      if request.env['HTTP_AUTHORIZATION']
+        logger.debug(log_message) {'authorization='+request.env['HTTP_AUTHORIZATION']}
+        credentials = basic_authentication request.env['HTTP_AUTHORIZATION']
+        json_error(400, 'Micro-service basic authentication is needed', log_message) if credentials.empty?
+
+        begin
+          micro_service = MicroService.find_by_credentials(Base64.strict_encode64(credentials))
+          logger.debug(log_message) {"Found micro-service #{micro_service}"}
+          headers content_type: :json
+          halt 200, micro_service.to_json(only: [:token])
+        rescue MicroServiceNotFoundError => e
+          json_error 400, 'No micro-service with basic authentication '+credentials+' was found', log_message
         end
       else
         # If here, it's the common 'index' action
