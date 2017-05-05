@@ -275,7 +275,7 @@ class Keycloak < Sinatra::Application
     client_data, role_data, error_code, error_msg = set_service_roles(parsed_form['clientId'])
     if error_code != nil
       delete_client(parsed_form['clientId'])
-      halt error_code, {'Content-type' => 'application/json'}, error_msg
+      halt error_code, {'Content-type' => 'application/json'}, error_msg.to_json
     end
     # puts "SETTING SERVICE ACCOUNT ROLES"
     code, error_msg = set_service_account_roles(client_data['id'], role_data)

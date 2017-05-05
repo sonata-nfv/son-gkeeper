@@ -858,9 +858,9 @@ class Keycloak < Sinatra::Application
     logger.debug "Keycloak: Available roles: #{parse_json(response.body)}"
     role_data = parse_json(response.body)[0].find {|role| role['name'] == query['name']}
     # p "ROLE DATA", role_data
-    logger.debug "Keycloak: Client role data is: #{parse_json(response.body)}"
+    logger.debug "Keycloak: Client role data is: #{role_data}"
     unless role_data
-      return nil, nil, 401, 'Service not allowed'
+      return nil, nil, 401, {'Error'=> 'Service not allowed'}
     end
 
     # Add a set of realm-level roles to the client’s scope
@@ -932,7 +932,7 @@ class Keycloak < Sinatra::Application
     if response.code.to_i == 204
       return response.code.to_i, nil
     else
-      return response.code.to_i, response.body.to_s
+      return response.code.to_i, response.body
     end
   end
 
