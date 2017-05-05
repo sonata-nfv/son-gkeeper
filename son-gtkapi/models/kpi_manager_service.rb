@@ -59,13 +59,34 @@ class KpiManagerService < ManagerService
     end      
   end
 
+  def self.find(params)
+    method = LOG_MESSAGE + "##{__method__}"
+    GtkApi.logger.debug(method) {"entered with params=#{params}"}
+    GtkApi.logger.debug(method) {"url = "+@@url}
+
+    # POST .../api/v1/prometheus/metrics/data with body {"name":"user_registrations","start": "2017-05-03T11:41:22Z", "end": "2017-05-03T11:51:11Z", "step": "10s", "labels":[]}    
+    begin
+      response = getCurb(url: @@url+'/kpis', params: params)      
+      case response[:status]
+      when 200
+        { status: response[:status], data: response[:items] }
+      else
+        { status: response[:status], data: {}, message: 'Metric were not retrieved'}
+      end   
+    rescue => e
+      GtkApi.logger.error(method) {"Error during processing: #{$!}"}
+      GtkApi.logger.error(method) {"Backtrace:\n\t#{e.backtrace.join("\n\t")}"}
+      { status: 500, message: e.backtrace.join("\n\t")}
+    end      
+  end
+
   def self.get_metric(params)
     method = LOG_MESSAGE + "##{__method__}(#{params})"
     GtkApi.logger.debug(method) {"entered"}
     
     begin
       GtkApi.logger.debug(method) {"url = "+@@url}
-      response = getCurb(url: @@url+'/kpis', params: params, headers:JSON_HEADERS)      
+      response = getCurb(url: @@url+'/original-kpis', params: params, headers:JSON_HEADERS)      
       case response[:status]
       when 200
         { status: response[:status], data: JSON.parse(response[:items].to_json, :symbolize_names => true) }

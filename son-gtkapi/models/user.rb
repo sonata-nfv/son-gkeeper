@@ -232,6 +232,7 @@ class User < ManagerService
       GtkApi.logger.debug(method) {"Got response: #{response}"}
       case response[:status]
       when 200
+        GtkApi.logger.debug(method) {'response[:items].empty? '+(response[:items].empty? ? 'yes' : 'no')}
         raise UsersNotFoundError.new "No users with params #{params} were found" if response[:items].empty?
         retrieved_users = []
         response[:items].each do |user|
@@ -243,10 +244,10 @@ class User < ManagerService
       else 
         raise UsersNotFoundError.new "Users with params #{params} were not found(code #{response[:code]})"
       end
-    rescue => e
+    rescue StandardError => e
       GtkApi.logger.error(method) {"Error during processing: #{$!}"}
       GtkApi.logger.error(method) {"Backtrace:\n\t#{e.backtrace.join("\n\t")}"}
-      nil
+      []
     end
   end
   
