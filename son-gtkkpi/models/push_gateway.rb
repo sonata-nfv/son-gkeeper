@@ -28,36 +28,46 @@
 class PushGateway
   def self.postCurb(url:, body:, headers: {})
     log_message="PushGateway##{__method__}"
-    GtkApi.logger.debug(log_message) {"entered with url=#{url}, body=#{body} headers=#{headers}"}
+    GtkKpi.logger.debug(log_message) {"entered with url=#{url}, body=#{body} headers=#{headers}"}
     res=Curl.post(url, body.to_json) do |req|
       if headers.empty?
         req.headers['Content-type'] = req.headers['Accept'] = 'application/json'
       else
         headers.each do |h|
-          GtkApi.logger.debug(log_message) {"header[#{h[0]}]: #{h[1]}"}
+          GtkKpi.logger.debug(log_message) {"header[#{h[0]}]: #{h[1]}"}
           req.headers[h[0]] = h[1]
         end
       end
     end
-    GtkApi.logger.debug(log_message) {"response body=#{res.body}"}
+    GtkKpi.logger.debug(log_message) {"response body=#{res.body}"}
     status = status_from_response_headers(res.header_str)
     case status
     when 200..202
       begin
         parsed_response = JSON.parse(res.body, symbolize_names: true)
-        GtkApi.logger.debug(log_message) {"status #{status}, parsed_response=#{parsed_response}"}
+        GtkKpi.logger.debug(log_message) {"status #{status}, parsed_response=#{parsed_response}"}
         {status: status, count: 1, items: parsed_response, message: "OK"}
       rescue => e
-        GtkApi.logger.error(log_message) {"Error during processing: #{$!}"} 
-        GtkApi.logger.error(log_message) {"Backtrace:\n\t#{e.backtrace.join("\n\t")}"}
+        GtkKpi.logger.error(log_message) {"Error during processing: #{$!}"} 
+        GtkKpi.logger.error(log_message) {"Backtrace:\n\t#{e.backtrace.join("\n\t")}"}
         {status: nil, count: nil, items: nil, message: "Error processing #{$!}: \n\t#{e.backtrace.join("\n\t")}"}
       end
     when 400..499
-      GtkApi.logger.error(log_message) {"Status #{status}"} 
+      GtkKpi.logger.error(log_message) {"Status #{status}"} 
       {status: status, count: nil, items: nil, message: "Status #{status}: could not process"}
     else
-      GtkApi.logger.error(log_message) {"Status #{status}"} 
+      GtkKpi.logger.error(log_message) {"Status #{status}"} 
       {status: status, count: nil, items: nil, message: "Status #{status} unknown"}
     end
   end
+  
+  private
+  
+  def self.status_from_response_headers(header_str)
+    # From http://stackoverflow.com/questions/14345805/get-response-headers-from-curb
+    #http_response # => "HTTP/1.1 200 OK"
+    http_status = header_str.split(/[\r\n]+/).map(&:strip)[0].split(" ")
+    http_status[1].to_i
+  end
+  
 end

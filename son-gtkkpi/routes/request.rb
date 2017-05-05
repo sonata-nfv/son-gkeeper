@@ -161,7 +161,7 @@ class GtkKpi < Sinatra::Base
     # 400 Bad request when json data have syntax error
     # 415 on missinh header
     begin
-      resp = PushGateway.postCurb( url+'/api/v1/prometheus/metrics/data', body)
+      resp = PushGateway.postCurb( url: url+'/api/v1/prometheus/metrics/data', body: body)
       case resp[:status]
       when 200
         GtkApi.logger.debug(log_message) {"#{resp[:items].count} metrics were received"}
