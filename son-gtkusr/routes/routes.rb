@@ -152,29 +152,34 @@ class Keycloak < Sinatra::Application
     end
 
     # pkey and cert will be nil if they does not exist
-    pkey = form['attributes']['public_key']
-    form['attributes'].delete('public_key')
+    begin
+      pkey = form['attributes']['public_key']
+      form['attributes'].delete('public_key')
 
-    cert = form['attributes']['certificate']
-    form['attributes'].delete('certificate')
+      cert = form['attributes']['certificate']
+      form['attributes'].delete('certificate')
 
-    if pkey || cert
-      if form['attributes']['userType'].is_a?(Array)
-        if form['attributes']['userType'].include?('developer')
-          # proceed
-        else
-          logger.debug 'Adapter: leaving POST /register/user with userType error'
-          json_error(400, 'Registration failed! Only developer role support public_key attribute')
-        end
-      elsif form['attributes']['userType']
-        case form['attributes']['userType']
-          when 'developer'
+      if pkey || cert
+        if form['attributes']['userType'].is_a?(Array)
+          if form['attributes']['userType'].include?('developer')
             # proceed
           else
             logger.debug 'Adapter: leaving POST /register/user with userType error'
-            json_error(400, 'Bad userType! Only developer role support public_key attribute')
+            json_error(400, 'Registration failed! Only developer role support public_key attribute')
+          end
+        elsif form['attributes']['userType']
+          case form['attributes']['userType']
+            when 'developer'
+              # proceed
+            else
+              logger.debug 'Adapter: leaving POST /register/user with userType error'
+              json_error(400, 'Bad userType! Only developer role support public_key attribute')
+          end
         end
       end
+    rescue
+      logger.error 'Adapter: Failed to read registration JSON object'
+      halt json_error(400, 'Bad registration form')
     end
 
     logger.info "Registering new user"
@@ -246,7 +251,7 @@ class Keycloak < Sinatra::Application
     logger.debug 'Adapter: entered POST /register/service'
     # Return if content-type is not valid
     logger.info "Content-Type is " + request.media_type
-    halt 415 unless (request.content_type == 'application/x-www-form-urlencoded' or request.content_type == 'application/json')
+    halt 415 unless request.content_type == 'application/json'
 
     # TODO: Do some validations to the serviceForm
     # Compatibility support for JSON content-type
@@ -982,7 +987,7 @@ class Keycloak < Sinatra::Application
       logger.debug "Adapter: entered PUT /signatures/#{params[:username]}"
 
       # Return if Authorization is invalid
-      # json_error(400, 'Authorization header not set') unless request.env["HTTP_AUTHORIZATION"]
+      json_error(400, 'Authorization header not set') unless request.env["HTTP_AUTHORIZATION"]
       user_token = request.env["HTTP_AUTHORIZATION"].split(' ').last
       unless user_token
         json_error(400, 'Access token is not provided')
