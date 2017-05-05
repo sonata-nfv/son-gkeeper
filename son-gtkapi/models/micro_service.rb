@@ -61,23 +61,35 @@ class MicroService < ManagerService
   def self.create(params)
     method = LOG_MESSAGE + "##{__method__}"
     GtkApi.logger.debug(method) {"entered with #{params}"}
-
-    body = params.merge({clientAuthenticatorType: "client-secret", directAccessGrantsEnabled: true, serviceAccountsEnabled: true})
+ 
+    body = params.dup
+    body[:clientAuthenticatorType]="client-secret"
+    body[:directAccessGrantsEnabled]=true
+    body[:serviceAccountsEnabled]=true
+    body[:enabled]=true
+    body[:bearerOnly]=false
+    body[:consentRequired]=false
+    body[:standardFlowEnabled]=true
+    body[:implicitFlowEnabled]=false 
+    body[:publicClient]=false
+    body[:protocol]="openid-connect"
+    body[:fullScopeAllowed]=false
+    
     micro_service = postCurb(url: @@url+'/api/v1/register/service', body: body, headers: {})
     GtkApi.logger.debug(method) {"micro_service=#{micro_service}"}
     case micro_service[:status]
     when 201
       GtkApi.logger.debug(method) {"Created micro-service #{micro_service[:items]}"}
-      MicroService.new(micro_service)
+      MicroService.new(micro_service[:items])
     when 404
       GtkApi.logger.debug(method) {"Status 404 (Not Found): micro-service #{params} could not be created"}
-      raise MicroServiceNotCreatedError.new(params)
+      raise MicroServiceNotCreatedError.new "Could not create micro-service for #{params}"
     when 409
       GtkApi.logger.debug(method) {"Status 409 (Conflict): micro-service #{params} already created"}
-      raise MicroServiceAlreadyCreatedError.new(params)
+      raise MicroServiceAlreadyCreatedError.new "Micro-service #{params} has already been registered"
     else
       GtkApi.logger.debug(method) {"Status #{micro_service[:status]}: micro-service #{params} could not be created"}
-      raise MicroServiceNotCreatedError.new(params)
+      raise MicroServiceNotCreatedError.new "Could not create micro-service for #{params}"
     end
   end
 
