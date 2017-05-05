@@ -68,6 +68,7 @@ class KpiManagerService < ManagerService
     # curl -H "Content-Type: application/json" -d '{"name":"user_registrations","start":"2017-05-05T14:13:02.699Z","end":"2017-05-05T14:33:02.699Z","step":"10m","labels":[{}]}' http://sp.int3.sonata-nfv.eu:8000/api/v1/prometheus/metrics/data
     begin
       response = getCurb(url: @@url+'/kpis', params: params)      
+      GtkApi.logger.debug(method) {"response: #{response}"}
       case response[:status]
       when 200
         { status: response[:status], data: response[:items] }
