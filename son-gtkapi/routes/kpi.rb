@@ -31,14 +31,12 @@ class GtkApi < Sinatra::Base
   register Sinatra::Namespace
   
   namespace '/api/v2/kpis' do
-    before do
-       if request.request_method == 'OPTIONS'
-         response.headers['Access-Control-Allow-Origin'] = '*'
-         response.headers['Access-Control-Allow-Methods'] = 'POST'      
-         response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Access-Control-Allow-Headers, Authorization, X-Requested-With'
-         halt 200
-       end
-     end
+    options '/?' do
+      response.headers['Access-Control-Allow-Origin'] = '*'
+      response.headers['Access-Control-Allow-Methods'] = 'POST'      
+      response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Access-Control-Allow-Headers, Authorization, X-Requested-With'
+      halt 200
+    end
   
     # GET many kpis
     get '/?' do
@@ -51,7 +49,7 @@ class GtkApi < Sinatra::Base
         logger.debug(MESSAGE) {"leaving with #{resp[:data].count} items"}
         halt 200, resp[:data].to_json        
       else
-        json_error 400, 'No list of KPIs was returned', MESSAGE
+        json_error 400, "No list of KPIs was returned (status #{resp[:status]})", MESSAGE
       end      
     end
 

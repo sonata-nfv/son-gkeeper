@@ -168,13 +168,13 @@ class GtkKpi < Sinatra::Base
         resp[:items].to_json
       when 400
         GtkApi.logger.debug(log_message) {'415 (Unsupported Media Type) returned from the PushGateway'}
-        json_error(415, 'Error collecting the KPIs', log_message)
+        json_error(400, 'Error collecting the KPIs', log_message)
       when 415
         GtkApi.logger.debug(log_message) {'415 (Unsupported Media Type) returned from the PushGateway'}
         json_error(415, 'Error collecting the KPIs', log_message)
       else
         GtkApi.logger.error(method) {"Status #{resp[:status]} returned from the PushGateway"} 
-        raise UserNotCreatedError.new "User not created with params #{params}"
+        json_error(resp[:status], 'Error collecting the KPIs', log_message)
       end
     rescue Exception => e
       logger.debug(e.message)
