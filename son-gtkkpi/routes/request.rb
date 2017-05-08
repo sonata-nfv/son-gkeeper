@@ -230,4 +230,10 @@ class GtkKpi < Sinatra::Base
       halt 400
     end
   end
+  
+  get '/admin/logs' do
+    log_message = 'GtkKpi GET /admin/logs'
+    logger.debug(log_message) {"entered"}
+    File.open('log/'+ENV['RACK_ENV']+'.log', 'r').read
+  end
 end
