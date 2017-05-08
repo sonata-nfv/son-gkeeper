@@ -133,6 +133,36 @@ class GtkApi < Sinatra::Base
       end
     end
   
+    # PATCH
+=begin
+    The UM is expecting a PUT /api/v1/signatures/:username with a body like {"public_key":"..."}.
+    HTTP method: PUT
+    Authentication header includes the user's Access Token
+    Parameter: username
+    Body: JSON object that includes public_key field (required) and certificate field (optional). Sample:
+    {"public_key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEArVFiBHBiLPFRGrMobAxcK98SJRKKXJOkA66NL0UEgR7g8hOjVySchYUvtGAU5wi2ZCjmPGDT0hrJd1WEBplv0kT7YrIgdRGXGH73OJFjH8c7iX+XBwk0sH1K+KMUbszSbWFCKAlyHhYa8vz95RyzmzoMJZW6TeadlhRLuVw52RECaK9eIJu311oFA8os3z8J65olLexT0vF+B9Oqtn1gVJUfC0w984PXwMoGzSOVCbb5jD0/blAXonMS8PU+JFSGF4trTwRcmjw349NDEifUQamdHE8pynuxSpAuMN2WAPAlJpjnw/fHUxQFgRNGki6vHmegnQ6qmcbuorVW3oXkMwIDAQAB", "certificate": "optional"}
+=end
+    patch '/:username/?' do
+      log_message = 'GtkApi:: PATCH /api/v2/users/:username'
+      body = request.body.read
+      json_error(404, "Fields to be updated need to be part of the body", log_message) if body.empty?
+      logger.debug(log_message) {"entered with username=#{params[:username]} and body=#{body}"}
+      
+      begin
+        user = User.find_by_name(params[:username])
+        parsed_body = JSON.parse(body, symbolize_names: true)
+        
+        # TODO: generalize this
+        user.public_key = parsed_body[:public_key]
+        user.certificate = parsed_body[:certificate]
+        user.save
+        halt 200, user.to_json
+      rescue UserNotFoundError
+        json_error 404, "User #{pamas[:username]} was not found", log_message
+      rescue UserNotUpdatedError
+        json_error 404, "User #{pamas[:username]} was not updated", log_message
+      end
+    end
     # GET .../api/v2/micro-services/users/public-key: To get the UM's public-key:
     get '/public-key/?' do
       log_message = 'GtkApi:: GET /api/v2/users/public-key'

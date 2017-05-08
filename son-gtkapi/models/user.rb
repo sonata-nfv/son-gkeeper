@@ -33,6 +33,7 @@ class UserNotCreatedError < StandardError; end
 class UserNotAuthenticatedError < StandardError; end
 class UserNotFoundError < StandardError; end
 class UsersNotFoundError < StandardError; end
+class UserNotUpdatedError < StandardError; end
 class UserNameAlreadyInUseError < StandardError; end
 class UserNotLoggedOutError < StandardError; end
 class UserTokenNotActiveError < StandardError; end
@@ -41,7 +42,7 @@ class User < ManagerService
 
   LOG_MESSAGE = 'GtkApi::' + self.name
   
-  attr_accessor :uuid, :username, :session, :secret, :created_at, :user_type, :email, :last_name, :first_name
+  attr_accessor :uuid, :username, :session, :secret, :created_at, :user_type, :email, :last_name, :first_name, :public_key, :certificate
   
   # {"username" => "sampleuser", "enabled" => true, "totp" => false, "emailVerified" => false, "firstName" => "User", "lastName" => "Sample", "email" => "user.sample@email.com.br", "credentials" => [ {"type" => "password", "value" => "1234"} ], "requiredActions" => [], "federatedIdentities" => [], "attributes" => {"developer" => ["true"], "customer" => ["false"], "admin" => ["false"]}, "realmRoles" => [], "clientRoles" => {}, "groups" => ["developers"]}
   
@@ -66,6 +67,8 @@ class User < ManagerService
     @email = params[:email]
     @last_name = params[:last_name] if params[:last_name]
     @first_name = params[:first_name] if params[:first_name]
+    @public_key = params[:public_key] if params[:public_key]
+    @certificate = params[:certificate] if params[:certificate]
   end
 
   def self.create(params)
@@ -206,7 +209,7 @@ class User < ManagerService
       case response[:status]
       when 200
         user = response[:items].first
-        unless users.empty?
+        unless user.empty?
           User.new( User.import(user))
         else
           raise UserNotFoundError.new "User with name #{name} was not found"
@@ -263,6 +266,19 @@ class User < ManagerService
       GtkApi.logger.error(method) {"Backtrace:\n\t#{e.backtrace.join("\n\t")}"}
       raise PublicKeyNotFoundError.new('No public key received from User Management micro-service')
     end
+  end
+  
+=begin
+      The UM is expecting a PUT /api/v1/signatures/:username with a body like {"public_key":"..."}.
+      HTTP method: PUT
+      Authentication header includes the user's Access Token
+      Parameter: username
+      Body: JSON object that includes public_key field (required) and certificate field (optional). Sample:
+      {"public_key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEArVFiBHBiLPFRGrMobAxcK98SJRKKXJOkA66NL0UEgR7g8hOjVySchYUvtGAU5wi2ZCjmPGDT0hrJd1WEBplv0kT7YrIgdRGXGH73OJFjH8c7iX+XBwk0sH1K+KMUbszSbWFCKAlyHhYa8vz95RyzmzoMJZW6TeadlhRLuVw52RECaK9eIJu311oFA8os3z8J65olLexT0vF+B9Oqtn1gVJUfC0w984PXwMoGzSOVCbb5jD0/blAXonMS8PU+JFSGF4trTwRcmjw349NDEifUQamdHE8pynuxSpAuMN2WAPAlJpjnw/fHUxQFgRNGki6vHmegnQ6qmcbuorVW3oXkMwIDAQAB", "certificate": "optional"}
+=end
+  def update
+    method = LOG_MESSAGE + "##{__method__}"
+    GtkApi.logger.debug(method) {'entered'}
   end
   
   def to_h
