@@ -13,7 +13,7 @@ KCADMIN_SCRIPT=/opt/jboss/keycloak/bin/kcadm.sh
 SONATA_REALM=sonata
 ADAPTER_CLIENT=adapter
 
-# Demo user registration json object
+# Demo user registration JSON object, remove before using in production
 demo_reg_data() {
     cat << EOF
 {"username": "demo",
@@ -179,6 +179,8 @@ if [ "$ADAPTER_URL" ]; then
     fi
 fi
 
+sleep 3
+
 printf "\n\n======== POST Demo User (predefined) Registration form to GTKUSR ==\n\n\n"
 resp=$(curl -qSfsw '\n%{http_code}' -H "Content-Type: application/json" \
 -d "$(demo_reg_data)" \
@@ -189,9 +191,3 @@ username=$(echo $resp | grep "username")
 
 code=$(echo "$resp" | tail -n1)
 echo "Code: $code"
-
-#if [[ $code != 201 ]] ;
-#  then
-#    echo "Error: Response error $code"
-#    exit -1
-#fi
