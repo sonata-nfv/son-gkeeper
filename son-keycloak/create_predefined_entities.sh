@@ -13,6 +13,26 @@ KCADMIN_SCRIPT=/opt/jboss/keycloak/bin/kcadm.sh
 SONATA_REALM=sonata
 ADAPTER_CLIENT=adapter
 
+# Demo user registration JSON object, remove before using in production
+demo_reg_data() {
+    cat << EOF
+{"username": "demo",
+ "enabled": true,
+ "totp": false,
+ "emailVerified": false,
+ "firstName": "Demo",
+ "lastName": "User",
+ "email": "demo.user@email.com",
+ "credentials": [{"type": "password","value": "demo"}],
+ "requiredActions": [],
+ "federatedIdentities": [],
+ "attributes": {"userType": ["developer","customer"]},
+ "realmRoles": [],
+ "clientRoles": {},
+ "groups": []}
+EOF
+}
+
 # Param: $1 = realm name
 function create_realm() {
 	$KCADMIN_SCRIPT create realms -s realm=$1 -s enabled=true -s sslRequired=none -i > /dev/null
@@ -158,3 +178,16 @@ if [ "$ADAPTER_URL" ]; then
 	echo "Unable to POST secret to $ADAPTER_URL"
     fi
 fi
+
+sleep 3
+
+printf "\n\n======== POST Demo User (predefined) Registration form to GTKUSR ==\n\n\n"
+resp=$(curl -qSfsw '\n%{http_code}' -H "Content-Type: application/json" \
+-d "$(demo_reg_data)" \
+-X POST http://sp.int3.sonata-nfv.eu:5600/api/v1/register/user)
+echo $resp
+
+username=$(echo $resp | grep "username")
+
+code=$(echo "$resp" | tail -n1)
+echo "Code: $code"
