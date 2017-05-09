@@ -29,6 +29,7 @@ require './models/manager_service.rb'
 
 class MetricNameNotFoundError < StandardError; end
 class MetricNameCanNotBeNilOrEmptyError < StandardError; end
+class MetricNotCollectedError < StandardError; end
 class AsynchMonitoringDataRequestNotCreatedError < StandardError; end
 class SynchMonitoringDataRequestNotCreatedError < StandardError; end
 
@@ -91,6 +92,34 @@ class Metric < ManagerService
     else
       raise MetricNameNotFoundError.new('Metric with name '+name+' was not found')
     end
+  end
+
+  def self.get_kpis(params)
+    log_message = LOG_MESSAGE + "##{__method__}"
+    GtkApi.logger.debug(log_message) {"entered with params=#{params}"}
+    message = "Metric #{params[:name]}, from #{params[:start]} to #{params[:stop]} (step #{params[:step]}) could not be collected"
+        
+    begin
+      resp = postCurb(url: @@url+'/prometheus/metrics/data', body: params)
+      GtkApi.logger.debug(log_message) {"resp=#{resp}"}
+      case resp[:status]
+      when 200..202
+        GtkApi.logger.debug(log_message) {"request=#{resp[:items]}"}
+        unless resp[:items][:metrics].empty?
+          resp[:items][:metrics][:result]
+        else
+          GtkApi.logger.error(log_message) {message} 
+          raise MetricNotCollectedError.new message
+        end
+      else
+        GtkApi.logger.error(log_message) {"Status #{resp[:status]}"} 
+        raise MetricNotCollectedError.new message
+      end
+    rescue  => e
+      GtkApi.logger.error(log_message) {"Error during processing: #{$!}"}
+      GtkApi.logger.error(log_message) {"Backtrace:\n\t#{e.backtrace.join("\n\t")}"}
+      raise MetricNotCollectedError.new message
+    end 
   end
   
   # Get mon data via asynch request
