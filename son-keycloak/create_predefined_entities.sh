@@ -11,7 +11,7 @@ ADAPTER_ADMIN=http://son-gtkusr:5600/admin
 KCADMIN_SCRIPT=/opt/jboss/keycloak/bin/kcadm.sh
 
 SONATA_REALM=sonata
-ADAPTER_CLIENT=
+ADAPTER_CLIENT=adapter
 
 # Demo user registration json object
 demo_reg_data() {
