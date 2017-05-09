@@ -88,7 +88,7 @@ class KpiManagerService < ManagerService
     
     begin
       GtkApi.logger.debug(method) {"url = "+@@url}
-      response = getCurb(url: @@url+'/original-kpis', params: params, headers:JSON_HEADERS)      
+      response = getCurb(url: @@url+'/kpis', params: params, headers:JSON_HEADERS)      
       case response[:status]
       when 200
         { status: response[:status], data: JSON.parse(response[:items].to_json, :symbolize_names => true) }
