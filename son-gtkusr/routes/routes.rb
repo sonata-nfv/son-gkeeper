@@ -500,6 +500,50 @@ class Keycloak < Sinatra::Application
     halt 200, {'Content-type' => 'application/json'}, user_info
   end
 
+  get '/token-status' do
+    logger.debug 'Adapter: entered POST /userinfo'
+    # Return if Authorization is invalid
+    halt 400 unless request.env["HTTP_AUTHORIZATION"]
+
+    user_token = request.env["HTTP_AUTHORIZATION"].split(' ').last
+    unless user_token
+      json_error(400, 'Access token is not provided')
+    end
+
+    # Validate token
+    res, code = token_validation(user_token)
+    if code == '200'
+      result = is_active?(res)
+      case result
+        when false
+          halt 401
+        else
+          halt 200
+      end
+    else
+      json_error(400, res.to_s)
+    end
+  end
+
+  get '/token-check' do
+    logger.debug 'Adapter: entered POST /userinfo'
+    # Return if Authorization is invalid
+    halt 400 unless request.env["HTTP_AUTHORIZATION"]
+
+    user_token = request.env["HTTP_AUTHORIZATION"].split(' ').last
+    unless user_token
+      json_error(400, 'Access token is not provided')
+    end
+
+    # Validate token
+    res = token_expired?(user_token)
+    if res == 200
+      halt 200
+    else
+      json_error(401, res)
+    end
+  end
+
   get '/userid' do
     logger.debug 'Adapter: entered POST /userid'
     # Return if Authorization is invalid
