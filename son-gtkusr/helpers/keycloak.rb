@@ -1367,6 +1367,32 @@ class Keycloak < Sinatra::Application
     response
   end
 
+  def token_expired?(token)
+    public_key = get_public_key
+    logger.debug 'Adapter: Decoding Access Token'
+    begin
+      decoded_payload, decoded_header = JWT.decode token, public_key, true, { :algorithm => 'RS256' }
+      # puts "DECODED_HEADER: ", decoded_header
+      logger.debug 'Adapter: Access Token decoded successfully'
+      # puts "DECODED_PAYLOAD: ", decoded_payload
+      response = 200
+        # if expired token, refresh adapter token
+    rescue JWT::DecodeError
+      logger.debug 'Adapter: Decoding Access Token DecodeError'
+      response = 'DecodeError'
+    rescue JWT::ExpiredSignature
+      logger.debug 'Adapter: Decoding Access Token ExpiredSignature Error'
+      response = 'ExpiredSignature'
+    rescue JWT::InvalidIssuerError
+      logger.debug 'Adapter: Decoding Access Token InvalidIssuerError'
+      response = 'InvalidIssuerError'
+    rescue JWT::InvalidIatError
+      logger.debug 'Adapter: Decoding Access Token InvalidIatError'
+      response = 'InvalidIatError'
+    end
+    response
+  end
+
   def process_request(uri, method)
     # Parse uri path
     path = URI(uri).path.split('/')[1]
