@@ -38,29 +38,41 @@ class GtkApi < Sinatra::Base
       halt 200
     end
   
-    # GET many kpis
-    get '/?' do
+    # GET collected kpis
+    get '/collected?' do
       log_message = 'GtkApi::GET /api/v2/kpis/?'
       logger.debug(log_message) {"entered with params=#{params}"}
-    
+      
       json_error(400, 'The KPI name must be given', log_message) if (params[:name].nil? || params[:name].empty?)
       json_error(400, 'The KPI start date must be given', log_message) if (params[:start].nil? || params[:start].empty?)
       json_error(400, 'The KPI end date must be given', log_message) if (params[:end].nil? || params[:end].empty?)
       json_error(400, 'The KPI step must be given', log_message) if (params[:step].nil? || params[:step].empty?)
     
-      # POST .../api/v1/prometheus/metrics/data with body {"name":"user_registrations","start": "2017-05-03T11:41:22Z", "end": "2017-05-03T11:51:11Z", "step": "10s", "labels":[]}
-      #url = 'http://'+settings.pushgateway_host+':'+settings.pushgateway_port.to_s
-      body = {"name": params[:name],"start": params[:start], "end": params[:end], "step": params[:step], "labels":[]}
+      body = {name: params[:name], start: params[:start], end: params[:end], step: params[:step], labels:[]}
       # 200 with metrics
       # 400 Bad request when json data have syntax error
       # 415 on missinh header
       begin
         resp = Metric.get_kpis(body)
         GtkApi.logger.debug(log_message) {"received response was #{resp}"}
-        
-        #json_error(400, 'No KPIs collection received', log_message) if resp[:items]
-
         GtkApi.logger.debug(log_message) {"#{resp.count} metrics were received"} 
+        resp.to_json
+      rescue MetricNotCollectedError => e
+        logger.debug(e.message)
+        logger.debug(e.backtrace.inspect)
+        json_error(400, 'Error collecting the KPIs', log_message)
+      end
+    end  
+
+    # GET many kpis
+    get '/?' do
+      log_message = 'GtkApi::GET /api/v2/kpis/?'
+      logger.debug(log_message) {"entered with params=#{params}"}
+      
+      begin
+        resp = KpiManagerService.get_metric(params)
+        GtkApi.logger.debug(log_message) {"received response was #{resp}"}
+        content_type :json
         resp.to_json
       rescue MetricNotCollectedError => e
         logger.debug(e.message)
