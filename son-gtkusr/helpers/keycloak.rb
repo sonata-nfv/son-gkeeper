@@ -1001,10 +1001,9 @@ class Keycloak < Sinatra::Application
     # GET new registered client Id (Name)
     url = URI("http://#{@@address.to_s}:#{@@port.to_s}/#{@@uri.to_s}/admin/realms/#{@@realm_name}/clients?clientId=#{clientId}")
     http = Net::HTTP.new(url.host, url.port)
-
     request = Net::HTTP::Get.new(url.to_s)
     request["authorization"] = 'Bearer ' + @@access_token
-    request.body = body.to_json
+    # request.body = body.to_json
 
     response = http.request(request)
     begin
