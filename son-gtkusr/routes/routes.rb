@@ -284,7 +284,8 @@ class Keycloak < Sinatra::Application
       halt code, {'Content-type' => 'application/json'}, error_msg
     end
     logger.info "New Service client #{parsed_form['clientId']} registered"
-    halt 201
+    response = {'clientId' => parsed_form['clientId'], 'id' => client_id.to_s}
+    halt 201, {'Content-type' => 'application/json'}, response.to_json
   end
 
   post '/login/user' do
