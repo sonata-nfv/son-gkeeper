@@ -998,21 +998,20 @@ class Keycloak < Sinatra::Application
   end
 
   def delete_client(clientId)
-    logger.debug "Keycloak: entered delete_client id: #{clientId}"
+    # logger.debug "Keycloak: entered delete_client id: #{clientId}"
     # GET new registered client Id (Name)
     url = URI("http://#{@@address.to_s}:#{@@port.to_s}/#{@@uri.to_s}/admin/realms/#{@@realm_name}/clients?clientId=#{clientId}")
     http = Net::HTTP.new(url.host, url.port)
     request = Net::HTTP::Get.new(url.to_s)
     request["authorization"] = 'Bearer ' + @@access_token
-    # request.body = body.to_json
-
     response = http.request(request)
-    logger.debug "Keycloak: delete client id code response #{response.code}"
-    logger.debug "#{response.body}"
+    # logger.debug "Keycloak: delete client id code response #{response.code}"
+    # logger.debug "#{response.body}"
     begin
       client_id = parse_json(response.body).first[0]["id"]
     rescue
-      json_error(response.code.to_i, response.body.to_s)
+      # ClientId already is the 'id' of the client
+      client_id = clientId
     end
 
     # refresh_adapter # Refresh admin token if expired
@@ -1021,10 +1020,9 @@ class Keycloak < Sinatra::Application
     request = Net::HTTP::Delete.new(url.to_s)
     request["authorization"] = 'Bearer ' + @@access_token
     request["content-type"] = 'application/json'
-    # request.body = client_object.to_json
     response = http.request(request)
-    logger.debug "Keycloak: delete client result code #{response.code}"
-    logger.debug "#{response.body}"
+    # logger.debug "Keycloak: delete client result code #{response.code}"
+    # logger.debug "#{response.body}"
     if response.code.to_i != 204
       halt response.code.to_i, {'Content-type' => 'application/json'}, response.body
     end
