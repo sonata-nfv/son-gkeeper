@@ -1006,6 +1006,8 @@ class Keycloak < Sinatra::Application
     # request.body = body.to_json
 
     response = http.request(request)
+    logger.debug "Keycloak: delete client id code response #{response.code}"
+    logger.debug "#{response.body}"
     begin
       client_id = parse_json(response.body).first[0]["id"]
     rescue
@@ -1020,6 +1022,8 @@ class Keycloak < Sinatra::Application
     request["content-type"] = 'application/json'
     # request.body = client_object.to_json
     response = http.request(request)
+    logger.debug "Keycloak: delete client result code #{response.code}"
+    logger.debug "#{response.body}"
     if response.code.to_i != 204
       halt response.code.to_i, {'Content-type' => 'application/json'}, response.body
     end
