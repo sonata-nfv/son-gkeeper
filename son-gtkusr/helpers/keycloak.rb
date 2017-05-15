@@ -998,6 +998,7 @@ class Keycloak < Sinatra::Application
   end
 
   def delete_client(clientId)
+    logger.debug "Keycloak: entered delete_client id: #{clientId}"
     # GET new registered client Id (Name)
     url = URI("http://#{@@address.to_s}:#{@@port.to_s}/#{@@uri.to_s}/admin/realms/#{@@realm_name}/clients?clientId=#{clientId}")
     http = Net::HTTP.new(url.host, url.port)
