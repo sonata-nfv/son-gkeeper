@@ -47,7 +47,7 @@ class GtkApi < Sinatra::Base
         json_error 400, "No package file specified: #{params}", log_message
       end
       
-      unless params[:package][:tempfile]
+      if params[:package][:tempfile].nil?
         count_package_on_boardings(labels: {result: "bad request", uuid: '', elapsed_time: (Time.now.utc-began_at).to_s})
         json_error 400, 'Temp file name not provided', log_message
       end
