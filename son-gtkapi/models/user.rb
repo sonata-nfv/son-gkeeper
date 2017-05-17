@@ -267,15 +267,7 @@ class User < ManagerService
       raise PublicKeyNotFoundError.new('No public key received from User Management micro-service')
     end
   end
-  
-=begin
-      The UM is expecting a PUT /api/v1/signatures/:username with a body like {"public_key":"..."}.
-      HTTP method: PUT
-      Authentication header includes the user's Access Token
-      Parameter: username
-      Body: JSON object that includes public_key field (required) and certificate field (optional). Sample:
-      {"public_key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEArVFiBHBiLPFRGrMobAxcK98SJRKKXJOkA66NL0UEgR7g8hOjVySchYUvtGAU5wi2ZCjmPGDT0hrJd1WEBplv0kT7YrIgdRGXGH73OJFjH8c7iX+XBwk0sH1K+KMUbszSbWFCKAlyHhYa8vz95RyzmzoMJZW6TeadlhRLuVw52RECaK9eIJu311oFA8os3z8J65olLexT0vF+B9Oqtn1gVJUfC0w984PXwMoGzSOVCbb5jD0/blAXonMS8PU+JFSGF4trTwRcmjw349NDEifUQamdHE8pynuxSpAuMN2WAPAlJpjnw/fHUxQFgRNGki6vHmegnQ6qmcbuorVW3oXkMwIDAQAB", "certificate": "optional"}
-=end
+
   def update
     method = LOG_MESSAGE + "##{__method__}"
     GtkApi.logger.debug(method) {'entered'}

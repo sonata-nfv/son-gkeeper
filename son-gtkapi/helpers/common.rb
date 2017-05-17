@@ -71,4 +71,16 @@ module GtkApiHelper
     links << %(<#{url}?offset=#{last_offset}&limit=#{limit}>; rel="last")
     links.join(",")
   end
+  
+  def get_token( env, log_message)
+    json_error(400, 'Unprocessable entity: missing authorization header', log_message) if (env['HTTP_AUTHORIZATION'].nil? || env['HTTP_AUTHORIZATION'].empty?)
+    logger.debug(log_message) {"entered with request.env['HTTP_AUTHORIZATION']="+env['HTTP_AUTHORIZATION']}
+
+    authorization=env['HTTP_AUTHORIZATION']
+    logger.debug(log_message) {'authorization='+authorization}
+
+    bearer_token = authorization.split(' ')
+    json_error(400, 'Unprocessable entity: authorization header must be "Bearer <token>"', log_message) unless (bearer_token.size == 2 && bearer_token[0].downcase == 'bearer')
+    bearer_token[1]
+  end
 end
