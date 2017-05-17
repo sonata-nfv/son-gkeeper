@@ -368,7 +368,7 @@ class Keycloak < Sinatra::Application
       end
   end
 
-  get '/authorize' do
+  post '/authorize' do
     logger.debug 'Adapter: entered POST /authorize'
     # Return if Authorization is invalid
     halt 400 unless request.env["HTTP_AUTHORIZATION"]
@@ -389,13 +389,13 @@ class Keycloak < Sinatra::Application
       # puts "RESULT", result
       case result
         when false
-          logger.debug 'Adapter: exit POST /authorize without valid access token'
+          logger.debug 'Adapter: exit POST /authorize without invalid access token'
           json_error(401, 'Token not active')
         else
           # continue
       end
     else
-      logger.debug 'Adapter: exit POST /authorize with valid access token'
+      logger.debug 'Adapter: exit POST /authorize with unauthorized access token'
       halt 401, {'Content-type' => 'application/json'}, val_res
     end
     logger.info 'Authorization request received at /authorize'
@@ -497,8 +497,9 @@ class Keycloak < Sinatra::Application
     end
 
     # puts "RESULT", user_token
-    user_info = userinfo(user_token)
-    halt 200, {'Content-type' => 'application/json'}, user_info
+    code, user_info = userinfo(user_token)
+    halt code.to_i, {'Content-type' => 'application/json'}, user_info
+    # halt 200, {'Content-type' => 'application/json'}, user_info
   end
 
   get '/token-status' do
