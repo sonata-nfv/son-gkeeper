@@ -254,6 +254,33 @@ class User < ManagerService
     end
   end
   
+  def self.find_username_by_token(token)
+    # POST /api/v1/userinfo
+    # request["authorization"] = 'Bearer eyJhbGciOiJSkxX0NpUUhmTm9nIn0...'  
+    # Response: 
+    # {"sub":"8031545e-d4da-4086-8cb2-a417f3460de2","name":"myName myLastName","preferred_username":"tester01","given_name":"myName","family_name":"myLastName","email":"myname.company@email.com"}
+    # the field you need is "preferred_username"
+    method = LOG_MESSAGE + "##{__method__}"
+    raise ArgumentError.new __method__.to_s+' requires the login token' if (token.nil? || token.empty?)
+    GtkApi.logger.debug(method) {"entered"}
+    headers = {'Content-type'=>'application/json', 'Accept'=> 'application/json', 'Authorization'=>'Bearer '+token}
+
+    resp = postCurb(url: @@url+'/api/v1/userinfo', body: {}, headers: headers)
+    case resp[:status]
+    when 200..201
+      GtkApi.logger.debug(method) {"resp[:items]=#{resp[:items]}"}
+      resp[:items][:preferred_username]
+    when 401
+      GtkApi.logger.error(method) {"Status 401: token not active"} 
+      raise UserTokenNotActiveError.new "User token was not active"
+    else
+      GtkApi.logger.error(method) {"Status #{resp[:status]}"} 
+      raise UserNotLoggedOutError.new "User not found with the given token"
+    end
+    
+    
+  end
+  
   def self.public_key
     method = LOG_MESSAGE + "##{__method__}"
     GtkApi.logger.debug(method) {'entered'}
