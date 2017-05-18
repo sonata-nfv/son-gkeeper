@@ -135,4 +135,176 @@ class Keycloak < Sinatra::Application
     logger.debug "Adapter: exit from GET /refresh with token #{access_token}"
     halt code.to_i
   end
+
+  post '/authorize' do
+    logger.debug 'Adapter: entered POST /authorize'
+    # Return if Authorization is invalid
+    halt 400 unless request.env["HTTP_AUTHORIZATION"]
+
+    # Get authorization token
+    user_token = request.env["HTTP_AUTHORIZATION"].split(' ').last
+    unless user_token
+      logger.debug 'Adapter: exit POST /authorize without access token'
+      json_error(400, 'Access token is not provided')
+    end
+
+    # Check token validation
+    val_res, val_code = token_validation(user_token)
+    logger.debug "Token evaluation: #{val_code} - #{val_res}"
+    # Check token expiration
+    if val_code.to_s == '200'
+      result = is_active?(val_res)
+      # puts "RESULT", result
+      case result
+        when false
+          logger.debug 'Adapter: exit POST /authorize without invalid access token'
+          json_error(401, 'Token not active')
+        else
+          # continue
+      end
+    else
+      logger.debug 'Adapter: exit POST /authorize with unauthorized access token'
+      halt 401, {'Content-type' => 'application/json'}, val_res
+    end
+    logger.info 'Authorization request received at /authorize'
+    # Return if content-type is not valid
+    # log_file = File.new("#{settings.root}/log/#{settings.environment}.log", 'a+')
+    # STDOUT.reopen(log_file)
+    # STDOUT.sync = true
+    # puts "Content-Type is " + request.content_type
+    if request.content_type
+      logger.info "Request Content-Type is #{request.content_type}"
+    end
+    # halt 415 unless (request.content_type == 'application/x-www-form-urlencoded' or request.content_type == 'application/json')
+    # We will accept both a JSON file, form-urlencoded or query type
+    # Compatibility support
+    case request.content_type
+      when 'application/x-www-form-urlencoded'
+        # Validate format
+        # form_encoded, errors = request.body.read
+        # halt 400, errors.to_json if errors
+
+        # p "FORM PARAMS", form_encoded
+        # form = Hash[URI.decode_www_form(form_encoded)]
+        # mat
+        # p "FORM", form
+        # keyed_params = keyed_hash(form)
+        # halt 401 unless (keyed_params[:'path'] and keyed_params[:'method'])
+
+        # Request is a QUERY TYPE
+        # Get request parameters
+        logger.info "Request parameters are #{params}"
+        # puts "Input params", params
+        keyed_params = keyed_hash(params)
+        # puts "KEYED_PARAMS", keyed_params
+        # params examples: {:path=>"catalogues", :method=>"GET"}
+        # Halt if 'path' and 'method' are not included
+        json_error(401, 'Parameters "path=" and "method=" not found') unless (keyed_params[:path] and keyed_params[:method])
+
+      when 'application/json'
+        # Compatibility support for JSON content-type
+        # Parses and validates JSON format
+        form, errors = parse_json(request.body.read)
+        halt 400, errors.to_json if errors
+        # p "FORM", form
+        logger.info "Request parameters are #{form.to_s}"
+        keyed_params = keyed_hash(form)
+        json_error(401, 'Parameters "path=" and "method=" not found') unless (keyed_params[:path] and keyed_params[:method])
+      else
+        # Request is a QUERY TYPE
+        # Get request parameters
+        logger.info "Request parameters are #{params}"
+        keyed_params = keyed_hash(params)
+        # puts "KEYED_PARAMS", keyed_params
+        # params examples: {:path=>"catalogues", :method=>"GET"}
+        # Halt if 'path' and 'method' are not included
+        json_error(401, 'Parameters "path=" and "method=" not found') unless (keyed_params[:path] and keyed_params[:method])
+      # halt 401, json_error("Invalid Content-type")
+    end
+
+    # TODO: Handle alternative authorization requests
+    # puts "PATH", keyed_params[:'path']
+    # puts "METHOD",keyed_params[:'method']
+    # Check the provided path to the resource and the HTTP method, then build the request
+    request = process_request(keyed_params[:path], keyed_params[:method])
+
+    logger.info 'Evaluating Authorization request'
+    # Authorization process
+    auth_code, auth_msg = authorize?(user_token, request)
+    if auth_code.to_i == 200
+      halt auth_code.to_i
+    else
+      json_error(auth_code, auth_msg)
+    end
+    # STDOUT.sync = false
+  end
+
+  # DEPRECATED!
+  post '/authenticate' do
+    logger.debug 'Adapter: entered POST /authenticate'
+    logger.info 'POST /authenticate is deprecated! It returns an ID token which is currently unused'
+    # Return if Authorization is invalid
+    halt 400 unless request.env["HTTP_AUTHORIZATION"]
+    keyed_params = params
+
+    case keyed_params[:grant_type]
+      when 'password' # -> user
+        authenticate(keyed_params[:client_id],
+                     keyed_params[:username],
+                     keyed_params[:password],
+                     keyed_params[:grant_type])
+
+      when 'client_credentials' # -> service
+        authenticate(keyed_params[:client_id],
+                     nil,
+                     keyed_params[:client_secret],
+                     keyed_params[:grant_type])
+      else
+        json_error(400, 'Bad request')
+    end
+  end
+
+  get '/token-status' do
+    logger.debug 'Adapter: entered POST /userinfo'
+    # Return if Authorization is invalid
+    halt 400 unless request.env["HTTP_AUTHORIZATION"]
+
+    user_token = request.env["HTTP_AUTHORIZATION"].split(' ').last
+    unless user_token
+      json_error(400, 'Access token is not provided')
+    end
+
+    # Validate token
+    res, code = token_validation(user_token)
+    if code == '200'
+      result = is_active?(res)
+      case result
+        when false
+          halt 401
+        else
+          halt 200
+      end
+    else
+      json_error(400, res.to_s)
+    end
+  end
+
+  get '/token-check' do
+    logger.debug 'Adapter: entered POST /userinfo'
+    # Return if Authorization is invalid
+    halt 400 unless request.env["HTTP_AUTHORIZATION"]
+
+    user_token = request.env["HTTP_AUTHORIZATION"].split(' ').last
+    unless user_token
+      json_error(400, 'Access token is not provided')
+    end
+
+    # Validate token
+    res = token_expired?(user_token)
+    if res == 200
+      halt 200
+    else
+      json_error(401, res)
+    end
+  end
 end
