@@ -26,4 +26,4 @@
 ## partner consortium (www.sonata-nfv.eu).
 
 
-require_relative 'resources'
+require_relative 'sp_models'
