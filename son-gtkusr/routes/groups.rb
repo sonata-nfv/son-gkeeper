@@ -25,5 +25,12 @@
 ## acknowledge the contributions of their colleagues of the SONATA
 ## partner consortium (www.sonata-nfv.eu).
 
+require 'json'
+require 'sinatra'
+require 'net/http'
+require_relative '../helpers/init'
 
-require_relative 'sp_models'
+# Adapter-Keycloak API class
+class Keycloak < Sinatra::Application
+
+end

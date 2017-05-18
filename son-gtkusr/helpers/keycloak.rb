@@ -588,7 +588,8 @@ class Keycloak < Sinatra::Application
   def logout(user_token, user=nil, realm=nil)
     refresh_adapter # Refresh admin token if expired
     # user = token['sub']#'971fc827-6401-434e-8ea0-5b0f6d33cb41'
-    user = parse_json(userinfo(user_token))[0]
+    # code, data = userinfo(user_token)
+    user = parse_json(userinfo(user_token)[1])[0]
     # p "SUB[0]", user['sub']
     # http_path = "http://localhost:8081/auth/realms/master/protocol/openid-connect/logout"
     http_path ="http://#{@@address.to_s}:#{@@port.to_s}/#{@@uri.to_s}/admin/realms/#{@@realm_name}/users/#{user['sub']}/logout"

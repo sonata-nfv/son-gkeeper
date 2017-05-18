@@ -35,9 +35,11 @@ class Sp_resource
 
   field :name, type: String
   field :roles, type: Array
+
   validates :name, presence: true
 end
 
+# Class model for SP user meta-data
 class Sp_user
   include Mongoid::Document
   include Mongoid::Timestamps
@@ -52,12 +54,26 @@ class Sp_user
   validates :username, :public_key, :certificate, presence: true, :allow_nil => true
 end
 
-class Sp_permissions
+# Class model for SP permissions
+class Sp_permission
   include Mongoid::Document
   include Mongoid::Timestamps
   # include Mongoid::Pagination
   include Mongoid::Attributes::Dynamic
   store_in collection: 'sp_permissions'
+
+  field :name, type: String
+  field :roles, type: Array
+  validates :name, presence: true
+end
+
+# Class model for SP groups
+class Sp_group
+  include Mongoid::Document
+  include Mongoid::Timestamps
+  # include Mongoid::Pagination
+  include Mongoid::Attributes::Dynamic
+  store_in collection: 'sp_groups'
 
   field :name, type: String
   field :roles, type: Array

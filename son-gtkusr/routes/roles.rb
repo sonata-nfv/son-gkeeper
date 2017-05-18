@@ -25,5 +25,42 @@
 ## acknowledge the contributions of their colleagues of the SONATA
 ## partner consortium (www.sonata-nfv.eu).
 
+require 'json'
+require 'sinatra'
+require 'net/http'
+require_relative '../helpers/init'
 
-require_relative 'sp_models'
+# Adapter-Keycloak API class
+class Keycloak < Sinatra::Application
+
+  get '/roles' do
+    #TODO: QUERIES NOT SUPPORTED -> Check alternatives!!
+    # This endpoint allows queries for the next fields:
+    # search, lastName, firstName, email, username, first, max
+    logger.debug 'Adapter: entered GET /roles'
+    # Return if Authorization is invalid
+    # json_error(400, 'Authorization header not set') unless request.env["HTTP_AUTHORIZATION"]
+    queriables = %w(search id name description first max)
+    keyed_params = keyed_hash(params)
+    keyed_params.each { |k, v|
+      unless queriables.include? k
+        json_error(400, 'Bad query')
+      end
+    }
+    code, realm_roles = get_realm_roles(keyed_params)
+
+    params['offset'] ||= DEFAULT_OFFSET
+    params['limit'] ||= DEFAULT_LIMIT
+    realm_roles = apply_limit_and_offset(JSON.parse(realm_roles), offset=params[:offset], limit=params[:limit])
+    halt code.to_i, {'Content-type' => 'application/json'}, realm_roles.to_json
+  end
+
+  put '/roles' do
+
+  end
+
+  delete '/roles' do
+
+  end
+
+end
