@@ -25,7 +25,6 @@
 ## acknowledge the contributions of their colleagues of the SONATA
 ## partner consortium (www.sonata-nfv.eu).
 
-# require_relative 'routes'
 require_relative 'adapter'
 require_relative 'users'
 require_relative 'services'
