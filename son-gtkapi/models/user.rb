@@ -254,6 +254,33 @@ class User < ManagerService
     end
   end
   
+  def self.find_username_by_token(token)
+    # POST /api/v1/userinfo
+    # request["authorization"] = 'Bearer eyJhbGciOiJSkxX0NpUUhmTm9nIn0...'  
+    # Response: 
+    # {"sub":"8031545e-d4da-4086-8cb2-a417f3460de2","name":"myName myLastName","preferred_username":"tester01","given_name":"myName","family_name":"myLastName","email":"myname.company@email.com"}
+    # the field you need is "preferred_username"
+    method = LOG_MESSAGE + "##{__method__}"
+    raise ArgumentError.new __method__.to_s+' requires the login token' if (token.nil? || token.empty?)
+    GtkApi.logger.debug(method) {"entered"}
+    headers = {'Content-type'=>'application/json', 'Accept'=> 'application/json', 'Authorization'=>'Bearer '+token}
+
+    resp = postCurb(url: @@url+'/api/v1/userinfo', body: {}, headers: headers)
+    case resp[:status]
+    when 200..201
+      GtkApi.logger.debug(method) {"resp[:items]=#{resp[:items]}"}
+      resp[:items][:preferred_username]
+    when 401
+      GtkApi.logger.error(method) {"Status 401: token not active"} 
+      raise UserTokenNotActiveError.new "User token was not active"
+    else
+      GtkApi.logger.error(method) {"Status #{resp[:status]}"} 
+      raise UserNotLoggedOutError.new "User not found with the given token"
+    end
+    
+    
+  end
+  
   def self.public_key
     method = LOG_MESSAGE + "##{__method__}"
     GtkApi.logger.debug(method) {'entered'}
@@ -267,15 +294,7 @@ class User < ManagerService
       raise PublicKeyNotFoundError.new('No public key received from User Management micro-service')
     end
   end
-  
-=begin
-      The UM is expecting a PUT /api/v1/signatures/:username with a body like {"public_key":"..."}.
-      HTTP method: PUT
-      Authentication header includes the user's Access Token
-      Parameter: username
-      Body: JSON object that includes public_key field (required) and certificate field (optional). Sample:
-      {"public_key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEArVFiBHBiLPFRGrMobAxcK98SJRKKXJOkA66NL0UEgR7g8hOjVySchYUvtGAU5wi2ZCjmPGDT0hrJd1WEBplv0kT7YrIgdRGXGH73OJFjH8c7iX+XBwk0sH1K+KMUbszSbWFCKAlyHhYa8vz95RyzmzoMJZW6TeadlhRLuVw52RECaK9eIJu311oFA8os3z8J65olLexT0vF+B9Oqtn1gVJUfC0w984PXwMoGzSOVCbb5jD0/blAXonMS8PU+JFSGF4trTwRcmjw349NDEifUQamdHE8pynuxSpAuMN2WAPAlJpjnw/fHUxQFgRNGki6vHmegnQ6qmcbuorVW3oXkMwIDAQAB", "certificate": "optional"}
-=end
+
   def update
     method = LOG_MESSAGE + "##{__method__}"
     GtkApi.logger.debug(method) {'entered'}
