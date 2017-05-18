@@ -26,6 +26,24 @@
 ## partner consortium (www.sonata-nfv.eu).
 
 # Class model for SP micro-service resources
+=begin
+catalogue:
+    services:
+      GET: read
+      POST: write
+      PUT: write
+      DEL: write
+    functions:
+        GET: read
+      POST: write
+      PUT: write
+      DEL: write
+    packages:
+        GET: read
+      POST: write
+      PUT: write
+      DEL: write
+=end
 class Sp_resource
   include Mongoid::Document
   include Mongoid::Timestamps
@@ -35,6 +53,7 @@ class Sp_resource
 
   field :name, type: String
   field :roles, type: Array
+
   validates :name, presence: true
 end
 

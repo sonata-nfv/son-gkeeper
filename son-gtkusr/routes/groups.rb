@@ -25,9 +25,12 @@
 ## acknowledge the contributions of their colleagues of the SONATA
 ## partner consortium (www.sonata-nfv.eu).
 
-# require_relative 'routes'
-require_relative 'adapter'
-require_relative 'users'
-require_relative 'services'
-require_relative 'roles'
-require_relative 'groups'
+require 'json'
+require 'sinatra'
+require 'net/http'
+require_relative '../helpers/init'
+
+# Adapter-Keycloak API class
+class Keycloak < Sinatra::Application
+
+end
