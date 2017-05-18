@@ -280,7 +280,7 @@ class Keycloak < Sinatra::Application
     response = http.request(request)
     # puts "RESPONSE", response.read_body
     # response_json = parse_json(response.read_body)[0]
-    response.body
+    return response.code, response.body
   end
 
   # Token Validation Endpoint
