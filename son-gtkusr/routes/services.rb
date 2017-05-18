@@ -197,4 +197,24 @@ class Keycloak < Sinatra::Application
     end
   end
 
+  get '/sessions/services' do
+    # Get all service client sessions
+    # Returns a list of service client sessions
+    logger.debug 'Adapter: entered GET /sessions/services'
+    # Return if Authorization is invalid
+    # json_error(400, 'Authorization header not set') unless request.env["HTTP_AUTHORIZATION"]
+    # adapter_id = get_adapter_id
+    ses_code, ses_msg = get_sessions('service', nil)
+
+    params['offset'] ||= DEFAULT_OFFSET
+    params['limit'] ||= DEFAULT_LIMIT
+    ses_msg = apply_limit_and_offset(JSON.parse(ses_msg), offset=params[:offset], limit=params[:limit])
+    halt ses_code.to_i, {'Content-type' => 'application/json'}, ses_msg.to_json
+  end
+
+  get '/sessions/services/:clientId/?' do
+    # Get service client sessions
+    # Returns a list of sessions associated with the client service user
+  end
+
 end

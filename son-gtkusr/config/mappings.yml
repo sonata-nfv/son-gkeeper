@@ -5,6 +5,11 @@ resources:
   - gatekeeper
   - monitoring
 
+groups:
+    developers: developer
+    customers: customer
+    admins: admin
+
 paths:
     catalogue:
         services:
