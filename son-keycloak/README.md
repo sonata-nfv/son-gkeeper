@@ -1,4 +1,4 @@
-# [SONATA](http://www.sonata-nfv.eu)'s Gatekeeper API micro-service
+# [SONATA](http://www.sonata-nfv.eu)'s Keycloak server
 [![Build Status](http://jenkins.sonata-nfv.eu/buildStatus/icon?job=son-gkeeper)](http://jenkins.sonata-nfv.eu/job/son-gkeeper)
 
 This folder includes the configuration and deployment specifications of **Keycloak** identity management and **User Management** handshaking.
@@ -67,7 +67,7 @@ OPTIONS:
 
 
 ## Documentation
-Information about Keycloak can be found in [`Keyclaok Documentation`](http://www.keycloak.org/documentation.html) section.
+Information about Keycloak can be found in [`Keycloak Documentation`](http://www.keycloak.org/documentation.html) section.
 You can refer to the [`Gatekeeper Github Wiki`](https://github.com/sonata-nfv/son-gkeeper/wiki) sections and check for User Management pages, which include information and examples of usage of its features.
 
 ## License
