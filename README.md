@@ -5,7 +5,7 @@ This is [SONATA](http://www.sonata-nfv.eu)'s Service Platform Gatekeeper's repos
 
 The Gatekeeper is the component that implements all the **Northbound Interface** (NBI) of the Servive Platform.
  
-This NBI provides systems like the [son-push](http://github.com/sonata-nfv/son-push), [son-gui](http://github.com/sonata-nfv/son-gui) and [son-bss](http://github.com/sonata-nfv/son-bss) access to the **Service Platform**, for features like:
+This NBI provides systems like the [son-cli](http://github.com/sonata-nfv/son-cli), [son-gui](http://github.com/sonata-nfv/son-gui) and [son-bss](http://github.com/sonata-nfv/son-bss) access to the **Service Platform**, for features like:
 
  * **accepting new developers**' to be part of the contributors of new developed services;
  * **accepting new services**, in the **package format**, to be deployed in the platform;
@@ -28,7 +28,7 @@ Micro-services currently implemented are the following:
 1. [`son-gtkvim`](https://github.com/sonata-nfv/son-gkeeper/tree/master/son-gtkvim): where all Vims features are implemented;
 1. [`son-gtkrec`](https://github.com/sonata-nfv/son-gkeeper/tree/master/son-gtkrec): where all Records' features are implemented;
 1. [`son-gtklic`](https://github.com/sonata-nfv/son-gkeeper/tree/master/son-gtklic): where all Licences' features are implemented;
-1. [`son-gtkusr`](https://github.com/sonata-nfv/son-gkeeper/tree/master/son-gtkusr): where all Users' features are implemented;
+1. [`son-gtkusr`](https://github.com/sonata-nfv/son-gkeeper/tree/master/son-gtkusr): where all User Management's features are implemented;
 1. [`son-gtkkpi`](https://github.com/sonata-nfv/son-gkeeper/tree/master/son-gtkkpi): where all KPIs' features are implemented;
 
 The last three micro-services are still a work in progress. Most of these micro-services have been implemented using [`ruby`](https://github.com/ruby/ruby/tree/ruby_2_2) programming language and the [`sinatra`](https://github.com/sinatra/sinatra) framework. The exception is the [`son-gtklic`](https://github.com/sonata-nfv/son-gkeeper/tree/master/son-gtklic), which is implemented in [`python`](https://www.python.org/). The only need is that the micro-service to be implemented provides a REST API, whatever the language it is implemented in.

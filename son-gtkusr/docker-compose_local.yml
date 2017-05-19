@@ -7,8 +7,9 @@ services:
       dockerfile: dockerfile-gtkusr
     ports: 
       - "4021:4021"
-    #links:
+    links:
     #  - keycloak
+      - mongo:mongo
     environment:
       - KEYCLOAK_ADDRESS=keycloak
       - KEYCLOAK_PORT=8080
@@ -27,4 +28,17 @@ services:
       - KEYCLOAK_PASSWORD=admin
     links:
       - adapter
-    container_name: sonata-keycloak    
+    container_name: sonata-keycloak
+  mongodata-gtk:
+    image: mongo:3.0.4
+    volumes:
+      - /data/db
+    command: --break-mongo
+  mongo:
+    image: mongo:3.0.4
+    volumes_from:
+      - mongodata-gtk
+    ports:
+      - "27017"
+    command: --smallfiles --rest
+    restart: always
