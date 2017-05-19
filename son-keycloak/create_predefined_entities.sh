@@ -1,9 +1,12 @@
 #!/bin/bash
 
+KEYCLOAK_USER=${1:-admin}
+KEYCLOAK_PASSWORD=${2:-admin}
+
+# KEYCLOAK_USER=admin
+# KEYCLOAK_PASSWORD=admin
 
 KEYCLOAK_PORT=5601
-KEYCLOAK_USER=admin
-KEYCLOAK_PASSWORD=admin
 KEYCLOAK_URL=http://localhost:$KEYCLOAK_PORT
 KEYCLOAK_OPENID_TOKEN_ENDPOINT=$KEYCLOAK_URL/auth/realms/sonata/protocol/openid-connect/token
 ADAPTER_URL=http://son-gtkusr:5600/api/v1/config
@@ -76,7 +79,7 @@ function create_realm_role() {
 
 # Param: $1 = realm, $2 = group name
 function create_group() {
-	$KCADMIN_SCRIPT create groups -r $1 -s name=$2 -i > /dev/null
+	$KCADMIN_SCRIPT create groups -r $1 -s name=$2 -s $3 -i > /dev/null
 	ret=$?
 	if [ $ret -eq 0 ]; then
         	echo "Created group [$2] for realm [$1]"
@@ -119,27 +122,28 @@ if [ $? -ne 0 ]; then
 	exit 1
 fi
 
-# Creating a realm:
+# Creating the Service Platform realm:
 create_realm $SONATA_REALM
 
-# Creating a client:
+# Creating the Service Platform adapter client:
 create_client_out=$(create_client $SONATA_REALM $ADAPTER_CLIENT "http://localhost:8081/adapter")
 echo $create_client_out
 adapter_cid=$(echo $create_client_out | awk -F id= '{print $2}')
 #echo "adapter_cid=$adapter_cid"
 
-# Creating a realm role:
+# Creating predefined realm roles:
 create_realm_role $SONATA_REALM son-gkeeper "\${role_access-catalogue},\${role_access-repositories}"
 create_realm_role $SONATA_REALM son-catalogue ""
 create_realm_role $SONATA_REALM son-repositories "\${role_read-catalogue}"
 create_realm_role $SONATA_REALM son-monitor "\${role_read-catalogue},\${role_read-repositories}"
 create_realm_role $SONATA_REALM customer "\${role_read-repositories},\${role_write-repositories},\${role_execute-catalogue}"
 create_realm_role $SONATA_REALM developer "\${role_read-catalogue},\${role_write-catalogue},\${role_read-monitor}"
+# create_realm_role $SONATA_REALM admin "\${role_read-catalogue},\${role_write-catalogue},\${role_read-monitor}"
 
-# Creating realm groups:
-create_group $SONATA_REALM developers
-create_group $SONATA_REALM customers
-#create_group $SONATA_REALM admins
+# Creating predefined realm groups where $1=realm_name $2=group_name $3=associated_role_name:
+create_group $SONATA_REALM developers 'attributes.roles=["developer"]'
+create_group $SONATA_REALM customers 'attributes.roles=["customer"]'
+create_group $SONATA_REALM admins 'attributes.roles=["admin"]'
 
 # Capture the adapter client secret for the next set of operations
 adapter_secret=$(get_client_secret $SONATA_REALM $adapter_cid)
