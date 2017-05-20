@@ -12,3 +12,4 @@
 son-gtksrv/db/postgres
 son-gtkpkg/vendor
 **/.idea/*
+**/.project
