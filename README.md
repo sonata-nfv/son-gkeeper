@@ -21,17 +21,19 @@ This repository is organized by **micro-service** (one folder to one micro-servi
 
 Micro-services currently implemented are the following:
 
-1. [`son-gtkapi`](https://github.com/sonata-nfv/son-gkeeper/tree/master/son-gtkapi): the only 'door' to the Gatekeeper, where the API is exposed;
-1. [`son-gtkpkg`](https://github.com/sonata-nfv/son-gkeeper/tree/master/son-gtkpkg): where all Packages features are implemented;
-1. [`son-gtksrv`](https://github.com/sonata-nfv/son-gkeeper/tree/master/son-gtksrv): where all Services features are implemented;
-1. [`son-gtkfnct`](https://github.com/sonata-nfv/son-gkeeper/tree/master/son-gtkfnct): where all Functions features are implemented;
-1. [`son-gtkvim`](https://github.com/sonata-nfv/son-gkeeper/tree/master/son-gtkvim): where all Vims features are implemented;
-1. [`son-gtkrec`](https://github.com/sonata-nfv/son-gkeeper/tree/master/son-gtkrec): where all Records' features are implemented;
-1. [`son-gtklic`](https://github.com/sonata-nfv/son-gkeeper/tree/master/son-gtklic): where all Licences' features are implemented;
+1. [`son-gtkapi`](https://github.com/sonata-nfv/son-gkeeper/tree/master/son-gtkapi): the only 'door' to the Gatekeeper, where the API is exposed and requests are validated and dispached to the other micro-services of the Gatekeeper;
+1. [`son-gtkpkg`](https://github.com/sonata-nfv/son-gkeeper/tree/master/son-gtkpkg): where packages are opened, validated and submited to the [Catalogues](https://github.com/sonata-nfv/son-catalogue-repos);
+1. [`son-gtksrv`](https://github.com/sonata-nfv/son-gkeeper/tree/master/son-gtksrv): where requests for services' meta-data are forwarded to the [Catalogues](https://github.com/sonata-nfv/son-catalogue-repos) and service instantiation requests are sent to the [`MANO Framework`](https://github.com/sonata-nfv/son-mano-framework);
+1. [`son-gtkfnct`](https://github.com/sonata-nfv/son-gkeeper/tree/master/son-gtkfnct): where requests for functions' meta-data are forwarded to the [Catalogues](https://github.com/sonata-nfv/son-catalogue-repos) and requests for function metrics are sent to the [Monitoring Framework](https://github.com/sonata-nfv/son-monitor);
+1. [`son-gtkvim`](https://github.com/sonata-nfv/son-gkeeper/tree/master/son-gtkvim): through which the [GUI](https://github.com/sonata-nfv/son-gui) accesses VIMs and WIMs configurations;
+1. [`son-gtkrec`](https://github.com/sonata-nfv/son-gkeeper/tree/master/son-gtkrec): where requests for services' or functions' records are forwarded to the [Repositories](https://github.com/sonata-nfv/son-catalogue-repos);
+1. [`son-gtklic`](https://github.com/sonata-nfv/son-gkeeper/tree/master/son-gtklic): where Licences' are managed;
 1. [`son-gtkusr`](https://github.com/sonata-nfv/son-gkeeper/tree/master/son-gtkusr): where all User Management's features are implemented;
 1. [`son-gtkkpi`](https://github.com/sonata-nfv/son-gkeeper/tree/master/son-gtkkpi): where all KPIs' features are implemented;
+1. [`son-sec-gw`](https://github.com/sonata-nfv/son-gkeeper/tree/master/son-sec-gw): the front-end implementing external secured (`HTTPS`) access;
+1. [`son-keycloak`](https://github.com/sonata-nfv/son-gkeeper/tree/master/son-keycloak): the back-end of the [User Management](https://github.com/sonata-nfv/son-gkeeper/tree/master/son-gtkusr) micro-service;
 
-The last three micro-services are still a work in progress. Most of these micro-services have been implemented using [`ruby`](https://github.com/ruby/ruby/tree/ruby_2_2) programming language and the [`sinatra`](https://github.com/sinatra/sinatra) framework. The exception is the [`son-gtklic`](https://github.com/sonata-nfv/son-gkeeper/tree/master/son-gtklic), which is implemented in [`python`](https://www.python.org/). The only need is that the micro-service to be implemented provides a REST API, whatever the language it is implemented in.
+Most of these micro-services have been implemented using [`ruby`](https://github.com/ruby/ruby/tree/ruby_2_2) programming language and the [`sinatra`](https://github.com/sinatra/sinatra) framework. The two exceptions are the [`son-gtklic`](https://github.com/sonata-nfv/son-gkeeper/tree/master/son-gtklic), which is implemented in [`python`](https://www.python.org/) and [`son-keycloak`](https://github.com/sonata-nfv/son-gkeeper/tree/master/son-keycloak), implemented in `java` ([`son-sec-gw`](https://github.com/sonata-nfv/son-gkeeper/tree/master/son-sec-gw) is just a `NGINx` fron-end, adequately configured). The only need is that the micro-service to be implemented provides a REST API, whatever the language it is implemented in.
 
 ### Building
 'Building' the Gatekeeper, given the approach mentioned above, is more like 'composing' it from the available micro-services. So:
