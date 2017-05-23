@@ -30,7 +30,7 @@ RSpec.describe PackageManagerService, type: :model do
   let(:secret) {Base64.strict_encode64(user[:username]+':'+user[:password])}
   let(:session) {{began_at: Time.now.utc, token: 'abc'}}
   # Just with the user for the moment
-  let(:package) {{user: user}}
+  let(:package) {{token: 'abc'}}
   
   describe '#find_by_uuid' do
     it 'should GET /catalogues/packages/:uuid from catalogues'
