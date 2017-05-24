@@ -40,21 +40,26 @@ class GtkApi < Sinatra::Base
   
     # POST a request
     post '/?' do
-      MESSAGE = 'GtkApi::POST /api/v2/requests/'
+      began_at = Time.now.utc
+      content_type :json
+      log_message = 'GtkApi::POST /api/v2/requests/'
       params = JSON.parse(request.body.read)
-      unless params.nil?
-        logger.debug(MESSAGE) {"entered with params=#{params}"}
-        new_request = ServiceManagerService.create_service_intantiation_request(params)
-        if new_request
-          logger.debug(MESSAGE) { "new_request =#{new_request}"}
-          halt 201, new_request.to_json
-        else
-          logger.debug(MESSAGE) { "leaving with 'No request was created'"}
-          json_error 400, 'No request was created'
-        end
+      logger.debug(log_message) {"entered with params=#{params}"}
+      
+      if params.nil?
+        count_service_instantiation_requests(labels: {result: "bad request", uuid: '', elapsed_time: (Time.now.utc-began_at).to_s})
+        json_error 400, 'No service id specified for the request', log_message
       end
-      logger.debug(MESSAGE) { "leaving with 'No service id specified for the request'"}
-      json_error 400, 'No service id specified for the request'
+        
+      new_request = ServiceManagerService.create_service_intantiation_request(params)
+      if new_request
+        count_service_instantiation_requests(labels: {result: "ok", uuid: '', elapsed_time: (Time.now.utc-began_at).to_s})
+        logger.debug(log_message) { "new_request =#{new_request}"}
+        halt 201, new_request.to_json
+      else
+        count_service_instantiation_requests(labels: {result: "bad request", uuid: '', elapsed_time: (Time.now.utc-began_at).to_s})
+        json_error 400, 'No request was created', log_message
+      end
     end
 
     # GET many requests
@@ -107,5 +112,13 @@ class GtkApi < Sinatra::Base
       headers 'Content-Type' => 'text/plain; charset=utf8', 'Location' => '/api/v2/admin/requests/logs'
       halt 200, log
     end
+  end
+  
+  private
+  
+  def count_service_instantiation_requests(labels:)
+    name = __method__.to_s.split('_')[1..-1].join('_')
+    desc = "how many service instantiations have been requested"
+    ServiceManagerService.counter_kpi({name: name, docstring: desc, base_labels: labels.merge({method: 'POST', module: 'services'})})
   end
 end
