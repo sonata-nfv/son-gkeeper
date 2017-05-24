@@ -25,20 +25,6 @@
 ## acknowledge the contributions of their colleagues of the SONATA
 ## partner consortium (www.sonata-nfv.eu).
 
-# Class model for SP micro-service resources
-class Sp_resource
-  include Mongoid::Document
-  include Mongoid::Timestamps
-  # include Mongoid::Pagination
-  include Mongoid::Attributes::Dynamic
-  store_in collection: 'sp_resources'
-
-  field :name, type: String
-  field :roles, type: Array
-
-  validates :name, presence: true
-end
-
 # Class model for SP user meta-data
 class Sp_user
   include Mongoid::Document
@@ -54,28 +40,29 @@ class Sp_user
   validates :username, :public_key, :certificate, presence: true, :allow_nil => true
 end
 
+# Class model for SP micro-service resources
+class Sp_resource
+  include Mongoid::Document
+  include Mongoid::Timestamps
+  # include Mongoid::Pagination
+  include Mongoid::Attributes::Dynamic
+  store_in collection: 'sp_resources'
+
+  field :name, type: String
+  field :roles, type: Array
+
+  validates :name, presence: true
+end
+
 # Class model for SP permissions
-class Sp_permission
-  include Mongoid::Document
-  include Mongoid::Timestamps
+#class Sp_permission
+#  include Mongoid::Document
+#  include Mongoid::Timestamps
   # include Mongoid::Pagination
-  include Mongoid::Attributes::Dynamic
-  store_in collection: 'sp_permissions'
+#  include Mongoid::Attributes::Dynamic
+#  store_in collection: 'sp_permissions'
 
-  field :name, type: String
-  field :roles, type: Array
-  validates :name, presence: true
-end
-
-# Class model for SP groups
-class Sp_group
-  include Mongoid::Document
-  include Mongoid::Timestamps
-  # include Mongoid::Pagination
-  include Mongoid::Attributes::Dynamic
-  store_in collection: 'sp_groups'
-
-  field :name, type: String
-  field :roles, type: Array
-  validates :name, presence: true
-end
+#  field :name, type: String
+#  field :roles, type: Array
+#  validates :name, presence: true
+#end
