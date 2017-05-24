@@ -53,7 +53,7 @@ class GtkApi < Sinatra::Base
         
       new_request = ServiceManagerService.create_service_intantiation_request(params)
       if new_request
-        count_service_instantiation_requests(labels: {result: "ok", uuid: '', elapsed_time: (Time.now.utc-began_at).to_s})
+        count_service_instantiation_requests(labels: {result: "ok", uuid: new_request[:id], elapsed_time: (Time.now.utc-began_at).to_s})
         logger.debug(log_message) { "new_request =#{new_request}"}
         halt 201, new_request.to_json
       else
