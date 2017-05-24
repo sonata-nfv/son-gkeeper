@@ -37,6 +37,7 @@ class GtkApi < Sinatra::Base
     
     # GET /functions/:function_uuid/instances/:instance_uuid/asynch-mon-data?metric=cpu_util&since=…&until=…
     get '/:uuid/instances/:instance_uuid/asynch-mon-data/?' do
+      began_at = Time.now.utc
       log_message = 'GtkApi::GET /api/v2/functions/:uuid/instances/:instance_uuid/asynch-mon-data/?'
       logger.debug(log_message) {"entered with params #{params}"}
       # {"name":"vm_mem_perc","start": "'$tw_start'", "end": "'$tw_end'", "step": "10s", "labels": [{"labeltag":"exported_job", "labelid":"vnf"}]}
@@ -88,15 +89,29 @@ class GtkApi < Sinatra::Base
     
     # …/functions/:function_uuid/instances/:instance_uuid/synch-mon-data?metric=cpu_util&for=<number of seconds>
     get '/:uuid/instances/:instance_uuid/synch-mon-data/?' do
+      began_at = Time.now.utc
       log_message = 'GtkApi::GET /api/v2/functions/:uuid/instances/:instance_uuid/synch-mon-data/?'
       logger.debug(log_message) {"entered with function #{params[:uuid]}, instance #{params[:instance_uuid]}"}
       # {"metric":"vm_cpu_perc","filters":["id='123456asdas255sdas'","type='vnf'"]}
+      
+      content_type :json
       
       logger.debug(log_message) { 'query_string='+request.env['QUERY_STRING']}
       params.delete('splat')
       params.delete('captures')
       params.merge(parse_query_string(request.env['QUERY_STRING']))
-      json_error 400, 'Metrics list is missing' unless (params.key?('metrics') && !params['metrics'].empty?)
+      
+      token = get_token( request.env, log_message)
+      if (token.nil? || token.empty?)
+        count_synch_monitoring_data_requests(labels: {result: "bad request", uuid: '', elapsed_time: (Time.now.utc-began_at).to_s})
+        json_error 400, 'A valid user access token was not provided', log_message
+      end
+      
+      unless (params.key?('metrics') && !params['metrics'].empty?)
+        count_synch_monitoring_data_requests(labels: {result: "bad request", uuid: '', elapsed_time: (Time.now.utc-began_at).to_s})
+        json_error 400, 'Metrics list is missing', log_message
+      end
+       
       # TODO: duration is not yet being treated
       # json_error 400, 'Duration is missing' unless (params.key?(:for) && !params[:for].empty?)
       # Can we fix the ID as being function instance ID...
@@ -107,6 +122,7 @@ class GtkApi < Sinatra::Base
       begin
         function = FunctionManagerService.find_by_uuid!(params[:uuid])
       rescue FunctionNotFoundError
+        count_synch_monitoring_data_requests(labels: {result: "not found", uuid: '', elapsed_time: (Time.now.utc-began_at).to_s})
         json_error 404, "Function #{params[:uuid]} not found", log_message
       end
     
@@ -115,27 +131,31 @@ class GtkApi < Sinatra::Base
       logger.debug(log_message) { "params without metrics=#{params}"}
       
       # TODO: validate user who's asking here
-      unless metrics_names.empty?
-        function.load_instances()
-        if function.instances.include?(params[:instance_uuid])
-          metrics = Metric.validate_and_create(metrics_names)
-            
-          # TODO: we're assuming this is treated one metric at a time
-          metrics.each do |metric|
-            begin
-              metric.synch_monitoring_data({filters: params[:filters]}) # TODO: add for: params[:for], 
-            rescue AsynchMonitoringDataRequestNotCreatedError
-              logger.debug(log_message) {'Failled request with params '+params.to_s+ ' for metric '+metric.name}
-              next
-            end
-          end
-          halt 200, 'Requested synch metrics'
-        else
-          json_error 404, "Instance #{params[:instance_uuid]} is not an instance of function #{params[:uuid]}", log_message
-        end
-      else
+      if metrics_names.empty?
+        count_synch_monitoring_data_requests(labels: {result: "not found", uuid: '', elapsed_time: (Time.now.utc-began_at).to_s})
         json_error 404, "At least one metric must be given", log_message
       end
+
+      function.load_instances()
+      
+      unless function.instances.include?(params[:instance_uuid])
+        count_synch_monitoring_data_requests(labels: {result: "not found", uuid: '', elapsed_time: (Time.now.utc-began_at).to_s})
+        json_error 404, "Instance #{params[:instance_uuid]} is not an instance of function #{params[:uuid]}", log_message
+      end
+      
+      metrics = Metric.validate_and_create(metrics_names)
+        
+      # TODO: we're assuming this is treated one metric at a time
+      metrics.each do |metric|
+        begin
+          metric.synch_monitoring_data({filters: params[:filters]}) # TODO: add for: params[:for], 
+        rescue SynchMonitoringDataRequestNotCreatedError
+          logger.debug(log_message) {'Failled request with params '+params.to_s+ ' for metric '+metric.name}
+          next
+        end
+      end
+      count_synch_monitoring_data_requests(labels: {result: "ok", uuid: '', elapsed_time: (Time.now.utc-began_at).to_s})
+      halt 200, 'Requested synch metrics'
     end
   end
   
@@ -155,5 +175,11 @@ class GtkApi < Sinatra::Base
     end
     logger.debug(__method__.to_s) {'params='+params.to_s}
     params
+  end
+  
+  def count_synch_monitoring_data_requests(labels:)
+    name = __method__.to_s.split('_')[1..-1].join('_')
+    desc = "how many synch monitoring data requests have been made"
+    Metric.counter_kpi({name: name, docstring: desc, base_labels: labels.merge({method: 'GET', module: 'metrics'})})
   end
 end
