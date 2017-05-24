@@ -712,4 +712,7 @@ class Keycloak < Sinatra::Application
     logger.debug 'Adapter: leaving PUT /attributes/ with no username specified'
     json_error 400, 'No username specified'
   end
+
+  # TODO: ADD ADMIN USERS OPERATIONS
+  # ADMIN OPS http://sp.int3.sonata-nfv.eu:5601/auth/admin/sonata/console/
 end

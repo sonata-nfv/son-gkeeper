@@ -595,7 +595,6 @@ class Keycloak < Sinatra::Application
     http_path ="http://#{@@address.to_s}:#{@@port.to_s}/#{@@uri.to_s}/admin/realms/#{@@realm_name}/users/#{user['sub']}/logout"
     url = URI(http_path)
     http = Net::HTTP.new(url.host, url.port)
-    # request = Net::HTTP::Post.new(url.to_s)
     request = Net::HTTP::Post.new(url.to_s)
     request["authorization"] = 'bearer ' + @@access_token
     request["content-type"] = 'application/x-www-form-urlencoded'
@@ -795,44 +794,46 @@ class Keycloak < Sinatra::Application
     end
   end
 
-  def set_user_groups(attr, user_id)
+  def set_user_groups(role_attr, user_id)
     # Assign group based on attr
-    group_name = Adapter.assign_group(attr)
+    group_list = get_groups
+    group_names = get_groups_names(group_list, role_attr)
+    # group_name = Adapter.assign_group(attr)
     # puts "DESIGNATED GROUP", group_name
+
     # Search roles
-    group_data, errors = parse_json(get_groups({'name' => group_name}))
-    # groups = get_groups(attribute)
-    # group_data = parse_json(realm_roles)[0].find {|group| group['name'] == attribute}
-    # p "GROUP DATA", group_data
-    # Compare user_type with roles
-    unless group_data
-      return 401, 'User type is not allowed'
-    end
+    group_names.each { |group_name|
+      group_data, errors = parse_json(get_groups({'name' => group_name}))
+      # groups = get_groups(attribute)
+      # group_data = parse_json(realm_roles)[0].find {|group| group['name'] == attribute}
+      # p "GROUP DATA", group_data
+      # Compare user_type with roles
+      unless group_data
+        return 401, 'User type is not allowed'
+      end
 
-    # Add user to group
-    ## PUT /admin/realms/{realm}/users/{id}/groups/{groupId}
-    http_path = "http://#{@@address.to_s}:#{@@port.to_s}/#{@@uri.to_s}/admin/realms/#{@@realm_name}/users/#{user_id}/groups/#{group_data['id']}"
-    url = URI(http_path)
-    http = Net::HTTP.new(url.host, url.port)
-    request = Net::HTTP::Put.new(url.to_s)
-    request["authorization"] = 'bearer ' + @@access_token
-    # request["content-type"] = 'application/json'
-    # body = []
-    # request.body = (body << role_data).to_json
-    # p "ADDING USER TO GROUP"
+      # Add user to group
+      ## PUT /admin/realms/{realm}/users/{id}/groups/{groupId}
+      http_path = "http://#{@@address.to_s}:#{@@port.to_s}/#{@@uri.to_s}/admin/realms/#{@@realm_name}/users/#{user_id}/groups/#{group_data['id']}"
+      url = URI(http_path)
+      http = Net::HTTP.new(url.host, url.port)
+      request = Net::HTTP::Put.new(url.to_s)
+      request["authorization"] = 'bearer ' + @@access_token
+      # request["content-type"] = 'application/json'
+      # body = []
+      # request.body = (body << role_data).to_json
+      # p "ADDING USER TO GROUP"
 
-    response = http.request(request)
-    # p "CODE", response.code
-    # p "BODY", response.body
+      response = http.request(request)
+      # p "CODE", response.code
+      # p "BODY", response.body
 
-    if response.code == '204'
-      # halt response.code.to_i
-      # puts "USER ADDED TO GROUP"
-      return response.code.to_i, nil
-    else
-      # json_error(response.code.to_i, response.body.to_s)
-      return response.code.to_i, response.body.to_s
-    end
+      if response.code != '204'
+        # json_error(response.code.to_i, response.body.to_s)
+        return response.code.to_i, response.body.to_s
+      end
+    }
+    return 204 , nil
   end
 
   def set_service_roles(client_id)
@@ -855,7 +856,7 @@ class Keycloak < Sinatra::Application
     response = http.request(request)
     # p "REALM AVAILABLE SCOPE", parse_json(response.body)[0]
 
-    # TODO: Rework this process (predefined service roles)
+    # TODO: Rework this process (predefined service roles)!!!
     logger.debug "Keycloak: Available roles: #{parse_json(response.body)}"
     role_data = parse_json(response.body)[0].find {|role| role['name'] == query['name']}
     # p "ROLE DATA", role_data
@@ -1113,10 +1114,34 @@ class Keycloak < Sinatra::Application
     if query['name']
       # puts "NAME PRESENT?", query['name']
       group_data = group_list.find {|group| group['name'] == query['name'] }
-      return group_data.to_json
+      group_data.to_json
     else
       response.body
     end
+  end
+
+  def get_groups_names(group_list, role)
+    role_group_map = []
+    group_list.each { |k|
+      if k['id']
+        url = URI("http://#{@@address.to_s}:#{@@port.to_s}/#{@@uri.to_s}/admin/realms/#{@@realm_name}/groups/#{k['id']}")
+        http = Net::HTTP.new(url.host, url.port)
+        request = Net::HTTP::Get.new(url.to_s)
+        request["authorization"] = 'Bearer ' + @@access_token
+        response = http.request(request)
+        group_data = parse_json(response.body)[0]
+        begin
+          group_data['attributes']['roles'].each { |role_name|
+            if role_name == role
+              role_group_map << group_data['name']
+            end
+          }
+        rescue
+          nil
+        end
+      end
+    }
+    role_group_map
   end
 
   def get_clients(query=nil)
@@ -1397,12 +1422,17 @@ class Keycloak < Sinatra::Application
   end
 
   def process_request(uri, method)
+    # TODO: REVAMP EVALUATION FUNCTION
+    log_file = File.new("#{settings.root}/log/#{settings.environment}.log", 'a+')
+    STDOUT.reopen(log_file)
+    STDOUT.sync = true
+
     # Parse uri path
     path = URI(uri).path.split('/')[1]
     # p "path", path
 
     # Find mapped resource to path
-    # TODO: check this -->
+    # TODO: CHECK IF IS A VALID RESOURCE FROM DATABASE
     resources = @@auth_mappings['resources']
     # p "RESOURCES", resources
 
@@ -1434,5 +1464,6 @@ class Keycloak < Sinatra::Application
       # puts "OPERATION", operation
       request = {"resource" => resource[0], "type" => resource[1], "operation" => operation}
     end
+    STDOUT.sync = false
   end
 end
