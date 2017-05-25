@@ -126,7 +126,7 @@ class GtkApi < Sinatra::Base
       end
     
       # Remove list of wanted fields from the query parameter list
-      metrics_names = params.delete('metrics')
+      metrics_names = params.delete('metrics').split(',')
       logger.debug(log_message) { "params without metrics=#{params}"}
       
       # TODO: validate user who's asking here
