@@ -663,10 +663,15 @@ class Keycloak < Sinatra::Application
     # operation_resource
     # operation_resource_type
 
+    log_file = File.new("#{settings.root}/log/#{settings.environment}.log", 'a+')
+    STDOUT.reopen(log_file)
+    STDOUT.sync = true
+
     logger.debug "Adapter: Token Payload: #{token_payload.to_s}, Token Header: #{token_header.to_s}"
 
     required_role = 'role_' + request['operation'] + '-' + request['resource']
     # p "REQUIRED ROLE", required_role
+    logger.debug "Adapter: Required Role: #{required_role}"
 
     # => Check token roles
     begin
@@ -685,10 +690,10 @@ class Keycloak < Sinatra::Application
     # .
     # .
 
-    # p "realm_access_roles", token_realm_access_roles
+    p "realm_access_roles", token_realm_access_roles
     code, realm_roles = get_realm_roles
 
-    # p "realm_roles", realm_roles
+    p "realm_roles", realm_roles
     parsed_realm_roles, errors = parse_json(realm_roles)
     # p "Realm_roles_PARSED", parsed_realm_roles
 
@@ -701,14 +706,16 @@ class Keycloak < Sinatra::Application
         json_error(403, 'No permissions')
       end
 
-      # puts "ROLE_DESC", token_role_repr['description']
+      puts "ROLE_DESC", token_role_repr['description']
       role_perms = token_role_repr['description'].tr('${}', '').split(',')
-      # puts "ROLE_PERM", role_perms
+      puts "ROLE_PERM", role_perms
 
       if role_perms.include?(required_role)
         authorized = true
       end
     }
+
+    STDOUT.sync = false
 
     #=> Response => 20X or 40X
     case authorized
@@ -1430,26 +1437,26 @@ class Keycloak < Sinatra::Application
 
     # Parse uri path
     path = URI(uri).path.split('/')[1]
-    # p "path", path
+    p "path", path
 
     # Find mapped resource to path
     # TODO: CHECK IF IS A VALID RESOURCE FROM DATABASE
     resources = @@auth_mappings['resources']
-    # p "RESOURCES", resources
+    p "RESOURCES", resources
 
     resource = nil
     # p "PATHS", @@auth_mappings['paths']
     @@auth_mappings['paths'].each { |k, v|
-      # puts "k, v", k, v
+      puts "k, v", k, v
       v.each { |kk, vv|
-        # puts "kk, vv", kk, vv
+        puts "kk, vv", kk, vv
         if kk == path
-          # p "Resource found", k, kk
+          p "Resource found", k, kk
           resource = [k, kk]
           break
         end
       }
-      # p "FOUND", resource
+      p "FOUND_RESOURCE", resource
       if resource
         break
       end
@@ -1462,9 +1469,9 @@ class Keycloak < Sinatra::Application
       json_error(403, 'The resource operation is not available')
     else
       operation = @@auth_mappings['paths'][resource[0]][resource[1]][method]
-      # puts "OPERATION", operation
+      puts "FOUND_OPERATION", operation
+      STDOUT.sync = false
       request = {"resource" => resource[0], "type" => resource[1], "operation" => operation}
     end
-    STDOUT.sync = false
   end
 end
