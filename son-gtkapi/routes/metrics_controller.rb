@@ -136,7 +136,7 @@ class GtkApi < Sinatra::Base
         json_error 404, "At least one metric must be given", log_message
       end
 
-      function.load_instances()
+      function.load_instances(params[:uuid])
       
       unless function.instances.include?(params[:instance_uuid])
         count_synch_monitoring_data_requests(labels: {result: "not found", uuid: '', elapsed_time: (Time.now.utc-began_at).to_s})
