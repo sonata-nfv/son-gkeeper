@@ -42,16 +42,16 @@ end
 def userbased
   # curl -d "client_id=admin-cli" -d "username=user1" -d "password=1234" -d "grant_type=password" "http://localhost:8081/auth/realms/SONATA/protocol/openid-connect/token"
   client_id = "adapter"
-  username = "tester"
+  username = "sonata"
   pwd = "1234"
   grt_type = "password"
-  http_path = "http://localhost:8081/auth/realms/master/protocol/openid-connect/token"
+  http_path = "http://sp.int3.sonata-nfv.eu:5601/auth/realms/sonata/protocol/openid-connect/token"
   idp_path = "http://localhost:8081/auth/realms/master/broker/github/login?"
   # puts `curl -X POST --data "client_id=#{client_id}&username=#{usrname}"&password=#{pwd}&grant_type=#{grt_type} #{http_path}`
 
   uri = URI(http_path)
   # uri = URI(idp_path)
-  res = Net::HTTP.post_form(uri, 'client_id' => client_id, 'client_secret' => 'df7e816d-0337-4fbe-a3f4-7b5263eaba9f',
+  res = Net::HTTP.post_form(uri, 'client_id' => client_id, 'client_secret' => '80b1a8eb-a349-4dd0-a9fe-470e7f29b9ca',
                             'username' => username,
                             'password' => pwd,
                             'grant_type' => grt_type)
@@ -75,16 +75,16 @@ def userbased
 end
 
 # "token_endpoint":"http://localhost:8081/auth/realms/master/protocol/openid-connect/token"
-def clientbased
+def clientbased(secret)
   # curl -d "client_id=admin-cli" -d "username=user1" -d "password=1234" -d "grant_type=password" "http://localhost:8081/auth/realms/SONATA/protocol/openid-connect/token"
-  http_path = "http://localhost:8081/auth/realms/master/protocol/openid-connect/token"
+  http_path = "http://sp.int3.sonata-nfv.eu:5601/auth/realms/sonata/protocol/openid-connect/token"
   # auth = "Basic YWRhcHRlcjpkZjdlODE2ZC0wMzM3LTRmYmUtYTNmNC03YjUyNjNlYWJhOWY=\n"
   # puts `curl -X POST --data "client_id=#{client_id}&username=#{usrname}"&password=#{pwd}&grant_type=#{grt_type} #{http_path}`
 
   uri = URI(http_path)
 
   res = Net::HTTP.post_form(uri, 'client_id' => 'adapter',
-                            'client_secret' => 'df7e816d-0337-4fbe-a3f4-7b5263eaba9f',
+                            'client_secret' => secret,
                             'grant_type' => 'client_credentials'
                             )
 
@@ -112,9 +112,18 @@ end
 
 def get_public_key
   # turn keycloak realm pub key into an actual openssl compat pub key.
-  keycloak_config = JSON.parse(File.read('../config/keycloak.json'))
+  # keycloak_config = JSON.parse(File.read('../config/keycloak.json'))
+  url = URI.parse("http://sp.int3.sonata-nfv.eu:5601/auth/realms/sonata")
+  http = Net::HTTP.new(url.host, url.port)
+  request = Net::HTTP::Get.new(url.to_s)
+
+  response = http.request(request)
+  parsed_response, code = parse_json(response.body)
+  # puts response.read_body # <-- save endpoints file
+  puts "realm_public_key: #{parsed_response['public_key']}"
+
   @s = "-----BEGIN PUBLIC KEY-----\n"
-  pub = "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA0CuLHW/20ixEsPCQkmLduyOuKLapGPO3+PhwYxEusgfxsZFB9ftx3IggKY+xPCfk77tUE0fK5BCqmaYR1DWJ1GYE4SK3Ic/KScCtRHLxcNUT8yzyw7KdaXHCYmLB9UjAZ24Jgx2ILpr6Epa3WV4vH0xTecvLQ4OUsgG0Po2Fa8M670lefP1Wzi8u7qAR5dQpsGL619hc2pB82mTU1ftd1+EfdNvm8O25g/wzeEHZ9AQe+0Lr/JwwsBbKnBbYa3/mMZI8EflZgnIwSOzL6GL3wRhNmNkz2BFcSy9Pd4ZbnSsisiGRkjR7RTtZaUk+s3sq0BVNRHvhw6d8lJUjln6BaQIDAQAB"
+  pub = parsed_response['public_key']
   @s += pub.scan(/.{1,64}/).join("\n")
   #@s += keycloak_config['realm-public-key'].scan(/.{1,64}/).join("\n")
   @s += "\n-----END PUBLIC KEY-----\n"
@@ -128,7 +137,7 @@ def token_validation(token)
   # puts "TEST ACCESS_TOKEN", token
   # decode_token(token, keycloak_pub_key)
   # url = URI("http://localhost:8081/auth/realms/master/clients-registrations/openid-connect/")
-  url = URI("http://127.0.0.1:8081/auth/realms/master/protocol/openid-connect/token/introspect")
+  url = URI("http://sp.int3.sonata-nfv.eu:5601/auth/realms/sonata/protocol/openid-connect/token/introspect")
   # ttp = Net::HTTP.new(url.host, url.port)
 
   # request = Net::HTTP::Post.new(url.to_s)
@@ -140,7 +149,7 @@ def token_validation(token)
   # request.body = body.to_json
 
   res = Net::HTTP.post_form(url, 'client_id' => 'adapter',
-                            'client_secret' => 'df7e816d-0337-4fbe-a3f4-7b5263eaba9f',
+                            'client_secret' => 'de4f7dc5-7f9e-4887-975f-6ebbe510fdcc',
                             'grant_type' => 'client_credentials', 'token' => token)
 
   puts "RESPONSE_INTROSPECT", res.read_body
@@ -210,7 +219,7 @@ end
 
 # "userinfo_endpoint":"http://localhost:8081/auth/realms/master/protocol/openid-connect/userinfo"
 def userinfo(token)
-  http_path = "http://localhost:8081/auth/realms/master/protocol/openid-connect/userinfo"
+  http_path = "http://sp.int3.sonata-nfv.eu:5601/auth/realms/sonata/protocol/openid-connect/userinfo"
   url = URI(http_path)
   http = Net::HTTP.new(url.host, url.port)
   # request = Net::HTTP::Post.new(url.to_s)
@@ -222,6 +231,7 @@ def userinfo(token)
   #request.body = body.to_json
   response = http.request(request)
   puts "RESPONSE", response.read_body
+  puts "CODE", response.code
   response_json = parse_json(response.read_body)[0]
 end
 
@@ -363,44 +373,63 @@ def register_client_bis (token, keycloak_pub_key)
 end
 
 def register_user(token) #, username,firstname, lastname, email, credentials)
-  body = {"username" => "tester",
-          "enabled" => true,
+  body1 = {"username" => "tester012",
+          #"phoneNumber" => "12234",
+          #"enabled" => true,
           "totp" => false,
           "emailVerified" => false,
           "firstName" => "User",
           "lastName" => "Sample",
-          "email" => "tester.sample@email.com.br",
+          "email" => "tester12.sample@email.com.br",
           "credentials" => [
               {"type" => "password",
                "value" => "1234"}
           ],
           "requiredActions" => [],
           "federatedIdentities" => [],
-          "attributes" => {"tester" => ["true"],"admin" => ["false"]},
+          "attributes" => {"tester" => ["true"],"admin" => ["false"], "phone" => [654654654]},
           "realmRoles" => [],
-          "clientRoles" => {},
+          "clientRoles"=> {
+              "realm-management" => ["realm-admin"]
+          },
           "groups" => []}
 
-  url = URI("http://localhost:8081/auth/admin/realms/master/users")
+  #"clientRoles": {
+  #    "realm-management": [ "realm-admin" ],
+  #    "account": [ "manage-account" ]
+  #}
+
+  unless body1.key?('enabled')
+    p "ENTERED BODY1.key"
+    # enable = {'enabled'=> true}
+    body1 = body1.merge({'enabled'=> true})
+  end
+
+  puts "BODY1", body1
+  if body1.key?('enabled')
+    p "ENABLED IS THERE"
+  end
+
+  url = URI("http://sp.int3.sonata-nfv.eu:5601/auth/admin/realms/sonata/users")
   http = Net::HTTP.new(url.host, url.port)
 
   request = Net::HTTP::Post.new(url.to_s)
   request["authorization"] = 'Bearer ' + token
 
   request["content-type"] = 'application/json'
-  request.body = body.to_json
+  request.body = body1.to_json
 
   response = http.request(request)
-  puts "REG CODE", response.code
+  puts "REG CODE??", response.code
   puts "REG BODY", response.body
 
   #GET new registered user Id
-  url = URI("http://localhost:8081/auth/admin/realms/master/users?username=tester")
+  url = URI("http://localhost:5601/auth/admin/realms/sonata/users?username=tester")
   http = Net::HTTP.new(url.host, url.port)
 
   request = Net::HTTP::Get.new(url.to_s)
   request["authorization"] = 'Bearer ' + token
-  request.body = body.to_json
+  #request.body = body.to_json
 
   response = http.request(request)
   puts "ID CODE", response.code
@@ -410,7 +439,7 @@ def register_user(token) #, username,firstname, lastname, email, credentials)
 
   #- Use the endpoint to setup temporary password of user (It will
   #automatically add requiredAction for UPDATE_PASSWORD
-  url = URI("http://localhost:8081/auth/admin/realms/master/users/#{user_id}/reset-password")
+  url = URI("http://localhost:5601/auth/admin/realms/sonata/users/#{user_id}/reset-password")
   http = Net::HTTP.new(url.host, url.port)
   request = Net::HTTP::Put.new(url.to_s)
   request["authorization"] = 'Bearer ' + token
@@ -428,7 +457,7 @@ def register_user(token) #, username,firstname, lastname, email, credentials)
   #- Then use the endpoint for update user and send the empty array of
   #requiredActions in it. This will ensure that UPDATE_PASSWORD required
   #action will be deleted and user won't need to update password again.
-  url = URI("http://localhost:8081/auth/admin/realms/master/users/#{user_id}")
+  url = URI("http://localhost:5601/auth/admin/realms/sonata/users/#{user_id}")
   http = Net::HTTP.new(url.host, url.port)
   request = Net::HTTP::Put.new(url.to_s)
   request["authorization"] = 'Bearer ' + token
@@ -440,6 +469,10 @@ def register_user(token) #, username,firstname, lastname, email, credentials)
   response = http.request(request)
   puts "UPD CODE", response.code
   puts "UPD BODY", response.body
+
+  response = {'username' => body1['username'], 'userId' => user_id.to_s}
+  puts response.to_json
+  return user_id.to_s
 end
 
 def set_user_roles(token)
@@ -447,7 +480,7 @@ def set_user_roles(token)
 end
 
 def login_user_bis (token, username=nil, credentials=nil)
-  url = URI("http://localhost:8081/auth/realms/master/protocol/openid-connect/token")
+  url = URI("http://sp.int3.sonata-nfv.eu:5601/auth/realms/sonata/protocol/openid-connect/token")
   http = Net::HTTP.new(url.host, url.port)
   request = Net::HTTP::Post.new(url.to_s)
   request["authorization"] = 'Bearer ' + token
@@ -455,9 +488,9 @@ def login_user_bis (token, username=nil, credentials=nil)
 
 
   request.set_form_data({'client_id' => 'adapter',
-                         'client_secret' => 'df7e816d-0337-4fbe-a3f4-7b5263eaba9f',
-                         'username' => 'user',
-                         'password' => '1234',
+                         'client_secret' => 'b3929fe7-268b-4c8e-8b1a-c5d9e0f090cb',
+                         'username' => 'admin',
+                         'password' => 'admin',
                          'grant_type' => 'password'})
 
   response = http.request(request)
@@ -535,11 +568,11 @@ def get_client_secret(token, id=nil)
 end
 
 def get_clients(token, id=nil)
-  realm = "master"
+  realm = "sonata"
   id = "adapter"
   id = "c0253603-dd08-42fb-a48f-c9bedd0c78f3"
   #Get the client secret
-  url = URI("http://localhost:8081/auth/admin/realms/#{realm}/clients")
+  url = URI("http://sp.int3.sonata-nfv.eu:5601/auth/admin/realms/#{realm}/clients")
   http = Net::HTTP.new(url.host, url.port)
   request = Net::HTTP::Get.new(url.to_s)
   #request.basic_auth("admin", "admin")
@@ -550,6 +583,9 @@ def get_clients(token, id=nil)
   p "RESPONSE", response
   p "RESPONSE.read_body222", parse_json(response.read_body)[0]
   p "CODE", response.code
+  p "BODY", response.body
+  p "PARSED_BODY", JSON.parse(response.body)
+  parse_json(response.read_body)[0]
 end
 
 def regenerate_client_secret()
@@ -608,7 +644,7 @@ end
 
 def get_users(token)
   #url = /admin/realms/{realm}/users
-  url = URI("http://localhost:8081/auth/admin/realms/master/users")
+  url = URI("http://sp.int3.sonata-nfv.eu:5601/auth/admin/realms/sonata/users")
   http = Net::HTTP.new(url.host, url.port)
   request = Net::HTTP::Get.new(url.to_s)
   request["authorization"] = 'bearer ' + token
@@ -680,6 +716,268 @@ def refresh_token(token)
   return 200, parse_json(response.body)[0]
 end
 
+def delete_user(token, userId)
+  url = URI("http://localhost:5601/auth/admin/realms/sonata/users/#{userId}")
+  http = Net::HTTP.new(url.host, url.port)
+  request = Net::HTTP::Delete.new(url.to_s)
+  request["authorization"] = 'Bearer ' + token
+  request["content-type"] = 'application/json'
+
+  response = http.request(request)
+  p "RESPONSE", response.body
+  p "CODE", response.code
+  # p "RESPONSE.read_body222", parse_json(response.read_body)[0]
+end
+
+def delete_client(token, clientId)
+  # GET new registered client Id (Name)
+  url = URI("http://sp.int3.sonata-nfv.eu:5601/auth/admin/realms/sonata/clients?clientId=#{clientId}")
+  http = Net::HTTP.new(url.host, url.port)
+  request = Net::HTTP::Get.new(url.to_s)
+  request["authorization"] = 'Bearer ' + token
+  # request.body = body.to_json
+
+  response = http.request(request)
+  puts 'RESPONSE:CODE', response.code
+  puts 'RESPONSE:BODY', response.body
+
+  begin
+    client_id = parse_json(response.body).first[0]["id"]
+  rescue
+    puts 'json_error(response.code.to_i, response.body.to_s)'
+  end
+
+  # refresh_adapter # Refresh admin token if expired
+  url = URI("http://sp.int3.sonata-nfv.eu:5601/auth/admin/realms/sonata/clients/#{client_id}")
+  http = Net::HTTP.new(url.host, url.port)
+  request = Net::HTTP::Delete.new(url.to_s)
+  request["authorization"] = 'Bearer ' + token
+  request["content-type"] = 'application/json'
+  # request.body = client_object.to_json
+  response = http.request(request)
+  puts 'RESPONSE:CODE', response.code
+  puts 'RESPONSE:BODY', response.body
+  if response.code.to_i != 204
+    halt response.code.to_i, {'Content-type' => 'application/json'}, response.body
+  end
+end
+
+def user_sessions(token, userId)
+  url = URI("http://sp.int3.sonata-nfv.eu:5601/auth/admin/realms/sonata/users/#{userId}/sessions")
+  http = Net::HTTP.new(url.host, url.port)
+  request = Net::HTTP::Get.new(url.to_s)
+  request["authorization"] = 'Bearer ' + token
+  request["content-type"] = 'application/json'
+
+  response = http.request(request)
+  p "RESPONSE", response.body
+  p "CODE", response.code
+  # p "RESPONSE.read_body222", parse_json(response.read_body)[0]
+end
+
+def add_user_group(token, userId, groupId)
+  ## PUT /admin/realms/{realm}/users/{id}/groups/{groupId}
+  http_path = "http://localhost:5601/auth/admin/realms/sonata/users/#{userId}/groups/#{groupId}"
+  url = URI(http_path)
+  http = Net::HTTP.new(url.host, url.port)
+  request = Net::HTTP::Put.new(url.to_s)
+  request["authorization"] = 'bearer ' + token
+  # request["content-type"] = 'application/json'
+  # body = []
+  # request.body = (body << role_data).to_json
+  # p "ADDING USER TO GROUP"
+
+  response = http.request(request)
+  p "CODE_group", response.code
+  p "BODY", response.body
+
+  if response.code == '204'
+    # halt response.code.to_i
+    # puts "USER ADDED TO GROUP"
+    # TODO: return
+    return response.code
+  else
+    # json_error(response.code.to_i, response.body.to_s)
+    return nil
+  end
+end
+
+def get_sessions(token)
+  # GET /admin/realms/{realm}/clients/{id}/user-sessions
+  id = 'cd8d576e-55ee-41ca-9dc8-0d34c08ff0b0'
+  http_path = "http://sp.int3.sonata-nfv.eu:5601/auth/admin/realms/sonata/clients/#{id}/user-sessions"
+  #http_path = "http://sp.int3.sonata-nfv.eu:5601/auth/admin/realms/sonata/sessions/"
+  url = URI(http_path)
+  http = Net::HTTP.new(url.host, url.port)
+  request = Net::HTTP::Get.new(url.to_s)
+  request["authorization"] = 'bearer ' + token
+  response = http.request(request)
+  p "CODE_SESSIONS", response.code
+  p "BODY_SESSIONS", response.body
+end
+
+def get_client_id(token)
+  # GET /admin/realms/{realm}/clients/{id}/user-sessions
+  id = 'cd8d576e-55ee-41ca-9dc8-0d34c08ff0b0'
+  http_path = "http://sp.int3.sonata-nfv.eu:5601/auth/admin/realms/sonata/clients?clientId=adapter"
+  #http_path = "http://sp.int3.sonata-nfv.eu:5601/auth/admin/realms/sonata/client-session-stats"
+  url = URI(http_path)
+  http = Net::HTTP.new(url.host, url.port)
+  request = Net::HTTP::Get.new(url.to_s)
+  request["authorization"] = 'bearer ' + token
+  response = http.request(request)
+  p "CODE_SESSIONS", response.code
+  p "BODY_SESSIONS", response.body
+end
+
+def get_user_by_id(token)
+  #GET new registered user Id
+  url = URI("http://sp.int3.sonata-nfv.eu:5601/auth/admin/realms/sonata/users/6727e040-2f24-4043-80e1-6b5a6333bcf9")
+  http = Net::HTTP.new(url.host, url.port)
+
+  request = Net::HTTP::Get.new(url.to_s)
+  request["authorization"] = 'Bearer ' + token
+  #request.body = body.to_json
+
+  response = http.request(request)
+  puts "ID CODE", response.code
+  puts "ID BODY", response.body
+
+  parsed_user_data = JSON.parse(response.body)[0]
+  p "parsed_user_data #{parsed_user_data}"
+
+  user_attributes = parsed_user_data['attributes']
+  p "user_attributes #{user_attributes}"
+  p "usertype", user_attributes['userType'][0]
+  unless user_attributes['userType'][0] == "developer"
+    p "HE IS NOT A DEVELOPER"
+  end
+
+  user_attributes.delete('userType') if user_attributes['userType'][0] == "developer"
+  p "deleted? user_attributes #{user_attributes}"
+end
+
+def test_form
+  params = {"name" => "username", "id" => "1234"}
+  #form = {"attributes" => {"username" => "test"}}
+  #form = {"attributes" => {"username" => "test", "userType" => "developer"}}
+  form = {"attributes" => {"username" => "test", "userType" => ["developer", "customer"]}}
+  #p "DO THIS WORK?", form['attributes']['userType']
+
+  pkey = "cert"
+  cert = nil
+
+  p "PARAMS", params, params.length
+  p "PARAMS.FIRST", params.first
+
+  if pkey || cert
+    p "ENTERED"
+
+    certa = form['attributes']['certificate']
+    form['attributes'].delete('certificate')
+    p "CERT IS", certa
+    p "FORM DELETED", form
+  end
+
+
+  unless pkey
+    p "OKEY IS NIL", pkey
+  end
+
+  if pkey
+    p "pkey is", pkey
+  end
+
+  #if form['attributes']['userType']
+    #p "USERTYPE EXISTS"
+    if form['attributes']['userType'].is_a?(String)
+      p "ITS A STRING"
+      case form['attributes']['userType']
+        when 'customer'
+          p "includes customer"
+        when 'developer'
+          p "includes developer"
+        else
+          p "case else"
+      end
+    end
+    if form['attributes']['userType'].is_a?(Array)
+      p "ITS AN ARRAY"
+      if form['attributes']['userType'].include?('developer')
+        p "INCLUDES DEVELOPER"
+      end
+      if form['attributes']['userType'].include?('customer')
+        p "INCLUDES CUSTOMER"
+      end
+    end
+  #end
+end
+
+def get_groups(token, query=nil)
+  ## GET /admin/realms/{realm}/users/{id}/groups/{groupId}
+  http_path = "http://sp.int3.sonata-nfv.eu:5601/auth/admin/realms/sonata/groups/"
+  url = URI(http_path)
+  http = Net::HTTP.new(url.host, url.port)
+  request = Net::HTTP::Get.new(url.to_s)
+  request["authorization"] = 'bearer ' + token
+  # request["content-type"] = 'application/json'
+  # body = []
+  # request.body = (body << role_data).to_json
+  # p "ADDING USER TO GROUP"
+
+  response = http.request(request)
+  p "CODE_group", response.code
+  p "BODY", parse_json(response.body)[0]
+  # parse_json(response.body)[0]
+  group_list = parse_json(response.read_body)[0]
+  #begin
+    if query && query.key?('name')
+      # puts "NAME PRESENT?", query['name']
+      group_data = group_list.find {|group| group['name'] == query['name'] }
+      group_data.to_json
+    else
+      group_list
+    end
+  #rescue
+    group_list
+  #end
+end
+
+def get_groups_names(token, group_list, role)
+  role_group_map = []
+  group_list.each { |k|
+    puts "k", k
+    if k['id']
+      http_path = "http://sp.int3.sonata-nfv.eu:5601/auth/admin/realms/sonata/groups/#{k['id']}"
+      url = URI(http_path)
+      http = Net::HTTP.new(url.host, url.port)
+      request = Net::HTTP::Get.new(url.to_s)
+      request["authorization"] = 'bearer ' + token
+
+      response = http.request(request)
+      p "CODE_group", response.code
+      p "BODY", parse_json(response.body)[0]
+      group_data = parse_json(response.body)[0]
+
+      begin
+        group_data['attributes']['roles'].each { |j|
+          if j == role
+            role_group_map << group_data['name']
+          end
+        }
+      rescue
+        # next
+      end
+      # role_group_map.push({'role' => group_data['attributes']['roles'], 'group' => group_data['name']})
+    end
+  }
+  puts "MAP LIST", role_group_map
+
+  role_group_map.each { |group_name|
+    puts 'group_name=', group_name }
+end
+
+
 =begin
 "grant_types_supported":["authorization_code","implicit","refresh_token","password","client_credentials"]
 "response_types_supported":["code","none","id_token","token","id_token token","code id_token","code token","code id_token token"]
@@ -698,15 +996,16 @@ end
 "request_uri_parameter_supported":true}
 =end
 
+#test_form
 #token = userbased
-token = clientbased
+#token = clientbased('f50d8d0f-1411-44c8-9431-3a48e930deb1')
 #token = adminbased
 #pub = get_public_key
 #token_validation(token)
 # certificates
 #authenticate(token)
-# userinfo(token)
-#token = "eyJhbGciOiJSUzI1NiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICJ2aGVwSzktY3VfbXVMRS00LUZac0FiMW5oT1o3elU3aXJLbk9jcWoxYzZZIn0.eyJqdGkiOiJhYTQyYTEyMi0xMzA1LTQ1NWEtYjk0My05MWM3NDBmMDBlODkiLCJleHAiOjE0ODgyNzkyNjUsIm5iZiI6MCwiaWF0IjoxNDg4Mjc4OTY1LCJpc3MiOiJodHRwOi8vbG9jYWxob3N0OjgwODAvYXV0aC9yZWFsbXMvc29uYXRhIiwiYXVkIjoiYWRhcHRlciIsInN1YiI6ImMzMjBkMGQyLTg4Y2MtNGMxNS1iMGQwLTAyZmY5OGNkNmQ0YSIsInR5cCI6IkJlYXJlciIsImF6cCI6ImFkYXB0ZXIiLCJhdXRoX3RpbWUiOjAsInNlc3Npb25fc3RhdGUiOiJmNjRkNGM2OC0zMjBhLTRkYjMtYmIyOC1jMzgzNWNlODJhZWUiLCJhY3IiOiIxIiwiY2xpZW50X3Nlc3Npb24iOiJlYzQ4MjlkMC0wNjNmLTQwYzEtOTBiMC0wOGE5MTg4ODEwZmUiLCJhbGxvd2VkLW9yaWdpbnMiOlsiaHR0cDovL2xvY2FsaG9zdDo4MDgxIl0sInJlYWxtX2FjY2VzcyI6eyJyb2xlcyI6WyJ1bWFfYXV0aG9yaXphdGlvbiJdfSwicmVzb3VyY2VfYWNjZXNzIjp7ImFkYXB0ZXIiOnsicm9sZXMiOlsidW1hX3Byb3RlY3Rpb24iXX0sImFjY291bnQiOnsicm9sZXMiOlsibWFuYWdlLWFjY291bnQiLCJ2aWV3LXByb2ZpbGUiXX19LCJjbGllbnRIb3N0IjoiMTcyLjE5LjAuMSIsImNsaWVudElkIjoiYWRhcHRlciIsIm5hbWUiOiIiLCJwcmVmZXJyZWRfdXNlcm5hbWUiOiJzZXJ2aWNlLWFjY291bnQtYWRhcHRlciIsImNsaWVudEFkZHJlc3MiOiIxNzIuMTkuMC4xIiwiZW1haWwiOiJzZXJ2aWNlLWFjY291bnQtYWRhcHRlckBwbGFjZWhvbGRlci5vcmcifQ.njVxVlghmVzAoW3nDsA1OnHTb3jBlO5lVjsxu2fjJlT9gM86Z_HjuxnIBZlGwbvl2EXN7SKfma7VptZck2_Z_TiLu4_s79ISdsg_Hx2YymBcSpEjxUiVO8UYa80rDxtPulK5z24MAKodmqbJf1VZWY4Vb7GkFHuPh3EbUQDQNRaXhP7plhfn36xgUTXh-c5oaO4OZvg6VPTKHKAdkEYUacoQP7xc-FxLW8rixT9GUw86dz6BNdww1ezsmBHjyJ0ma4un1COMHDT63k6JAsiVaoWH0rZrT6PzPcX4IldSP7mD9Fq_lY_DE-ATjMx4MDAvApYhWQZPKuHloQ4HkVYo8A"
+# userinfo(token['access_token'])
+# {"jti":"bc1200e5-3b6d-43f2-a125-dc4ed45c7ced","exp":1486105972,"nbf":0,"iat":1486051972,"iss":"http://localhost:8081/auth/realms/master","aud":"adapter","sub":"67cdf213-349b-4539-bdb2-43351bf3f56e","typ":"Bearer","azp":"adapter","auth_time":0,"session_state":"608a2a72-198d-440b-986f-ddf37883c802","name":"","preferred_username":"service-account-adapter","email":"service-account-adapter@placeholder.org","acr":"1","client_session":"2c31bbd9-c13d-43f1-bb30-d9bd46e3c0ab","allowed-origins":[],"realm_access":{"roles":["create-realm","admin","uma_authorization"]},"resource_access":{"adapter":{"roles":["uma_protection"]},"master-realm":{"roles":["view-identity-providers","view-realm","manage-identity-providers","impersonation","create-client","manage-users","view-authorization","manage-events","manage-realm","view-events","view-users","view-clients","manage-authorization","manage-clients"]},"account":{"roles":["manage-account","view-profile"]}},"clientHost":"127.0.0.1","clientId":"adapter","clientAddress":"127.0.0.1","client_id":"adapter","username":"service-account-adapter","active":true}
 #decode_token(token, pub)
 #registration = register_client(token, pub)
 #register_client_bis(token, pub)
@@ -717,27 +1016,36 @@ token = clientbased
 #sleep(3)
 #logout_user(token,)
 #sleep(3)
-#token_validation(token)
+#token_validation(token['access_token'])
 #management(token)
 #logout(token2)
 #sleep(2)
 #token_validation(token2)
-#register_user(token)
+#userId = register_user(token['access_token'])
+####get_user_by_id(token['access_token'])
+# add_user_group(token['access_token'], userId, '9b4b5c44-76e4-4483-91c6-fff46418f79e')
+# delete_user(token['access_token'], 'f8689af4-9a0b-4341-8c65-521227f8966b')
 #set_Keycloak_config
 #get_inst_file
 #get_client_secret(token)
-get_clients(token['access_token'])
+#result = get_clients(token['access_token'])
+#client_data = result.find {|client| client['id'] == '735e51ff-854f-4620-a8db-74b22a0108cf' }
+#p client_data['id'].to_s
 #full_token(token)
 # get_role_details(token)
 # authorize_browser
 #authorize(token)
-#get_users(token)
+#get_users(token['access_token'])
+#group_list = get_groups(token['access_token'], {'name' => 'developers'})
+#puts "GROUP_LIST", group_list
+#get_groups_names(token['access_token'], group_list, 'developer')
 #service_user(token)
-#token = "eyJhbGciOiJSUzI1NiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICJqZjQ3WXlHSzQ3VUprLXJ1cUk5RV9IaDhsNS1heHFrMzkxX0NpUUhmTm9nIn0.eyJqdGkiOiI2YjM5YTIwZC1lNTU0LTQ1MTUtYWUxNC1hMDExMDdjMjRkZjIiLCJleHAiOjE0ODc4NTAwNjAsIm5iZiI6MCwiaWF0IjoxNDg3ODQ4MjYwLCJpc3MiOiJodHRwOi8vbG9jYWxob3N0OjgwODEvYXV0aC9yZWFsbXMvbWFzdGVyIiwiYXVkIjoiYWRhcHRlciIsInN1YiI6ImUyZjdjN2IwLTY4YmEtNDE5NC04N2M5LWU0MmRiYzQyMmZiZCIsInR5cCI6IlJlZnJlc2giLCJhenAiOiJhZGFwdGVyIiwiYXV0aF90aW1lIjowLCJzZXNzaW9uX3N0YXRlIjoiNGZjNWVlMDUtYTQ3My00YzI0LWFmOGQtZGUzMjFmMWQwOTE3IiwiY2xpZW50X3Nlc3Npb24iOiI0MDFlMzkzOC00MDE1LTQ4MjgtYjUzMS0zMzM4NmY0MTk4MDMiLCJyZWFsbV9hY2Nlc3MiOnsicm9sZXMiOlsiY3JlYXRlLXJlYWxtIiwiYWRtaW4iLCJ1bWFfYXV0aG9yaXphdGlvbiJdfSwicmVzb3VyY2VfYWNjZXNzIjp7Im1hc3Rlci1yZWFsbSI6eyJyb2xlcyI6WyJ2aWV3LWlkZW50aXR5LXByb3ZpZGVycyIsInZpZXctcmVhbG0iLCJtYW5hZ2UtaWRlbnRpdHktcHJvdmlkZXJzIiwiaW1wZXJzb25hdGlvbiIsImNyZWF0ZS1jbGllbnQiLCJtYW5hZ2UtdXNlcnMiLCJ2aWV3LWF1dGhvcml6YXRpb24iLCJtYW5hZ2UtZXZlbnRzIiwibWFuYWdlLXJlYWxtIiwidmlldy1ldmVudHMiLCJ2aWV3LXVzZXJzIiwidmlldy1jbGllbnRzIiwibWFuYWdlLWF1dGhvcml6YXRpb24iLCJtYW5hZ2UtY2xpZW50cyJdfSwiYWNjb3VudCI6eyJyb2xlcyI6WyJtYW5hZ2UtYWNjb3VudCIsInZpZXctcHJvZmlsZSJdfX19.ZoZFEBlyRMH51qA9S4DCQBtmc8Uq_Q8CGgwxqYK_HBT3TD8peNK4RZynyvSN0iIPlycKFXxJk87-iFc6vD3jNwIjgMSdEcrJEkvKG6y5ZkCTnMZOnSubTdLD2ajbh4N5D06eXEos-ZV_TZbU5x8BDfCLylAUPZtZXQc0cy454JuVcw9Ck49WhjrbFHMZtCBD27tqMW-juHr4-SiiDKcPO7pYBvgWP4BQwlohbZfVIQ-VnS4fEoOXzzrDqf7gFGr0NXox1K-tFh4YJIGujcaqmZfkCDr-UtqWJ3pRS-AmUo-pcLOfrCVk7Tw-SuUuoie6_HUTa41iDqriQZzrTUCVkA"
 #code, token_h = refresh_token(token)
-#token_validation(token_h["access_token"])
-
-
+#token_validation(token["access_token"])
+#get_sessions(token['access_token'])
+#get_client_id(token['access_token'])
+# delete_client(token['access_token'], 'son-catalogue')
+# user_sessions(token['access_token'], '671808aa-2226-4f51-9f53-3bbf5047a2fe')
 
 =begin
     "software_version",
@@ -780,4 +1088,29 @@ get_clients(token['access_token'])
     "registration_client_uri",
     "client_name",
     "userinfo_encrypted_response_alg"
+=end
+
+=begin
+{"jti"=>"4da6654f-8a8e-4f50-b0ec-97356dd614d1",
+ "exp"=>1492605508,
+ "nbf"=>0,
+ "iat"=>1492605208,
+ "iss"=>"http://son-keycloak:5601/auth/realms/sonata",
+ "aud"=>"adapter",
+ "sub"=>"e0ad408c-e9b1-4fe0-b6ed-c2f4cf15b0de",
+ "typ"=>"Bearer",
+ "azp"=>"adapter",
+ "auth_time"=>0,
+ "session_state"=>"a32c1cf8-e940-47b9-a899-2f6f739093fd",
+ "name"=>"",
+ "preferred_username"=>"user04",
+ "email"=>"a1@example.com",
+ "acr"=>"1",
+ "client_session"=>"a6cb180e-fba0-452a-a3d4-2d9dbb51bed6",
+ "allowed-origins"=>["http://localhost:8081"],
+ "realm_access"=>{"roles"=>["developer", "uma_authorization"]},
+ "resource_access"=>{"account"=>{"roles"=>["manage-account", "manage-account-links", "view-profile"]}},
+ "client_id"=>"adapter",
+ "username"=>"user04",
+ "active"=>true}
 =end

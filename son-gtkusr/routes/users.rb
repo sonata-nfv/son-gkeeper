@@ -328,14 +328,14 @@ class Keycloak < Sinatra::Application
       # call mongoDB to receive user_extra_data
       begin
         user_extra_data = Sp_user.find_by({ '_id' => user_id })
+        user_extra_data = user_extra_data.to_json(:except => [:_id, :id, :username, :updated_at, :created_at])
+        user_extra_data = {'attributes' => parse_json(user_extra_data)[0]}
+        merged_user_data = user_data.deep_merge(user_extra_data)
+        new_reg_users << merged_user_data
       rescue Mongoid::Errors::DocumentNotFound => e
         logger.debug 'Adapter: Error caused by DocumentNotFound in user database'
-        # Continue?
+        new_reg_users = reg_users
       end
-      user_extra_data = user_extra_data.to_json(:except => [:_id, :id, :username, :updated_at, :created_at])
-      user_extra_data = {'attributes' => parse_json(user_extra_data)[0]}
-      merged_user_data = user_data.deep_merge(user_extra_data)
-      new_reg_users << merged_user_data
     end
 
     params['offset'] ||= DEFAULT_OFFSET
