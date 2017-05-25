@@ -44,12 +44,12 @@ class FunctionManagerService < ManagerService
     GtkApi.logger.debug(log_message) {'entered with url='+url}
   end
 
-  def initialize(params:)
+  def initialize(uuid:)
     log_message = LOG_MESSAGE + "##{__method__}"
     GtkApi.logger.debug(log_message) {"entered with params #{params}"}
-    raise ArgumentError.new('FunctionManagerService can not be instantiated without a function uuid') unless (params.key?(:uuid) && !params[:uuid].empty?)
-    @uuid = params[:uuid]
-    @instances = params[:instances]
+    raise ArgumentError.new('FunctionManagerService can not be instantiated without a function uuid') if (:uuid.nil? || :uuid.empty?)
+    @uuid = uuid
+    @instances = []
   end
   
   def self.find_by_uuid(uuid)
@@ -69,7 +69,7 @@ class FunctionManagerService < ManagerService
     case response[:status]
     when 200
       function = response[:items]
-      FunctionManagerService.new({uuid: function[:uuid]})
+      FunctionManagerService.new(uuid: function[:uuid])
     else
       raise FunctionNotFoundError.new 'Function with uuid='+uuid+' not found'
     end
