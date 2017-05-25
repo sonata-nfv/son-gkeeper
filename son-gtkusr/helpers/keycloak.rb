@@ -1111,16 +1111,13 @@ class Keycloak < Sinatra::Application
     # p "CODE", response.code
     # p "RESPONSE.read_body222", parse_json(response.read_body)[0]
     group_list = parse_json(response.read_body)[0]
-    begin
-      if query['name']
-        # puts "NAME PRESENT?", query['name']
-        group_data = group_list.find {|group| group['name'] == query['name'] }
-        group_data.to_json
-      else
-        response.body
-      end
-    rescue
-      response.body
+
+    if query && query.key?('name')
+      # puts "NAME PRESENT?", query['name']
+      group_data = group_list.find {|group| group['name'] == query['name'] }
+      group_data.to_json
+    else
+      group_list
     end
   end
 
