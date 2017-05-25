@@ -68,7 +68,8 @@ class FunctionManagerService < ManagerService
     GtkApi.logger.debug(log_message) {"response=#{response}"}
     case response[:status]
     when 200
-      FunctionManagerService.new({uuid: response[:data][:uuid]})
+      function = response[:items]
+      FunctionManagerService.new({uuid: function[:uuid]})
     else
       raise FunctionNotFoundError.new 'Function with uuid='+uuid+' not found'
     end
