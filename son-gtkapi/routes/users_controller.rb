@@ -46,9 +46,7 @@ class GtkApi < Sinatra::Base
       params = JSON.parse(request.body.read, symbolize_names: true)
       
       logger.info(log_message) {"entered with params=#{params}"}
-      
-      # {"username" => "sampleuser", "firstName" => "User", "lastName" => "Sample", "email" => "user.sample@email.com.br", "password" => "1234", "user_type" => "developer"|"customer"|"admin"}
-      
+            
       unless valid_param?(params: params, sym: :username)
         count_user_registrations(labels: {result: "bad request", uuid: '', elapsed_time: (Time.now.utc-began_at).to_s})
         json_error(400, 'User name is missing', log_message)
@@ -112,9 +110,26 @@ class GtkApi < Sinatra::Base
       end
     end
   
+    # GET a specific user name
+    get '/username/?' do
+      began_at = Time.now.utc
+      log_message = 'GtkApi:: GET /api/v2/users/username'
+      logger.debug(log_message) {'entered'}
+    
+      token = get_token( request.env, log_message)
+      begin
+        username = User.find_username_by_token(token)
+        logger.debug(log_message) {"leaving with #{username}"}
+        content_type :json
+        halt 200, username.to_json
+      rescue UserNotFoundError
+        json_error 404, "User for token #{token} not found", log_message
+      end
+    end
+
     # GET a specific user
     get '/:uuid/?' do
-      log_message = 'GtkApi:: GET /api/v2/services/:uuid'
+      log_message = 'GtkApi:: GET /api/v2/users/:uuid'
       logger.debug(log_message) {"entered with #{params}"}
     
       if valid?(params[:uuid])
@@ -163,6 +178,7 @@ class GtkApi < Sinatra::Base
         json_error 404, "User #{pamas[:username]} was not updated", log_message
       end
     end
+    
     # GET .../api/v2/micro-services/users/public-key: To get the UM's public-key:
     get '/public-key/?' do
       log_message = 'GtkApi:: GET /api/v2/users/public-key'
