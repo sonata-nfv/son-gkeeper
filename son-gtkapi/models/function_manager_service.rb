@@ -46,7 +46,7 @@ class FunctionManagerService < ManagerService
 
   def initialize(uuid:)
     log_message = LOG_MESSAGE + "##{__method__}"
-    GtkApi.logger.debug(log_message) {"entered with params #{params}"}
+    GtkApi.logger.debug(log_message) {"entered with uuid #{uuid}"}
     raise ArgumentError.new('FunctionManagerService can not be instantiated without a function uuid') if (:uuid.nil? || :uuid.empty?)
     @uuid = uuid
     @instances = []
