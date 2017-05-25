@@ -148,8 +148,8 @@ class GtkApi < Sinatra::Base
           next
         end
       end
-      count_synch_monitoring_data_requests(labels: {result: "ok", uuid: '', elapsed_time: (Time.now.utc-began_at).to_s})
-      halt 200, 'Requested synch metrics'
+      count_synch_monitoring_data_requests(labels: {result: "ok", uuid: params[:instance_uuid], elapsed_time: (Time.now.utc-began_at).to_s})
+      halt 200, {function_uuid: params[:uuid], function_instance_uuid: params[:instance_uuid], metrics: metrics_names}.to_json
     end
   end
   
