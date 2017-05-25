@@ -31,29 +31,55 @@ class GtkApi < Sinatra::Base
   register Sinatra::Namespace
   
   namespace '/api/v2/kpis' do
-    before do
-       if request.request_method == 'OPTIONS'
-         response.headers['Access-Control-Allow-Origin'] = '*'
-         response.headers['Access-Control-Allow-Methods'] = 'POST'      
-         response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Access-Control-Allow-Headers, Authorization, X-Requested-With'
-         halt 200
-       end
-     end
+    options '/?' do
+      response.headers['Access-Control-Allow-Origin'] = '*'
+      response.headers['Access-Control-Allow-Methods'] = 'POST'      
+      response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Access-Control-Allow-Headers, Authorization, X-Requested-With'
+      halt 200
+    end
   
+    # GET collected kpis
+    get '/collected?' do
+      log_message = 'GtkApi::GET /api/v2/kpis/?'
+      logger.debug(log_message) {"entered with params=#{params}"}
+      
+      json_error(400, 'The KPI name must be given', log_message) if (params[:name].nil? || params[:name].empty?)
+      json_error(400, 'The KPI start date must be given', log_message) if (params[:start].nil? || params[:start].empty?)
+      json_error(400, 'The KPI end date must be given', log_message) if (params[:end].nil? || params[:end].empty?)
+      json_error(400, 'The KPI step must be given', log_message) if (params[:step].nil? || params[:step].empty?)
+    
+      body = {name: params[:name], start: params[:start], end: params[:end], step: params[:step], labels:[]}
+      # 200 with metrics
+      # 400 Bad request when json data have syntax error
+      # 415 on missinh header
+      begin
+        resp = Metric.get_kpis(body)
+        GtkApi.logger.debug(log_message) {"received response was #{resp}"}
+        GtkApi.logger.debug(log_message) {"#{resp.count} metrics were received"} 
+        resp.to_json
+      rescue MetricNotCollectedError => e
+        logger.debug(e.message)
+        logger.debug(e.backtrace.inspect)
+        json_error(400, 'Error collecting the KPIs', log_message)
+      end
+    end  
+
     # GET many kpis
     get '/?' do
-      MESSAGE = "GtkApi::GET /api/v2/kpis"+query_string
+      log_message = 'GtkApi::GET /api/v2/kpis/?'
+      logger.debug(log_message) {"entered with params=#{params}"}
       
-      logger.info(MESSAGE) {"entered"}
-      resp = KpiManagerService.find(params)
-      case resp[:status]
-      when 200
-        logger.debug(MESSAGE) {"leaving with #{resp[:data].count} items"}
-        halt 200, resp[:data].to_json        
-      else
-        json_error 400, 'No list of KPIs was returned', MESSAGE
-      end      
-    end
+      begin
+        resp = KpiManagerService.get_metric(params)
+        GtkApi.logger.debug(log_message) {"received response was #{resp}"}
+        content_type :json
+        resp.to_json
+      rescue MetricNotCollectedError => e
+        logger.debug(e.message)
+        logger.debug(e.backtrace.inspect)
+        json_error(400, 'Error collecting the KPIs', log_message)
+      end
+    end  
 
     # PUT a request
     put '/?' do

@@ -33,6 +33,7 @@ class UserNotCreatedError < StandardError; end
 class UserNotAuthenticatedError < StandardError; end
 class UserNotFoundError < StandardError; end
 class UsersNotFoundError < StandardError; end
+class UserNotUpdatedError < StandardError; end
 class UserNameAlreadyInUseError < StandardError; end
 class UserNotLoggedOutError < StandardError; end
 class UserTokenNotActiveError < StandardError; end
@@ -41,7 +42,7 @@ class User < ManagerService
 
   LOG_MESSAGE = 'GtkApi::' + self.name
   
-  attr_accessor :uuid, :username, :session, :secret, :created_at, :user_type, :email, :last_name, :first_name
+  attr_accessor :uuid, :username, :session, :secret, :created_at, :user_type, :email, :last_name, :first_name, :public_key, :certificate
   
   # {"username" => "sampleuser", "enabled" => true, "totp" => false, "emailVerified" => false, "firstName" => "User", "lastName" => "Sample", "email" => "user.sample@email.com.br", "credentials" => [ {"type" => "password", "value" => "1234"} ], "requiredActions" => [], "federatedIdentities" => [], "attributes" => {"developer" => ["true"], "customer" => ["false"], "admin" => ["false"]}, "realmRoles" => [], "clientRoles" => {}, "groups" => ["developers"]}
   
@@ -66,6 +67,8 @@ class User < ManagerService
     @email = params[:email]
     @last_name = params[:last_name] if params[:last_name]
     @first_name = params[:first_name] if params[:first_name]
+    @public_key = params[:public_key] if params[:public_key]
+    @certificate = params[:certificate] if params[:certificate]
   end
 
   def self.create(params)
@@ -158,10 +161,35 @@ class User < ManagerService
     end
   end
   
-  def self.authorized?(params)
+  def self.authorized?(token:, params:)
     method = LOG_MESSAGE + "##{__method__}"
     GtkApi.logger.debug(method) {"entered with params #{params}"}
-    true
+    # Token Authorization
+    # POST /api/v1/authorize
+    # 200: OK or 401: Unauthorized
+    # Authorization header must include a string following the next pattern: 
+    #  request.env["HTTP_AUTHORIZATION"] = "Bearer <access_token>  
+    # Content-type: JSON
+    # request.content_type = 'application/json'
+    #  and now the body
+    #  •Body: JSON object
+    # {"path": "/packages", "method": "POST"}
+    raise ArgumentError.new __method__.to_s+' requires the login token' if (token.nil? || token.empty?)
+    GtkApi.logger.debug(method) {"entered"}
+    headers = {'Content-type'=>'application/json', 'Accept'=> 'application/json', 'Authorization'=>'Bearer '+token}
+
+    resp = postCurb(url: @@url+'/api/v1/userinfo', body: params, headers: headers)
+    case resp[:status]
+    when 200
+      GtkApi.logger.debug(method) {"User authorized to #{params}"}
+      true
+    when 401
+      GtkApi.logger.error(method) {"Status 401: User not authorized to #{params}"} 
+      false
+    else
+      GtkApi.logger.error(method) {"Status #{resp[:status]}"} 
+      false
+    end
   end
   
   def self.valid?(params)
@@ -206,7 +234,7 @@ class User < ManagerService
       case response[:status]
       when 200
         user = response[:items].first
-        unless users.empty?
+        unless user.empty?
           User.new( User.import(user))
         else
           raise UserNotFoundError.new "User with name #{name} was not found"
@@ -251,6 +279,38 @@ class User < ManagerService
     end
   end
   
+  def self.find_username_by_token(token)
+    # POST /api/v1/userinfo
+    # request["authorization"] = 'Bearer eyJhbGciOiJSkxX0NpUUhmTm9nIn0...'  
+    # Response: 
+    # {"sub":"8031545e-d4da-4086-8cb2-a417f3460de2","name":"myName myLastName","preferred_username":"tester01","given_name":"myName","family_name":"myLastName","email":"myname.company@email.com"}
+    # the field you need is "preferred_username"
+    # ------------------
+    # [23/05/2017, 09:33:28] Daniel Guija: url = URI("http://<address>:<port>/api/v1/userinfo")
+    #  request["authorization"] = 'Bearer eyJhbGciOiJSkxX0NpUUhmTm9nIn0...'
+    # [23/05/2017, 09:33:46] Daniel Guija: the response is:
+    #  {"sub":"8031545e-d4da-4086-8cb2-a417f3460de2","name":"myName myLastName","preferred_username":"tester01","given_name":"myName","family_name":"myLastName","email":"myname.company@email.com"}
+    # [23/05/2017, 09:34:08] Daniel Guija: just parse response['preferred_username'] to get the username
+
+    method = LOG_MESSAGE + "##{__method__}"
+    raise ArgumentError.new __method__.to_s+' requires the login token' if (token.nil? || token.empty?)
+    GtkApi.logger.debug(method) {"entered"}
+    headers = {'Content-type'=>'application/json', 'Accept'=> 'application/json', 'Authorization'=>'Bearer '+token}
+
+    resp = postCurb(url: @@url+'/api/v1/userinfo', body: {}, headers: headers)
+    case resp[:status]
+    when 200
+      GtkApi.logger.debug(method) {"resp[:items]=#{resp[:items]}"}
+      resp[:items][:preferred_username]
+    when 401
+      GtkApi.logger.error(method) {"Status 401: token not active"} 
+      raise UserTokenNotActiveError.new "User token was not active"
+    else
+      GtkApi.logger.error(method) {"Status #{resp[:status]}"} 
+      raise UserNotLoggedOutError.new "User not found with the given token"
+    end  
+  end
+  
   def self.public_key
     method = LOG_MESSAGE + "##{__method__}"
     GtkApi.logger.debug(method) {'entered'}
@@ -263,6 +323,11 @@ class User < ManagerService
       GtkApi.logger.error(method) {"Backtrace:\n\t#{e.backtrace.join("\n\t")}"}
       raise PublicKeyNotFoundError.new('No public key received from User Management micro-service')
     end
+  end
+
+  def update
+    method = LOG_MESSAGE + "##{__method__}"
+    GtkApi.logger.debug(method) {'entered'}
   end
   
   def to_h

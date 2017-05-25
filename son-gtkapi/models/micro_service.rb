@@ -29,6 +29,7 @@ require './models/manager_service.rb'
 require 'base64'
 
 class MicroServiceNotCreatedError < StandardError; end
+class MicroServiceAlreadyCreatedError < StandardError; end
 class MicroServiceNotFoundError < StandardError; end
 class PublicKeyNotFoundError < StandardError; end
 
@@ -60,16 +61,35 @@ class MicroService < ManagerService
   def self.create(params)
     method = LOG_MESSAGE + "##{__method__}"
     GtkApi.logger.debug(method) {"entered with #{params}"}
-    # { "clientId": "son-catalogue", "clientAuthenticatorType": "client-secret", "secret": "1234", "redirectUris": [ "/auth/son-catalogue"]}
-
-    begin
-      micro_service = postCurb(url: @@url+'/api/v1/register/service', body: params.merge({clientAuthenticatorType: "client-secret"}), headers: {})
-      GtkApi.logger.debug(method) {"micro_service=#{micro_service}"}
-      MicroService.new(micro_service)
-    rescue  => e
-      GtkApi.logger.error(method) {"Error during processing: #{$!}"}
-      GtkApi.logger.error(method) {"Backtrace:\n\t#{e.backtrace.join("\n\t")}"}
-      raise MicroServiceNotCreatedError.new(params)
+ 
+    body = params.dup
+    body[:clientAuthenticatorType]="client-secret"
+    body[:directAccessGrantsEnabled]=true
+    body[:serviceAccountsEnabled]=true
+    body[:enabled]=true
+    body[:bearerOnly]=false
+    body[:consentRequired]=false
+    body[:standardFlowEnabled]=true
+    body[:implicitFlowEnabled]=false 
+    body[:publicClient]=false
+    body[:protocol]="openid-connect"
+    body[:fullScopeAllowed]=false
+    
+    micro_service = postCurb(url: @@url+'/api/v1/register/service', body: body, headers: {})
+    GtkApi.logger.debug(method) {"micro_service=#{micro_service}"}
+    case micro_service[:status]
+    when 201
+      GtkApi.logger.debug(method) {"Created micro-service #{micro_service[:items]}"}
+      MicroService.new(micro_service[:items])
+    when 404
+      GtkApi.logger.debug(method) {"Status 404 (Not Found): micro-service #{params} could not be created"}
+      raise MicroServiceNotCreatedError.new "Could not create micro-service for #{params}"
+    when 409
+      GtkApi.logger.debug(method) {"Status 409 (Conflict): micro-service #{params} already created"}
+      raise MicroServiceAlreadyCreatedError.new "Micro-service #{params} has already been registered"
+    else
+      GtkApi.logger.debug(method) {"Status #{micro_service[:status]}: micro-service #{params} could not be created"}
+      raise MicroServiceNotCreatedError.new "Could not create micro-service for #{params}"
     end
   end
 
@@ -78,9 +98,18 @@ class MicroService < ManagerService
     GtkApi.logger.debug(method) {"entered with credentials #{credentials}"}
     #user=find(url: @@url + USERS_URL + name, log_message: LOG_MESSAGE + "##{__method__}(#{name})")
     begin
-      micro_service = postCurb(url: @@url+'/api/v1/register/service', body: {}, headers: { authorization: 'bearer '+credentials})
-      GtkApi.logger.debug(method) {"micro_service=#{micro_service}"}
-      MicroService.new(micro_service)
+      micro_service = postCurb(url: @@url+'/api/v1/login/service', body: {}, headers: { authorization: 'basic '+credentials})
+      case micro_service[:status]
+      when 200
+        GtkApi.logger.debug(method) {"micro_service=#{micro_service[:items]}"}
+        MicroService.new(micro_service)
+      when 400
+        GtkApi.logger.debug(method) {"Status 400 when looking for micro_service with credentials #{credentials}"}
+        raise MicroServiceNotFoundError.new(credentials)
+      else
+        GtkApi.logger.debug(method) {"Status #{micro_service[:status]} when looking for micro_service with credentials #{credentials}"}
+        raise MicroServiceNotFoundError.new(credentials)
+      end
     rescue  => e
       GtkApi.logger.error(method) {"Error during processing: #{$!}"}
       GtkApi.logger.error(method) {"Backtrace:\n\t#{e.backtrace.join("\n\t")}"}

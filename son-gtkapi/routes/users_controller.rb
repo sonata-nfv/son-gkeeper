@@ -46,9 +46,7 @@ class GtkApi < Sinatra::Base
       params = JSON.parse(request.body.read, symbolize_names: true)
       
       logger.info(log_message) {"entered with params=#{params}"}
-      
-      # {"username" => "sampleuser", "firstName" => "User", "lastName" => "Sample", "email" => "user.sample@email.com.br", "password" => "1234", "user_type" => "developer"|"customer"|"admin"}
-      
+            
       unless valid_param?(params: params, sym: :username)
         count_user_registrations(labels: {result: "bad request", uuid: '', elapsed_time: (Time.now.utc-began_at).to_s})
         json_error(400, 'User name is missing', log_message)
@@ -112,9 +110,26 @@ class GtkApi < Sinatra::Base
       end
     end
   
+    # GET a specific user name
+    get '/username/?' do
+      began_at = Time.now.utc
+      log_message = 'GtkApi:: GET /api/v2/users/username'
+      logger.debug(log_message) {'entered'}
+    
+      token = get_token( request.env, log_message)
+      begin
+        username = User.find_username_by_token(token)
+        logger.debug(log_message) {"leaving with #{username}"}
+        content_type :json
+        halt 200, username.to_json
+      rescue UserNotFoundError
+        json_error 404, "User for token #{token} not found", log_message
+      end
+    end
+
     # GET a specific user
     get '/:uuid/?' do
-      log_message = 'GtkApi:: GET /api/v2/services/:uuid'
+      log_message = 'GtkApi:: GET /api/v2/users/:uuid'
       logger.debug(log_message) {"entered with #{params}"}
     
       if valid?(params[:uuid])
@@ -133,6 +148,37 @@ class GtkApi < Sinatra::Base
       end
     end
   
+    # PATCH
+=begin
+    The UM is expecting a PUT /api/v1/signatures/:username with a body like {"public_key":"..."}.
+    HTTP method: PUT
+    Authentication header includes the user's Access Token
+    Parameter: username
+    Body: JSON object that includes public_key field (required) and certificate field (optional). Sample:
+    {"public_key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEArVFiBHBiLPFRGrMobAxcK98SJRKKXJOkA66NL0UEgR7g8hOjVySchYUvtGAU5wi2ZCjmPGDT0hrJd1WEBplv0kT7YrIgdRGXGH73OJFjH8c7iX+XBwk0sH1K+KMUbszSbWFCKAlyHhYa8vz95RyzmzoMJZW6TeadlhRLuVw52RECaK9eIJu311oFA8os3z8J65olLexT0vF+B9Oqtn1gVJUfC0w984PXwMoGzSOVCbb5jD0/blAXonMS8PU+JFSGF4trTwRcmjw349NDEifUQamdHE8pynuxSpAuMN2WAPAlJpjnw/fHUxQFgRNGki6vHmegnQ6qmcbuorVW3oXkMwIDAQAB", "certificate": "optional"}
+=end
+    patch '/:username/?' do
+      log_message = 'GtkApi:: PATCH /api/v2/users/:username'
+      body = request.body.read
+      json_error(404, "Fields to be updated need to be part of the body", log_message) if body.empty?
+      logger.debug(log_message) {"entered with username=#{params[:username]} and body=#{body}"}
+      
+      begin
+        user = User.find_by_name(params[:username])
+        parsed_body = JSON.parse(body, symbolize_names: true)
+        
+        # TODO: generalize this
+        user.public_key = parsed_body[:public_key]
+        user.certificate = parsed_body[:certificate]
+        user.save
+        halt 200, user.to_json
+      rescue UserNotFoundError
+        json_error 404, "User #{pamas[:username]} was not found", log_message
+      rescue UserNotUpdatedError
+        json_error 404, "User #{pamas[:username]} was not updated", log_message
+      end
+    end
+    
     # GET .../api/v2/micro-services/users/public-key: To get the UM's public-key:
     get '/public-key/?' do
       log_message = 'GtkApi:: GET /api/v2/users/public-key'

@@ -79,17 +79,9 @@ class GtkApi < Sinatra::Base
     delete '/?' do
       log_message = 'GtkApi::DELETE /sessions/?'
 
-      json_error(400, 'Unprocessable entity: missing authorization header', log_message) if (request.env['HTTP_AUTHORIZATION'].nil? || request.env['HTTP_AUTHORIZATION'].empty?)
-      logger.debug(log_message) {"entered with request.env['HTTP_AUTHORIZATION']="+request.env['HTTP_AUTHORIZATION']}
-
-      authorization=request.env['HTTP_AUTHORIZATION']
-      logger.debug(log_message) {'authorization='+authorization}
-
-      bearer_token = authorization.split(' ')
-      json_error(400, 'Unprocessable entity: authorization header must be "Bearer <token>"', log_message) unless (bearer_token.size == 2 && bearer_token[0].downcase == 'bearer')
-      
+      token = get_token( request.env, log_message)
       begin
-        User.logout! bearer_token[1]
+        User.logout! token
         logger.debug(log_message) {"User successfuly logged out"}
         content_type :json
         halt 204

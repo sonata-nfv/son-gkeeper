@@ -61,6 +61,7 @@ class VimManagerService < ManagerService
     cparams[:configuration][:tenant] = params[:compute_configuration][:tenant_id]
     cparams[:country] = params[:country]
     cparams[:city] = params[:city]
+    cparams[:name] = params[:name]
     cparams[:vim_address] = params[:compute_configuration][:vim_address]
     cparams[:username] = params[:compute_configuration][:username]
     cparams[:pass] = params[:compute_configuration][:pass]
@@ -75,6 +76,7 @@ class VimManagerService < ManagerService
     nparams[:vim_address] = params[:networking_configuration][:vim_address]
     nparams[:username] = params[:networking_configuration][:username]
     nparams[:city] = params[:city]
+    nparams[:name] = params[:name]
     nparams[:country] = params[:country]
     nparams[:pass] = params[:networking_configuration][:pass]
 

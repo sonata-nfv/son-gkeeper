@@ -209,4 +209,13 @@ class ManagerService
     #  "base_labels": {"result": "ok", "time-taken": (Time.now.utc-began_at).to_s} --> examples
     KpiManagerService.update_metric(BASE_KPI_PARAMS.merge(params).merge({metric_type: "counter"}))
   end
+  
+  # curl -H "Content-Type: application/json" -X PUT -d '{"job":"job-name","instance":"instance-name","name":"gauge_name", "metric_type": "gauge", "operation": "inc" (optional; default "inc"), "docstring":"metric gauge description", "metric_value (optional; default 1)", "base_labels": {"label1":"value1","label2":"value2"}}' http://<GATEKEEPER_HOST>:<KPI_MODULE_PORT>/kpis
+  def self.gauge_kpi(params)
+    # params should have
+    #  "name": "example_counter"
+    #  "docstring": "metric counter test"
+    #  "base_labels": {"result": "ok", "time-taken": (Time.now.utc-began_at).to_s} --> examples
+    KpiManagerService.update_metric(BASE_KPI_PARAMS.merge(params).merge({metric_type: "gauge"}))
+  end
 end

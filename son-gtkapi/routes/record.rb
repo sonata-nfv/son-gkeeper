@@ -31,7 +31,7 @@ class GtkApi < Sinatra::Base
   register Sinatra::Namespace
   
   namespace '/api/v2/records' do
-    options '/?' do
+    options '/*/?' do
       response.headers['Access-Control-Allow-Origin'] = '*'
       response.headers['Access-Control-Allow-Methods'] = 'POST,PUT'      
       response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Access-Control-Allow-Headers, Authorization, X-Requested-With'

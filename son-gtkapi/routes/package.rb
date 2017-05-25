@@ -41,38 +41,50 @@ class GtkApi < Sinatra::Base
       began_at = Time.now.utc
       log_message = 'GtkApi::POST /api/v2/packages/?'
       logger.info(log_message) {"entered with params=#{params}"}
+      content_type :json
     
       if params[:package].nil?
         count_package_on_boardings(labels: {result: "bad request", uuid: '', elapsed_time: (Time.now.utc-began_at).to_s})
         json_error 400, "No package file specified: #{params}", log_message
       end
       
-      unless params[:package][:tempfile]
+      if params[:package][:tempfile].nil?
         count_package_on_boardings(labels: {result: "bad request", uuid: '', elapsed_time: (Time.now.utc-began_at).to_s})
         json_error 400, 'Temp file name not provided', log_message
       end
 
-      # TODO: we're fixing the user here, but it should come from the request
-      resp = PackageManagerService.create(params.merge({user: {username: 'Unknown', password: 'None'}}))
-      logger.debug(log_message) {"resp=#{resp.inspect}"}
-      case resp[:status]
-      when 201
-        logger.info(log_message) {"leaving with package: #{resp[:data][:uuid]}"}
-        count_package_on_boardings(labels: {result: "ok", uuid: resp[:data][:uuid], elapsed_time: (Time.now.utc-began_at).to_s})
-        headers 'Location'=> PackageManagerService.class_variable_get(:@@url)+"/packages/#{resp[:data][:uuid]}", 'Content-Type'=> 'application/json'
-        halt 201, resp[:data].to_json
-      when 409
-        logger.error(log_message) {"leaving with duplicated package: #{resp[:data]}"}
-        count_package_on_boardings(labels: {result: "duplicated", uuid: resp[:data][:uuid], elapsed_time: (Time.now.utc-began_at).to_s})
-        headers 'Content-Type'=> 'application/json'
-        halt 409, resp[:data].to_json
-      when 400
+      token = get_token( request.env, log_message)
+      if (token.nil? || token.empty?)
+        count_package_on_boardings(labels: {result: "bad request", uuid: '', elapsed_time: (Time.now.utc-began_at).to_s})
+        json_error 400, 'Token not provided', log_message
+      end
+        
+      begin
+        resp = PackageManagerService.create(params.merge({token: token}))
+        logger.debug(log_message) {"resp=#{resp.inspect}"}
+        case resp[:status]
+        when 201
+          logger.info(log_message) {"leaving with package: #{resp[:data][:uuid]}"}
+          count_package_on_boardings(labels: {result: "ok", uuid: resp[:data][:uuid], elapsed_time: (Time.now.utc-began_at).to_s})
+          headers 'Location'=> PackageManagerService.class_variable_get(:@@url)+"/packages/#{resp[:data][:uuid]}", 'Content-Type'=> 'application/json'
+          halt 201, resp[:data].to_json
+        when 409
+          logger.error(log_message) {"leaving with duplicated package: #{resp[:data]}"}
+          count_package_on_boardings(labels: {result: "duplicated", uuid: resp[:data][:uuid], elapsed_time: (Time.now.utc-began_at).to_s})
+          headers 'Content-Type'=> 'application/json'
+          halt 409, resp[:data].to_json
+        when 400
+          count_package_on_boardings(labels: {result: "bad request", uuid: '', elapsed_time: (Time.now.utc-began_at).to_s})
+          headers 'Content-Type'=> 'application/json'
+          json_error 400, "Error creating package #{params}", log_message
+        else
+          count_package_on_boardings(labels: {result: "other error", uuid: '', elapsed_time: (Time.now.utc-began_at).to_s})
+          json_error resp[:status], "Unknown status: #{resp[:status]} for package #{params}", log_message
+        end
+      rescue ArgumentError => e
         count_package_on_boardings(labels: {result: "bad request", uuid: '', elapsed_time: (Time.now.utc-began_at).to_s})
         headers 'Content-Type'=> 'application/json'
         json_error 400, "Error creating package #{params}", log_message
-      else
-        count_package_on_boardings(labels: {result: "other error", uuid: '', elapsed_time: (Time.now.utc-began_at).to_s})
-        json_error resp[:status], "Unknown status: #{resp[:status]} for package #{params}", log_message
       end
     end
 
@@ -81,6 +93,7 @@ class GtkApi < Sinatra::Base
       began_at = Time.now.utc
       log_message = 'GtkApi::GET /api/v2/packages/:uuid/?'
       logger.debug(log_message) {'entered'}
+      content_type :json
       unless params[:uuid].nil?
         logger.debug(log_message) {"params[:uuid]=#{params[:uuid]}"}
         json_error 400, 'Invalid Package UUID' unless valid? params['uuid']
@@ -127,9 +140,16 @@ class GtkApi < Sinatra::Base
     get '/?' do
       log_message = 'GtkApi::GET /api/v2/packages/?'
       logger.debug(log_message) {'entered with '+query_string}
+      content_type :json
     
       @offset ||= params[:offset] ||= DEFAULT_OFFSET
       @limit ||= params[:limit] ||= DEFAULT_LIMIT
+
+      token = get_token( request.env, log_message)
+      if (token.nil? || token.empty?)
+        count_package_on_boardings(labels: {result: "bad request", uuid: '', elapsed_time: (Time.now.utc-began_at).to_s})
+        json_error 400, 'Token not provided', log_message
+      end
     
       packages = PackageManagerService.find(params)
       if packages

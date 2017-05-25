@@ -30,7 +30,8 @@ default: &common_settings
   user: postgres
   host: localhost
   port: 5432
-  pool: 5
+  pool: 40
+  timeout: 5000
   database: sonata
 
 development:

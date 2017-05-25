@@ -57,13 +57,15 @@ class GtkApi < Sinatra::Base
           #                              "vim_address":"ip_address"},
           #  "wim_id":"name",
           #  "country":"country",
-          #  "city":"city"}
+          #  "city":"city"
+          #  "name" : "nombre"}
 
           json_error(400, 'VIM compute is missing', log_message) unless valid_param?(params: params, sym: :compute_configuration)
           json_error(400, 'VIM networking is missing', log_message) unless valid_param?(params: params, sym: :networking_configuration)
           json_error(400, 'VIM wim_id is missing', log_message) unless valid_param?(params: params, sym: :wim_id)
           json_error(400, 'VIM country is missing', log_message) unless valid_param?(params: params, sym: :country)
           json_error(400, 'VIM city is missing', log_message) unless valid_param?(params: params, sym: :city)
+          json_error(400, 'VIM name is missing', log_message) unless valid_param?(params: params, sym: :name)
 
           new_request = VimManagerService.create_vim_rs(params)
           if new_request

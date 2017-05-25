@@ -49,47 +49,36 @@ class PackageManagerService < ManagerService
     method = LOG_MESSAGE + "##{__method__}"
     GtkApi.logger.debug(method) {"entered with params #{params}"}
     uri = @@url+'/packages'
-    raise ArgumentError.new('PackageManagerService can not be created without a user') unless params.key?(:user)
-    user_params = params.delete(:user)
-    #user = User.find_by_name(user_params[:username])
-    #if user
-    #  if User.authenticated?(Base64.strict_encode64(user_params[:username]+':'+user_params[:password]))
-    #    GtkApi.logger.debug(method) {"User #{user_params[:username]} authenticated"}
-    #    if User.authorized?(user_params)
-    #      GtkApi.logger.debug(method) {"User #{user_params[:username]} authorized"}
-          begin
-            # from http://www.rubydoc.info/gems/rest-client/1.6.7/frames#Result_handling
-            GtkApi.logger.debug(method) {"POSTing to "+uri+ " with params #{params}"}
-            RestClient.post(uri, params){ |response, request, result, &block|
-              GtkApi.logger.debug(method) {"response=#{response.inspect}"}
-              case response.code
-              when 201
-                { status: 201, count: 1, data: JSON.parse(response.body, :symbolize_names => true), message: 'Created'}
-              when 409
-                { status: 409, count: 0, data: JSON.parse(response.body, :symbolize_names => true), message: 'Conflict'}
-              when 400
-                { status: 400, count: 0, data: {}, message: "Bad Request: #{params}"}
-              else
-                { status: response.code, count: 0, data: {}, message: 'Unexpected code'}
-              end
-            }
-          rescue  => e #RestClient::Conflict
-            GtkApi.logger.error(method) {"Error during processing: #{$!}"}
-            GtkApi.logger.error(method) {"Backtrace:\n\t#{e.backtrace.join("\n\t")}"}
-            { status: 500, count: 0, data: {}, message: e.backtrace.join("\n\t")}
-          end
-     #   else
-      #    GtkApi.logger.debug(method) {"user #{params[:user][:name]} not authorized"}
-      #    { status: 403, count: 0, data: {}, message: 'Forbidden: user '+params[:user][:name]+' could not be authorized'}
-      #  end
-      #else
-      #  GtkApi.logger.debug(method) {"user #{params[:user][:name]} not authenticated"}
-      #  { status: 401, count: 0, data: {}, message: 'Unauthorized: user '+params[:user][:name]+' could not be authenticated'}
-      #end
-      #else
-      #GtkApi.logger.debug(method) {"user #{params[:user][:name]} not found"}
-      #{ status: 404, count: 0, data: {}, message: 'User '+params[:user][:name]+' not found'}
-      #end
+    raise ArgumentError.new('Package can not be created without a user token') unless params.key?(:token)
+    token = params.delete(:token)
+    # {"path": "/packages", "method": "POST"}
+    unless User.authorized?(token: token, params: {path: '/packages', method: 'POST'})
+      GtkApi.logger.debug(method) {"User not authorized to create packages"}
+      { status: 403, count: 0, data: {}, message: 'Forbidden: user could not be authorized'}
+    end
+      
+    GtkApi.logger.debug(method) {"User authorized"}
+    begin
+      # from http://www.rubydoc.info/gems/rest-client/1.6.7/frames#Result_handling
+      GtkApi.logger.debug(method) {"POSTing to "+uri+ " with params #{params}"}
+      RestClient.post(uri, params){ |response, request, result, &block|
+        GtkApi.logger.debug(method) {"response=#{response.inspect}"}
+        case response.code
+        when 201
+          { status: 201, count: 1, data: JSON.parse(response.body, symbolize_names: true), message: 'Created'}
+        when 409
+          { status: 409, count: 0, data: JSON.parse(response.body, symbolize_names: true), message: 'Conflict'}
+        when 400
+          { status: 400, count: 0, data: {}, message: "Bad Request: #{params}"}
+        else
+          { status: response.code, count: 0, data: {}, message: 'Unexpected code'}
+        end
+      }
+    rescue  => e #RestClient::Conflict
+      GtkApi.logger.error(method) {"Error during processing: #{$!}"}
+      GtkApi.logger.error(method) {"Backtrace:\n\t#{e.backtrace.join("\n\t")}"}
+      { status: 500, count: 0, data: {}, message: e.backtrace.join("\n\t")}
+    end
   end
   
   def self.find_by_uuid(uuid)
