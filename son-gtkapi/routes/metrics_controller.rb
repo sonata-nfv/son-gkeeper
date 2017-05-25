@@ -64,8 +64,7 @@ class GtkApi < Sinatra::Base
         json_error 404, "Function #{params[:uuid]} not found", log_message
       end
       
-      function.load_instances()
-      json_error(404, "Instance #{params[:instance_uuid]} is not an instance of function #{params[:uuid]}", log_message) unless function.instances.include?(params[:instance_uuid])
+      function.load_instances(params[:uuid])
       
       metrics = Metric.validate_and_create(metrics_list)
         
@@ -137,11 +136,6 @@ class GtkApi < Sinatra::Base
       end
 
       function.load_instances(params[:uuid])
-      
-      unless function.instances.include?(params[:instance_uuid])
-        count_synch_monitoring_data_requests(labels: {result: "not found", uuid: '', elapsed_time: (Time.now.utc-began_at).to_s})
-        json_error 404, "Instance #{params[:instance_uuid]} is not an instance of function #{params[:uuid]}", log_message
-      end
       
       metrics = Metric.validate_and_create(metrics_names)
         

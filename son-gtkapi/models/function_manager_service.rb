@@ -92,6 +92,7 @@ class FunctionManagerService < ManagerService
     instances = RecordManagerService.find_records_by_function_uuid(uuid)
     case instances[:status]
     when 200
+      GtkApi.logger.debug(log_message) {"instances=#{instances[:items]}"}
       @instances = instances[:items]
     else
       @instances = nil
