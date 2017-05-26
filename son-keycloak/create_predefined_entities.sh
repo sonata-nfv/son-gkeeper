@@ -99,7 +99,7 @@ function create_realm_role() {
 }
 
 # Params: $1 = realm, $2 = role name , $3 = client-role client id , $4 = role name
-function update_realm_role(){
+function update_realm_role() {
 	$KCADMIN_SCRIPT add-roles -r $1 --rname $2 --cclientid $3 --rolename $4 -i > /dev/null
 	ret=$?
 	if [ $ret -eq 0 ]; then
@@ -172,8 +172,11 @@ create_realm_role $SONATA_REALM developer "\${role_read-catalogue},\${role_write
 create_realm_role $SONATA_REALM admin "\${role_realm-admin}"
 
 # Update 'admin' role to composite-role type with 'realm-admin' role
-update_realm_role $SONATA_REALM admin realm-management realm-admin
+echo Adding realm-admin role to admin role...
+$KCADMIN_SCRIPT add-roles -r $SONATA_REALM --rname admin --cclientid realm-management --rolename realm-admin
 # kcadm.sh add-roles -r sonata --rname admin --cclientid realm-management --rolename realm-admin
+# update_realm_role $SONATA_REALM admin realm-management realm-admin
+
 
 # Creating predefined realm groups where $1=realm_name $2=group_name $3=associated_role_name:
 create_group $SONATA_REALM developers 'attributes.roles=["developer"]'
