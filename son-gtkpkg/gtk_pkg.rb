@@ -78,13 +78,13 @@ class GtkPkg < Sinatra::Base
   #enable :method_override
 
   if GtkPkg.settings.catalogues
-   set :son_packages_catalogue, Catalogue.new(settings.catalogues+'/son-packages', logger)
+   set :son_packages_catalogue, Catalogue.new(settings.catalogues+'/son-packages')
    logger.debug('GtkPkg') {'SON-packages Catalogue URL='+settings.son_packages_catalogue.url}
-   set :packages_catalogue, Catalogue.new(settings.catalogues+'/packages', logger)
+   set :packages_catalogue, Catalogue.new(settings.catalogues+'/packages')
    logger.debug('GtkPkg') {'Packages Catalogue URL='+settings.packages_catalogue.url}
-   set :services_catalogue, Catalogue.new(settings.catalogues+'/network-services', logger)
+   set :services_catalogue, Catalogue.new(settings.catalogues+'/network-services')
    logger.debug('GtkPkg') {'Services Catalogue URL='+settings.services_catalogue.url}
-   set :functions_catalogue, Catalogue.new(settings.catalogues+'/vnfs', logger)
+   set :functions_catalogue, Catalogue.new(settings.catalogues+'/vnfs')
    logger.debug('GtkPkg') {'Functions Catalogue URL='+settings.functions_catalogue.url}
   else
     logger.error('GtkPkg') {'    >>>Catalogue url not defined, application being terminated!!'}

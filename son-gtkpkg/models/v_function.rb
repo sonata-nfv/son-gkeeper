@@ -31,11 +31,12 @@ require 'fileutils'
 class VFunction
   
   attr_accessor :descriptor
+  CLASS = self.name
   
-  def initialize(catalogue, logger, folder)
+  def initialize(catalogue, folder, username)
     @catalogue = catalogue
-    @logger = logger
     @descriptor = {}
+    @username = username
     if folder
       @folder = File.join(folder, "function_descriptors")
       FileUtils.mkdir @folder unless File.exists? @folder
@@ -43,41 +44,33 @@ class VFunction
   end
   
   def to_file(content)
-    @logger.debug "VFunction.to_file(#{content})"
+    GtkPkg.logger.debug "VFunction.to_file(#{content})"
     filename = content['name'].split('/')[-1]
     File.open(File.join( @folder, filename), 'w') {|f| YAML.dump(content, f) }
   end
   
   def from_file(path)
-    @logger.debug "VFunction.from_file("+path+")"
+    GtkPkg.logger.debug "VFunction.from_file("+path+")"
     @descriptor = YAML.load_file path
-    @logger.debug "VFunction.from_file: content = #{@descriptor}"
+    GtkPkg.logger.debug "VFunction.from_file: content = #{@descriptor}"
     @descriptor
   end
   
   def store
-    @logger.debug "VFunction.store #{@descriptor}"
-    function = duplicated_function?(@descriptor)
+    GtkPkg.logger.debug "VFunction.store #{@descriptor}"
+    function = duplicated_function?()
     if function && function.any?
-      @logger.debug "VFunction.store function #{function} is duplicated"
+      GtkPkg.logger.debug "VFunction.store function #{function} is duplicated"
     else 
-      function = @catalogue.create(@descriptor)
+      function = @catalogue.create(@descriptor, @username)
     end
-    @logger.debug "VFunction.store function #{function}"
+    GtkPkg.logger.debug "VFunction.store function #{function}"
     function
-  end
-  
-  def find_by_uuid(uuid)
-    @logger.debug "VFunction.find_by_uuid(#{uuid})"
-    headers = {'Accept'=>'application/json', 'Content-Type'=>'application/json'}
-    response = RestClient.get(@catalogue+"/#{uuid}", headers) 
-    @logger.debug "VFunction.find_by_uuid: #{response}"
-    JSON.parse response.body
   end
   
   private
   
-  def duplicated_function?(descriptor)
-    @catalogue.find({'vendor'=> descriptor['vendor'], 'name'=> descriptor['name'], 'version'=> descriptor['version']})
+  def duplicated_function?()
+    @catalogue.find({vendor: @descriptor['vendor'], name: @descriptor['name'], version: @descriptor['version']})
   end
 end
