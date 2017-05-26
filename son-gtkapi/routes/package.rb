@@ -68,22 +68,25 @@ class GtkApi < Sinatra::Base
           count_package_on_boardings(labels: {result: "ok", uuid: resp[:data][:uuid], elapsed_time: (Time.now.utc-began_at).to_s})
           headers 'Location'=> PackageManagerService.class_variable_get(:@@url)+"/packages/#{resp[:data][:uuid]}", 'Content-Type'=> 'application/json'
           halt 201, resp[:data].to_json
+        when 400
+          count_package_on_boardings(labels: {result: "bad request", uuid: '', elapsed_time: (Time.now.utc-began_at).to_s})
+          json_error 400, "Error creating package #{params}", log_message
+        when 403
+          count_package_on_boardings(labels: {result: "forbidden", uuid: '', elapsed_time: (Time.now.utc-began_at).to_s})
+          json_error 403, "User not allowed to create package #{params}", log_message
+        when 404
+          count_package_on_boardings(labels: {result: "not found", uuid: '', elapsed_time: (Time.now.utc-began_at).to_s})
+          json_error 404, "User name not found", log_message
         when 409
           logger.error(log_message) {"leaving with duplicated package: #{resp[:data]}"}
           count_package_on_boardings(labels: {result: "duplicated", uuid: resp[:data][:uuid], elapsed_time: (Time.now.utc-began_at).to_s})
-          headers 'Content-Type'=> 'application/json'
           halt 409, resp[:data].to_json
-        when 400
-          count_package_on_boardings(labels: {result: "bad request", uuid: '', elapsed_time: (Time.now.utc-began_at).to_s})
-          headers 'Content-Type'=> 'application/json'
-          json_error 400, "Error creating package #{params}", log_message
         else
           count_package_on_boardings(labels: {result: "other error", uuid: '', elapsed_time: (Time.now.utc-began_at).to_s})
           json_error resp[:status], "Unknown status: #{resp[:status]} for package #{params}", log_message
         end
       rescue ArgumentError => e
         count_package_on_boardings(labels: {result: "bad request", uuid: '', elapsed_time: (Time.now.utc-began_at).to_s})
-        headers 'Content-Type'=> 'application/json'
         json_error 400, "Error creating package #{params}", log_message
       end
     end

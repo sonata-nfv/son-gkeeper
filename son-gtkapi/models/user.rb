@@ -280,12 +280,6 @@ class User < ManagerService
   end
   
   def self.find_username_by_token(token)
-    # POST /api/v1/userinfo
-    # request["authorization"] = 'Bearer eyJhbGciOiJSkxX0NpUUhmTm9nIn0...'  
-    # Response: 
-    # {"sub":"8031545e-d4da-4086-8cb2-a417f3460de2","name":"myName myLastName","preferred_username":"tester01","given_name":"myName","family_name":"myLastName","email":"myname.company@email.com"}
-    # the field you need is "preferred_username"
-    # ------------------
     # [23/05/2017, 09:33:28] Daniel Guija: url = URI("http://<address>:<port>/api/v1/userinfo")
     #  request["authorization"] = 'Bearer eyJhbGciOiJSkxX0NpUUhmTm9nIn0...'
     # [23/05/2017, 09:33:46] Daniel Guija: the response is:
