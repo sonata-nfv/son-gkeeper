@@ -16,7 +16,28 @@ KCADMIN_SCRIPT=/opt/jboss/keycloak/bin/kcadm.sh
 SONATA_REALM=sonata
 ADAPTER_CLIENT=adapter
 
-# Demo user registration JSON object, remove before using in production
+# SONATA realm Admin user registration JSON object, remove before using in production
+admin_reg_data() {
+    cat << EOF
+{"username": "sonata",
+ "enabled": true,
+ "totp": false,
+ "emailVerified": false,
+ "firstName": "Admin",
+ "lastName": "sample",
+ "email": "sonata.admin@email.com",
+ "credentials": [{"type": "password","value": "1234"}],
+ "requiredActions": [],
+ "federatedIdentities": [],
+ "attributes": {"userType": ["admin"]},
+ "realmRoles": [],
+ "clientRoles": {},
+ "groups": []
+}
+EOF
+}
+
+# SONATA Demo user registration JSON object, remove before using in production
 demo_reg_data() {
     cat << EOF
 {"username": "demo",
@@ -73,6 +94,16 @@ function create_realm_role() {
 	ret=$?
 	if [ $ret -eq 0 ]; then
         	echo "Created role [$2] for realm [$1]"
+	fi
+	return $ret
+}
+
+# Params: $1 = realm, $2 = role name , $3 = client-role client id , $4 = role name
+function update_realm_role() {
+	$KCADMIN_SCRIPT add-roles -r $1 --rname $2 --cclientid $3 --rolename $4 -i > /dev/null
+	ret=$?
+	if [ $ret -eq 0 ]; then
+        	echo "Updated role [$2] for realm [$1]"
 	fi
 	return $ret
 }
@@ -138,7 +169,14 @@ create_realm_role $SONATA_REALM son-repositories "\${role_read-catalogue}"
 create_realm_role $SONATA_REALM son-monitor "\${role_read-catalogue},\${role_read-repositories}"
 create_realm_role $SONATA_REALM customer "\${role_read-repositories},\${role_write-repositories},\${role_execute-catalogue}"
 create_realm_role $SONATA_REALM developer "\${role_read-catalogue},\${role_write-catalogue},\${role_read-monitor}"
-# create_realm_role $SONATA_REALM admin "\${role_read-catalogue},\${role_write-catalogue},\${role_read-monitor}"
+create_realm_role $SONATA_REALM admin "\${role_realm-admin}"
+
+# Update 'admin' role to composite-role type with 'realm-admin' role
+echo Adding realm-admin role to admin role...
+$KCADMIN_SCRIPT add-roles -r $SONATA_REALM --rname admin --cclientid realm-management --rolename realm-admin
+# kcadm.sh add-roles -r sonata --rname admin --cclientid realm-management --rolename realm-admin
+# update_realm_role $SONATA_REALM admin realm-management realm-admin
+
 
 # Creating predefined realm groups where $1=realm_name $2=group_name $3=associated_role_name:
 create_group $SONATA_REALM developers 'attributes.roles=["developer"]'
@@ -184,6 +222,17 @@ if [ "$ADAPTER_URL" ]; then
 fi
 
 sleep 3
+
+printf "\n\n======== POST Admin User (predefined) Registration form to GTKUSR ==\n\n\n"
+resp=$(curl -qSfsw '\n%{http_code}' -H "Content-Type: application/json" \
+-d "$(admin_reg_data)" \
+-X POST http://sp.int3.sonata-nfv.eu:5600/api/v1/register/user)
+echo $resp
+
+username=$(echo $resp | grep "username")
+
+code=$(echo "$resp" | tail -n1)
+echo "Code: $code"
 
 printf "\n\n======== POST Demo User (predefined) Registration form to GTKUSR ==\n\n\n"
 resp=$(curl -qSfsw '\n%{http_code}' -H "Content-Type: application/json" \

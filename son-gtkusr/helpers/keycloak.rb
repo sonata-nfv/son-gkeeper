@@ -772,7 +772,7 @@ class Keycloak < Sinatra::Application
     # p "ROLE DATA", role_data
     # Compare user_type with roles
     unless role_data
-      return 401, 'User type is not allowed'
+      return 401, {'Error' => 'User type is not allowed'}
     end
 
     # Add role from roles to user_id
@@ -794,8 +794,7 @@ class Keycloak < Sinatra::Application
     # p "BODY", response.body
     # STDOUT.sync = false
     if response.code.to_i != 204
-      # json_error(response.code.to_i, response.body.to_s)
-      return response.code.to_i, response.body.to_s
+      return response.code.to_i, response.body
     else
       return response.code.to_i, nil
     end
@@ -806,7 +805,6 @@ class Keycloak < Sinatra::Application
     group_list = get_groups
     group_names = get_groups_names(group_list, role_attr)
     # group_name = Adapter.assign_group(attr)
-    # puts "DESIGNATED GROUP", group_name
 
     # Search roles
     group_names.each { |group_name|
@@ -816,7 +814,7 @@ class Keycloak < Sinatra::Application
       # p "GROUP DATA", group_data
       # Compare user_type with roles
       unless group_data
-        return 401, 'User type is not allowed'
+        return 401, {'Error' => 'User type is not allowed'}
       end
 
       # Add user to group
@@ -836,8 +834,7 @@ class Keycloak < Sinatra::Application
       # p "BODY", response.body
 
       if response.code != '204'
-        # json_error(response.code.to_i, response.body.to_s)
-        return response.code.to_i, response.body.to_s
+        return response.code.to_i, response.body
       end
     }
     return 204 , nil
