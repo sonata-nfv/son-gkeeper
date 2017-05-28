@@ -179,6 +179,7 @@ class User < ManagerService
     headers = {'Content-type'=>'application/json', 'Accept'=> 'application/json', 'Authorization'=>'Bearer '+token}
 
     resp = postCurb(url: @@url+'/api/v1/userinfo', body: params, headers: headers)
+    # {:sub=>"fe53ac4f-052a-4a41-b7cd-914d4c64c2f8", :name=>"", :preferred_username=>"jbonnet", :email=>"jbonnet@alticelabs.com"}
     case resp[:status]
     when 200
       GtkApi.logger.debug(method) {"User authorized to #{params}"}

@@ -35,6 +35,7 @@ RSpec.describe GtkApi, type: :controller do
   def app() GtkApi end
 
   describe 'GET /api/v2/services' do
+    let(:token) {'abc'}
     let(:service1) {{
       name: "sonata-demo-1",
       author: "Felipe Vicens, Atos IT Solutions and Services Iberia",
@@ -45,12 +46,17 @@ RSpec.describe GtkApi, type: :controller do
     }}
     let(:returned_service1) {{status: 200, count: 2, items: service1, message: "OK"}}
     
+    before do
+      allow(User).to receive(:authorized?).with(token: token, params: {path: '/services', method: 'GET'}).and_return(true)
+      allow(ServiceManagerService).to receive(:counter_kpi)
+    end
+    
     context 'with UUID given' do      
       let(:serv_man) {class_double("ServiceManagerService", find_service_by_uuid: service1[:uuid])}
       before(:each) do
         allow(ServiceManagerService).to receive(:find_service_by_uuid).with(uuid: service1[:uuid]).and_return(returned_service1)
         #allow(serv_man).to receive(:find_service_by_uuid).with(uuid: service1[:uuid]).and_return(returned_service1)
-        get '/api/v2/services/'+service1[:uuid]
+        get '/api/v2/services/'+service1[:uuid], {}, {'HTTP_AUTHORIZATION' => 'Bearer '+token}
       end
     
       #subject { last_response }
@@ -71,11 +77,10 @@ RSpec.describe GtkApi, type: :controller do
       }}
       let(:all_services) { [ service1, service2 ]}
       let(:returned_all_services) {{status: 200, count: 2, items: all_services, message: "OK"}}
-      let(:default_params) {{'limit'=> GtkApi::DEFAULT_LIMIT, 'offset'=> GtkApi::DEFAULT_OFFSET}}
-      let(:token) {'abc'}
-      let(:tokenized_default_params) {default_params.merge({token: token})}
-      before(:each) do
-        allow(ServiceManagerService).to receive(:find_services).with(tokenized_default_params).and_return(returned_all_services)
+      let(:default_params) {{'offset'=>GtkApi::DEFAULT_OFFSET, 'limit'=>GtkApi::DEFAULT_LIMIT}}
+      let(:tokenized_default_params) {default_params.merge({'token'=>token})}
+      before(:each) do        
+        allow(ServiceManagerService).to receive(:find_services).with(default_params).and_return(returned_all_services)
         get '/api/v2/services', {}, {'HTTP_AUTHORIZATION' => 'Bearer '+token}
       end
         
