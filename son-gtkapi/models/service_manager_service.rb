@@ -45,10 +45,10 @@ class ServiceManagerService < ManagerService
     GtkApi.logger.debug(log_message) {"entered with params #{params}"}
     token = params.delete(:token)
     unless User.authorized?(token: token, params: {path: '/services', method: 'GET'})
-      GtkApi.logger.debug(method) {"User not authorized to list service by uuid"}
+      GtkApi.logger.debug(log_message) {"User not authorized to list service by uuid"}
       return { status: 403, count: 0, data: {}, message: 'Forbidden: user could not be authorized'}
     end
-    GtkApi.logger.debug(method) {"User authorized"}
+    GtkApi.logger.debug(log_message) {"User authorized"}
     find(url: @@url + '/services/' + uuid, params: params, log_message: LOG_MESSAGE + "##{__method__}(#{uuid})")
   end
   
@@ -57,10 +57,10 @@ class ServiceManagerService < ManagerService
     GtkApi.logger.debug(log_message) {"entered with params #{params}"}
     token = params.delete(:token)
     unless User.authorized?(token: token, params: {path: '/services', method: 'GET'})
-      GtkApi.logger.debug(method) {"User not authorized to list services"}
+      GtkApi.logger.debug(log_message) {"User not authorized to list services"}
       return { status: 403, count: 0, data: {}, message: 'Forbidden: user could not be authorized'}
     end
-    GtkApi.logger.debug(method) {"User authorized"}
+    GtkApi.logger.debug(log_message) {"User authorized"}
     
     services=find(url: @@url + '/services', params: params, log_message: LOG_MESSAGE + "##{__method__}(#{params})")
     vectorize_hash services
