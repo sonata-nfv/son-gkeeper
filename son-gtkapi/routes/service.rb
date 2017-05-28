@@ -41,15 +41,23 @@ class GtkApi < Sinatra::Base
 
     # GET many services
     get '/?' do
+      began_at = Time.now.utc
       log_message = 'GtkApi:: GET /api/v2/services'    
       logger.debug(log_message) {'entered with '+query_string}
-      headers 'Content-Type'=> 'application/json'
+      content_type :json
     
       @offset ||= params['offset'] ||= DEFAULT_OFFSET
       @limit ||= params['limit'] ||= DEFAULT_LIMIT
       logger.debug(log_message) {"offset=#{@offset}, limit=#{@limit}"}
       logger.debug(log_message) {"params=#{params}"}
-    
+      
+      token = get_token( request.env, log_message)
+      if (token.to_s.empty?)
+        count_service_metadata_queries(labels: {result: "bad request", uuid: '', elapsed_time: (Time.now.utc-began_at).to_s})
+        json_error 400, 'Token not provided', log_message
+      end
+
+      params[:token] = token
       services = ServiceManagerService.find_services(params)
       logger.debug(log_message) {"Found services #{services}"}
       case services[:status]
@@ -60,9 +68,8 @@ class GtkApi < Sinatra::Base
         headers 'Link'=> links, 'Record-Count'=> services[:count].to_s
         halt 200, services[:items].to_json
       else
-        message = "No services with #{params} were found"
-        logger.debug(log_message) {"leaving with message '"+message+"'"}
-        json_error 404, message
+        count_service_metadata_queries(labels: {result: "not found", uuid: '', elapsed_time: (Time.now.utc-began_at).to_s})
+        json_error 404, "No services with #{params} were found", log_message
       end
     end
   
@@ -104,5 +111,13 @@ class GtkApi < Sinatra::Base
       logger.debug(log_message) {'leaving with log='+log}
       halt 200, log
     end
+  end
+  
+  private
+  
+  def count_service_metadata_queries(labels:)
+    name = __method__.to_s.split('_')[1..-1].join('_')
+    desc = "how many service metadata queries have been made"
+    ServiceManagerService.counter_kpi({name: name, docstring: desc, base_labels: labels.merge({method: 'GET', module: 'services'})})
   end
 end

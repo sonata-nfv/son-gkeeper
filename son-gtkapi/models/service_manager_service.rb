@@ -45,8 +45,9 @@ class ServiceManagerService < ManagerService
   end
   
   def self.find_services(params)
-    log_message = LOG_MESSAGE + "##{__method__}(#{params})"
-    GtkApi.logger.debug(log_message) {'entered'}
+    log_message = LOG_MESSAGE + "##{__method__}"
+    GtkApi.logger.debug(log_message) {"entered with params #{params}"}
+    token = params.delete(:token)
     services=find(url: @@url + '/services', params: params, log_message: LOG_MESSAGE + "##{__method__}(#{params})")
     vectorize_hash services
  end

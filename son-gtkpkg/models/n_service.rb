@@ -75,6 +75,6 @@ class NService
   private
   
   def duplicated_service?()
-    @catalogue.find({vendor:@descriptor['vendor'], name:@descriptor['name'], version:@descriptor['version']}, @token)
+    @catalogue.find({vendor:@descriptor['vendor'], name:@descriptor['name'], version:@descriptor['version']})
   end
 end
