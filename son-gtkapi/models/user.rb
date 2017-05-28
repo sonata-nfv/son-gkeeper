@@ -174,7 +174,7 @@ class User < ManagerService
     #  and now the body
     #  •Body: JSON object
     # {"path": "/packages", "method": "POST"}
-    raise ArgumentError.new __method__.to_s+' requires the login token' if (token.nil? || token.empty?)
+    raise ArgumentError.new __method__.to_s+' requires the login token' if token.to_s.empty?
     GtkApi.logger.debug(method) {"entered"}
     headers = {'Content-type'=>'application/json', 'Accept'=> 'application/json', 'Authorization'=>'Bearer '+token}
 
