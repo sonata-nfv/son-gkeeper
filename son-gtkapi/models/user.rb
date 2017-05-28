@@ -174,11 +174,12 @@ class User < ManagerService
     #  and now the body
     #  •Body: JSON object
     # {"path": "/packages", "method": "POST"}
-    raise ArgumentError.new __method__.to_s+' requires the login token' if (token.nil? || token.empty?)
+    raise ArgumentError.new __method__.to_s+' requires the login token' if token.to_s.empty?
     GtkApi.logger.debug(method) {"entered"}
     headers = {'Content-type'=>'application/json', 'Accept'=> 'application/json', 'Authorization'=>'Bearer '+token}
 
     resp = postCurb(url: @@url+'/api/v1/userinfo', body: params, headers: headers)
+    # {:sub=>"fe53ac4f-052a-4a41-b7cd-914d4c64c2f8", :name=>"", :preferred_username=>"jbonnet", :email=>"jbonnet@alticelabs.com"}
     case resp[:status]
     when 200
       GtkApi.logger.debug(method) {"User authorized to #{params}"}

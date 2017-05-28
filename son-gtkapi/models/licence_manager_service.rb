@@ -33,8 +33,7 @@ class LicenceManagerService < ManagerService
   
   def self.config(url:)
     method = LOG_MESSAGE + "#config(url=#{url})"
-    raise ArgumentError.new('LicenceManagerService can not be configured with nil url') if url.nil?
-    raise ArgumentError.new('LicenceManagerService can not be configured with empty url') if url.empty?
+    raise ArgumentError.new('LicenceManagerService can not be configured with nil or empty url') if url.to_s.empty?
     @@url = url
     GtkApi.logger.debug(method) {'entered'}
   end

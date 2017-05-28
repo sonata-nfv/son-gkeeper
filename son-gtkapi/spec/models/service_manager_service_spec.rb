@@ -37,6 +37,10 @@ RSpec.describe ServiceManagerService, type: :model do
   let(:all_services) { [ created_service_1, created_service_2 ]}
   let(:services_url) { ServiceManagerService.class_variable_get(:@@url)+'/services' }
   describe '#find_services' do
+    before :each do
+      allow(User).to receive(:authorized?).and_return(true) #.with({token: 'abc', params: {path: '/services', method: 'GET'}})
+    end
+    
     it 'with default parameters should return two services' do
       resp = OpenStruct.new(header_str: "HTTP/1.1 200 OK\nRecord-Count: 2", body: all_services.to_json)      
       allow(Curl).to receive(:get).with(services_url+'?limit=10&offset=0').and_return(resp) 
@@ -57,6 +61,10 @@ RSpec.describe ServiceManagerService, type: :model do
     end
   end
   describe '#find_service_by_uuid' do
+    before :each do
+      allow(User).to receive(:authorized?).and_return(true) #.with({token: 'abc', params: {path: '/services', method: 'GET'}})
+    end
+    
     it 'should find a service with a known UUID' do
       resp = OpenStruct.new(header_str: "HTTP/1.1 200 OK\nRecord-Count: 1", body: created_service_1.to_json)      
       allow(Curl).to receive(:get).with(services_url+'/'+service_uuid).and_return(resp) 

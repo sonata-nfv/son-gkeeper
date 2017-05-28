@@ -41,13 +41,14 @@ class ServiceManagerService < ManagerService
   end
 
   def self.find_service_by_uuid(uuid:, params: {})
+    log_message = LOG_MESSAGE + "##{__method__}"
+    GtkApi.logger.debug(log_message) {"entered with params #{params}"}
     find(url: @@url + '/services/' + uuid, params: params, log_message: LOG_MESSAGE + "##{__method__}(#{uuid})")
   end
   
   def self.find_services(params)
     log_message = LOG_MESSAGE + "##{__method__}"
-    GtkApi.logger.debug(log_message) {"entered with params #{params}"}
-    token = params.delete(:token)
+    GtkApi.logger.debug(log_message) {"entered with params #{params}"}    
     services=find(url: @@url + '/services', params: params, log_message: LOG_MESSAGE + "##{__method__}(#{params})")
     vectorize_hash services
  end
