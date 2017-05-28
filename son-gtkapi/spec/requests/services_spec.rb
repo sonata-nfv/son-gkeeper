@@ -180,7 +180,7 @@ RSpec.describe GtkApi, type: :controller do
             stub_request(:get, services_url)
               .with(headers: {'Accept'=>'application/json', 'Content-Type'=>'application/json'})
               .to_return(status: 200, body: services.to_json, headers: {'Record-Count'=>services.count.to_s})
-          get '/api/v2/services'
+          get '/api/v2/services', {}, {'HTTP_AUTHORIZATION' => 'Bearer abc'}
         end
         it 'should call the Service Management Service' do
           expect(a_request(:get, full_services_url)).to have_been_made
@@ -204,15 +204,16 @@ RSpec.describe GtkApi, type: :controller do
         end
       end
       
-      context 'and limit param given (offset becomes DEFAULT_OFFSET)' do
+      context 'but limit param given (offset becomes DEFAULT_OFFSET)' do
+        let(:headers) {{'Accept'=>'application/json', 'Content-Type'=>'application/json'}} #, 'Authorization'=>'Bearer abc'}}
         before(:each) do
           stub_request(:get, services_url+'?limit=1&offset='+GtkApi::DEFAULT_OFFSET)
-            .with(headers: {'Accept'=>'application/json', 'Content-Type'=>'application/json'})
+            .with(headers: headers)
             .to_return(status: 200, body: services[0].to_json, headers: {'Record-Count'=>services.count.to_s})
           stub_request(:get, services_url)
-            .with(headers: {'Accept'=>'application/json', 'Content-Type'=>'application/json'})
+            .with(headers: headers)
             .to_return(status: 200, body: services.to_json, headers: {'Record-Count'=>services.count.to_s})
-          get '/api/v2/services?limit=1'
+          get '/api/v2/services?limit=1', {}, {'HTTP_AUTHORIZATION' => 'Bearer abc'}
         end
         it 'should call the Service Management Service' do
           expect(a_request(:get, services_url+'?offset='+GtkApi::DEFAULT_OFFSET+'&limit=1')
@@ -233,9 +234,9 @@ RSpec.describe GtkApi, type: :controller do
       end
       
       # only to be tested if more than DEFAULT_LIMIT services could be mocked
-      context 'and offset param given (limit becomes DEFAULT_LIMIT)'
+      context 'but offset param given (limit becomes DEFAULT_LIMIT)'
         
-      context 'and limit and offset param given' do
+      context 'but limit and offset param given' do
         before(:each) do
           stub_request(:get, services_url+'?offset=1&limit=1')
             .with(headers: {'Accept'=>'application/json', 'Content-Type'=>'application/json'})
@@ -243,7 +244,7 @@ RSpec.describe GtkApi, type: :controller do
           stub_request(:get, services_url)
             .with(headers: {'Accept'=>'application/json', 'Content-Type'=>'application/json'})
             .to_return(status: 200, body: services.to_json, headers: {'Record-Count'=>services.count.to_s})
-          get '/api/v2/services?offset=1&limit=1'
+          get '/api/v2/services?offset=1&limit=1', {}, {'HTTP_AUTHORIZATION' => 'Bearer abc'}
         end
         it 'should call the Service Management Service' do
           expect(a_request(:get, services_url+'?offset=1&limit=1')

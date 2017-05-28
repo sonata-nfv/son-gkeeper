@@ -72,9 +72,11 @@ RSpec.describe GtkApi, type: :controller do
       let(:all_services) { [ service1, service2 ]}
       let(:returned_all_services) {{status: 200, count: 2, items: all_services, message: "OK"}}
       let(:default_params) {{'limit'=> GtkApi::DEFAULT_LIMIT, 'offset'=> GtkApi::DEFAULT_OFFSET}}
+      let(:token) {'abc'}
+      let(:tokenized_default_params) {default_params.merge({token: token})}
       before(:each) do
-        allow(ServiceManagerService).to receive(:find_services).with(default_params).and_return(returned_all_services)
-        get '/api/v2/services'
+        allow(ServiceManagerService).to receive(:find_services).with(tokenized_default_params).and_return(returned_all_services)
+        get '/api/v2/services', {}, {'HTTP_AUTHORIZATION' => 'Bearer '+token}
       end
         
       it 'calls ServiceManagerService' do

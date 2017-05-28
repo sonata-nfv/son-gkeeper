@@ -45,10 +45,10 @@ class Package
     
   def initialize(catalogue:, params:, username:)
     method = "GtkPkg: #{CLASS}.#{__method__}"
-    logger.debug(method) {"entered"}
-    raise ArgumentError.new(method + 'no Catalogue has been provided') unless catalogue
-    raise ArgumentError.new(method + 'no parameters has been provided') unless params
-    raise ArgumentError.new(method + 'no username has been provided') unless username
+    GtkPkg.logger.debug(method) {"entered with catalogue=#{catalogue}, params=#{params}, username=#{username}"}
+    raise ArgumentError.new(method + ': no Catalogue has been provided') unless catalogue
+    raise ArgumentError.new(method + ': no parameters has been provided') unless params
+    raise ArgumentError.new(method + ': no username has been provided') if username.to_s.empty?
 
     @service = {}
     @functions = []
@@ -118,9 +118,9 @@ class Package
         break
       end
     end
-    GtkPkg.logger.debug(log_message) {" before calling duplicate_package?, @@catalogue=#{@@catalogue.inspect}"}
+    GtkPkg.logger.debug(log_message) {" before calling duplicated_package?, @@catalogue=#{@@catalogue.inspect}"}
     
-    unless duplicate_package?().empty?
+    unless duplicated_package?().empty?
       dup = {}
       dup['vendor'] = @descriptor['vendor']
       dup['version'] = @descriptor['version']
@@ -222,11 +222,11 @@ class Package
 
   private
   
-  def duplicate_package?(desc)
+  def duplicated_package?()
     log_message = 'Package.'+__method__.to_s
-    GtkPkg.logger.debug(log_message) { "verifying duplication of package with desc=#{desc}"}
+    GtkPkg.logger.debug(log_message) { "verifying duplication of package with @descriptor=#{@descriptor}"}
     GtkPkg.logger.debug(log_message) { "@@catalogue=#{@@catalogue.inspect}"}
-    package = Package.find({vendor: desc['vendor'], version: desc['version'], name: desc['name']})
+    package = Package.find({vendor: @descriptor['vendor'], version: @descriptor['version'], name: @descriptor['name']})
     GtkPkg.logger.debug(log_message) { "returned package is #{package.inspect}"}
     package
   end
@@ -326,10 +326,6 @@ class Package
     true # TODO: validate the descriptor here
   end
   
-  def duplicated_package?()
-    @@catalogue.find({vendor:@descriptor['vendor'], name:@descriptor['name'], version:@descriptor['version']})
-  end
-
   def store()
     GtkPkg.logger.debug('Package.store') {"descriptor "+@descriptor.to_s}
     saved_descriptor = @@catalogue.create(@descriptor, @username)
@@ -349,7 +345,7 @@ class Package
     GtkPkg.logger.debug(log_message) {"@functions is #{@functions}"}
     
     # The verification of duplicates may have to migrate to the router, in order to make it return '200' instead of '201' 
-    package_descriptor = duplicated_package?(@descriptor)
+    package_descriptor = duplicated_package?()
     if package_descriptor.one?
       GtkPkg.logger.error(log_message) {"package exists: #{package_descriptor[0]}"}
       package_descriptor[0]

@@ -39,7 +39,7 @@ class GtkPkg < Sinatra::Base
     logger.info(log_message) {"params = #{params}"}
     package_filename = params['package']['filename']
     logger.info(log_message) {"filename = #{package_filename}"}
-    username = params.delete(:username)
+    username = params.delete('username')
     package = Package.new(catalogue: settings.packages_catalogue, params: {io: params[:package][:tempfile][:tempfile]}, username: username)
     unless package
       json_error 400, 'No package created', log_message

@@ -54,7 +54,7 @@ class GtkApi < Sinatra::Base
       end
 
       token = get_token( request.env, log_message)
-      if (token.nil? || token.empty?)
+      if (token.to_s.empty?)
         count_package_on_boardings(labels: {result: "bad request", uuid: '', elapsed_time: (Time.now.utc-began_at).to_s})
         json_error 400, 'Token not provided', log_message
       end
