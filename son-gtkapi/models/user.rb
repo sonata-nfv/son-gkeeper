@@ -37,6 +37,7 @@ class UserNotUpdatedError < StandardError; end
 class UserNameAlreadyInUseError < StandardError; end
 class UserNotLoggedOutError < StandardError; end
 class UserTokenNotActiveError < StandardError; end
+class UserPublicKeyNotUpdatedError < StandardError; end
 
 class User < ManagerService
 
@@ -163,19 +164,9 @@ class User < ManagerService
   
   def self.authorized?(token:, params:)
     method = LOG_MESSAGE + "##{__method__}"
-    GtkApi.logger.debug(method) {"entered with params #{params}"}
-    # Token Authorization
-    # POST /api/v1/authorize
-    # 200: OK or 401: Unauthorized
-    # Authorization header must include a string following the next pattern: 
-    #  request.env["HTTP_AUTHORIZATION"] = "Bearer <access_token>  
-    # Content-type: JSON
-    # request.content_type = 'application/json'
-    #  and now the body
-    #  •Body: JSON object
-    # {"path": "/packages", "method": "POST"}
     raise ArgumentError.new __method__.to_s+' requires the login token' if token.to_s.empty?
-    GtkApi.logger.debug(method) {"entered"}
+    raise ArgumentError.new __method__.to_s+' requires a path and a method to be authorized' if (params.to_s.empty? || !params.key?(:method) || !params.key?(:path))
+    GtkApi.logger.debug(method) {"entered with token #{token} and params #{params}"}
     headers = {'Content-type'=>'application/json', 'Accept'=> 'application/json', 'Authorization'=>'Bearer '+token}
 
     resp = postCurb(url: @@url+'/api/v1/userinfo', body: params, headers: headers)
@@ -191,6 +182,42 @@ class User < ManagerService
       GtkApi.logger.error(method) {"Status #{resp[:status]}"} 
       false
     end
+  end
+  
+=begin
+      The UM is expecting a PUT /api/v1/signatures/:username with a body like {"public_key":"..."}.
+      HTTP method: PUT
+      Authentication header includes the user's Access Token
+      Parameter: username
+      Body: JSON object that includes public_key field (required) and certificate field (optional). Sample:
+      {"public_key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEArVFiBHBiLPFRGrMobAxcK98SJRKKXJOkA66NL0UEgR7g8hOjVySchYUvtGAU5wi2ZCjmPGDT0hrJd1WEBplv0kT7YrIgdRGXGH73OJFjH8c7iX+XBwk0sH1K+KMUbszSbWFCKAlyHhYa8vz95RyzmzoMJZW6TeadlhRLuVw52RECaK9eIJu311oFA8os3z8J65olLexT0vF+B9Oqtn1gVJUfC0w984PXwMoGzSOVCbb5jD0/blAXonMS8PU+JFSGF4trTwRcmjw349NDEifUQamdHE8pynuxSpAuMN2WAPAlJpjnw/fHUxQFgRNGki6vHmegnQ6qmcbuorVW3oXkMwIDAQAB", "certificate": "optional"}
+=end
+  def update_public_key(token)
+    method = LOG_MESSAGE + "##{__method__}"
+    raise ArgumentError.new __method__.to_s+' requires the login token' if token.to_s.empty?
+    GtkApi.logger.debug(method) {"entered"}
+    
+    body={public_key: @public_key, certificate: @certificate}
+    headers = {'Content-type'=>'application/json', 'Accept'=> 'application/json', 'Authorization'=>'Bearer '+token}
+    resp = putCurb(url: @@url+'/api/v1/signatures/'+@username, body: params, headers: headers)
+    case resp[:status]
+    when 200 # signature is successfully updated
+      GtkApi.logger.debug(method) {"User public-key updated"}
+      self
+    when 400 # Provided username does not match with Access Token, No username specified or Developer public key not provided
+      GtkApi.logger.debug(method) {'Username '+@username+' does not match with token'}
+      raise UserTokenNotActiveError.new 'Username '+@username+' does not match with token'
+    when 401 # Token is not valid
+      GtkApi.logger.debug(method) {'Username '+@username+' provided a token that is not valid'}
+      raise UserTokenNotActiveError.new 'Username '+@username+' provided a token that is not valid'
+    when 404 # Username is not found
+      GtkApi.logger.debug(method) {'Username '+@username+' was not found'}
+      raise UserNotFoundError.new 'Username '+@username+' was not found'
+    else
+      GtkApi.logger.error(method) {"Status #{resp[:status]}"} 
+      raise UserPublicKeyNotUpdatedError.new 'User public-key not updated'
+    end
+    
   end
   
   def self.valid?(params)
@@ -234,12 +261,11 @@ class User < ManagerService
       GtkApi.logger.debug(method) {"Got response: #{response}"}
       case response[:status]
       when 200
-        user = response[:items].first
-        unless user.empty?
-          User.new( User.import(user))
-        else
+        # TODO: items can be empty
+        if response[:items].empty? || (user = response[:items].first).empty?
           raise UserNotFoundError.new "User with name #{name} was not found"
         end
+        User.new( User.import(user))
       when 404
         raise UserNotFoundError.new "User with name #{name} was not found (code 404)"
       else
