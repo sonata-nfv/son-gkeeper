@@ -373,7 +373,7 @@ class User < ManagerService
     user[:created_at] = @created_at
     user[:user_type] = @user_type
     user[:email] = @email
-    user[:last_name] @last_name
+    user[:last_name] = @last_name
     user[:first_name] = @first_name
     user[:public_key] = @public_key
     user[:certificate] = @certificate
