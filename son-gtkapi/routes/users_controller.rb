@@ -151,6 +151,7 @@ class GtkApi < Sinatra::Base
     # PATCH
     patch '/:username/user-public-key/?' do
       log_message = 'GtkApi:: PATCH /api/v2/users/:username/user-public-key'
+      content_type :json
       body = request.body.read
       
       if body.to_s.empty?
@@ -171,11 +172,11 @@ class GtkApi < Sinatra::Base
         json_error 400, "User #{params[:username]} was not found", log_message
       end
       logger.debug(log_message) {"user found=#{user}"}
-        
-      user.update parsed_body
+
       begin
-        user.save_public_key(token)
-        halt 200, user.to_json
+        user.save_public_key(parsed_body, token)
+        logger.debug(log_message) {"user found=#{user.to_h.to_json}"}
+        halt 200, user.to_h.to_json
       rescue UserTokenNotActiveError
         json_error 400, "User #{params[:username]} does not match with token", log_message
       rescue UserTokenNotActiveError

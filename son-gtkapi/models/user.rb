@@ -208,11 +208,13 @@ class User < ManagerService
       Body: JSON object that includes public_key field (required) and certificate field (optional). Sample:
       {"public_key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEArVFiBHBiLPFRGrMobAxcK98SJRKKXJOkA66NL0UEgR7g8hOjVySchYUvtGAU5wi2ZCjmPGDT0hrJd1WEBplv0kT7YrIgdRGXGH73OJFjH8c7iX+XBwk0sH1K+KMUbszSbWFCKAlyHhYa8vz95RyzmzoMJZW6TeadlhRLuVw52RECaK9eIJu311oFA8os3z8J65olLexT0vF+B9Oqtn1gVJUfC0w984PXwMoGzSOVCbb5jD0/blAXonMS8PU+JFSGF4trTwRcmjw349NDEifUQamdHE8pynuxSpAuMN2WAPAlJpjnw/fHUxQFgRNGki6vHmegnQ6qmcbuorVW3oXkMwIDAQAB", "certificate": "optional"}
 =end
-  def save_public_key(token)
+  def save_public_key(params, token)
     method = LOG_MESSAGE + "##{__method__}"
     raise ArgumentError.new __method__.to_s+' requires the login token' if token.to_s.empty?
     GtkApi.logger.debug(method) {"entered"}
     
+    @public_key = params[:public_key]
+    @certificate = params[:certificate] if params[:certificate]
     body={public_key: @public_key, certificate: @certificate}
     headers = {'Content-type'=>'application/json', 'Accept'=> 'application/json', 'Authorization'=>'Bearer '+token}
     resp = User.putCurb(url: @@url+'/api/v1/signatures/'+@username, body: body, headers: headers)
@@ -362,6 +364,8 @@ class User < ManagerService
   end
 
   def to_h
+    method = LOG_MESSAGE + "##{__method__}"
+    GtkApi.logger.debug(method) {"entered"}
     h={}
     h[:username]= @username
     h[:uuid]=@uuid
@@ -370,25 +374,9 @@ class User < ManagerService
     h[:email]=@email
     h[:last_name]=@last_name
     h[:first_name]=@first_name
-    # :session, :secret
+    h[:public_key] = @public_key
+    h[:certificate] = @certificate
     h
-  end
-  
-  def to_json
-    method = LOG_MESSAGE + "##{__method__}"
-    GtkApi.logger.debug(method) {"entered"}
-    
-    user = {}
-    user[:username] = @username
-    user[:uuid] = @uuid
-    user[:created_at] = @created_at
-    user[:user_type] = @user_type
-    user[:email] = @email
-    user[:last_name] = @last_name
-    user[:first_name] = @first_name
-    user[:public_key] = @public_key
-    user[:certificate] = @certificate
-    user
   end
   
   private 
