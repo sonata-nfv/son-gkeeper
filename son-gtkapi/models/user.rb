@@ -261,7 +261,6 @@ class User < ManagerService
       GtkApi.logger.debug(method) {"Got response: #{response}"}
       case response[:status]
       when 200
-        # TODO: items can be empty
         if response[:items].empty? || (user = response[:items].first).empty?
           raise UserNotFoundError.new "User with name #{name} was not found"
         end
@@ -362,6 +361,23 @@ class User < ManagerService
     h[:first_name]=@first_name
     # :session, :secret
     h
+  end
+  
+  def to_json
+    method = LOG_MESSAGE + "##{__method__}"
+    GtkApi.logger.debug(method) {"entered"}
+    
+    user = {}
+    user[:username] = @username
+    user[:uuid] = @uuid
+    user[:created_at] = @created_at
+    user[:user_type] = @user_type
+    user[:email] = @email
+    user[:last_name] = @last_name
+    user[:first_name] = @first_name
+    user[:public_key] = @public_key
+    user[:certificate] = @certificate
+    user
   end
   
   private 
