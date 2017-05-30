@@ -139,9 +139,15 @@ class ManagerService
     case status
     when 200..202
       begin
-        parsed_response = JSON.parse(res.body, symbolize_names: true)
-        GtkApi.logger.debug(log_message) {"status #{status}, parsed_response=#{parsed_response}"}
-        {status: status, count: 1, items: parsed_response, message: "OK"}
+        body = res.body
+        if body.empty?
+          GtkApi.logger.debug(log_message) {"status #{status}, parsed_response=[]"}
+          {status: status, count: 1, items: [], message: "OK"}
+        else
+          parsed_response = JSON.parse(body, symbolize_names: true)
+          GtkApi.logger.debug(log_message) {"status #{status}, parsed_response=#{parsed_response}"}
+          {status: status, count: 1, items: parsed_response, message: "OK"}
+        end
       rescue => e
         GtkApi.logger.error(log_message) {"Error during processing: #{$!}"} 
         GtkApi.logger.error(log_message) {"Backtrace:\n\t#{e.backtrace.join("\n\t")}"}

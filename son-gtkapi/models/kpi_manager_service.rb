@@ -46,6 +46,7 @@ class KpiManagerService < ManagerService
     begin
       GtkApi.logger.debug(method) {"url = "+@@url}      
       response = putCurb(url: @@url+'/kpis', body: params)      
+      GtkApi.logger.error(method) {"response=#{response}"}
       case response[:status]
       when 201
         { status: response[:status], data: {}, message: 'Metric updated'}        
