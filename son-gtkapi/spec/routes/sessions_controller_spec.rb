@@ -104,7 +104,7 @@ RSpec.describe GtkApi, type: :controller do
     context 'returns Unprocessable entity (400)' do
       it 'without token given' do
         delete '/api/v2/sessions/', {}, {'HTTP_AUTHORIZATION' => ''}
-        expect(last_response.status).to eq(400)
+        expect(last_response.status).to eq(401)
       end
       it 'with mal-formed token given' do
         delete '/api/v2/sessions/', {}, {'HTTP_AUTHORIZATION' => 'ABC'}
