@@ -170,14 +170,11 @@ class GtkApi < Sinatra::Base
       unless user
         json_error 400, "User #{params[:username]} was not found", log_message
       end
+      logger.debug(log_message) {"user found=#{user}"}
         
-      parsed_body.each do |key, value|
-        if user.respond_to? key
-          user.public_send key, value
-        end
-      end
+      user.update parsed_body
       begin
-        user.update_public_key
+        user.save_public_key(token)
         halt 200, user.to_json
       rescue UserTokenNotActiveError
         json_error 400, "User #{params[:username]} does not match with token", log_message

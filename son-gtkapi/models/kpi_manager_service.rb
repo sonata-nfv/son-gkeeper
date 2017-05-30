@@ -46,11 +46,11 @@ class KpiManagerService < ManagerService
     begin
       GtkApi.logger.debug(method) {"url = "+@@url}      
       response = putCurb(url: @@url+'/kpis', body: params)      
-      case response
+      case response[:status]
       when 201
-        { status: response, data: {}, message: 'Metric updated'}        
+        { status: response[:status], data: {}, message: 'Metric updated'}        
       else
-        { status: response, data: {}, message: 'Metric was not updated'}
+        { status: response[:status], data: {}, message: 'Metric was not updated'}
       end      
     rescue => e
       GtkApi.logger.error(method) {"Error during processing: #{$!}"}

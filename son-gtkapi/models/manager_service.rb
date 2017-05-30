@@ -135,8 +135,25 @@ class ManagerService
       end
     end
     status = status_from_response_headers(res.header_str)
-    GtkApi.logger.debug(log_message) {"response =#{status}"}   
-    status 
+    GtkApi.logger.debug(log_message) {"response body=#{res.body}"}
+    case status
+    when 200..202
+      begin
+        parsed_response = JSON.parse(res.body, symbolize_names: true)
+        GtkApi.logger.debug(log_message) {"status #{status}, parsed_response=#{parsed_response}"}
+        {status: status, count: 1, items: parsed_response, message: "OK"}
+      rescue => e
+        GtkApi.logger.error(log_message) {"Error during processing: #{$!}"} 
+        GtkApi.logger.error(log_message) {"Backtrace:\n\t#{e.backtrace.join("\n\t")}"}
+        {status: nil, count: nil, items: nil, message: "Error processing #{$!}: \n\t#{e.backtrace.join("\n\t")}"}
+      end
+    when 400..499
+      GtkApi.logger.error(log_message) {"Status #{status}"} 
+      {status: status, count: nil, items: nil, message: "Status #{status}: could not process"}
+    else
+      GtkApi.logger.error(log_message) {"Status #{status}"} 
+      {status: status, count: nil, items: nil, message: "Status #{status} unknown"}
+    end
   end
   
   private

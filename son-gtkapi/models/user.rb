@@ -184,6 +184,22 @@ class User < ManagerService
     end
   end
   
+  def update(fields)
+    log_message = LOG_MESSAGE + "##{__method__}"
+    raise ArgumentError.new __method__.to_s+' requires a hash with arguments' if fields.to_s.empty?
+    GtkApi.logger.debug(log_message) {"entered with fields=#{fields}"}
+    fields.each do |key, value|
+      GtkApi.logger.debug(log_message) {"key=#{key}, value=#{value}"}
+      method = "@#{key}=".to_sym
+      if respond_to? method
+        GtkApi.logger.debug(log_message) {"user respondes to #{method}"}
+        instance_variable_set(method, value)
+        new_val = instance_variable_get("@#{key}")
+        GtkApi.logger.debug(log_message) {"variable @#{key} set to #{new_val}"}
+      end
+    end
+  end
+  
 =begin
       The UM is expecting a PUT /api/v1/signatures/:username with a body like {"public_key":"..."}.
       HTTP method: PUT
@@ -192,14 +208,14 @@ class User < ManagerService
       Body: JSON object that includes public_key field (required) and certificate field (optional). Sample:
       {"public_key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEArVFiBHBiLPFRGrMobAxcK98SJRKKXJOkA66NL0UEgR7g8hOjVySchYUvtGAU5wi2ZCjmPGDT0hrJd1WEBplv0kT7YrIgdRGXGH73OJFjH8c7iX+XBwk0sH1K+KMUbszSbWFCKAlyHhYa8vz95RyzmzoMJZW6TeadlhRLuVw52RECaK9eIJu311oFA8os3z8J65olLexT0vF+B9Oqtn1gVJUfC0w984PXwMoGzSOVCbb5jD0/blAXonMS8PU+JFSGF4trTwRcmjw349NDEifUQamdHE8pynuxSpAuMN2WAPAlJpjnw/fHUxQFgRNGki6vHmegnQ6qmcbuorVW3oXkMwIDAQAB", "certificate": "optional"}
 =end
-  def update_public_key(token)
+  def save_public_key(token)
     method = LOG_MESSAGE + "##{__method__}"
     raise ArgumentError.new __method__.to_s+' requires the login token' if token.to_s.empty?
     GtkApi.logger.debug(method) {"entered"}
     
     body={public_key: @public_key, certificate: @certificate}
     headers = {'Content-type'=>'application/json', 'Accept'=> 'application/json', 'Authorization'=>'Bearer '+token}
-    resp = putCurb(url: @@url+'/api/v1/signatures/'+@username, body: params, headers: headers)
+    resp = User.putCurb(url: @@url+'/api/v1/signatures/'+@username, body: body, headers: headers)
     case resp[:status]
     when 200 # signature is successfully updated
       GtkApi.logger.debug(method) {"User public-key updated"}
@@ -345,11 +361,6 @@ class User < ManagerService
     end
   end
 
-  def update
-    method = LOG_MESSAGE + "##{__method__}"
-    GtkApi.logger.debug(method) {'entered'}
-  end
-  
   def to_h
     h={}
     h[:username]= @username
