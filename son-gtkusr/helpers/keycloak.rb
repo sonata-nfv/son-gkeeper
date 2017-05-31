@@ -271,7 +271,6 @@ class Keycloak < Sinatra::Application
   # "userinfo_endpoint":"http://localhost:8081/auth/realms/master/protocol/openid-connect/userinfo"
   def userinfo(token)
     # token = @@access_token
-    # puts "TOKEN_CONTENT", token
     http_path = "http://#{@@address.to_s}:#{@@port.to_s}/#{@@uri.to_s}/realms/#{@@realm_name}/protocol/openid-connect/userinfo"
     url = URI(http_path)
     http = Net::HTTP.new(url.host, url.port)
@@ -286,25 +285,19 @@ class Keycloak < Sinatra::Application
   # Token Validation Endpoint
   # "token_introspection_endpoint":"http://localhost:8081/auth/realms/master/protocol/openid-connect/token/introspect"
   def token_validation(token, realm=nil)
-    # decode_token(token, keycloak_pub_key)
     # url = URI("http://localhost:8081/auth/realms/master/clients-registrations/openid-connect/")
     url = URI("http://#{@@address.to_s}:#{@@port.to_s}/#{@@uri.to_s}/realms/#{@@realm_name}/protocol/openid-connect/token/introspect")
-    # ttp = Net::HTTP.new(url.host, url.port)
-
     # request = Net::HTTP::Post.new(url.to_s)
     # request = Net::HTTP::Get.new(url.to_s)
     # request["authorization"] = 'bearer ' + token
     # request["content-type"] = 'application/json'
     # body = {"token" => token}
-
     # request.body = body.to_json
 
     res = Net::HTTP.post_form(url, 'client_id' => @@client_name,
                               'client_secret' => @@client_secret,
                               'grant_type' => 'client_credentials', 'token' => token)
 
-    # puts "RESPONSE_INTROSPECT", res.read_body
-    # puts "CODE_INTROSPECT", res.code
     # RESPONSE_INTROSPECT:
       logger.debug "Keycloak: Token validation code: #{res.code.to_s}"
     begin
@@ -742,15 +735,35 @@ class Keycloak < Sinatra::Application
   def refresh_adapter()
     logger.debug 'Adapter: Checking Adapter token status'
     if defined?@@access_token
-      #=> Check if token.expired?
+      # Check if token has expired
       code = is_expired?
       case code
         when 200
-          # puts "OK"
+          # Then check if token is still valid
+          res, code = token_validation(@@access_token)
+          if code.to_i == 200
+            result = is_active?(res)
+            case result
+              # When the token is inactive
+              when false
+                # Then GET a new token
+                logger.debug 'Adapter: Refreshing Adapter token'
+                result = Keycloak.get_adapter_token
+                if result.is_a?(Integer)
+                  halt result
+                end
+                @@access_token = result
+                logger.debug "New Access Token saved #{@@access_token}"
+                return 200, @@access_token
+              else
+                logger.debug 'Adapter: Adapter token is active'
+                return 200, @@access_token
+            end
+          end
           logger.debug 'Adapter: Adapter token is active'
           return 200, @@access_token
         else
-          # => Then GET new token
+          # Then GET a new token
           logger.debug 'Adapter: Refreshing Adapter token'
           result = Keycloak.get_adapter_token
           if result.is_a?(Integer)
@@ -1359,17 +1372,16 @@ class Keycloak < Sinatra::Application
   end
 
   def is_active?(introspect_res)
-    # puts "JSON PARSING"
     token_evaluation = JSON.parse(introspect_res)
     # puts "token_evaluation", token_evaluation.to_s
     case token_evaluation['active']
       when true
         # p "ACTIVE CONTENTS TRUE", token_evaluation['active']
-        logger.info 'Keycloak: Evaluated token is valid and active'
+        logger.info 'Keycloak: Evaluated token is active'
         true
       else
         # p "ACTIVE CONTENTS FALSE", token_evaluation['active']
-        logger.info 'Keycloak: Evaluated token is expired'
+        logger.info 'Keycloak: Evaluated token is inactive'
         false
     end
   end

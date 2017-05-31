@@ -128,7 +128,7 @@ class Keycloak < Sinatra::Application
   end
 
   get '/refresh' do
-    # This endpoint forces the Adapter to resfresh the token
+    # This endpoint forces the Adapter to refresh the token
     logger.debug 'Adapter: entered GET /refresh'
     code, access_token = refresh_adapter
     # access_token = Keycloak.get_adapter_token
@@ -265,7 +265,7 @@ class Keycloak < Sinatra::Application
   end
 
   get '/token-status' do
-    logger.debug 'Adapter: entered POST /userinfo'
+    logger.debug 'Adapter: entered GET /token-status'
     # Return if Authorization is invalid
     halt 400 unless request.env["HTTP_AUTHORIZATION"]
 
@@ -290,7 +290,7 @@ class Keycloak < Sinatra::Application
   end
 
   get '/token-check' do
-    logger.debug 'Adapter: entered POST /userinfo'
+    logger.debug 'Adapter: entered GET /token-check'
     # Return if Authorization is invalid
     halt 400 unless request.env["HTTP_AUTHORIZATION"]
 

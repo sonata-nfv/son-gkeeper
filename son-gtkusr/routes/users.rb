@@ -186,25 +186,20 @@ class Keycloak < Sinatra::Application
       json_error(400, 'Access token is not provided')
     end
 
-    # Validate token
+    # Validates the token
     res, code = token_validation(user_token)
     if code == '200'
       result = is_active?(res)
-      # puts "RESULT", result
       case result
         when false
           json_error(401, 'Token not active')
         else
-          # continue
+          code, user_info = userinfo(user_token)
+          halt code.to_i, {'Content-type' => 'application/json'}, user_info
       end
     else
       json_error(400, res.to_s)
     end
-
-    # puts "RESULT", user_token
-    code, user_info = userinfo(user_token)
-    halt code.to_i, {'Content-type' => 'application/json'}, user_info
-    # halt 200, {'Content-type' => 'application/json'}, user_info
   end
 
   get '/userid' do

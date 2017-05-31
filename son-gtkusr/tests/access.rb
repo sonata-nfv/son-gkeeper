@@ -42,7 +42,7 @@ end
 def userbased(client_secret)
   # curl -d "client_id=admin-cli" -d "username=user1" -d "password=1234" -d "grant_type=password" "http://localhost:8081/auth/realms/SONATA/protocol/openid-connect/token"
   client_id = "adapter"
-  username = "user04"
+  username = "jenkins"
   pwd = "1234"
   grt_type = "password"
   http_path = "http://sp.int3.sonata-nfv.eu:5601/auth/realms/sonata/protocol/openid-connect/token"
@@ -144,7 +144,6 @@ def token_validation(token, client_secret)
   # request["authorization"] = 'bearer ' + token
   # request["content-type"] = 'application/json'
   # body = {"token" => token}
-
   # request.body = body.to_json
 
   res = Net::HTTP.post_form(url, 'client_id' => 'adapter',
@@ -478,6 +477,23 @@ end
 
 def set_user_roles(token)
   #TODO: Implement
+end
+
+def get_realm_roles(token)
+  http_path = "http://sp.int3.sonata-nfv.eu:5601/auth/realms/sonata/protocol/openid-connect/userinfo"
+  url = URI(http_path)
+  http = Net::HTTP.new(url.host, url.port)
+  # request = Net::HTTP::Post.new(url.to_s)
+  request = Net::HTTP::Get.new(url.to_s)
+  request["authorization"] = 'bearer ' + token
+  #request["content-type"] = 'application/json'
+  #body = {}
+
+  #request.body = body.to_json
+  response = http.request(request)
+  puts "RESPONSE", response.read_body
+  puts "CODE", response.code
+  response_json = parse_json(response.read_body)[0]
 end
 
 def login_user_bis (token, username=nil, credentials=nil)
@@ -998,7 +1014,7 @@ end
 =end
 
 #test_form
-token = userbased('66829d12-b84c-4527-a596-26d09c894cc6')
+token = userbased('dc2eb6eb-4221-47b7-81e3-62d72db7b1e6')
 #token = clientbased('f50d8d0f-1411-44c8-9431-3a48e930deb1')
 #token = adminbased
 #pub = get_public_key
@@ -1017,8 +1033,7 @@ userinfo(token['access_token'])
 #sleep(3)
 #logout_user(token,)
 #sleep(3)
-token = "eyJhbGciOiJSUzI1NiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICI1OWtrclRZVFI0NU5FSWJMTXlpTEZsWTZkOGgwenhYcmcxU3FyQktKSlRvIn0.eyJqdGkiOiI2YWUxOTUwYy05ZGVhLTRmY2UtODg4Zi1jMDA3M2UxNzk2MjQiLCJleHAiOjE0OTYxNzI3ODgsIm5iZiI6MCwiaWF0IjoxNDk2MTU0Nzg4LCJpc3MiOiJodHRwOi8vc29uLWtleWNsb2FrOjU2MDEvYXV0aC9yZWFsbXMvc29uYXRhIiwiYXVkIjoiYWRhcHRlciIsInN1YiI6ImQ2ZTdjODM3LTZiMDQtNDAyNi04YjUwLWEyMzc4OTFmODY1NSIsInR5cCI6IkJlYXJlciIsImF6cCI6ImFkYXB0ZXIiLCJhdXRoX3RpbWUiOjAsInNlc3Npb25fc3RhdGUiOiIwN2VjZTMzMC1kZDA1LTRlMmMtOGU0Yy0wOTUxN2MyNTNjZDUiLCJhY3IiOiIxIiwiY2xpZW50X3Nlc3Npb24iOiI0ZmM2NTgwZS05ZDU1LTQ2YzAtOGQyYi04ZDQzZWFmYjJkODciLCJhbGxvd2VkLW9yaWdpbnMiOlsiaHR0cDovL2xvY2FsaG9zdDo4MDgxIl0sInJlYWxtX2FjY2VzcyI6eyJyb2xlcyI6WyJkZXZlbG9wZXIiLCJ1bWFfYXV0aG9yaXphdGlvbiJdfSwicmVzb3VyY2VfYWNjZXNzIjp7ImFjY291bnQiOnsicm9sZXMiOlsibWFuYWdlLWFjY291bnQiLCJtYW5hZ2UtYWNjb3VudC1saW5rcyIsInZpZXctcHJvZmlsZSJdfX0sIm5hbWUiOiJ1c2VyIHNhbXBsZSIsInByZWZlcnJlZF91c2VybmFtZSI6InVzZXIwNCIsImdpdmVuX25hbWUiOiJ1c2VyIiwiZmFtaWx5X25hbWUiOiJzYW1wbGUiLCJlbWFpbCI6InVzZXIwNC5zb25hdGFAZW1haWwuY29tIn0.Ax0zn4a84WJTSOGfArjORAGDgKbmw6bBXzpcYp5_bz1qR5P6qcdCiJLGw6S-TEu6bJABGtIez4IlsTnuaXeEPlqvAcgZOMQehK5qf1I_iX4iP0CHlh5IkY6yOWDpoI3h1DmSDrmZqkUb3Swtx3WzdTCeANcjqOayihMfOPO7ddEOJ6SSkOS3RFW1UAjWwggeMOT74zBdrwZGUtzm5-gGlGy0IP1RM-jhOr3mkEqnzhecv0wdhpieIYamaj2AVFZGgReacOx_u4GSbhPr3HvHaxSu5FOx129n2GaZUCGi5RHLkVG-q_yPgb9ooGYVmBwnMmuucxpVnbsgog52doPPjw"
-token_validation(token['access_token'], '66829d12-b84c-4527-a596-26d09c894cc6')
+#token_validation(token['access_token'], 'dc2eb6eb-4221-47b7-81e3-62d72db7b1e6')
 #management(token)
 #logout(token2)
 #sleep(2)

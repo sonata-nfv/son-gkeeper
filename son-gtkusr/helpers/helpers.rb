@@ -70,7 +70,7 @@ def apply_limit_and_offset(input, offset= nil, limit= nil)
 end
 
 def create_public_key
-  # turn keycloak realm pub key into an actual openssl compat pub key.
+  # Turn keycloak realm pub key into an actual openssl compat pub key
   keycloak_yml = YAML.load_file('config/keycloak.yml')
   keycloak_config = JSON.parse(File.read('config/keycloak.json'))
   @s = "-----BEGIN PUBLIC KEY-----\n"
@@ -80,9 +80,6 @@ def create_public_key
   set :keycloak_pub_key, @key
   set :keycloak_client_id, keycloak_config['resource']
   set :keycloak_url, keycloak_config['auth-server-url'] + '/' + keycloak_config['realm'] + '/'
-
-  # Print token settings
-  # puts "settings.keycloak_pub_key: ", settings.keycloak_pub_key
 end
 
 def query_string
@@ -116,7 +113,7 @@ class Adapter < Sinatra::Application
         {
             'uri' => '/refresh',
             'method' => 'GET',
-            'purpose' => 'User Management current configuration'
+            'purpose' => 'User Management refresh token endpoint'
         }
     ]
   end
@@ -133,9 +130,7 @@ class Adapter < Sinatra::Application
   end
 
   def self.assign_group(attr)
-    # TODO: UPDATE THIS! Use mapping settings to configure?
-    # Supported attrs = developer, customer
-    # Supported groups = Developers, Customers
+    # DEPRECATED
     case attr
       when 'developer'
         return 'developers'
@@ -147,6 +142,7 @@ class Adapter < Sinatra::Application
   end
 
   def authorize!
+    # DEPRECATED
     # @decoded_token = JWT.decode @access_token, settings.keycloak_pub_key, true, { :algorithm => 'RS256' }
     @decoded_payload, @decoded_header = JWT.decode @access_token, settings.keycloak_pub_key, true, { :algorithm => 'RS256' }
     # puts "DECODED_TOKEN: ", @decoded_token
@@ -185,46 +181,47 @@ class Adapter < Sinatra::Application
   end
 
   def set_sonata_realm()
-    #TODO: Implement
-    #Requirement: pre-defined SONATA Realm json template:
+    # DEPRECATED
+    # Requirement: pre-defined SONATA Realm json template:
     # ./standalone.sh -Dkeycloak.migration.action=export -Dkeycloak.migration.provider=singleFile -Dkeycloak.migration.file=</path/to/template.json>
-    #Then, import template into Keycloak thorugh REST API:
-    #Imports a realm from a full representation of that realm.
-    #POST /admin/realms
-    #BodyParameter = JSON representation of the realm
+    # Then, import template into Keycloak thorugh REST API:
+    # Imports a realm from a full representation of that realm.
+    # POST /admin/realms
+    # BodyParameter = JSON representation of the realm
   end
 
   def set_adapter_client()
-    #TODO: Implement
-    #Create a new client
+    # DEPRECATED
+    # Create a new client
 
     # set Client's client_id must be unique!
     # generate uuid client secret -> call set_adapter_client_credentials()
-    #import pre-made Adapter client template
+    # import pre-made Adapter client template
     # set client secret in template
-    #POST /admin/realms/{realm}/clients
-    #BodyParameter = ClientRepresentation
-    #realm = realm name (not id!)
+    # POST /admin/realms/{realm}/clients
+    # BodyParameter = ClientRepresentation
+    #r ealm = realm name (not id!)
   end
 
   def set_adapter_client_credentials()
-    #TODO: Implement
-    #generate uuid
-    #save generated uuid secret in config/keycloak.yml
+    # DEPRECATED
+    # generate uuid
+    # save generated uuid secret in config/keycloak.yml
     conf = YAML::load_file('../config/keycloak.yml') #Load
     conf['client'] = 'adapter' #Modify
     conf['secret'] = '' #Modify
     # conf['secret'] = ''
     File.open('../config/keycloak.yml', 'w') {|f| f.write conf.to_yaml } #Store
-    #client: adapter
-    #secret: <generated uuid>
+    # client: adapter
+    # secret: <generated uuid>
     # return uuid to set_adapter_client()
   end
 
   def get_client_secret()
+    # DEPRECATED
     realm = "master"
     id = "adapter"
-    #Get the client secret
+    # Get the client secret
     url = URI("http://localhost:8081/auth/admin/realms/#{realm}/clients/#{id}/client-secret")
     http = Net::HTTP.new(url.host, url.port)
     request = Net::HTTP::Get.new(url.to_s)
@@ -237,11 +234,11 @@ class Adapter < Sinatra::Application
   end
 
   def regenerate_client_secret()
-    #Generate a new secret for the client
-    #POST /admin/realms/{realm}/clients/{id}/client-secret
+    # Generate a new secret for the client
+    # POST /admin/realms/{realm}/clients/{id}/client-secret
   end
 
   def set_keycloak_credentials()
-    #Other Keycloak credentials that might be configured
+    # Other Keycloak credentials that might be configured
   end
 end
