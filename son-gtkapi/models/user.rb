@@ -219,7 +219,7 @@ class User < ManagerService
     headers = {'Content-type'=>'application/json', 'Accept'=> 'application/json', 'Authorization'=>'Bearer '+token}
     resp = User.putCurb(url: @@url+'/api/v1/signatures/'+@username, body: body, headers: headers)
     case resp[:status]
-    when 200 # signature is successfully updated
+    when 204 # signature is successfully updated
       GtkApi.logger.debug(method) {"User public-key updated"}
       self
     when 400 # Provided username does not match with Access Token, No username specified or Developer public key not provided

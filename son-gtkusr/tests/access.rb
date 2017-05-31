@@ -39,10 +39,10 @@ def adminbased()
 end
 
 # "token_endpoint":"http://localhost:8081/auth/realms/master/protocol/openid-connect/token"
-def userbased
+def userbased(client_secret)
   # curl -d "client_id=admin-cli" -d "username=user1" -d "password=1234" -d "grant_type=password" "http://localhost:8081/auth/realms/SONATA/protocol/openid-connect/token"
   client_id = "adapter"
-  username = "sonata"
+  username = "jenkins"
   pwd = "1234"
   grt_type = "password"
   http_path = "http://sp.int3.sonata-nfv.eu:5601/auth/realms/sonata/protocol/openid-connect/token"
@@ -51,7 +51,7 @@ def userbased
 
   uri = URI(http_path)
   # uri = URI(idp_path)
-  res = Net::HTTP.post_form(uri, 'client_id' => client_id, 'client_secret' => '80b1a8eb-a349-4dd0-a9fe-470e7f29b9ca',
+  res = Net::HTTP.post_form(uri, 'client_id' => client_id, 'client_secret' => client_secret,
                             'username' => username,
                             'password' => pwd,
                             'grant_type' => grt_type)
@@ -68,7 +68,7 @@ def userbased
     parsed_res, code = parse_json(res.body)
     @access_token = parsed_res['access_token']
     puts "ACCESS_TOKEN RECEIVED", parsed_res['access_token']
-    parsed_res['access_token']
+    parsed_res
   else
     401
   end
@@ -133,27 +133,27 @@ end
 
 # Token Validation Endpoint
 # "token_introspection_endpoint":"http://localhost:8081/auth/realms/master/protocol/openid-connect/token/introspect"
-def token_validation(token)
+def token_validation(token, client_secret)
   # puts "TEST ACCESS_TOKEN", token
   # decode_token(token, keycloak_pub_key)
   # url = URI("http://localhost:8081/auth/realms/master/clients-registrations/openid-connect/")
   url = URI("http://sp.int3.sonata-nfv.eu:5601/auth/realms/sonata/protocol/openid-connect/token/introspect")
-  # ttp = Net::HTTP.new(url.host, url.port)
 
   # request = Net::HTTP::Post.new(url.to_s)
   # request = Net::HTTP::Get.new(url.to_s)
   # request["authorization"] = 'bearer ' + token
   # request["content-type"] = 'application/json'
   # body = {"token" => token}
-
   # request.body = body.to_json
 
   res = Net::HTTP.post_form(url, 'client_id' => 'adapter',
-                            'client_secret' => 'de4f7dc5-7f9e-4887-975f-6ebbe510fdcc',
-                            'grant_type' => 'client_credentials', 'token' => token)
+                            'client_secret' => client_secret,
+                            'grant_type' => 'client_credentials', 'token' => token, 'token_type_hint' =>'access_token')
 
-  puts "RESPONSE_INTROSPECT", res.read_body
+  puts "RESPONSE_INTROSPECT", res.body
+  puts "RESPONSE_CODE", res.code
   res.read_body
+
   # RESPONSE_INTROSPECT:
   # {"jti":"bc1200e5-3b6d-43f2-a125-dc4ed45c7ced","exp":1486105972,"nbf":0,"iat":1486051972,"iss":"http://localhost:8081/auth/realms/master","aud":"adapter","sub":"67cdf213-349b-4539-bdb2-43351bf3f56e","typ":"Bearer","azp":"adapter","auth_time":0,"session_state":"608a2a72-198d-440b-986f-ddf37883c802","name":"","preferred_username":"service-account-adapter","email":"service-account-adapter@placeholder.org","acr":"1","client_session":"2c31bbd9-c13d-43f1-bb30-d9bd46e3c0ab","allowed-origins":[],"realm_access":{"roles":["create-realm","admin","uma_authorization"]},"resource_access":{"adapter":{"roles":["uma_protection"]},"master-realm":{"roles":["view-identity-providers","view-realm","manage-identity-providers","impersonation","create-client","manage-users","view-authorization","manage-events","manage-realm","view-events","view-users","view-clients","manage-authorization","manage-clients"]},"account":{"roles":["manage-account","view-profile"]}},"clientHost":"127.0.0.1","clientId":"adapter","clientAddress":"127.0.0.1","client_id":"adapter","username":"service-account-adapter","active":true}
 end
@@ -477,6 +477,23 @@ end
 
 def set_user_roles(token)
   #TODO: Implement
+end
+
+def get_realm_roles(token)
+  http_path = "http://sp.int3.sonata-nfv.eu:5601/auth/realms/sonata/protocol/openid-connect/userinfo"
+  url = URI(http_path)
+  http = Net::HTTP.new(url.host, url.port)
+  # request = Net::HTTP::Post.new(url.to_s)
+  request = Net::HTTP::Get.new(url.to_s)
+  request["authorization"] = 'bearer ' + token
+  #request["content-type"] = 'application/json'
+  #body = {}
+
+  #request.body = body.to_json
+  response = http.request(request)
+  puts "RESPONSE", response.read_body
+  puts "CODE", response.code
+  response_json = parse_json(response.read_body)[0]
 end
 
 def login_user_bis (token, username=nil, credentials=nil)
@@ -997,14 +1014,14 @@ end
 =end
 
 #test_form
-#token = userbased
+token = userbased('dc2eb6eb-4221-47b7-81e3-62d72db7b1e6')
 #token = clientbased('f50d8d0f-1411-44c8-9431-3a48e930deb1')
 #token = adminbased
 #pub = get_public_key
 #token_validation(token)
 # certificates
 #authenticate(token)
-# userinfo(token['access_token'])
+userinfo(token['access_token'])
 # {"jti":"bc1200e5-3b6d-43f2-a125-dc4ed45c7ced","exp":1486105972,"nbf":0,"iat":1486051972,"iss":"http://localhost:8081/auth/realms/master","aud":"adapter","sub":"67cdf213-349b-4539-bdb2-43351bf3f56e","typ":"Bearer","azp":"adapter","auth_time":0,"session_state":"608a2a72-198d-440b-986f-ddf37883c802","name":"","preferred_username":"service-account-adapter","email":"service-account-adapter@placeholder.org","acr":"1","client_session":"2c31bbd9-c13d-43f1-bb30-d9bd46e3c0ab","allowed-origins":[],"realm_access":{"roles":["create-realm","admin","uma_authorization"]},"resource_access":{"adapter":{"roles":["uma_protection"]},"master-realm":{"roles":["view-identity-providers","view-realm","manage-identity-providers","impersonation","create-client","manage-users","view-authorization","manage-events","manage-realm","view-events","view-users","view-clients","manage-authorization","manage-clients"]},"account":{"roles":["manage-account","view-profile"]}},"clientHost":"127.0.0.1","clientId":"adapter","clientAddress":"127.0.0.1","client_id":"adapter","username":"service-account-adapter","active":true}
 #decode_token(token, pub)
 #registration = register_client(token, pub)
@@ -1016,7 +1033,7 @@ end
 #sleep(3)
 #logout_user(token,)
 #sleep(3)
-#token_validation(token['access_token'])
+#token_validation(token['access_token'], 'dc2eb6eb-4221-47b7-81e3-62d72db7b1e6')
 #management(token)
 #logout(token2)
 #sleep(2)
