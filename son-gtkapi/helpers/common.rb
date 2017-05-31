@@ -73,7 +73,7 @@ module GtkApiHelper
   end
   
   def get_token( env, log_message)
-    json_error(400, 'Unprocessable entity: missing authorization header', log_message) if (env['HTTP_AUTHORIZATION'].nil? || env['HTTP_AUTHORIZATION'].empty?)
+    json_error(401, 'Unauthorized: missing authorization header', log_message) if (env['HTTP_AUTHORIZATION'].to_s.empty?)
     logger.debug(log_message) {"entered with request.env['HTTP_AUTHORIZATION']="+env['HTTP_AUTHORIZATION']}
 
     authorization=env['HTTP_AUTHORIZATION']

@@ -42,27 +42,23 @@ class Package
   CLASS = self.name
   
   attr_accessor :descriptor
-  
-  class NoCatalogueProvided < Exception; end
-  class NoLoggerProvided < Exception; end
-  class NoParamsProvided < Exception; end
-  
-  def initialize(catalogue:, logger:, params:)
-    method = "GtkPkg: Package.initialize: "
-    logger.debug(method) {"entered"}
-    raise NoCatalogueProvided.new(method + 'no Catalogue has been provided') unless catalogue
-    raise NoLoggerProvided.new(method + 'no Logger has been provided') unless logger
-    raise NoParamsProvided.new(method + 'no parameters has been provided') unless params
+    
+  def initialize(catalogue:, params:, username:)
+    method = "GtkPkg: #{CLASS}.#{__method__}"
+    GtkPkg.logger.debug(method) {"entered with catalogue=#{catalogue}, params=#{params}, username=#{username}"}
+    raise ArgumentError.new(method + ': no Catalogue has been provided') unless catalogue
+    raise ArgumentError.new(method + ': no parameters has been provided') unless params
+    raise ArgumentError.new(method + ': no username has been provided') if username.to_s.empty?
 
-    @logger = logger
     @service = {}
     @functions = []
+    @username = username
     @@catalogue = catalogue
     GtkPkg.logger.debug(method) {"@@catalogue=#{@@catalogue.inspect}"}
     
     @url = @@catalogue.url
     if params[:descriptor]
-     @descriptor = params[:descriptor]
+      @descriptor = params[:descriptor]
       @input_folder = File.join('tmp', SecureRandom.hex)
       FileUtils.mkdir_p @input_folder unless File.exists? @input_folder
       @output_folder = File.join( 'public', 'packages', @descriptor['uuid'])
@@ -76,20 +72,20 @@ class Package
     
   # Builds a package file from its descriptors, and returns a handle to it
   def to_file()
-    log_message = 'Package.'+__method__.to_s
+    log_message = CLASS+__method__.to_s
     @descriptor = clear_unwanted_parameters(@descriptor)
     save_package_descriptor()
-    GtkPkg.logger.debug "Package.to_file: @descriptor=#{@descriptor}"
+    GtkPkg.logger.debug(log_message) {"@descriptor=#{@descriptor}"}
     @descriptor[:package_content].each do |p_cont|
-      @logger.debug "Package.to_file: p_cont=#{p_cont}"
+      GtkPkg.logger.debug(log_message) {"p_cont=#{p_cont}"}
       if p_cont['name'] =~ /service_descriptors/
-        GtkPkg.logger.debug('Package.to_file') { "p_cont['name']=#{p_cont['name']}"}
-        @service = NService.new(GtkPkg.settings.services_catalogue, @logger, @input_folder)
+        GtkPkg.logger.debug(log_message) { "p_cont['name']=#{p_cont['name']}"}
+        @service = NService.new(GtkPkg.settings.services_catalogue, @input_folder)
         @service.to_file(p_cont)
       end
       if p_cont['name'] =~ /function_descriptors/
-        GtkPkg.logger.debug('Package.to_file') { "p_cont['name']=#{p_cont['name']}"}
-        function = VFunction.new(GtkPkg.settings.functions_catalogue, @logger, @input_folder)
+        GtkPkg.logger.debug(log_message) { "p_cont['name']=#{p_cont['name']}"}
+        function = VFunction.new(GtkPkg.settings.functions_catalogue, @input_folder)
         function.to_file(p_cont)
         @functions << function
       end
@@ -99,7 +95,7 @@ class Package
     # Cleans things up before generating
     FileUtils.rm output_file if File.file? output_file
     zip_it output_file
-    GtkPkg.logger.debug "Package.to_file: output_file #{output_file}"
+    GtkPkg.logger.debug(log_message) {"output_file #{output_file}"}
     output_file
   end
 
@@ -122,9 +118,9 @@ class Package
         break
       end
     end
-    GtkPkg.logger.debug(log_message) {" before calling duplicate_package?, @@catalogue=#{@@catalogue.inspect}"}
+    GtkPkg.logger.debug(log_message) {" before calling duplicated_package?, @@catalogue=#{@@catalogue.inspect}"}
     
-    unless duplicate_package?(@descriptor).empty?
+    unless duplicated_package?().empty?
       dup = {}
       dup['vendor'] = @descriptor['vendor']
       dup['version'] = @descriptor['version']
@@ -140,14 +136,14 @@ class Package
       GtkPkg.logger.debug(log_message) { "path=#{path}, file_name = #{file_name}"}
 
       if path =~ /service_descriptors/
-        @service = NService.new(GtkPkg.settings.services_catalogue, @logger, nil)
+        @service = NService.new(GtkPkg.settings.services_catalogue, nil, @username)
         GtkPkg.logger.debug(log_message) { "service=#{@service}"}
         @service.from_file(file)
       end
       if path =~ /function_descriptors/
-        function = VFunction.new(GtkPkg.settings.functions_catalogue, @logger, nil)
+        function = VFunction.new(GtkPkg.settings.functions_catalogue, nil, @username)
         function.from_file(file)
-        GtkPkg.logger.debug('Package.from_file') { "function=#{function}"}
+        GtkPkg.logger.debug(log_message) { "function=#{function}"}
         @functions << function
       end
     end
@@ -155,19 +151,17 @@ class Package
     GtkPkg.logger.debug(log_message) { "@service is #{@service}"}
     GtkPkg.logger.debug(log_message) { "@functions is #{@functions}"}
     
-    if valid_descriptor(@descriptor)
-      stored_descriptor = store_package_service_and_functions()
-      if stored_descriptor
-        GtkPkg.logger.debug(log_message) { "stored package based on descriptor=#{stored_descriptor}"}
-        stored_descriptor
-      else
-        GtkPkg.logger.error(log_message) { "could not store package based on descriptor=#{stored_descriptor}"}
-        nil
-      end     
-    else
+    unless valid_descriptor()
       GtkPkg.logger.error(log_message) { "invalid descriptor (#{stored_descriptor})"}
-      nil
+      nil # bad habit!
     end
+    stored_descriptor = store_package_service_and_functions()
+    unless stored_descriptor
+      GtkPkg.logger.error(log_message) { "could not store package based on descriptor=#{stored_descriptor}"}
+      nil # bad habit!
+    end
+    GtkPkg.logger.debug(log_message) { "stored package based on descriptor=#{stored_descriptor}"}
+    stored_descriptor
   end
 
   def self.find_by_uuid(uuid)
@@ -177,11 +171,11 @@ class Package
     package
   end
   
-  def self.find(params, logger)
+  def self.find(params)
     GtkPkg.logger.debug "Package#find: #{params}"
     GtkPkg.logger.debug "Package#find: @@catalogue=#{@@catalogue.inspect}"
     packages = @@catalogue.find(params)
-    logger.debug "Package#find: #{packages}"
+    GtkPkg.logger.debug "Package#find: #{packages}"
     packages
   end
   
@@ -207,10 +201,10 @@ class Package
   def add_sonpackage_id(desc_uuid, sonp_uuid)
     response = @@catalogue.set_sonpackage_id(desc_uuid, sonp_uuid)
     if response.nil?
-      @logger.debug('Package.add_sonpackage_id'){'Updated descriptor with params: descriptor_uuid=' + desc_uuid + ', sonpackage_uuid=' + sonp_uuid}
+      GtkPkg.logger.debug('Package.add_sonpackage_id'){'Updated descriptor with params: descriptor_uuid=' + desc_uuid + ', sonpackage_uuid=' + sonp_uuid}
       nil
     else
-      @logger.debug('Package.add_sonpackage_id'){'Failed to store son-package-uuid in package descriptor'}
+      GtkPkg.logger.debug('Package.add_sonpackage_id'){'Failed to store son-package-uuid in package descriptor'}
       response
     end
   end
@@ -218,36 +212,36 @@ class Package
   def add_sonpackage_meta(sonp_uuid, desc)
     response = @@catalogue.set_sonpackage_trio_meta(sonp_uuid, desc)
     if response.nil?
-      @logger.debug('Package.add_sonpackage_meta'){'Updated descriptor with params: sonp_uuid= '+sonp_uuid+', desc_vendor= '+desc['vendor']+', desc_name= '+desc['name']+', desc_version= '+desc['version']}
+      GtkPkg.logger.debug('Package.add_sonpackage_meta'){'Updated descriptor with params: sonp_uuid= '+sonp_uuid+', desc_vendor= '+desc['vendor']+', desc_name= '+desc['name']+', desc_version= '+desc['version']}
       nil
     else
-      @logger.debug('Package.add_sonpackage_meta'){'Failed to store son-package-uuid in package descriptor'}
+      GtkPkg.logger.debug('Package.add_sonpackage_meta'){'Failed to store son-package-uuid in package descriptor'}
       response
     end
   end
 
   private
   
-  def duplicate_package?(desc)
+  def duplicated_package?()
     log_message = 'Package.'+__method__.to_s
-    @logger.debug(log_message) { "verifying duplication of package with desc=#{desc}"}
-    @logger.debug(log_message) { "@@catalogue=#{@@catalogue.inspect}"}
-    package = Package.find({vendor: desc['vendor'], version: desc['version'], name: desc['name']}, @logger)
-    @logger.debug(log_message) { "returned package is #{package.inspect}"}
+    GtkPkg.logger.debug(log_message) { "verifying duplication of package with @descriptor=#{@descriptor}"}
+    GtkPkg.logger.debug(log_message) { "@@catalogue=#{@@catalogue.inspect}"}
+    package = Package.find({vendor: @descriptor['vendor'], version: @descriptor['version'], name: @descriptor['name']})
+    GtkPkg.logger.debug(log_message) { "returned package is #{package.inspect}"}
     package
   end
   
   def keyed_hash(hash)
-    @logger.debug "Package.keyed_hash hash=#{hash}"
+    GtkPkg.logger.debug "Package.keyed_hash hash=#{hash}"
     #Hash[hash.map{|(k,v)| v.is_a?(Hash) ? [k.to_sym,keyed_hash(v)] : [k.to_sym,v]}]
     Hash[hash.map{|(k,v)| [k.to_sym,v]}]
   end
   
   def clear_unwanted_parameters(hash)
-    @logger.debug "Package.clear_unwanted_parameters hash=#{hash}"
+    GtkPkg.logger.debug "Package.clear_unwanted_parameters hash=#{hash}"
     keyed_hash = keyed_hash(hash)
     [:uuid, :created_at, :updated_at].each { |k| keyed_hash.delete(k) }
-    @logger.debug "Package.clear_unwanted_parameters keyed_hash=#{keyed_hash}"
+    GtkPkg.logger.debug "Package.clear_unwanted_parameters keyed_hash=#{keyed_hash}"
     keyed_hash
   end
 
@@ -289,7 +283,7 @@ class Package
   
   def unzip_it(io)    
     files = []
-    @logger.debug "Package.unzip_it: io = #{io.inspect}"
+    GtkPkg.logger.debug "Package.unzip_it: io = #{io.inspect}"
     #@logger.debug "Package.unzip_it: io is " + (io.closed? ? "closed" : "opened")
     #io.rewind
     #@logger.debug "Package.unzip_it: io is " + (io.closed? ? "closed" : "opened")
@@ -297,29 +291,29 @@ class Package
     
     # Extract the zipped file into a directory
     Zip::InputStream.open(io) do |zip_file|
-      @logger.debug "Package.unzip_it: zip_file = #{zip_file}"
+      GtkPkg.logger.debug "Package.unzip_it: zip_file = #{zip_file}"
       while (entry = zip_file.get_next_entry)
-        @logger.debug "Package.unzip_it: entry.name = #{entry.name}"
+        GtkPkg.logger.debug "Package.unzip_it: entry.name = #{entry.name}"
         if valid_entry_name? entry.name
           disk_file_path = File.join(unzip_folder, entry.name) 
           entry_name_splited = entry.name.split('/')          
           if entry_name_splited.size == 1
             # just a folder
             FileUtils.mkdir_p disk_file_path unless File.exists? disk_file_path
-            @logger.debug "Package.unzip_it: disk_file_path"+disk_file_path+" is a directory"
+            GtkPkg.logger.debug "Package.unzip_it: disk_file_path"+disk_file_path+" is a directory"
           else
             # a file, and maybe a folder
             file_name = entry_name_splited.pop
             file_folders = File.join(unzip_folder, entry_name_splited)
             FileUtils.mkdir_p file_folders unless File.exists? file_folders
-            @logger.debug "Package.unzip_it: disk_file_path is a file "+disk_file_path
+            GtkPkg.logger.debug "Package.unzip_it: disk_file_path is a file "+disk_file_path
             File.open(disk_file_path, 'w') { |f| f.write entry.get_input_stream.read}
             files << disk_file_path
           end
         end
       end
     end
-    @logger.debug "Package.unzip_it: files = #{files}"
+    GtkPkg.logger.debug "Package.unzip_it: files = #{files}"
     files
   end
   
@@ -327,68 +321,65 @@ class Package
     (name =~ /function_descriptors/ || name =~ /service_descriptors/ || name =~ /META-INF/)
   end
   
-  def valid_descriptor(descriptor)
+  def valid_descriptor()
+    # use @descriptor
     true # TODO: validate the descriptor here
   end
   
-  def duplicated_package?(descriptor)
-    @@catalogue.find({'vendor'=>descriptor['vendor'], 'name'=>descriptor['name'], 'version'=>descriptor['version']})
-  end
-
   def store()
-    @logger.debug('Package.store') {"descriptor "+@descriptor.to_s}
-    saved_descriptor = @@catalogue.create(@descriptor)
+    GtkPkg.logger.debug('Package.store') {"descriptor "+@descriptor.to_s}
+    saved_descriptor = @@catalogue.create(@descriptor, @username)
     if saved_descriptor && saved_descriptor['uuid']
-      @logger.debug('Package.store') {"saved_descriptor is "+saved_descriptor.to_s}
+      GtkPkg.logger.debug('Package.store') {"saved_descriptor is "+saved_descriptor.to_s}
       saved_descriptor
     else
-      @logger.debug('Package.store') {"failled to store #{@descriptor} with no response"}
+      GtkPkg.logger.debug('Package.store') {"failled to store #{@descriptor} with no response"}
       nil
     end
   end
 
   def store_package_service_and_functions
     log_message = 'Package.'+__method__.to_s
-    @logger.debug(log_message) {"@package is #{@package}"}
-    @logger.debug(log_message) {"@service is #{@service}"}
-    @logger.debug(log_message) {"@functions is #{@functions}"}
+    GtkPkg.logger.debug(log_message) {"@package is #{@package}"}
+    GtkPkg.logger.debug(log_message) {"@service is #{@service}"}
+    GtkPkg.logger.debug(log_message) {"@functions is #{@functions}"}
     
     # The verification of duplicates may have to migrate to the router, in order to make it return '200' instead of '201' 
-    package_descriptor = duplicated_package?(@descriptor)
+    package_descriptor = duplicated_package?()
     if package_descriptor.one?
-      @logger.error(log_message) {"package exists: #{package_descriptor[0]}"}
+      GtkPkg.logger.error(log_message) {"package exists: #{package_descriptor[0]}"}
       package_descriptor[0]
     else
       saved_descriptor=store()
       if saved_descriptor
-        @logger.debug(log_message) {"stored package #{saved_descriptor}"}
+        GtkPkg.logger.debug(log_message) {"stored package #{saved_descriptor}"}
         if @service #.size > 0
-          @logger.debug(log_message) {"service is #{@service.inspect}"}
+          GtkPkg.logger.debug(log_message) {"service is #{@service.inspect}"}
           stored_service = @service.store()
           if stored_service
-            @logger.debug(log_message) {"stored service #{stored_service}"}
+            GtkPkg.logger.debug(log_message) {"stored service #{stored_service}"}
           else
             # TODO: what if storing a service goes wrong?
             # rollback!
-            @logger.debug(log_message) {"service and package rollback should happen here"}
+            GtkPkg.logger.debug(log_message) {"service and package rollback should happen here"}
           end
         end
         if @functions.size > 0
           @functions.each do |vf|
-            @logger.debug(log_message) {"vf = #{vf}"}
+            GtkPkg.logger.debug(log_message) {"vf = #{vf}"}
             function = vf.store()
             if function
-              @logger.debug(log_message) {"stored function #{function}"}
+              GtkPkg.logger.debug(log_message) {"stored function #{function}"}
               # TODO: rollback if failled
             else
-              @logger.debug(log_message) {"function, service and package rollback should happen here"}
+              GtkPkg.logger.debug(log_message) {"function, service and package rollback should happen here"}
             end
           end
         end
-        @logger.debug(log_message) {"saved_descriptor is #{saved_descriptor}"}
+        GtkPkg.logger.debug(log_message) {"saved_descriptor is #{saved_descriptor}"}
         saved_descriptor
       else
-        @logger.debug(log_message) { "failled to store package with descriptor=#{@descriptor}"}
+        GtkPkg.logger.debug(log_message) { "failled to store package with descriptor=#{@descriptor}"}
         {}
       end
     end

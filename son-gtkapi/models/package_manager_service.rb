@@ -39,7 +39,7 @@ class PackageManagerService < ManagerService
   def self.config(url:)
     method = LOG_MESSAGE + "##{__method__}"
     GtkApi.logger.debug(method) {'entered with url='+url}
-    raise ArgumentError.new('PackageManagerService can not be configured with nil or empty url') if (url.nil? || url.empty?)
+    raise ArgumentError.new('PackageManagerService can not be configured with nil or empty url') if url.to_s.empty?
     @@url = url
     @@catalogue_url = ENV[GtkApi.services['catalogue']['environment']] || GtkApi.services['catalogue']['url']
     GtkApi.logger.debug(method) {'@@catalogue_url='+@@catalogue_url}
@@ -48,20 +48,27 @@ class PackageManagerService < ManagerService
   def self.create(params)
     method = LOG_MESSAGE + "##{__method__}"
     GtkApi.logger.debug(method) {"entered with params #{params}"}
-    uri = @@url+'/packages'
     raise ArgumentError.new('Package can not be created without a user token') unless params.key?(:token)
     token = params.delete(:token)
     # {"path": "/packages", "method": "POST"}
     unless User.authorized?(token: token, params: {path: '/packages', method: 'POST'})
       GtkApi.logger.debug(method) {"User not authorized to create packages"}
-      { status: 403, count: 0, data: {}, message: 'Forbidden: user could not be authorized'}
+      return { status: 403, count: 0, data: {}, message: 'Forbidden: user could not be authorized'}
     end
-      
     GtkApi.logger.debug(method) {"User authorized"}
+    
+    username = User.find_username_by_token(token)
+    if (username.to_s.empty?)
+      GtkApi.logger.debug(method) {"User name not found from token"}
+      return { status: 404, count: 0, data: {}, message: 'Not Found: user name not found from token'}
+    end
+    GtkApi.logger.debug(method) {"User name found: #{username}"}
+    
+    uri = @@url+'/packages'
     begin
       # from http://www.rubydoc.info/gems/rest-client/1.6.7/frames#Result_handling
       GtkApi.logger.debug(method) {"POSTing to "+uri+ " with params #{params}"}
-      RestClient.post(uri, params){ |response, request, result, &block|
+      RestClient.post(uri, params.merge({username: username})){ |response, request, result, &block|
         GtkApi.logger.debug(method) {"response=#{response.inspect}"}
         case response.code
         when 201

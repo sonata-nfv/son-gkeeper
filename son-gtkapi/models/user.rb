@@ -37,6 +37,7 @@ class UserNotUpdatedError < StandardError; end
 class UserNameAlreadyInUseError < StandardError; end
 class UserNotLoggedOutError < StandardError; end
 class UserTokenNotActiveError < StandardError; end
+class UserPublicKeyNotUpdatedError < StandardError; end
 
 class User < ManagerService
 
@@ -163,22 +164,13 @@ class User < ManagerService
   
   def self.authorized?(token:, params:)
     method = LOG_MESSAGE + "##{__method__}"
-    GtkApi.logger.debug(method) {"entered with params #{params}"}
-    # Token Authorization
-    # POST /api/v1/authorize
-    # 200: OK or 401: Unauthorized
-    # Authorization header must include a string following the next pattern: 
-    #  request.env["HTTP_AUTHORIZATION"] = "Bearer <access_token>  
-    # Content-type: JSON
-    # request.content_type = 'application/json'
-    #  and now the body
-    #  •Body: JSON object
-    # {"path": "/packages", "method": "POST"}
-    raise ArgumentError.new __method__.to_s+' requires the login token' if (token.nil? || token.empty?)
-    GtkApi.logger.debug(method) {"entered"}
+    raise ArgumentError.new __method__.to_s+' requires the login token' if token.to_s.empty?
+    raise ArgumentError.new __method__.to_s+' requires a path and a method to be authorized' if (params.to_s.empty? || !params.key?(:method) || !params.key?(:path))
+    GtkApi.logger.debug(method) {"entered with token #{token} and params #{params}"}
     headers = {'Content-type'=>'application/json', 'Accept'=> 'application/json', 'Authorization'=>'Bearer '+token}
 
     resp = postCurb(url: @@url+'/api/v1/userinfo', body: params, headers: headers)
+    # {:sub=>"fe53ac4f-052a-4a41-b7cd-914d4c64c2f8", :name=>"", :preferred_username=>"jbonnet", :email=>"jbonnet@alticelabs.com"}
     case resp[:status]
     when 200
       GtkApi.logger.debug(method) {"User authorized to #{params}"}
@@ -190,6 +182,60 @@ class User < ManagerService
       GtkApi.logger.error(method) {"Status #{resp[:status]}"} 
       false
     end
+  end
+  
+  def update(fields)
+    log_message = LOG_MESSAGE + "##{__method__}"
+    raise ArgumentError.new __method__.to_s+' requires a hash with arguments' if fields.to_s.empty?
+    GtkApi.logger.debug(log_message) {"entered with fields=#{fields}"}
+    fields.each do |key, value|
+      GtkApi.logger.debug(log_message) {"key=#{key}, value=#{value}"}
+      method = "@#{key}=".to_sym
+      if respond_to? method
+        GtkApi.logger.debug(log_message) {"user respondes to #{method}"}
+        instance_variable_set(method, value)
+        new_val = instance_variable_get("@#{key}")
+        GtkApi.logger.debug(log_message) {"variable @#{key} set to #{new_val}"}
+      end
+    end
+  end
+  
+=begin
+      The UM is expecting a PUT /api/v1/signatures/:username with a body like {"public_key":"..."}.
+      HTTP method: PUT
+      Authentication header includes the user's Access Token
+      Parameter: username
+      Body: JSON object that includes public_key field (required) and certificate field (optional). Sample:
+      {"public_key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEArVFiBHBiLPFRGrMobAxcK98SJRKKXJOkA66NL0UEgR7g8hOjVySchYUvtGAU5wi2ZCjmPGDT0hrJd1WEBplv0kT7YrIgdRGXGH73OJFjH8c7iX+XBwk0sH1K+KMUbszSbWFCKAlyHhYa8vz95RyzmzoMJZW6TeadlhRLuVw52RECaK9eIJu311oFA8os3z8J65olLexT0vF+B9Oqtn1gVJUfC0w984PXwMoGzSOVCbb5jD0/blAXonMS8PU+JFSGF4trTwRcmjw349NDEifUQamdHE8pynuxSpAuMN2WAPAlJpjnw/fHUxQFgRNGki6vHmegnQ6qmcbuorVW3oXkMwIDAQAB", "certificate": "optional"}
+=end
+  def save_public_key(params, token)
+    method = LOG_MESSAGE + "##{__method__}"
+    raise ArgumentError.new __method__.to_s+' requires the login token' if token.to_s.empty?
+    GtkApi.logger.debug(method) {"entered"}
+    
+    @public_key = params[:public_key]
+    @certificate = params[:certificate] if params[:certificate]
+    body={public_key: @public_key, certificate: @certificate}
+    headers = {'Content-type'=>'application/json', 'Accept'=> 'application/json', 'Authorization'=>'Bearer '+token}
+    resp = User.putCurb(url: @@url+'/api/v1/signatures/'+@username, body: body, headers: headers)
+    case resp[:status]
+    when 200 # signature is successfully updated
+      GtkApi.logger.debug(method) {"User public-key updated"}
+      self
+    when 400 # Provided username does not match with Access Token, No username specified or Developer public key not provided
+      GtkApi.logger.debug(method) {'Username '+@username+' does not match with token'}
+      raise UserTokenNotActiveError.new 'Username '+@username+' does not match with token'
+    when 401 # Token is not valid
+      GtkApi.logger.debug(method) {'Username '+@username+' provided a token that is not valid'}
+      raise UserTokenNotActiveError.new 'Username '+@username+' provided a token that is not valid'
+    when 404 # Username is not found
+      GtkApi.logger.debug(method) {'Username '+@username+' was not found'}
+      raise UserNotFoundError.new 'Username '+@username+' was not found'
+    else
+      GtkApi.logger.error(method) {"Status #{resp[:status]}"} 
+      raise UserPublicKeyNotUpdatedError.new 'User public-key not updated'
+    end
+    
   end
   
   def self.valid?(params)
@@ -233,12 +279,10 @@ class User < ManagerService
       GtkApi.logger.debug(method) {"Got response: #{response}"}
       case response[:status]
       when 200
-        user = response[:items].first
-        unless user.empty?
-          User.new( User.import(user))
-        else
+        if response[:items].empty? || (user = response[:items].first).empty?
           raise UserNotFoundError.new "User with name #{name} was not found"
         end
+        User.new( User.import(user))
       when 404
         raise UserNotFoundError.new "User with name #{name} was not found (code 404)"
       else
@@ -280,12 +324,6 @@ class User < ManagerService
   end
   
   def self.find_username_by_token(token)
-    # POST /api/v1/userinfo
-    # request["authorization"] = 'Bearer eyJhbGciOiJSkxX0NpUUhmTm9nIn0...'  
-    # Response: 
-    # {"sub":"8031545e-d4da-4086-8cb2-a417f3460de2","name":"myName myLastName","preferred_username":"tester01","given_name":"myName","family_name":"myLastName","email":"myname.company@email.com"}
-    # the field you need is "preferred_username"
-    # ------------------
     # [23/05/2017, 09:33:28] Daniel Guija: url = URI("http://<address>:<port>/api/v1/userinfo")
     #  request["authorization"] = 'Bearer eyJhbGciOiJSkxX0NpUUhmTm9nIn0...'
     # [23/05/2017, 09:33:46] Daniel Guija: the response is:
@@ -325,12 +363,9 @@ class User < ManagerService
     end
   end
 
-  def update
-    method = LOG_MESSAGE + "##{__method__}"
-    GtkApi.logger.debug(method) {'entered'}
-  end
-  
   def to_h
+    method = LOG_MESSAGE + "##{__method__}"
+    GtkApi.logger.debug(method) {"entered"}
     h={}
     h[:username]= @username
     h[:uuid]=@uuid
@@ -339,7 +374,8 @@ class User < ManagerService
     h[:email]=@email
     h[:last_name]=@last_name
     h[:first_name]=@first_name
-    # :session, :secret
+    h[:public_key] = @public_key
+    h[:certificate] = @certificate
     h
   end
   

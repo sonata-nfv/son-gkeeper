@@ -44,7 +44,8 @@ RSpec.describe PackageManagerService, type: :model do
       context 'and authorized user' do
         before(:each) do
           allow(User).to receive(:authenticated?).with(secret).and_return(session)
-          allow(User).to receive(:authorized?).and_return(true) 
+          allow(User).to receive(:authorized?).and_return(true)
+          allow(User).to receive(:find_username_by_token).with(session[:token]).and_return(user[:username])
           allow(RestClient).to receive(:post).and_return(status: 200, body: "", headers: {})
           PackageManagerService.create(package)
         end

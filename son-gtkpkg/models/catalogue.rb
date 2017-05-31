@@ -39,20 +39,20 @@ class Catalogue
   CLASS = self.name
   JSON_HEADERS = {'Accept'=>'application/json', 'Content-Type'=>'application/json'}
   
-  def initialize(url, logger)
+  def initialize(url)
     @url = url
-    @logger = logger
   end
     
-  def create(descriptor)
-    @logger.debug "Catalogue.create("+descriptor.to_s+")"
+  def create(descriptor, username)
+    log_message=CLASS+__method__.to_s
+    GtkPkg.logger.debug(log_message) {"entered with username=#{username}, descriptor=#{descriptor}"}
     begin
-      response = RestClient.post( @url, descriptor.to_json, content_type: :json, accept: :json)     
+      response = RestClient.post( @url+'?username='+username, descriptor.to_json, content_type: :json, accept: :json)     
       object = JSON.parse response
-      @logger.debug "Catalogue.create: object=#{object}"
+      GtkPkg.logger.debug(log_message) {"object=#{object}"}
       object
     rescue => e
-      @logger.error format_error(e.backtrace)
+      GtkPkg.logger.error(log_message) {format_error(e.backtrace)}
       nil
     end
   end
@@ -69,7 +69,7 @@ class Catalogue
     # request["content-disposition"] = 'attachment; filename=<filename.son>' # Remove hardcoded filename
     request["content-disposition"] = 'attachment; filename=' + filename.to_s
     response = http.request(request)
-    @logger.debug("Catalogue response: " + response.read_body)
+    GtkPkg.logger.debug("Catalogue response: " + response.read_body)
     response.read_body
     #puts response.read_body
     # Response should return code 201, and ID of the stored son-package
@@ -84,7 +84,7 @@ class Catalogue
     request["content-type"] = 'application/zip'
     request["content-disposition"] = 'attachment; filename=<filename.son>'
     response = http.request(request)
-    @logger.debug("Catalogue response: #{response}")
+    GtkPkg.logger.debug("Catalogue response: #{response}")
     case response.code
     when 200
       #length = File.write(zip, response.read_body)
@@ -95,12 +95,12 @@ class Catalogue
   end
 
   def find_by_uuid(uuid)
-    @logger.debug CLASS+".find_by_uuid(#{uuid})"
+    GtkPkg.logger.debug CLASS+".find_by_uuid(#{uuid})"
     begin
       response = RestClient.get(@url+"/#{uuid}", JSON_HEADERS) 
       JSON.parse response.body
     rescue => e
-      @logger.error format_error(e.backtrace)
+      GtkPkg.logger.error format_error(e.backtrace)
       e.to_json
     end
   end
@@ -109,13 +109,13 @@ class Catalogue
     method = 'Catalogue.find'
     headers = JSON_HEADERS
     headers[:params] = params unless params.empty?
-    @logger.debug(method) {"params=#{params}, headers=#{headers}"}
+    GtkPkg.logger.debug(method) {"params=#{params}, headers=#{headers}"}
     begin
       response = RestClient.get(@url, headers)
-      @logger.debug(method) {"response was #{response}"}     
+      GtkPkg.logger.debug(method) {"response was #{response}"}     
       JSON.parse response.body
     rescue => e
-      @logger.error format_error(e.backtrace)
+      GtkPkg.logger.error format_error(e.backtrace)
       e.to_json
     end
   end
@@ -125,7 +125,7 @@ class Catalogue
   
   def delete(uuid)
     method = CLASS + __method__.to_s
-    @logger.debug(method) {'entered with uuid='+uuid}
+    GtkPkg.logger.debug(method) {'entered with uuid='+uuid}
     begin
       uri = URI(@url + '/' + uuid)
       req = Net::HTTP::Delete.new(uri)
@@ -133,17 +133,17 @@ class Catalogue
       response = Net::HTTP.start(uri.hostname, uri.port) { |http|
         http.request(req)
       }
-      @logger.debug(method) {"response was #{response}"}
+      GtkPkg.logger.debug(method) {"response was #{response}"}
       response.code.to_i
     rescue => e
-      @logger.error format_error(e.backtrace)
+      GtkPkg.logger.error format_error(e.backtrace)
       nil
     end
   end
   
   def set_sonpackage_id(desc_uuid, sonp_uuid)
     method = CLASS + __method__.to_s
-    @logger.debug(method) {"desc_uuid=#{desc_uuid}, sonp_uuid=#{sonp_uuid}"}
+    GtkPkg.logger.debug(method) {"desc_uuid=#{desc_uuid}, sonp_uuid=#{sonp_uuid}"}
     headers = {'Content-Type'=>'application/json'}
     begin
       uri = URI(@url + '/' + desc_uuid.to_s + '?sonp_uuid=' + sonp_uuid.to_s)
@@ -153,17 +153,17 @@ class Catalogue
         http.request(req)
       }
       #response = RestClient.put(@url + '/' + desc_uuid.to_s + '?sonp_uuid=' + sonp_uuid.to_s, :content_type => 'application/json')
-      @logger.debug(method) {"response was #{response}"}
+      GtkPkg.logger.debug(method) {"response was #{response}"}
       nil
     rescue => e
-      @logger.error format_error(e.backtrace)
+      GtkPkg.logger.error format_error(e.backtrace)
       e.to_json
     end
   end
 
   def set_sonpackage_trio_meta(sonp_uuid, desc)
     method = CLASS + __method__.to_s
-    @logger.debug(method) {"Catalogue.set_sonpackage_trio_meta: sonp_uuid=#{sonp_uuid}, desc_vendor=#{desc['vendor']}, desc_name=#{desc['name']}, desc_version=#{desc['version']}"}
+    GtkPkg.logger.debug(method) {"Catalogue.set_sonpackage_trio_meta: sonp_uuid=#{sonp_uuid}, desc_vendor=#{desc['vendor']}, desc_name=#{desc['name']}, desc_version=#{desc['version']}"}
     headers = {'Content-Type'=>'application/json'}
     begin
       uri = URI(@url + '/' + sonp_uuid.to_s + '?vendor=' + desc['vendor'].to_s + '&name=' + desc['name'].to_s + '&version=' + desc['version'].to_s)
@@ -172,10 +172,10 @@ class Catalogue
       response = Net::HTTP.start(uri.hostname, uri.port) { |http|
         http.request(req)
       }
-      @logger.debug(method) {"Catalogue.set_sonpackage_trio_meta: response was #{response}"}
+      GtkPkg.logger.debug(method) {"Catalogue.set_sonpackage_trio_meta: response was #{response}"}
       nil
     rescue => e
-      @logger.error format_error(e.backtrace)
+      GtkPkg.logger.error format_error(e.backtrace)
       e.to_json
     end
   end

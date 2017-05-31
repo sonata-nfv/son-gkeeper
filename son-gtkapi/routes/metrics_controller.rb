@@ -64,8 +64,7 @@ class GtkApi < Sinatra::Base
         json_error 404, "Function #{params[:uuid]} not found", log_message
       end
       
-      function.load_instances()
-      json_error(404, "Instance #{params[:instance_uuid]} is not an instance of function #{params[:uuid]}", log_message) unless function.instances.include?(params[:instance_uuid])
+      function.load_instances(params[:uuid])
       
       metrics = Metric.validate_and_create(metrics_list)
         
@@ -127,7 +126,7 @@ class GtkApi < Sinatra::Base
       end
     
       # Remove list of wanted fields from the query parameter list
-      metrics_names = params.delete('metrics')
+      metrics_names = params.delete('metrics').split(',')
       logger.debug(log_message) { "params without metrics=#{params}"}
       
       # TODO: validate user who's asking here
@@ -137,11 +136,6 @@ class GtkApi < Sinatra::Base
       end
 
       function.load_instances(params[:uuid])
-      
-      unless function.instances.include?(params[:instance_uuid])
-        count_synch_monitoring_data_requests(labels: {result: "not found", uuid: '', elapsed_time: (Time.now.utc-began_at).to_s})
-        json_error 404, "Instance #{params[:instance_uuid]} is not an instance of function #{params[:uuid]}", log_message
-      end
       
       metrics = Metric.validate_and_create(metrics_names)
         
@@ -154,8 +148,8 @@ class GtkApi < Sinatra::Base
           next
         end
       end
-      count_synch_monitoring_data_requests(labels: {result: "ok", uuid: '', elapsed_time: (Time.now.utc-began_at).to_s})
-      halt 200, 'Requested synch metrics'
+      count_synch_monitoring_data_requests(labels: {result: "ok", uuid: params[:instance_uuid], elapsed_time: (Time.now.utc-began_at).to_s})
+      halt 200, {function_uuid: params[:uuid], function_instance_uuid: params[:instance_uuid], metrics: metrics_names}.to_json
     end
   end
   

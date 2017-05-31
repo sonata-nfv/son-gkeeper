@@ -39,49 +39,51 @@ class GtkPkg < Sinatra::Base
     logger.info(log_message) {"params = #{params}"}
     package_filename = params['package']['filename']
     logger.info(log_message) {"filename = #{package_filename}"}
-    package = Package.new(catalogue: settings.packages_catalogue, logger: logger, params: {io: params[:package][:tempfile][:tempfile]})
-    if package 
-      logger.debug(log_message) {"package=#{package.inspect}"}
-      descriptor = package.from_file()
-      if descriptor
-        logger.info(log_message) {"descriptor is #{descriptor}"}
-        if descriptor.key?('uuid') # && descriptor.key?('vendor') && descriptor.key?('name') && descriptor.key?('version')
-          logger.debug("Storing son-package contents in catalogue")
-          son_package_inst = Package.new(catalogue: settings.son_packages_catalogue, logger: logger, params: {io: params[:package][:tempfile][:tempfile]})
-          logger.debug("son-package contents stored in catalogue")
-          # son_package = son_package_inst.store_package_file() #<----- add filename?
-          son_package = son_package_inst.store_package_file(package_filename) #<----- add filename?
-          if son_package && son_package['uuid']
-            logger.debug("Adding meta-data info from #{descriptor} to son-package file #{son_package['uuid']}")
-            response = son_package_inst.add_sonpackage_meta(son_package['uuid'], descriptor['pd'])
-            logger.debug("Meta-data info for son-package file #{son_package['uuid']} response: #{response}")
-            package = Package.new(catalogue: settings.packages_catalogue, logger: logger, params: {io: params[:package][:tempfile][:tempfile]})
-            response = package.add_sonpackage_id(descriptor['uuid'], son_package['uuid'])
-            if response.nil?
-              descriptor.store("son-package-uuid", son_package['uuid'])
-              logger.info(log_message) {"leaving with package #{descriptor.to_json}"}
-              #halt 201, {'Location' => "/packages/#{descriptor['uuid']}"}, descriptor.to_json
-              halt 201, {'Location' => "/son-packages/#{descriptor['son-package-uuid']}"}, descriptor.to_json
-            else
-              error_message = "Error storing son-package-uuid in descriptor: " + response
-              json_error 400, error_message, log_message
-            end
-          else
-            json_error 400, 'Error storing son-package.', log_message         
-          end
-        elsif descriptor.key?('name') && descriptor.key?('vendor') && descriptor.key?('version')
-          logger.debug(log_message) {"Package is duplicated"}
-          error_message = "Version #{descriptor['version']} of package '#{descriptor['name']}' from vendor '#{descriptor['vendor']}' already exists"
-          json_error 409, error_message, log_message
-        else
-          json_error 400, 'Oops.. something terribly wrong happened here!', log_message      
-        end
-      else
-        json_error 400, 'Error generating package descriptor', log_message
-      end
-    else
+    username = params.delete('username')
+    package = Package.new(catalogue: settings.packages_catalogue, params: {io: params[:package][:tempfile][:tempfile]}, username: username)
+    unless package
       json_error 400, 'No package created', log_message
     end
+      
+    logger.debug(log_message) {"package=#{package.inspect}"}
+    descriptor = package.from_file()
+    unless descriptor
+      json_error 400, 'Error generating package descriptor', log_message
+    end
+    logger.info(log_message) {"descriptor is #{descriptor}"}
+    
+    if descriptor.key?('name') && descriptor.key?('vendor') && descriptor.key?('version')
+      logger.debug(log_message) {"Package is duplicated"}
+      error_message = "Version #{descriptor['version']} of package '#{descriptor['name']}' from vendor '#{descriptor['vendor']}' already exists"
+      json_error 409, error_message, log_message
+    end
+        
+    unless descriptor.key?('uuid')
+      json_error 400, 'Oops.. something terribly wrong happened here!', log_message      
+    end
+    
+    logger.debug("Storing son-package contents in catalogue")
+    son_package_inst = Package.new(catalogue: settings.son_packages_catalogue, params: {io: params[:package][:tempfile][:tempfile]}, username: username)
+    logger.debug("son-package contents stored in catalogue")
+    # son_package = son_package_inst.store_package_file() #<----- add filename?
+    son_package = son_package_inst.store_package_file(package_filename) #<----- add filename?
+    unless son_package && son_package['uuid']
+      json_error 400, 'Error storing son-package.', log_message         
+    end
+    
+    logger.debug("Adding meta-data info from #{descriptor} to son-package file #{son_package['uuid']}")
+    response = son_package_inst.add_sonpackage_meta(son_package['uuid'], descriptor['pd'])
+    logger.debug("Meta-data info for son-package file #{son_package['uuid']} response: #{response}")
+    package = Package.new(catalogue: settings.packages_catalogue, params: {io: params[:package][:tempfile][:tempfile]}, username: username)
+    response = package.add_sonpackage_id(descriptor['uuid'], son_package['uuid'])
+    unless response.nil?
+      error_message = "Error storing son-package-uuid in descriptor: " + response
+      json_error 400, error_message, log_message
+    end
+    
+    descriptor.store("son-package-uuid", son_package['uuid'])
+    logger.info(log_message) {"leaving with package #{descriptor.to_json}"}
+    halt 201, {'Location' => "/son-packages/#{descriptor['son-package-uuid']}"}, descriptor.to_json
   end
  
   # GET package descriptor

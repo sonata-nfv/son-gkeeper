@@ -41,15 +41,29 @@ class GtkApi < Sinatra::Base
 
     # GET many services
     get '/?' do
+      began_at = Time.now.utc
       log_message = 'GtkApi:: GET /api/v2/services'    
       logger.debug(log_message) {'entered with '+query_string}
-      headers 'Content-Type'=> 'application/json'
+      content_type :json
     
       @offset ||= params['offset'] ||= DEFAULT_OFFSET
       @limit ||= params['limit'] ||= DEFAULT_LIMIT
       logger.debug(log_message) {"offset=#{@offset}, limit=#{@limit}"}
       logger.debug(log_message) {"params=#{params}"}
-    
+      
+      token = get_token( request.env, log_message)
+      if (token.to_s.empty?)
+        count_services_metadata_queries(labels: {result: "bad request", uuid: '', elapsed_time: (Time.now.utc-began_at).to_s})
+        json_error 400, 'Token not provided', log_message
+      end
+
+      unless User.authorized?(token: token, params: {path: '/services', method: 'GET'})
+        GtkApi.logger.debug(log_message) {"User not authorized to list services"}
+        count_services_metadata_queries(labels: {result: "forbidden", uuid: '', elapsed_time: (Time.now.utc-began_at).to_s})
+        json_error 403, "Forbidden: user could not be authorized to get metadata for service #{params[:uuid]}", log_message
+      end
+      GtkApi.logger.debug(log_message) {"User authorized"}
+
       services = ServiceManagerService.find_services(params)
       logger.debug(log_message) {"Found services #{services}"}
       case services[:status]
@@ -58,39 +72,48 @@ class GtkApi < Sinatra::Base
         links = build_pagination_headers(url: request_url, limit: @limit.to_i, offset: @offset.to_i, total: services[:count].to_i)
         logger.debug(log_message) {"links: #{links}"}
         headers 'Link'=> links, 'Record-Count'=> services[:count].to_s
+        count_services_metadata_queries(labels: {result: "ok", uuid: '', elapsed_time: (Time.now.utc-began_at).to_s})
         halt 200, services[:items].to_json
       else
-        message = "No services with #{params} were found"
-        logger.debug(log_message) {"leaving with message '"+message+"'"}
-        json_error 404, message
+        count_services_metadata_queries(labels: {result: "not found", uuid: '', elapsed_time: (Time.now.utc-began_at).to_s})
+        json_error 404, "No services with #{params} were found", log_message
       end
     end
   
     # GET a specific service
     get '/:uuid/?' do
+      began_at = Time.now.utc
       log_message = 'GtkApi:: GET /api/v2/services/:uuid'
       logger.debug(log_message) {"entered with #{params}"}
-      headers 'Content-Type'=> 'application/json'
-    
-      if valid?(params[:uuid])
-        uuid = params[:uuid]
-        
-        # TODO: mind that, besides the URL-based uuid we might as well pass other params, like fields we want to show
-        #params.delete :uuid
-        service = ServiceManagerService.find_service_by_uuid(uuid: uuid) #, params: params)
-        if service[:count] && !service[:items].empty?
-          logger.debug(log_message) {"leaving with #{service}"}
-          headers 'Record-Count'=> '1'
-          halt 200, service[:items].to_json
-        else
-          logger.debug(log_message) {"leaving with message 'Service #{params[:uuid]} not found'"}
-          json_error 404, "Service #{params[:uuid]} not found"
-        end
-      else
-        message = "Service #{params[:uuid]} not valid"
-        logger.debug(log_message) {"leaving with message '"+message+"'"}
-        json_error 404, message
+      content_type :json
+
+      token = get_token( request.env, log_message)
+      if (token.to_s.empty?)
+        count_service_metadata_queries(labels: {result: "bad request", uuid: params[:uuid], elapsed_time: (Time.now.utc-began_at).to_s})
+        json_error 400, 'Token not provided', log_message
       end
+    
+      unless valid?(params[:uuid])
+        count_service_metadata_queries(labels: {result: "bad request", uuid: params[:uuid], elapsed_time: (Time.now.utc-began_at).to_s})
+        json_error 404, "Service #{params[:uuid]} not valid", log_message
+      end
+
+      unless User.authorized?(token: token, params: {path: '/services', method: 'GET'})
+        count_service_metadata_queries(labels: {result: "forbidden", uuid: params[:uuid], elapsed_time: (Time.now.utc-began_at).to_s})
+        json_error 403, "Forbidden: user could not be authorized to get metadata for service #{params[:uuid]}", log_message
+      end
+    
+      # TODO: mind that, besides the URL-based uuid we might as well pass other params, like fields we want to show
+      #params.delete :uuid
+      service = ServiceManagerService.find_service_by_uuid(uuid: params[:uuid]) #, params: params)
+      if !service[:count] || service[:items].empty?
+        count_service_metadata_queries(labels: {result: "not found", uuid: params[:uuid], elapsed_time: (Time.now.utc-began_at).to_s})
+        json_error 404, "Service #{params[:uuid]} not found", log_message
+      end
+      count_service_metadata_queries(labels: {result: "ok", uuid: params[:uuid], elapsed_time: (Time.now.utc-began_at).to_s})
+      logger.debug(log_message) {"leaving with #{service}"}
+      headers 'Record-Count'=> '1'
+      halt 200, service[:items].to_json
     end
   end
   
@@ -104,5 +127,19 @@ class GtkApi < Sinatra::Base
       logger.debug(log_message) {'leaving with log='+log}
       halt 200, log
     end
+  end
+  
+  private
+  
+  def count_services_metadata_queries(labels:)
+    name = __method__.to_s.split('_')[1..-1].join('_')
+    desc = "how many service metadata queries have been made"
+    ServiceManagerService.counter_kpi({name: name, docstring: desc, base_labels: labels.merge({method: 'GET', module: 'services'})})
+  end
+
+  def count_service_metadata_queries(labels:)
+    name = __method__.to_s.split('_')[1..-1].join('_')
+    desc = "how many service metadata queries by uuid have been made"
+    ServiceManagerService.counter_kpi({name: name, docstring: desc, base_labels: labels.merge({method: 'GET', module: 'services'})})
   end
 end
