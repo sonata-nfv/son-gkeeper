@@ -69,7 +69,7 @@ function create_realm() {
 
 # Param: $1 = realm name
 function update_realm() {
-    $KCADMIN_SCRIPT update -r $1 -s accessTokenLifespan=1200 -i > /dev/null
+    $KCADMIN_SCRIPT update realms/$1 -s accessTokenLifespan=1200 -i > /dev/null
 	ret=$?
 	if [ $ret -eq 0 ]; then
         	echo "Updated realm [$1] token lifespan"
@@ -155,7 +155,10 @@ fi
 
 # Creating the Service Platform realm:
 create_realm $SONATA_REALM
-update_realm $SONATA_REALM
+
+# Increase access token lifespan
+echo "Increasing Access Token Lifespan to 1200"
+$KCADMIN_SCRIPT update realms/$1 -s accessTokenLifespan=1200
 
 # Creating the Service Platform adapter client:
 create_client_out=$(create_client $SONATA_REALM $ADAPTER_CLIENT "http://localhost:8081/adapter")

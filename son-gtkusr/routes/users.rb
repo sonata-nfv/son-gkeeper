@@ -187,6 +187,7 @@ class Keycloak < Sinatra::Application
     end
 
     # Validates the token
+    logger.debug "Evaluating token= #{user_token}"
     res, code = token_validation(user_token)
     if code == '200'
       result = is_active?(res)
