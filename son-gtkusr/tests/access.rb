@@ -39,10 +39,10 @@ def adminbased()
 end
 
 # "token_endpoint":"http://localhost:8081/auth/realms/master/protocol/openid-connect/token"
-def userbased
+def userbased(client_secret)
   # curl -d "client_id=admin-cli" -d "username=user1" -d "password=1234" -d "grant_type=password" "http://localhost:8081/auth/realms/SONATA/protocol/openid-connect/token"
   client_id = "adapter"
-  username = "sonata"
+  username = "user04"
   pwd = "1234"
   grt_type = "password"
   http_path = "http://sp.int3.sonata-nfv.eu:5601/auth/realms/sonata/protocol/openid-connect/token"
@@ -51,7 +51,7 @@ def userbased
 
   uri = URI(http_path)
   # uri = URI(idp_path)
-  res = Net::HTTP.post_form(uri, 'client_id' => client_id, 'client_secret' => '80b1a8eb-a349-4dd0-a9fe-470e7f29b9ca',
+  res = Net::HTTP.post_form(uri, 'client_id' => client_id, 'client_secret' => client_secret,
                             'username' => username,
                             'password' => pwd,
                             'grant_type' => grt_type)
@@ -68,7 +68,7 @@ def userbased
     parsed_res, code = parse_json(res.body)
     @access_token = parsed_res['access_token']
     puts "ACCESS_TOKEN RECEIVED", parsed_res['access_token']
-    parsed_res['access_token']
+    parsed_res
   else
     401
   end
@@ -133,12 +133,11 @@ end
 
 # Token Validation Endpoint
 # "token_introspection_endpoint":"http://localhost:8081/auth/realms/master/protocol/openid-connect/token/introspect"
-def token_validation(token)
+def token_validation(token, client_secret)
   # puts "TEST ACCESS_TOKEN", token
   # decode_token(token, keycloak_pub_key)
   # url = URI("http://localhost:8081/auth/realms/master/clients-registrations/openid-connect/")
   url = URI("http://sp.int3.sonata-nfv.eu:5601/auth/realms/sonata/protocol/openid-connect/token/introspect")
-  # ttp = Net::HTTP.new(url.host, url.port)
 
   # request = Net::HTTP::Post.new(url.to_s)
   # request = Net::HTTP::Get.new(url.to_s)
@@ -149,11 +148,13 @@ def token_validation(token)
   # request.body = body.to_json
 
   res = Net::HTTP.post_form(url, 'client_id' => 'adapter',
-                            'client_secret' => 'de4f7dc5-7f9e-4887-975f-6ebbe510fdcc',
-                            'grant_type' => 'client_credentials', 'token' => token)
+                            'client_secret' => client_secret,
+                            'grant_type' => 'client_credentials', 'token' => token, 'token_type_hint' =>'access_token')
 
-  puts "RESPONSE_INTROSPECT", res.read_body
+  puts "RESPONSE_INTROSPECT", res.body
+  puts "RESPONSE_CODE", res.code
   res.read_body
+
   # RESPONSE_INTROSPECT:
   # {"jti":"bc1200e5-3b6d-43f2-a125-dc4ed45c7ced","exp":1486105972,"nbf":0,"iat":1486051972,"iss":"http://localhost:8081/auth/realms/master","aud":"adapter","sub":"67cdf213-349b-4539-bdb2-43351bf3f56e","typ":"Bearer","azp":"adapter","auth_time":0,"session_state":"608a2a72-198d-440b-986f-ddf37883c802","name":"","preferred_username":"service-account-adapter","email":"service-account-adapter@placeholder.org","acr":"1","client_session":"2c31bbd9-c13d-43f1-bb30-d9bd46e3c0ab","allowed-origins":[],"realm_access":{"roles":["create-realm","admin","uma_authorization"]},"resource_access":{"adapter":{"roles":["uma_protection"]},"master-realm":{"roles":["view-identity-providers","view-realm","manage-identity-providers","impersonation","create-client","manage-users","view-authorization","manage-events","manage-realm","view-events","view-users","view-clients","manage-authorization","manage-clients"]},"account":{"roles":["manage-account","view-profile"]}},"clientHost":"127.0.0.1","clientId":"adapter","clientAddress":"127.0.0.1","client_id":"adapter","username":"service-account-adapter","active":true}
 end
@@ -997,14 +998,14 @@ end
 =end
 
 #test_form
-#token = userbased
+token = userbased('66829d12-b84c-4527-a596-26d09c894cc6')
 #token = clientbased('f50d8d0f-1411-44c8-9431-3a48e930deb1')
 #token = adminbased
 #pub = get_public_key
 #token_validation(token)
 # certificates
 #authenticate(token)
-# userinfo(token['access_token'])
+userinfo(token['access_token'])
 # {"jti":"bc1200e5-3b6d-43f2-a125-dc4ed45c7ced","exp":1486105972,"nbf":0,"iat":1486051972,"iss":"http://localhost:8081/auth/realms/master","aud":"adapter","sub":"67cdf213-349b-4539-bdb2-43351bf3f56e","typ":"Bearer","azp":"adapter","auth_time":0,"session_state":"608a2a72-198d-440b-986f-ddf37883c802","name":"","preferred_username":"service-account-adapter","email":"service-account-adapter@placeholder.org","acr":"1","client_session":"2c31bbd9-c13d-43f1-bb30-d9bd46e3c0ab","allowed-origins":[],"realm_access":{"roles":["create-realm","admin","uma_authorization"]},"resource_access":{"adapter":{"roles":["uma_protection"]},"master-realm":{"roles":["view-identity-providers","view-realm","manage-identity-providers","impersonation","create-client","manage-users","view-authorization","manage-events","manage-realm","view-events","view-users","view-clients","manage-authorization","manage-clients"]},"account":{"roles":["manage-account","view-profile"]}},"clientHost":"127.0.0.1","clientId":"adapter","clientAddress":"127.0.0.1","client_id":"adapter","username":"service-account-adapter","active":true}
 #decode_token(token, pub)
 #registration = register_client(token, pub)
@@ -1016,7 +1017,8 @@ end
 #sleep(3)
 #logout_user(token,)
 #sleep(3)
-#token_validation(token['access_token'])
+token = "eyJhbGciOiJSUzI1NiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICI1OWtrclRZVFI0NU5FSWJMTXlpTEZsWTZkOGgwenhYcmcxU3FyQktKSlRvIn0.eyJqdGkiOiI2YWUxOTUwYy05ZGVhLTRmY2UtODg4Zi1jMDA3M2UxNzk2MjQiLCJleHAiOjE0OTYxNzI3ODgsIm5iZiI6MCwiaWF0IjoxNDk2MTU0Nzg4LCJpc3MiOiJodHRwOi8vc29uLWtleWNsb2FrOjU2MDEvYXV0aC9yZWFsbXMvc29uYXRhIiwiYXVkIjoiYWRhcHRlciIsInN1YiI6ImQ2ZTdjODM3LTZiMDQtNDAyNi04YjUwLWEyMzc4OTFmODY1NSIsInR5cCI6IkJlYXJlciIsImF6cCI6ImFkYXB0ZXIiLCJhdXRoX3RpbWUiOjAsInNlc3Npb25fc3RhdGUiOiIwN2VjZTMzMC1kZDA1LTRlMmMtOGU0Yy0wOTUxN2MyNTNjZDUiLCJhY3IiOiIxIiwiY2xpZW50X3Nlc3Npb24iOiI0ZmM2NTgwZS05ZDU1LTQ2YzAtOGQyYi04ZDQzZWFmYjJkODciLCJhbGxvd2VkLW9yaWdpbnMiOlsiaHR0cDovL2xvY2FsaG9zdDo4MDgxIl0sInJlYWxtX2FjY2VzcyI6eyJyb2xlcyI6WyJkZXZlbG9wZXIiLCJ1bWFfYXV0aG9yaXphdGlvbiJdfSwicmVzb3VyY2VfYWNjZXNzIjp7ImFjY291bnQiOnsicm9sZXMiOlsibWFuYWdlLWFjY291bnQiLCJtYW5hZ2UtYWNjb3VudC1saW5rcyIsInZpZXctcHJvZmlsZSJdfX0sIm5hbWUiOiJ1c2VyIHNhbXBsZSIsInByZWZlcnJlZF91c2VybmFtZSI6InVzZXIwNCIsImdpdmVuX25hbWUiOiJ1c2VyIiwiZmFtaWx5X25hbWUiOiJzYW1wbGUiLCJlbWFpbCI6InVzZXIwNC5zb25hdGFAZW1haWwuY29tIn0.Ax0zn4a84WJTSOGfArjORAGDgKbmw6bBXzpcYp5_bz1qR5P6qcdCiJLGw6S-TEu6bJABGtIez4IlsTnuaXeEPlqvAcgZOMQehK5qf1I_iX4iP0CHlh5IkY6yOWDpoI3h1DmSDrmZqkUb3Swtx3WzdTCeANcjqOayihMfOPO7ddEOJ6SSkOS3RFW1UAjWwggeMOT74zBdrwZGUtzm5-gGlGy0IP1RM-jhOr3mkEqnzhecv0wdhpieIYamaj2AVFZGgReacOx_u4GSbhPr3HvHaxSu5FOx129n2GaZUCGi5RHLkVG-q_yPgb9ooGYVmBwnMmuucxpVnbsgog52doPPjw"
+token_validation(token['access_token'], '66829d12-b84c-4527-a596-26d09c894cc6')
 #management(token)
 #logout(token2)
 #sleep(2)

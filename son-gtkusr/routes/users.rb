@@ -628,7 +628,7 @@ class Keycloak < Sinatra::Application
       else
         json_error(400, 'Provided username does not match with Access Token')
       end
-      halt 200 # , {'Content-type' => 'application/json'}, 'User signature successfully updated'
+      halt 204 # , {'Content-type' => 'application/json'}, 'User signature successfully updated'
     end
     logger.debug 'Adapter: leaving PUT /signatures/ with no username specified'
     json_error(400, 'No username specified')

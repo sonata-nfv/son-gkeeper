@@ -69,6 +69,29 @@ def apply_limit_and_offset(input, offset= nil, limit= nil)
   @result = limit ? @result.first(limit.to_i) : @result
 end
 
+def create_public_key
+  # turn keycloak realm pub key into an actual openssl compat pub key.
+  keycloak_yml = YAML.load_file('config/keycloak.yml')
+  keycloak_config = JSON.parse(File.read('config/keycloak.json'))
+  @s = "-----BEGIN PUBLIC KEY-----\n"
+  @s += keycloak_yml['realm_public_key'].scan(/.{1,64}/).join("\n")
+  @s += "\n-----END PUBLIC KEY-----\n"
+  @key = OpenSSL::PKey::RSA.new @s
+  set :keycloak_pub_key, @key
+  set :keycloak_client_id, keycloak_config['resource']
+  set :keycloak_url, keycloak_config['auth-server-url'] + '/' + keycloak_config['realm'] + '/'
+
+  # Print token settings
+  # puts "settings.keycloak_pub_key: ", settings.keycloak_pub_key
+end
+
+def query_string
+  request.env['QUERY_STRING'].nil? ? '' : request.env['QUERY_STRING'].to_s
+end
+
+def request_url
+  request.env['rack.url_scheme'] + '://' + request.env['HTTP_HOST'] + request.env['REQUEST_PATH']
+end
 
 class Adapter < Sinatra::Application
   # Method which lists all available interfaces
@@ -90,6 +113,11 @@ class Adapter < Sinatra::Application
             'method' => 'GET',
             'purpose' => 'User Management current configuration'
         },
+        {
+            'uri' => '/refresh',
+            'method' => 'GET',
+            'purpose' => 'User Management current configuration'
+        }
     ]
   end
 
@@ -214,33 +242,6 @@ class Adapter < Sinatra::Application
   end
 
   def set_keycloak_credentials()
-    #TODO: Implement
     #Other Keycloak credentials that might be configured
   end
-
-#Comment about ROLES
-=begin
-Large number of roles approach will quickly become unmanageable and it
-may be better of using an ACL or something in the application itself.
-
-It is more often implemented as ACLs rather than RBAC.
-RBAC is usually used for things like 'manager' has read/write access to a
-group of resources, rather than 'user-a' has read access to 'resource-a'.
-=end
-end
-
-def create_public_key
-  # turn keycloak realm pub key into an actual openssl compat pub key.
-  keycloak_yml = YAML.load_file('config/keycloak.yml')
-  keycloak_config = JSON.parse(File.read('config/keycloak.json'))
-  @s = "-----BEGIN PUBLIC KEY-----\n"
-  @s += keycloak_yml['realm_public_key'].scan(/.{1,64}/).join("\n")
-  @s += "\n-----END PUBLIC KEY-----\n"
-  @key = OpenSSL::PKey::RSA.new @s
-  set :keycloak_pub_key, @key
-  set :keycloak_client_id, keycloak_config['resource']
-  set :keycloak_url, keycloak_config['auth-server-url'] + '/' + keycloak_config['realm'] + '/'
-
-  # Print token settings
-  # puts "settings.keycloak_pub_key: ", settings.keycloak_pub_key
 end
