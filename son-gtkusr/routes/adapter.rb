@@ -83,6 +83,11 @@ class Keycloak < Sinatra::Application
 
   @@access_token = nil
 
+  get '/' do
+    headers 'Content-Type' => 'text/plain; charset=utf8'
+    halt 200, interfaces_list.to_json
+  end
+
   post '/config' do
     logger.debug 'Adapter: entered POST /config'
     # log_file = File.new("#{settings.root}/log/#{settings.environment}.log", 'a+')

@@ -37,27 +37,24 @@ require 'uri'
 require_relative 'helpers'
 
 
-def parse_json(message)
+#def parse_json(message)
   # Check JSON message format
-  begin
-    parsed_message = JSON.parse(message)
-  rescue JSON::ParserError => e
+#  begin
+#    parsed_message = JSON.parse(message)
+#  rescue JSON::ParserError => e
     # If JSON not valid, return with errors
-    return message, e.to_s + "\n"
-  end
-  return parsed_message, nil
-end
+#    return message, e.to_s + "\n"
+#  end
+#  return parsed_message, nil
+#end
 
 class Keycloak < Sinatra::Application
-
   # logger.info "Adapter: Starting configuration"
   # Load configurations
   # keycloak_config = YAML.load_file 'config/keycloak.yml'
 
   # Load authorization mappings
   @@auth_mappings = YAML.load_file 'config/mappings.yml'
-
-  # puts "MAPPINGS CONTENT", @@auth_mappings
 
   @@port = ENV['KEYCLOAK_PORT']
   @@uri = ENV['KEYCLOAK_PATH']

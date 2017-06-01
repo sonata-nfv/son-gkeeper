@@ -90,6 +90,20 @@ def request_url
   request.env['rack.url_scheme'] + '://' + request.env['HTTP_HOST'] + request.env['REQUEST_PATH']
 end
 
+class Keycloak < Sinatra::Application
+  # Method which lists all available interfaces
+  # @return [Array] an array of hashes containing all interfaces
+  def interfaces_list
+    [
+        {
+            'uri' => '/',
+            'method' => 'GET',
+            'purpose' => 'REST API root'
+        }
+    ]
+  end
+end
+
 class Adapter < Sinatra::Application
   # Method which lists all available interfaces
   # @return [Array] an array of hashes containing all interfaces
