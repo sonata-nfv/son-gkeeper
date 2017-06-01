@@ -105,7 +105,7 @@ class GtkApi < Sinatra::Base
       count_function_metadata_queries(labels: {result: "ok", uuid: params[:uuid], elapsed_time: (Time.now.utc-began_at).to_s})
       logger.debug(log_message) {"leaving with #{function}"}
       headers 'Record-Count'=> '1'
-      halt 200, function[:items].to_json, log_message
+      halt 200, function[:items].to_json
     end
   end
   
