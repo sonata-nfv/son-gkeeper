@@ -61,7 +61,7 @@ class Catalogue
     log_message=CLASS+__method__.to_s
     GtkPkg.logger.debug(log_message) {"entered with filename=#{filename}, username=#{username}"}
     #url = URI("http://api.int.sonata-nfv.eu:4002/catalogues/son-packages")
-    url = URI(@url)+'?username='+username
+    url = URI(@url+'?username='+username)
     http = Net::HTTP.new(url.host, url.port)
     data = File.read(zip)  #File.read("/usr/test.amr")
     request = Net::HTTP::Post.new(url)
