@@ -57,9 +57,11 @@ class Catalogue
     end
   end
 
-  def create_zip(zip, filename) #<---- filename should be passed to the method
+  def create_zip(zip, filename, username) #<---- filename should be passed to the method
+    log_message=CLASS+__method__.to_s
+    GtkPkg.logger.debug(log_message) {"entered with filename=#{filename}, username=#{username}"}
     #url = URI("http://api.int.sonata-nfv.eu:4002/catalogues/son-packages")
-    url = URI(@url)
+    url = URI(@url)+'?username='+username
     http = Net::HTTP.new(url.host, url.port)
     data = File.read(zip)  #File.read("/usr/test.amr")
     request = Net::HTTP::Post.new(url)
@@ -69,8 +71,9 @@ class Catalogue
     # request["content-disposition"] = 'attachment; filename=<filename.son>' # Remove hardcoded filename
     request["content-disposition"] = 'attachment; filename=' + filename.to_s
     response = http.request(request)
-    GtkPkg.logger.debug("Catalogue response: " + response.read_body)
-    response.read_body
+    body = response.read_body
+    GtkPkg.logger.debug(log_message) {"Catalogue response: " + body}
+    body
     #puts response.read_body
     # Response should return code 201, and ID of the stored son-package
   end
