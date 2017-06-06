@@ -158,7 +158,7 @@ create_realm $SONATA_REALM
 
 # Increase access token lifespan
 echo "Increasing Access Token Lifespan to 1200"
-$KCADMIN_SCRIPT update realms/$1 -s accessTokenLifespan=1200
+$KCADMIN_SCRIPT update realms/$SONATA_REALM -s accessTokenLifespan=1200
 
 # Creating the Service Platform adapter client:
 create_client_out=$(create_client $SONATA_REALM $ADAPTER_CLIENT "http://localhost:8081/adapter")
