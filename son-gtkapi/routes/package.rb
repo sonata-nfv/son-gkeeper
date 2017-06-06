@@ -58,7 +58,21 @@ class GtkApi < Sinatra::Base
         count_package_on_boardings(labels: {result: "bad request", uuid: '', elapsed_time: (Time.now.utc-began_at).to_s})
         json_error 400, 'Token not provided', log_message
       end
-        
+
+      begin
+        # Validate validator's existence
+        Validator.valid_package? params[:package][:tempfile]
+      rescue ValidatorError => e
+        count_package_on_boardings(labels: {result: "bad request", uuid: '', elapsed_time: (Time.now.utc-began_at).to_s})
+        json_error 400, "Error creating package #{params}", log_message
+      rescue ValidatorGenericError => e
+        count_package_on_boardings(labels: {result: "other error", uuid: '', elapsed_time: (Time.now.utc-began_at).to_s})
+        GtkApi.logger.error(log_message) {"Error during processing: #{$!}"}
+        GtkApi.logger.error(log_message) {"Backtrace:\n\t#{e.backtrace.join("\n\t")}"}
+        #json_error 500, "Status 500 for package #{params}: #{$!}", log_message
+        GtkApi.logger.error(log_message) {"Proceed without package being validated..."}
+      end
+      
       begin
         resp = PackageManagerService.create(params.merge({token: token}))
         logger.debug(log_message) {"resp=#{resp.inspect}"}

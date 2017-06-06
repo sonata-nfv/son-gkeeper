@@ -84,7 +84,13 @@ class GtkApi < Sinatra::Base
   #enable :method_override
 
   settings.services.each do |service, properties|
-    Object.const_get(properties['model']).config(url: ENV[properties['environment']] || properties['url'])
+    # do not use properties['url']: they're depprecated, in favor of ANSIBLE configuration
+    url = ENV[properties['environment']]
+    unless url.to_s.empty? 
+      Object.const_get(properties['model']).config(url: url)
+    else
+      settings.logger.info('GtkApi') {"Service #{service} not configured"}
+    end
   end  
 
   Zip.setup do |c|
