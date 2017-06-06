@@ -75,6 +75,10 @@ development: &common_settings
       url: http://sp.int3.sonata-nfv.eu:8000/api/v1
       model: Metric
       environment: METRICS_URL
+    validator:
+      #url: http://sp.int3.sonata-nfv.eu:8000/api/v1
+      model: Validator
+      environment: VALIDATOR_URL
   level: debug
   defaults:
     page:

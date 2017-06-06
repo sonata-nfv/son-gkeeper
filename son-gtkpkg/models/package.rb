@@ -180,20 +180,20 @@ class Package
   end
   
   def self.delete(uuid)
-    method = CLASS + __method__.to_s
+    method = CLASS + '#' + __method__.to_s
     GtkPkg.logger.debug(method) {'entered with uuid='+uuid}
     @@catalogue.delete(uuid)
   end
 
-  def store_package_file(filename) # <----  Filename
-    GtkPkg.logger.debug "Entered Package.store_package_file"
-    message = "Package.#{__method__}"
-    saved_zip = @@catalogue.create_zip(@package_file, filename, @username)
-    if saved_zip
-      GtkPkg.logger.debug(message) {"catalogue_response is #{saved_zip}"}
-      JSON.parse(saved_zip)
+  def store_package_file(filename)
+    log_message = CLASS + '.' + __method__.to_s
+    GtkPkg.logger.debug(log_message) {"entered with #{filename}"}
+    create_zip_response = @@catalogue.create_zip(@package_file, filename, @username)
+    if create_zip_response
+      GtkPkg.logger.debug(log_message) {"catalogue_response is #{create_zip_response}"}
+      JSON.parse(create_zip_response)
     else
-      GtkPkg.logger..debug(message) {'failled to store zip with no response'}
+      GtkPkg.logger..debug(log_message) {'failled to store zip with no response'}
       nil
     end
   end
