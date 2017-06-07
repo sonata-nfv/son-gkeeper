@@ -30,55 +30,55 @@ development: &common_settings
     packages:
       #url: http://localhost:5100
       model: PackageManagerService
-      environment: PACKAGE_MANAGEMENT_URL
+      env_var_url: PACKAGE_MANAGEMENT_URL
     services:
       #url: http://localhost:5300
       model: ServiceManagerService
-      environment: SERVICE_MANAGEMENT_URL
+      env_var_url: SERVICE_MANAGEMENT_URL
     functions:
       #url: http://localhost:5400
       model: FunctionManagerService
-      environment: FUNCTION_MANAGEMENT_URL
+      env_var_url: FUNCTION_MANAGEMENT_URL
     records:
       #url: http://localhost:5500
       model: RecordManagerService
-      environment: RECORD_MANAGEMENT_URL
+      env_var_url: RECORD_MANAGEMENT_URL
     licences:
       #url: http://sp.int3.sonata-nfv.eu:5900
       model: LicenceManagerService
-      environment: LICENCE_MANAGEMENT_URL
+      env_var_url: LICENCE_MANAGEMENT_URL
     vims:
       #url: http://localhost:5600
       model: VimManagerService
-      environment: VIM_MANAGEMENT_URL
+      env_var_url: VIM_MANAGEMENT_URL
     wims:
       #url: http://localhost:5600
       model: WimManagerService
-      environment: VIM_MANAGEMENT_URL
+      env_var_url: VIM_MANAGEMENT_URL
     kpis:
       #url: http://localhost:5200
       model: KpiManagerService
-      environment: KPI_MANAGEMENT_URL
+      env_var_url: KPI_MANAGEMENT_URL
     users:
       #url: http://localhost:5700
       model: User
-      environment: USER_MANAGEMENT_URL
+      env_var_url: USER_MANAGEMENT_URL
     micro-services:
       #url: http://localhost:5700
       model: MicroService
-      environment: USER_MANAGEMENT_URL
+      env_var_url: USER_MANAGEMENT_URL
     catalogue:
       #url: http://sp.int3.sonata-nfv.eu:4002/catalogues/api/v2
       model: Catalogue
-      environment: CATALOGUES_URL
+      env_var_url: CATALOGUES_URL
     metrics:
       #url: http://sp.int3.sonata-nfv.eu:8000/api/v1
       model: Metric
-      environment: METRICS_URL
+      env_var_url: METRICS_URL
     validator:
       #url: no url here from now on
       model: Validator
-      environment: VALIDATOR_URL
+      env_var_url: VALIDATOR_URL
   level: debug
   defaults:
     page:
