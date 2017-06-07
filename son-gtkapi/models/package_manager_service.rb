@@ -42,7 +42,7 @@ class PackageManagerService < ManagerService
     raise ArgumentError.new('PackageManagerService can not be configured with nil or empty url') if url.to_s.empty?
     @@url = url
     @@catalogue_url = ENV[GtkApi.services['catalogue']['env_var_url']]
-    GtkApi.logger.debug(method) {'@@catalogue_url='+@@catalogue_url}
+    GtkApi.logger.debug(method) {"@@catalogue_url=#{@@catalogue_url}"}
   end
 
   def self.create(params)

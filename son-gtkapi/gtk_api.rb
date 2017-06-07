@@ -87,7 +87,7 @@ class GtkApi < Sinatra::Base
     # do not use properties['url']: they're depprecated, in favor of ANSIBLE configuration
     # set it from the ENV var instead
     url = ENV[properties['env_var_url']]
-    settings.logger.debug('GtkApi') {"Service #{service}'s URL set to #{url}"}
+    settings.logger.debug('GtkApi') {"Service #{service.upcase}: URL set from ENV[#{properties['env_var_url']}] is #{url}"}
     if url.to_s.empty? 
       settings.logger.info('GtkApi') {"Service #{service} not configured"}
       next

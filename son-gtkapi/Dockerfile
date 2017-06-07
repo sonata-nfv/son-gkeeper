@@ -10,6 +10,7 @@ COPY . /app
 EXPOSE 5000
 WORKDIR /app
 ENV PORT 5000
+ENV CATALOGUES_URL http://catalogues:4002/catalogues/api/v2
 ENV PACKAGE_MANAGEMENT_URL http://son-gtkpkg:5100
 ENV SERVICE_MANAGEMENT_URL http://son-gtksrv:5300
 ENV FUNCTION_MANAGEMENT_URL http://son-gtkfnct:5500

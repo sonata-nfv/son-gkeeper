@@ -38,7 +38,7 @@ class Validator < ManagerService
   #attr_accessor :available, :until
   
   def self.config(url:)
-    log_message = LOG_MESSAGE + __method__.to_s
+    log_message = LOG_MESSAGE + '#' + __method__.to_s
     raise ArgumentError.new('Validator model can not be configured with nil or empty url') if (url.to_s.empty?)
     @@url = url
     GtkApi.logger.debug(log_message) {'entered with url='+url}
