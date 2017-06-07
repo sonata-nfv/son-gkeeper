@@ -76,7 +76,7 @@ development: &common_settings
       model: Metric
       environment: METRICS_URL
     validator:
-      #url: http://sp.int3.sonata-nfv.eu:8000/api/v1
+      #url: no url here from now on
       model: Validator
       environment: VALIDATOR_URL
   level: debug
