@@ -123,6 +123,7 @@ class User < ManagerService
     headers = {'Content-type'=>'application/json', 'Accept'=> 'application/json', 'Authorization'=>'Basic '+secret}
     begin
       resp = postCurb(url: @@url+'/api/v1/login/user', body: {}, headers: headers)
+      GtkApi.logger.debug(method) {"response=#{resp}"}
       case resp[:status]
       when 200
         token = resp[:items]
