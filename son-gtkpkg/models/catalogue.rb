@@ -57,7 +57,7 @@ class Catalogue
     end
   end
 
-  def create_zip(zip, filename, username) #<---- filename should be passed to the method
+  def create_zip(zip, filename, username)
     log_message=CLASS+'.'+__method__.to_s
     GtkPkg.logger.debug(log_message) {"entered with filename=#{filename}, username=#{username}"}
     #url = URI("http://api.int.sonata-nfv.eu:4002/catalogues/son-packages")
@@ -68,13 +68,13 @@ class Catalogue
     request.body = data
     # These fields are mandatory
     request["content-type"] = 'application/zip'
-    # request["content-disposition"] = 'attachment; filename=<filename.son>' # Remove hardcoded filename
     request["content-disposition"] = 'attachment; filename=' + filename.to_s
     response = http.request(request)
+    GtkPkg.logger.debug(log_message) {"Catalogue response: #{response}"}
     case response.code
-    when 200
+    when 201
       body = response.read_body
-      GtkPkg.logger.debug(log_message) {"Catalogue response: " + body}
+      GtkPkg.logger.debug(log_message) {"Catalogue response body #{body}"}
       body
     else
       nil
