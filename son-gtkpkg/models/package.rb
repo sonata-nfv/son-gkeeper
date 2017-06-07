@@ -193,7 +193,7 @@ class Package
       GtkPkg.logger.debug(log_message) {"catalogue_response is #{create_zip_response}"}
       JSON.parse(create_zip_response)
     else
-      GtkPkg.logger..debug(log_message) {'failled to store zip with no response'}
+      GtkPkg.logger.debug(log_message) {'failled to store zip with no response'}
       nil
     end
   end

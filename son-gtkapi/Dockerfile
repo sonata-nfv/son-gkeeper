@@ -10,6 +10,7 @@ COPY . /app
 EXPOSE 5000
 WORKDIR /app
 ENV PORT 5000
+ENV CATALOGUES_URL http://catalogues:4002/catalogues/api/v2
 ENV PACKAGE_MANAGEMENT_URL http://son-gtkpkg:5100
 ENV SERVICE_MANAGEMENT_URL http://son-gtksrv:5300
 ENV FUNCTION_MANAGEMENT_URL http://son-gtkfnct:5500
@@ -17,6 +18,7 @@ ENV VIM_MANAGEMENT_URL http://son-gtkvim:5700
 ENV RECORD_MANAGEMENT_URL http://son-gtkrec:5800
 ENV LICENCE_MANAGEMENT_URL http://son-gtklic:5900
 ENV KPI_MANAGEMENT_URL http://son-gtkkpi:5400
-ENV METRICS_URL http://sp.int3.sonata-nfv.eu:8000/api/v1
+ENV METRICS_URL http://son-monitor:8000/api/v1
 ENV USER_MANAGEMENT_URL http://son-gtkusr:5600
+ENV VALIDATOR_URL http://son-validate:5050
 CMD ["foreman", "start"]
