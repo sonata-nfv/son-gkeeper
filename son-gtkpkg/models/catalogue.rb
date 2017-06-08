@@ -70,9 +70,9 @@ class Catalogue
     request["content-type"] = 'application/zip'
     request["content-disposition"] = 'attachment; filename=' + filename.to_s
     response = http.request(request)
-    GtkPkg.logger.debug(log_message) {"Catalogue response: #{response}"}
+    GtkPkg.logger.debug(log_message) {"Catalogue response: #{response.inspect}"}
     case response.code
-    when 201
+    when 200..202
       body = response.read_body
       GtkPkg.logger.debug(log_message) {"Catalogue response body #{body}"}
       body

@@ -115,10 +115,12 @@ class User < ManagerService
     end
   end
 
-  def self.authenticated?(secret)
-    method = LOG_MESSAGE + "##{__method__}"
-    raise ArgumentError.new 'Authentication needs the user secret' if (secret.nil? || secret.empty?)
+  def self.authenticated?(username:, password:)
+    method = "#{LOG_MESSAGE}##{__method__}"
+    raise ArgumentError.new 'Authentication needs the user name' if (username.to_s.empty?)
+    raise ArgumentError.new 'Authentication needs the user password' if (password.to_s.empty?)
     
+    secret = Base64.strict_encode64(username+':'+password)
     GtkApi.logger.debug(method) {"entered with secret=#{secret}"}
     headers = {'Content-type'=>'application/json', 'Accept'=> 'application/json', 'Authorization'=>'Basic '+secret}
     begin
@@ -128,7 +130,7 @@ class User < ManagerService
       when 200
         token = resp[:items]
         GtkApi.logger.debug(method) {"token=#{token}"}
-        {began_at: Time.now.utc, token: token}
+        {began_at: Time.now.utc, token: token, user_type: find_user_type_by_username(username)}
       when 401
         GtkApi.logger.error(method) {"Status 401"} 
         raise UserNotAuthenticatedError.new "User not authenticated with params #{secret}"
@@ -332,7 +334,7 @@ class User < ManagerService
     # [23/05/2017, 09:34:08] Daniel Guija: just parse response['preferred_username'] to get the username
 
     method = LOG_MESSAGE + "##{__method__}"
-    raise ArgumentError.new __method__.to_s+' requires the login token' if (token.nil? || token.empty?)
+    raise ArgumentError.new __method__.to_s+' requires the login token' if (token.to_s.empty?)
     GtkApi.logger.debug(method) {"entered"}
     headers = {'Content-type'=>'application/json', 'Accept'=> 'application/json', 'Authorization'=>'Bearer '+token}
 
@@ -347,6 +349,32 @@ class User < ManagerService
     else
       GtkApi.logger.error(method) {"Status #{resp[:status]}"} 
       raise UserNotLoggedOutError.new "User not found with the given token"
+    end  
+  end
+  
+  def self.find_user_type_by_username(username)
+    # GET url = URI("http://<address>:<port>/api/v1/users?username=user01")
+    # from the response, you can obtain it:
+    # [ { "id": "5e1ef7d8-b5cd-4835-8bcb-68b182140fa9", "createdTimestamp": 1492094414797, "username": "user01", "enabled": true, "totp": false, "emailVerified": false, "firstName": "User", "lastName": "Sample", "email": "user.sample@email.com", "attributes": { "userType": [ "developer" ] }, "disableableCredentialTypes": [ "password" ], "requiredActions": [] } ]
+    # e.g.: "attributes": { "userType": [ "developer" ] }
+    method = "#{LOG_MESSAGE}##{__method__}"
+    raise ArgumentError.new __method__.to_s+' requires the user name' if (username.to_s.empty?)
+    GtkApi.logger.debug(method) {"entered"}
+    headers = {'Content-type'=>'application/json', 'Accept'=> 'application/json'} #, 'Authorization'=>'Bearer '+token}
+
+    resp = getCurb(url: @@url+'/api/v1/users?username='+username, params: {}, headers: headers)
+    GtkApi.logger.debug(method) {"resp=#{resp}"}
+    case resp[:status]
+    when 200
+      GtkApi.logger.debug(method) {"resp[:items]=#{resp[:items]}"}
+      user = resp[:items].first
+      user[:attributes][:userType].first
+    when 404
+      GtkApi.logger.error(method) {"Status 404: username #{username} not found"} 
+      raise UserNotFoundError.new "User username #{username} not found"
+    else
+      GtkApi.logger.error(method) {"Status #{resp[:status]}"} 
+      raise UserNotFoundError.new "User not found with the given username"
     end  
   end
   
