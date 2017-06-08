@@ -52,8 +52,8 @@ class GtkApi < Sinatra::Base
       # Base64.decode64(s)
       params = JSON.parse(body, symbolize_names: true)
       logger.debug(log_message) {"entered with params=#{params}"}
-      json_error(400, 'Unprocessable entity: missing user name', log_message) if (params[:username].nil? || params[:username].empty?)
-      json_error(400, 'Unprocessable entity: missing user password', log_message) if (params[:password].nil? || params[:password].empty?)
+      json_error(400, 'Unprocessable entity: missing user name', log_message) if (params[:username].to_s.empty?)
+      json_error(400, 'Unprocessable entity: missing user password', log_message) if (params[:password].to_s.empty?)
 
       # We don't have a find_by_name method, and user_uuid is something hard to tackle by the end user
       # so this has to be done at the class level, instead of at instance level
@@ -62,10 +62,10 @@ class GtkApi < Sinatra::Base
         #logger.debug(log_message) {"user=#{user.inspect}"}
         #session = user.authenticated?(params[:secret])
       begin
-        session = User.authenticated?(Base64.strict_encode64(params[:username]+':'+params[:password]))
+        session = User.authenticated?( username: params[:username], password: params[:password])
         logger.debug(log_message) {"leaving with session #{session}"}
         content_type :json
-          #halt 200, {userid: user.uuid, username: user.username, session_started_at: user.session[:began_at]}.to_json
+        # halt 200, {userid: user.uuid, username: user.username, session_started_at: user.session[:began_at]}.to_json
         halt 200, {username: params[:username], session_began_at: session[:began_at], token: session[:token]}.to_json
       rescue UserNotAuthenticatedError
           json_error 401, 'Unauthorized: user '+params[:username]+' not authenticated', log_message
