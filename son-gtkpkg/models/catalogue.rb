@@ -44,7 +44,7 @@ class Catalogue
   end
     
   def create(descriptor, username)
-    log_message=CLASS+__method__.to_s
+    log_message=CLASS+'.'+__method__.to_s
     GtkPkg.logger.debug(log_message) {"entered with username=#{username}, descriptor=#{descriptor}"}
     begin
       response = RestClient.post( @url+'?username='+username, descriptor.to_json, content_type: :json, accept: :json)     
@@ -57,20 +57,28 @@ class Catalogue
     end
   end
 
-  def create_zip(zip, filename) #<---- filename should be passed to the method
+  def create_zip(zip, filename, username)
+    log_message=CLASS+'.'+__method__.to_s
+    GtkPkg.logger.debug(log_message) {"entered with filename=#{filename}, username=#{username}"}
     #url = URI("http://api.int.sonata-nfv.eu:4002/catalogues/son-packages")
-    url = URI(@url)
+    url = URI(@url+'?username='+username)
     http = Net::HTTP.new(url.host, url.port)
     data = File.read(zip)  #File.read("/usr/test.amr")
     request = Net::HTTP::Post.new(url)
     request.body = data
     # These fields are mandatory
     request["content-type"] = 'application/zip'
-    # request["content-disposition"] = 'attachment; filename=<filename.son>' # Remove hardcoded filename
     request["content-disposition"] = 'attachment; filename=' + filename.to_s
     response = http.request(request)
-    GtkPkg.logger.debug("Catalogue response: " + response.read_body)
-    response.read_body
+    GtkPkg.logger.debug(log_message) {"Catalogue response: #{response.inspect}"}
+    case response.code
+    when 200..202
+      body = response.read_body
+      GtkPkg.logger.debug(log_message) {"Catalogue response body #{body}"}
+      body
+    else
+      nil
+    end
     #puts response.read_body
     # Response should return code 201, and ID of the stored son-package
   end

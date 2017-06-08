@@ -33,7 +33,7 @@ RSpec.describe Metric, type: :model do
   let(:known_metric) {{name: known_metric_name1}}
   let(:unknown_metric_name1) {'abcd'}
   let(:unknown_metric_name2) {'efgh'}
-  let(:metrics_url) {'http://sp.int3.sonata-nfv.eu:8000/api/v1/prometheus/metrics/name'}
+  let(:metrics_url) {Metric.class_variable_get(:@@url)+'/prometheus/metrics/name' }
   let(:ok_response) {{status: 200, count: 1, items: [known_metric], message: 'OK'}}
   let(:not_found_response) {{status: 404, count: 0, items: [], message: 'Not Found'}}
 

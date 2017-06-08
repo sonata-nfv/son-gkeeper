@@ -58,35 +58,56 @@ class GtkApi < Sinatra::Base
         count_package_on_boardings(labels: {result: "bad request", uuid: '', elapsed_time: (Time.now.utc-began_at).to_s})
         json_error 400, 'Token not provided', log_message
       end
-        
+
+      begin
+        # Validate validator's existence
+        Validator.valid_package? params[:package][:tempfile]
+      rescue ValidatorError => e
+        count_package_on_boardings(labels: {result: "bad request", uuid: '', elapsed_time: (Time.now.utc-began_at).to_s})
+        json_error 400, "Error creating package #{params}", log_message
+      rescue ValidatorGenericError => e
+        count_package_on_boardings(labels: {result: "other error", uuid: '', elapsed_time: (Time.now.utc-began_at).to_s})
+        GtkApi.logger.error(log_message) {"Error during processing: #{$!}"}
+        GtkApi.logger.error(log_message) {"Backtrace:\n\t#{e.backtrace.join("\n\t")}"}
+        #json_error 500, "Status 500 for package #{params}: #{$!}", log_message
+        GtkApi.logger.error(log_message) {"Proceed without package being validated..."}
+      end
+      
       begin
         resp = PackageManagerService.create(params.merge({token: token}))
         logger.debug(log_message) {"resp=#{resp.inspect}"}
         case resp[:status]
         when 201
           logger.info(log_message) {"leaving with package: #{resp[:data][:uuid]}"}
-          count_package_on_boardings(labels: {result: "ok", uuid: resp[:data][:uuid], elapsed_time: (Time.now.utc-began_at).to_s})
+          now = Time.now.utc
+          count_package_on_boardings(labels: {result: "ok", uuid: resp[:data][:uuid], elapsed_time: (now-began_at).to_s, time_stamp: now})
           headers 'Location'=> PackageManagerService.class_variable_get(:@@url)+"/packages/#{resp[:data][:uuid]}", 'Content-Type'=> 'application/json'
           halt 201, resp[:data].to_json
         when 400
-          count_package_on_boardings(labels: {result: "bad request", uuid: '', elapsed_time: (Time.now.utc-began_at).to_s})
+          now = Time.now.utc
+          count_package_on_boardings(labels: {result: "bad request", uuid: '', elapsed_time: (now-began_at).to_s, time_stamp: now})
           json_error 400, "Error creating package #{params}", log_message
         when 403
-          count_package_on_boardings(labels: {result: "forbidden", uuid: '', elapsed_time: (Time.now.utc-began_at).to_s})
+          now = Time.now.utc
+          count_package_on_boardings(labels: {result: "forbidden", uuid: '', elapsed_time: (now-began_at).to_s, time_stamp: now})
           json_error 403, "User not allowed to create package #{params}", log_message
         when 404
-          count_package_on_boardings(labels: {result: "not found", uuid: '', elapsed_time: (Time.now.utc-began_at).to_s})
+          now = Time.now.utc
+          count_package_on_boardings(labels: {result: "not found", uuid: '', elapsed_time: (now-began_at).to_s, time_stamp: now})
           json_error 404, "User name not found", log_message
         when 409
           logger.error(log_message) {"leaving with duplicated package: #{resp[:data]}"}
-          count_package_on_boardings(labels: {result: "duplicated", uuid: resp[:data][:uuid], elapsed_time: (Time.now.utc-began_at).to_s})
+          now = Time.now.utc
+          count_package_on_boardings(labels: {result: "duplicated", uuid: resp[:data][:uuid], elapsed_time: (now-began_at).to_s, time_stamp: now})
           halt 409, resp[:data].to_json
         else
-          count_package_on_boardings(labels: {result: "other error", uuid: '', elapsed_time: (Time.now.utc-began_at).to_s})
+          now = Time.now.utc
+          count_package_on_boardings(labels: {result: "other error", uuid: '', elapsed_time: (now-began_at).to_s, time_stamp: now})
           json_error resp[:status], "Unknown status: #{resp[:status]} for package #{params}", log_message
         end
       rescue ArgumentError => e
-        count_package_on_boardings(labels: {result: "bad request", uuid: '', elapsed_time: (Time.now.utc-began_at).to_s})
+        now = Time.now.utc
+        count_package_on_boardings(labels: {result: "bad request", uuid: '', elapsed_time: (now-began_at).to_s, time_stamp: now})
         json_error 400, "Error creating package #{params}", log_message
       end
     end

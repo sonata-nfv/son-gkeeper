@@ -84,7 +84,17 @@ class GtkApi < Sinatra::Base
   #enable :method_override
 
   settings.services.each do |service, properties|
-    Object.const_get(properties['model']).config(url: ENV[properties['environment']] || properties['url'])
+    # do not use properties['url']: they're depprecated, in favor of ANSIBLE configuration
+    # set it from the ENV var instead
+    url = ENV[properties['env_var_url']]
+    settings.logger.debug('GtkApi') {"Service #{service.upcase}: URL set from ENV[#{properties['env_var_url']}] is #{url}"}
+    if url.to_s.empty? 
+      settings.logger.info('GtkApi') {"Service #{service} not configured"}
+      next
+    end
+    # Check first if class exists with
+    # Object.const_defined?('Hash')
+    Object.const_get(properties['model']).config(url: url)
   end  
 
   Zip.setup do |c|

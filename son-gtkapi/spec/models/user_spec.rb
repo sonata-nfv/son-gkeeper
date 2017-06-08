@@ -111,17 +111,19 @@ RSpec.describe User, type: :model do
     context 'yes' do
       before(:each) do
         resp = OpenStruct.new(header_str: "HTTP/1.1 200 OK\nRecord-Count: 1", body: token.to_json)            
-        allow(Curl).to receive(:post).with(login_url, '{}').and_return(resp) 
+        allow(Curl).to receive(:post).with(login_url, '{}').and_return(resp)
+        # find_user_type_by_username(username)
+        allow(User).to receive(:find_user_type_by_username).with(to_be_created_user[:username]).and_return(to_be_created_user[:user_type])
       end
       it 'should return a Hash' do
-        expect(User.authenticated?(secret)).to be_a Hash
+        expect(User.authenticated?(username:to_be_created_user[:username], password:to_be_created_user[:password])).to be_a Hash
       end
       it 'should call User Management Service' do
-        User.authenticated?(secret)
+        User.authenticated?(username:to_be_created_user[:username], password:to_be_created_user[:password])
         expect(Curl).to have_received(:post)
       end
       it 'should return a Hash with a token key' do
-        expect(User.authenticated?(secret)).to have_key(:token)
+        expect(User.authenticated?(username:to_be_created_user[:username], password:to_be_created_user[:password])).to have_key(:token)
       end
     end
     context 'no' do
@@ -130,7 +132,7 @@ RSpec.describe User, type: :model do
         allow(Curl).to receive(:post).with(login_url, '{}').and_return(resp) 
       end
       it 'should raise UserNotAuthenticatedError' do
-        expect{User.authenticated?(invalid_secret)}.to raise_error(UserNotAuthenticatedError)
+        expect{User.authenticated?(username:'foo', password:'bar')}.to raise_error(UserNotAuthenticatedError)
       end
     end
   end

@@ -57,28 +57,24 @@ class GtkPkg < Sinatra::Base
       error_message = "Version #{descriptor['version']} of package '#{descriptor['name']}' from vendor '#{descriptor['vendor']}' already exists"
       json_error 409, error_message, log_message
     end
-        
-    unless descriptor.key?('uuid')
-      json_error 400, 'Oops.. something terribly wrong happened here!', log_message      
-    end
     
-    logger.debug("Storing son-package contents in catalogue")
+    json_error 400, 'Oops.. something terribly wrong happened here!', log_message unless descriptor.key?('uuid')
+    
+    logger.debug(log_message) {"Storing son-package contents in catalogue"}
     son_package_inst = Package.new(catalogue: settings.son_packages_catalogue, params: {io: params[:package][:tempfile][:tempfile]}, username: username)
-    logger.debug("son-package contents stored in catalogue")
-    # son_package = son_package_inst.store_package_file() #<----- add filename?
-    son_package = son_package_inst.store_package_file(package_filename) #<----- add filename?
+    logger.debug(log_message) {"son-package contents stored in catalogue"}
+    son_package = son_package_inst.store_package_file(package_filename)
     unless son_package && son_package['uuid']
       json_error 400, 'Error storing son-package.', log_message         
     end
     
-    logger.debug("Adding meta-data info from #{descriptor} to son-package file #{son_package['uuid']}")
+    logger.debug(log_message) {"Adding meta-data info from #{descriptor} to son-package file #{son_package['uuid']}"}
     response = son_package_inst.add_sonpackage_meta(son_package['uuid'], descriptor['pd'])
-    logger.debug("Meta-data info for son-package file #{son_package['uuid']} response: #{response}")
+    logger.debug(log_message) {"Meta-data info for son-package file #{son_package['uuid']} response: #{response}"}
     package = Package.new(catalogue: settings.packages_catalogue, params: {io: params[:package][:tempfile][:tempfile]}, username: username)
     response = package.add_sonpackage_id(descriptor['uuid'], son_package['uuid'])
     unless response.nil?
-      error_message = "Error storing son-package-uuid in descriptor: " + response
-      json_error 400, error_message, log_message
+      json_error 400, "Error storing son-package-uuid in descriptor: " + response, log_message
     end
     
     descriptor.store("son-package-uuid", son_package['uuid'])
