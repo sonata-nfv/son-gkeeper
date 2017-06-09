@@ -4,7 +4,8 @@
 
 This is the folder of the Rate Limiter micro-service. 
 
-The rate limiter is based on the leaky bucket algorithm. Each client/limit has
+The rate limiter is based on the [leaky bucket
+algorithm](https://en.wikipedia.org/wiki/Leaky_bucket). Each client/limit has
 an empty bucket assigned with a given capacity (according to a limit
 definition). Each request goes to the bucket, that is leaking requests at a
 given rate (again according to a limit definition). A client is allowed to
