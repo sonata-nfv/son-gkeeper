@@ -2,8 +2,18 @@
 [![Build Status](http://jenkins.sonata-nfv.eu/buildStatus/icon?job=son-gkeeper)](http://jenkins.sonata-nfv.eu/job/son-gkeeper)
 
 
-This is the folder of the Rate Limiter micro-service. A rate limiter restricts
-each client to N requests in a given time span. 
+This is the folder of the Rate Limiter micro-service. 
+
+The rate limiter is based on the leaky bucket algorithm. Each client/limit has
+an empty bucket assigned with a given capacity (according to a limit
+definition). Each request goes to the bucket, that is leaking requests at a
+given rate (again according to a limit definition). A client is allowed to
+perform the request if there are remaining capacity in the bucket.
+
+Example: Suppose that we have a limit that allows at maximum 6 requests per
+minute. Then our bucket can hold at maximum 6 requests. However we’ll start 
+draining our bucket after 60 seconds at a rate of 6reqs/60sec, that is 
+removing one request from the bucket every 10 seconds.
 
 
 # Rate Limit API
@@ -27,6 +37,7 @@ This operation accepts the following parameters:
   number of requests is verified. (*required*)
 - **limit** - Maximum number of requests that a client is allowed to perform in
   the specified period. (*required*)
+- **description** - A human readable limit description. (*optional*)
 
 ### Sample request / response
 The following request creates a limit, identified by
@@ -38,7 +49,8 @@ PUT /limits/check_account_balance_limit
 Content-Type: application/json
 {
   "period": 3600,
-  "limit": 10
+  "limit": 10,
+  "description": "Can check account balance 10 times / hour"
 }
 
 -- response
@@ -73,8 +85,8 @@ GET /limits
 Content-Type: application/json
 [
   { "id": "other_account_operations", "period": 60, "limit": 100 }, 
-  { "id": "create_account", "period": 3600, "limit": 10 },
-  { "id": "default", "period": 1, "limit": 10 }
+  { "id": "create_account", "period": 3600, "limit": 10, "description": "Can create 10 accounts / hour" },
+  { "id": "default", "period": 1, "limit": 10, "description": "Global request rate policy is 10req/s"}
 ]
 ```
 
@@ -87,6 +99,10 @@ POST /check
 This operation checks if a client is either allowed or not allowed to perform
 the request according to the specified limit. Each call to this endpoint will
 consume one request associated to the given client.
+
+This operation accepts the following parameters:
+ * **limit_id** - The limit identifier that should be applied. (*required*)
+ * **client_id** - Any string that identifies the client. Cannot contain spaces. (*required*)
 
 
 ### Sample request / response
