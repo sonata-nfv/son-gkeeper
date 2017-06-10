@@ -50,9 +50,21 @@ class Validator < ManagerService
     # POST {'source':'embedded', 'file':'...', 'syntax': True, 'integrity': True, 'topology':True}
     GtkApi.logger.debug(log_message) {'entered'}
     
-    body = {source:'embedded', file: file, syntax: true, integrity: true, topology: true}
+    body = {source:'embedded', file: file, syntax: 'true', integrity: 'true', topology: 'true'}
+    headers = {'Content-Type'=>'multipart/form-data'} #{'Content-Type'=>'text/html'}
     begin
-      resp = postCurb(url: @@url+'/validate/package', body: body)
+      curl = Curl::Easy.new(@@url+'/validate/package')
+      # curl.headers["Content-Type"] = "multipart/form-data"
+      curl.multipart_form_post = true
+      
+      # data = File.read('/Users/haider/Pictures/lion.jpg')
+      # curl.post_body=data
+      curl.http_post( Curl::PostField.content('source', 'embedded'), Curl::PostField.file('file', file),
+        Curl::PostField.content('syntax', 'true'), Curl::PostField.content('integrity', 'true'), Curl::PostField.content('topology', 'true')
+      )                              
+      GtkApi.logger.debug(log_message) {"curl.body_str=#{curl.body_str}"}
+      #resp = postCurb(url: @@url+'/validate/package', body: body, headers: headers)
+      resp = {status: ManagerService.status_from_response_headers(curl.header_str), items: [JSON.parse(curl.body_str)]}
       case resp[:status]
       when 200
         GtkApi.logger.debug(log_message) {"Validator result=#{resp[:items]}"}
