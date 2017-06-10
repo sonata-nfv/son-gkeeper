@@ -60,7 +60,7 @@ class GtkApi < Sinatra::Base
       end
 
       begin
-        # Validate validator's existence
+        # Validate validator's existence first here
         Validator.valid_package? params[:package][:tempfile]
       rescue ValidatorError => e
         count_package_on_boardings(labels: {result: "bad request", uuid: '', elapsed_time: (Time.now.utc-began_at).to_s})
@@ -74,6 +74,7 @@ class GtkApi < Sinatra::Base
       end
       
       begin
+        #params[:package][:tempfile].rewind
         resp = PackageManagerService.create(params.merge({token: token}))
         logger.debug(log_message) {"resp=#{resp.inspect}"}
         case resp[:status]
