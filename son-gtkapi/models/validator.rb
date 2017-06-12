@@ -44,7 +44,7 @@ class Validator < ManagerService
     GtkApi.logger.debug(log_message) {'entered with url='+url}
   end
   
-  def self.valid_package?(file)
+  def self.valid_package?(file:)
     log_message = LOG_MESSAGE + '#'+__method__.to_s
     # /validate/package
     # POST {'source':'embedded', 'file':'...', 'syntax': True, 'integrity': True, 'topology':True}
