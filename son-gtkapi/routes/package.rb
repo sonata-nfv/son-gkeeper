@@ -59,9 +59,11 @@ class GtkApi < Sinatra::Base
         json_error 400, 'Token not provided', log_message
       end
 
+      file = params[:package][:tempfile].read
+      GtkApi.logger.error(log_message) {"file content is #{file}"}
       begin
         # Validate validator's existence first here
-        Validator.valid_package? params[:package][:tempfile]
+        Validator.valid_package?(file: file)
       rescue ValidatorError => e
         count_package_on_boardings(labels: {result: "bad request", uuid: '', elapsed_time: (Time.now.utc-began_at).to_s})
         json_error 400, "Error creating package #{params}", log_message
@@ -74,7 +76,7 @@ class GtkApi < Sinatra::Base
       end
       
       begin
-        #params[:package][:tempfile].rewind
+        params[:package][:tempfile].rewind
         resp = PackageManagerService.create(params.merge({token: token}))
         logger.debug(log_message) {"resp=#{resp.inspect}"}
         case resp[:status]
