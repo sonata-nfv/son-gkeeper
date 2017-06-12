@@ -72,7 +72,7 @@ class Catalogue
     response = http.request(request)
     GtkPkg.logger.debug(log_message) {"Catalogue response=#{response.inspect}"}
     GtkPkg.logger.debug(log_message) {"Catalogue response.code=#{response.code}"}
-    case response.code
+    case response.code.to_i
     when 200..204
       body = response.read_body
       GtkPkg.logger.debug(log_message) {"Catalogue response body #{body}"}
