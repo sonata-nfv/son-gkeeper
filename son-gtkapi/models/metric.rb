@@ -85,7 +85,7 @@ class Metric < ManagerService
     log_message = LOG_MESSAGE + "##{__method__}"
     raise MetricNameCanNotBeNilOrEmptyError.new('Metric name can not be nil or empty') if (name.nil? || name.empty?)
     GtkApi.logger.debug(log_message) {'entered with name='+name}
-    response = getCurb(url: @@url+'/prometheus/metrics/name/'+name)
+    response = getCurb(url: @@url+'/prometheus/metrics/name/'+name+'/')
     GtkApi.logger.debug(log_message) {"response=#{response}"}
     if response[:status] == 200
       Metric.new(response[:items])

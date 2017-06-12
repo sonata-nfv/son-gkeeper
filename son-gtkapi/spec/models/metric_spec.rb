@@ -47,7 +47,7 @@ RSpec.describe Metric, type: :model do
     context 'with a known metric name' do
       before(:each) do
         resp = OpenStruct.new(header_str: "HTTP/1.1 200 OK\nRecord-Count: 1", body: known_metric.to_json)      
-        allow(Curl).to receive(:get).with(metrics_url+'/'+known_metric_name1).and_return(resp) 
+        allow(Curl).to receive(:get).with(metrics_url+'/'+known_metric_name1+'/').and_return(resp) 
       end
       it 'should return a Metric instance' do
         expect(Metric.find_by_name(known_metric_name1)).to be_a Metric
@@ -66,7 +66,7 @@ RSpec.describe Metric, type: :model do
       end
       it 'unknown, should raise a MetricNameNotFoundError exception' do
         resp = OpenStruct.new(header_str: "HTTP/1.1 404 OK\nRecord-Count: 0", body: not_found_response)
-        allow(Curl).to receive(:get).with(metrics_url+'/'+unknown_metric_name1).and_return(resp) 
+        allow(Curl).to receive(:get).with(metrics_url+'/'+unknown_metric_name1+'/').and_return(resp) 
         expect{Metric.find_by_name(unknown_metric_name1)}.to raise_error(MetricNameNotFoundError)
       end
     end
