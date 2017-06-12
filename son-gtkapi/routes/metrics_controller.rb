@@ -86,11 +86,13 @@ class GtkApi < Sinatra::Base
       halt 200, 'Requested asynch metrics'
     end
     
-    # …/functions/:function_uuid/instances/:instance_uuid/synch-mon-data?metric=cpu_util&for=<number of seconds>
-    get '/:uuid/instances/:instance_uuid/synch-mon-data/?' do
+    # …/functions/instances/:instance_uuid/synch-mon-data?metrics=cpu_util&for=<number of seconds>
+    # this was
+    # …/functions/:function_uuid/instances/:instance_uuid/synch-mon-data?metrics=cpu_util&for=<number of seconds>
+    get '/instances/:instance_uuid/synch-mon-data/?' do
       began_at = Time.now.utc
       log_message = 'GtkApi::GET /api/v2/functions/:uuid/instances/:instance_uuid/synch-mon-data/?'
-      logger.debug(log_message) {"entered with function #{params[:uuid]}, instance #{params[:instance_uuid]}"}
+      logger.debug(log_message) {"entered with function instance #{params[:instance_uuid]}"}
       # {"metric":"vm_cpu_perc","filters":["id='123456asdas255sdas'","type='vnf'"]}
       
       content_type :json
@@ -118,12 +120,12 @@ class GtkApi < Sinatra::Base
       # ...and type as being 'vnf'?
       # json_error 400, 'Type is missing' unless (params.key?(:type) && !params[:type].empty?)
     
-      begin
-        function = FunctionManagerService.find_by_uuid!(params[:uuid])
-      rescue FunctionNotFoundError
-        count_synch_monitoring_data_requests(labels: {result: "not found", uuid: '', elapsed_time: (Time.now.utc-began_at).to_s})
-        json_error 404, "Function #{params[:uuid]} not found", log_message
-      end
+      #begin
+      #  function = FunctionManagerService.find_by_uuid!(params[:uuid])
+      #rescue FunctionNotFoundError
+      #  count_synch_monitoring_data_requests(labels: {result: "not found", uuid: '', elapsed_time: (Time.now.utc-began_at).to_s})
+      #  json_error 404, "Function #{params[:uuid]} not found", log_message
+      #end
     
       # Remove list of wanted fields from the query parameter list
       metrics_names = params.delete('metrics').split(',')
@@ -135,21 +137,34 @@ class GtkApi < Sinatra::Base
         json_error 404, "At least one metric must be given", log_message
       end
 
-      function.load_instances(params[:uuid])
+      #function.load_instances(params[:uuid])
       
       metrics = Metric.validate_and_create(metrics_names)
+      ws_url = ''
+      status = nil
         
       # TODO: we're assuming this is treated one metric at a time
       metrics.each do |metric|
+        logger.debug(log_message) { "Metric: #{metric}"}
         begin
-          metric.synch_monitoring_data({filters: params[:filters]}) # TODO: add for: params[:for], 
+          resp = metric.synch_monitoring_data({filters: params[:filters]}) # TODO: add for: params[:for], 
+          # {"status": "SUCCESS","metric": [<metric_name1>,<matric_name2>], "ws_url":"ws://<ws_server_ip>:8002/ws/<ws_id>"}
+          # In the end, :status and :ws_url will be the ones of the last metric processed
+          ws_url = resp[:ws_url]
+          status = resp[:status]
         rescue SynchMonitoringDataRequestNotCreatedError
           logger.debug(log_message) {'Failled request with params '+params.to_s+ ' for metric '+metric.name}
           next
         end
       end
       count_synch_monitoring_data_requests(labels: {result: "ok", uuid: params[:instance_uuid], elapsed_time: (Time.now.utc-began_at).to_s})
-      halt 200, {function_uuid: params[:uuid], function_instance_uuid: params[:instance_uuid], metrics: metrics_names}.to_json
+      return_data = {
+        status: status,
+        function_uuid: params[:uuid], function_instance_uuid: params[:instance_uuid],
+        metrics: metrics_names,
+        ws_url: ws_url
+      }
+      halt 200, return_data.to_json
     end
   end
   
