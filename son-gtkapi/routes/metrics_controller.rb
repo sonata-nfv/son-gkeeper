@@ -127,6 +127,12 @@ class GtkApi < Sinatra::Base
       #  json_error 404, "Function #{params[:uuid]} not found", log_message
       #end
     
+      # do not treat 'for=<length in seconds> now
+      unless params['for'].to_s.empty?
+        logger.debug(log_message) {"Currently we're not processing the 'for=<length in seconds>' parameter"}
+        params.delete('for')
+      end
+      
       # Remove list of wanted fields from the query parameter list
       metrics_names = params.delete('metrics').split(',')
       logger.debug(log_message) { "params without metrics=#{params}"}
@@ -147,7 +153,8 @@ class GtkApi < Sinatra::Base
       metrics.each do |metric|
         logger.debug(log_message) { "Metric: #{metric}"}
         begin
-          resp = metric.synch_monitoring_data({filters: params[:filters]}) # TODO: add for: params[:for], 
+          #resp = metric.synch_monitoring_data({filters: params[:filters]}) # TODO: add for: params[:for], 
+          resp = metric.synch_monitoring_data(params[:instance_uuid])
           # {"status": "SUCCESS","metric": [<metric_name1>,<matric_name2>], "ws_url":"ws://<ws_server_ip>:8002/ws/<ws_id>"}
           # In the end, :status and :ws_url will be the ones of the last metric processed
           ws_url = resp[:ws_url]
