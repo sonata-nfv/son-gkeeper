@@ -85,6 +85,7 @@ class Catalogue
   end
   
   def fetch_zip(uuid)
+    log_message=CLASS+'.'+__method__.to_s
     #url = URI("http://api.int.sonata-nfv.eu:4002/catalogues/son-packages")
     url = URI(@url)
     http = Net::HTTP.new(url.host, url.port)
@@ -93,7 +94,7 @@ class Catalogue
     request["content-type"] = 'application/zip'
     request["content-disposition"] = 'attachment; filename=<filename.son>'
     response = http.request(request)
-    GtkPkg.logger.debug("Catalogue response: #{response}")
+    GtkPkg.logger.debug(log_message) {"Catalogue response: #{response}"}
     case response.code
     when 200
       #length = File.write(zip, response.read_body)
@@ -104,12 +105,13 @@ class Catalogue
   end
 
   def find_by_uuid(uuid)
-    GtkPkg.logger.debug CLASS+".find_by_uuid(#{uuid})"
+    log_message=CLASS+'.'+__method__.to_s
+    GtkPkg.logger.debug(log_message) {"entered with uuid=#{uuid}"}
     begin
       response = RestClient.get(@url+"/#{uuid}", JSON_HEADERS) 
       JSON.parse response.body
     rescue => e
-      GtkPkg.logger.error format_error(e.backtrace)
+      GtkPkg.logger.error(log_message) { format_error(e.backtrace)}
       e.to_json
     end
   end
@@ -151,7 +153,7 @@ class Catalogue
   end
   
   def set_sonpackage_id(desc_uuid, sonp_uuid)
-    method = CLASS + __method__.to_s
+    method = CLASS + '.' + __method__.to_s
     GtkPkg.logger.debug(method) {"desc_uuid=#{desc_uuid}, sonp_uuid=#{sonp_uuid}"}
     headers = {'Content-Type'=>'application/json'}
     begin
@@ -171,7 +173,7 @@ class Catalogue
   end
 
   def set_sonpackage_trio_meta(sonp_uuid, desc)
-    method = CLASS + __method__.to_s
+    method = CLASS + '.' + __method__.to_s
     GtkPkg.logger.debug(method) {"Catalogue.set_sonpackage_trio_meta: sonp_uuid=#{sonp_uuid}, desc_vendor=#{desc['vendor']}, desc_name=#{desc['name']}, desc_version=#{desc['version']}"}
     headers = {'Content-Type'=>'application/json'}
     begin

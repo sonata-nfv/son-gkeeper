@@ -44,25 +44,24 @@ class Validator < ManagerService
     GtkApi.logger.debug(log_message) {'entered with url='+url}
   end
   
-  def self.valid_package?(file:)
+  def self.valid_package?(file_content:, signature: '')
     log_message = LOG_MESSAGE + '#'+__method__.to_s
     # /validate/package
     # POST {'source':'embedded', 'file':'...', 'syntax': True, 'integrity': True, 'topology':True}
-    GtkApi.logger.debug(log_message) {'entered'}
+    GtkApi.logger.debug(log_message) {"entered with file content #{file_content}"}
     
-    body = {source:'embedded', file: file, syntax: 'true', integrity: 'true', topology: 'true'}
-    headers = {'Content-Type'=>'multipart/form-data'} #{'Content-Type'=>'text/html'}
     begin
       curl = Curl::Easy.new(@@url+'/validate/package')
-      # curl.headers["Content-Type"] = "multipart/form-data"
-      curl.multipart_form_post = true
-      
-      # data = File.read('/Users/haider/Pictures/lion.jpg')
-      # curl.post_body=data
-      curl.http_post( Curl::PostField.content('source', 'embedded'), Curl::PostField.file('file', file),
-        Curl::PostField.content('syntax', 'true'), Curl::PostField.content('integrity', 'true'), Curl::PostField.content('topology', 'true')
+      curl.headers["Content-Type"] = "multipart/form-data"
+      #curl.multipart_form_post = true
+
+      curl.http_post( Curl::PostField.content('source', 'embedded'), Curl::PostField.file('file', file_content),
+        Curl::PostField.content('syntax', 'true'), Curl::PostField.content('integrity', 'true'), Curl::PostField.content('topology', 'true'),
+        Curl::PostField.content('signature', signature)
       )                              
       GtkApi.logger.debug(log_message) {"curl.body_str=#{curl.body_str}"}
+      #body = {source:'embedded', file: file, syntax: 'true', integrity: 'true', topology: 'true'}
+      #headers = {'Content-Type'=>'multipart/form-data'} #{'Content-Type'=>'text/html'}
       #resp = postCurb(url: @@url+'/validate/package', body: body, headers: headers)
       resp = {status: ManagerService.status_from_response_headers(curl.header_str), items: [JSON.parse(curl.body_str)]}
       case resp[:status]
