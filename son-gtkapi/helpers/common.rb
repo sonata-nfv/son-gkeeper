@@ -83,4 +83,9 @@ module GtkApiHelper
     json_error(400, 'Unprocessable entity: authorization header must be "Bearer <token>"', log_message) unless (bearer_token.size == 2 && bearer_token[0].downcase == 'bearer')
     bearer_token[1]
   end
+  
+  def get_signature(env, log_message)
+    logger.debug(log_message) {"entered with request.env['HTTP_SIGNATURE']=#{env['HTTP_SIGNATURE']}"}
+    env['HTTP_SIGNATURE'] ? env['HTTP_SIGNATURE'] : ''
+  end
 end
