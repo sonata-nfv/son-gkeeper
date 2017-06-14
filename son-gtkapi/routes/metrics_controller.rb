@@ -35,55 +35,81 @@ class GtkApi < Sinatra::Base
     # TODO: how to address multiple metrics like in
     # .../metric=cpu_util,disk_usage,packets_sent&...
     
-    # GET /functions/:function_uuid/instances/:instance_uuid/asynch-mon-data?metric=cpu_util&since=…&until=…
-    get '/:uuid/instances/:instance_uuid/asynch-mon-data/?' do
+    # GET /functions/instances/:instance_uuid/asynch-mon-data?metric=cpu_util&since=…&until=…
+    get '/instances/:instance_uuid/asynch-mon-data/?' do
       began_at = Time.now.utc
-      log_message = 'GtkApi::GET /api/v2/functions/:uuid/instances/:instance_uuid/asynch-mon-data/?'
+      log_message = 'GtkApi::GET /api/v2/functions/instances/:instance_uuid/asynch-mon-data/?'
       logger.debug(log_message) {"entered with params #{params}"}
-      # {"name":"vm_mem_perc","start": "'$tw_start'", "end": "'$tw_end'", "step": "10s", "labels": [{"labeltag":"exported_job", "labelid":"vnf"}]}
-      # labels:[{"labeltag":"id", "labelid":"123456asdas255sdas"}]}'
-      # TODO: validate user who's asking here
-      # json_error 400, 'User must be resent' unless ...
-      # json_error 400, 'User is not authorized' unless ...
       
+      content_type :json
+      
+      logger.debug(log_message) { 'query_string='+request.env['QUERY_STRING']}
       params.delete('splat')
       params.delete('captures')
       params.merge(parse_query_string(request.env['QUERY_STRING']))
-      json_error 400, 'Metrics list is missing' unless (params.key?('metrics') && !params['metrics'].empty?)
-      json_error 400, 'Starting date is missing' unless (params.key?('since') && !params['since'].empty?)
-      json_error 400, 'Ending date is missing' unless (params.key?('until') && !params['until'].empty?)
-    
-      # Remove list of wanted fields from the query parameter list
-      metrics_list = [params.delete('metrics')]
-      logger.debug(log_message) {"metrics list #{metrics_list} (is a #{metrics_list.class})"}
-      logger.debug(log_message) {"remaining params #{params}"}
       
-      begin
-        function = FunctionManagerService.find_by_uuid!(params[:uuid])
-      rescue FunctionNotFoundError
-        json_error 404, "Function #{params[:uuid]} not found", log_message
+      token = get_token( request.env, log_message)
+      if (token.nil? || token.empty?)
+        count_synch_monitoring_data_requests(labels: {result: "bad request", uuid: '', elapsed_time: (Time.now.utc-began_at).to_s})
+        json_error 400, 'A valid user access token was not provided', log_message
       end
       
-      function.load_instances(params[:uuid])
+      unless User.authorized?(token: token, params: {path: '/functions/instances', method: 'GET'})
+        count_service_metadata_queries(labels: {result: "forbidden", uuid: params[:instance_uuid], elapsed_time: (Time.now.utc-began_at).to_s})
+        json_error 403, "Forbidden: user could not be authorized to request asynch monitorin data for function instance #{params[:instance_uuid]}", log_message
+      end
       
-      metrics = Metric.validate_and_create(metrics_list)
+      unless (params.key?('metrics') && !params['metrics'].empty?)
+        count_synch_monitoring_data_requests(labels: {result: "bad request", uuid: '', elapsed_time: (Time.now.utc-began_at).to_s})
+        json_error 400, 'Metrics list is missing', log_message
+      end
+      
+      unless (params.key?('since') && !params['since'].empty?)
+        count_synch_monitoring_data_requests(labels: {result: "bad request", uuid: '', elapsed_time: (Time.now.utc-began_at).to_s})
+        json_error 400, 'Starting date is missing', log_message
+      end
+      
+      unless (params.key?('until') && !params['until'].empty?)
+        count_synch_monitoring_data_requests(labels: {result: "bad request", uuid: '', elapsed_time: (Time.now.utc-began_at).to_s})
+        json_error 400, 'Ending date is missing', log_message
+      end
+       
+      # Remove list of wanted fields from the query parameter list
+      metrics_names = params.delete('metrics').split(',')
+      logger.debug(log_message) { "params without metrics=#{params}"}
+
+      if metrics_names.empty?
+        count_synch_monitoring_data_requests(labels: {result: "not found", uuid: '', elapsed_time: (Time.now.utc-began_at).to_s})
+        json_error 404, "At least one metric must be requested", log_message
+      end
+      
+      metrics = Metric.validate_and_create(metrics_names)
+      status = nil
         
       # TODO: we're assuming this is treated one metric at a time
-      # TODO: instance uuid should be inserted here, when it is clear how it relates
       metrics.each do |metric|
+        logger.debug(log_message) { "Metric: #{metric}"}
         begin
-          metric.asynch_monitoring_data({
-            start: params[:start],
-            end: params[:send],
-            step: params[:step],
-            labels: params[:labels]
+          resp = metric.asynch_monitoring_data({
+            start: params[:since].to_s, end: params[:until].to_s,
+            step: params[:step], instance_id: params[:instance_uuid]
           })
+          # In the end, :status will be the one of the last metric processed
+          status = resp[:status]
         rescue AsynchMonitoringDataRequestNotCreatedError
           logger.debug(log_message) {'Failled request with params '+params.to_s+ ' for metric '+metric.name}
           next
         end
       end
-      halt 200, 'Requested asynch metrics'
+      count_synch_monitoring_data_requests(labels: {result: "ok", uuid: params[:instance_uuid], elapsed_time: (Time.now.utc-began_at).to_s})
+      return_data = {
+        status: status,
+        function_instance_uuid: params[:instance_uuid],
+        metrics: metrics_names #,
+        #ws_url: ws_url
+      }
+      logger.debug(log_message) {"Leaving with #{return_data}"}
+      halt 200, return_data.to_json
     end
     
     # …/functions/instances/:instance_uuid/synch-mon-data?metrics=cpu_util&for=<number of seconds>
@@ -151,9 +177,8 @@ class GtkApi < Sinatra::Base
         
       # TODO: we're assuming this is treated one metric at a time
       metrics.each do |metric|
-        logger.debug(log_message) { "Metric: #{metric}"}
+        logger.debug(log_message) { "Metric: #{metric.inspect}"}
         begin
-          #resp = metric.synch_monitoring_data({filters: params[:filters]}) # TODO: add for: params[:for], 
           resp = metric.synch_monitoring_data(params[:instance_uuid])
           # {"status": "SUCCESS","metric": [<metric_name1>,<matric_name2>], "ws_url":"ws://<ws_server_ip>:8002/ws/<ws_id>"}
           # In the end, :status and :ws_url will be the ones of the last metric processed
