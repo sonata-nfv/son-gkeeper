@@ -149,10 +149,10 @@ class Metric < ManagerService
     body[:start]=params[:start]
     body[:end]=params[:end]
     body[:step]=params[:step]
-    body[:labels]=[{labeltag:'id', labelid: params[:instance_id]}]
+    body[:labels]=[{labeltag:'id', labelid: params[:instance_id]}, {labeltag: 'exported_job', labelid: 'vnf'}]
     
     begin
-      resp = postCurb(url: @@url+'/prometheus/metrics/data', body: params.merge({name: @name}))
+      resp = postCurb(url: @@url+'/prometheus/metrics/data', body: body)
       GtkApi.logger.debug(log_message) {"resp=#{resp}"}
       case resp[:status]
       when 200..202
