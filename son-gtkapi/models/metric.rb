@@ -139,12 +139,20 @@ class Metric < ManagerService
   # -H "Content-Type:application/json" 
   # -X POST --data '{"name":"vm_mem_perc","start": "'$tw_start'", "end": "'$tw_end'", "step": "10s", "labels": [{"labeltag":"exported_job", "labelid":"vnf"}]}' 
   # "http://<mon_manager_url>/api/v1/prometheus/metrics/data"
+  # {"name":"vm_mem_perc","start": "'$tw_start'", "end": "'$tw_end'", "step": "10s", "labels": [{"labeltag":"exported_job", "labelid":"vnf"}]}
+  # labels:[{"labeltag":"id", "labelid":"123456asdas255sdas"}]}'
   def asynch_monitoring_data(params)
     log_message = LOG_MESSAGE + "##{__method__}"
     GtkApi.logger.debug(log_message) {"entered with params=#{params}"}
-        
+    body = {}
+    body[:name]=@name
+    body[:start]=params[:start]
+    body[:end]=params[:end]
+    body[:step]=params[:step]
+    body[:labels]=[{labeltag:'id', labelid: params[:instance_id]}, {labeltag: 'exported_job', labelid: 'vnf'}]
+    
     begin
-      resp = postCurb(url: @@url+'/prometheus/metrics/data', body: params.merge({name: @name}))
+      resp = postCurb(url: @@url+'/prometheus/metrics/data', body: body)
       GtkApi.logger.debug(log_message) {"resp=#{resp}"}
       case resp[:status]
       when 200..202
@@ -168,8 +176,8 @@ class Metric < ManagerService
   # -X POST --data '{"metric":"vm_cpu_perc","filters":["id='123456asdas255sdas'","type='vnf'"]}' 
   # "http://<mon_manager_url>/api/v1/ws/new"
   def synch_monitoring_data(function_instance_id)
-    log_message = LOG_MESSAGE + "##{__method__}"
-    GtkApi.logger.debug(log_message) {"entered with params=#{params}"}
+    log_message = LOG_MESSAGE + ".#{__method__}"
+    GtkApi.logger.debug(log_message) {"entered with function_instance_id=#{function_instance_id}"}
     body = {}
     body[:metric]=@name
     body[:filters]=["id='#{function_instance_id}'", "type='vnf'"]
