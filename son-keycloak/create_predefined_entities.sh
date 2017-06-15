@@ -232,7 +232,7 @@ sleep 3
 printf "\n\n======== POST Admin User (predefined) Registration form to GTKUSR ==\n\n\n"
 resp=$(curl -qSfsw '\n%{http_code}' -H "Content-Type: application/json" -H "Authorization: Bearer $token" \
 -d "$(admin_reg_data)" \
--X POST http://sp.int3.sonata-nfv.eu:5600/api/v1/register/user)
+-X POST http://son-gtkusr:5600/api/v1/register/user)
 echo $resp
 
 username=$(echo $resp | grep "username")
@@ -243,7 +243,7 @@ echo "Code: $code"
 printf "\n\n======== POST Demo User (predefined) Registration form to GTKUSR ==\n\n\n"
 resp=$(curl -qSfsw '\n%{http_code}' -H "Content-Type: application/json" \
 -d "$(demo_reg_data)" \
--X POST http://sp.int3.sonata-nfv.eu:5600/api/v1/register/user)
+-X POST http://son-gtkusr:5600/api/v1/register/user)
 echo $resp
 
 username=$(echo $resp | grep "username")
