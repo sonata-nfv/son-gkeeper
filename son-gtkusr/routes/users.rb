@@ -91,18 +91,21 @@ class Keycloak < Sinatra::Application
         end
 
         # Validates the token
-        logger.debug "Evaluating token= #{user_token}"
-        res, code = token_validation(user_token)
-        logger.debug "Adapter: Token validation is #{res.to_s}"
-        json_error(400, res.to_s) unless code == '200'
-
-        result = is_active?(res)
-        logger.debug "Adapter: Token status is #{result.to_s}"
-        json_error(401, 'Token not active') unless result
-
+        logger.debug "Evaluating token=#{user_token}"
         code, user_info = userinfo(user_token)
         if code != '200'
           halt code.to_i, {'Content-type' => 'application/json'}, user_info
+        end
+
+        #TODO: Allow custom name service-account-$
+        unless user_info['username'] == 'service-account-adapter'
+          res, code = token_validation(user_token)
+          logger.debug "Adapter: Token validation is #{res.to_s}"
+          json_error(400, res.to_s) unless code == '200'
+
+          result = is_active?(res)
+          logger.debug "Adapter: Token status is #{result.to_s}"
+          json_error(401, 'Token not active') unless result
         end
 
         code, user_data = get_user(user_info['sub'])
@@ -110,9 +113,7 @@ class Keycloak < Sinatra::Application
           halt code.to_i, {'Content-type' => 'application/json'}, user_data
         end
 
-        #TODO: Allow custom name service-account-$
-        unless (user_data['username'] == 'service-account-adapter') ||
-            (user_data['attributes']['userType'].include?('admin'))
+        unless user_data['attributes']['userType'].include?('admin')
           logger.debug 'Adapter: leaving POST /register/user with userType error'
           json_error(400, 'Registration failed! Only admin users can register a new admin')
         end
