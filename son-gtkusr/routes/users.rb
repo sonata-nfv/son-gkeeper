@@ -82,18 +82,22 @@ class Keycloak < Sinatra::Application
     if form['attributes']['userType'].is_a?(Array)
       if form['attributes']['userType'].include?('admin')
         # Return if Authorization is invalid
+        logger.debug 'Adapter: leaving POST /register/user '
         halt 400 unless request.env["HTTP_AUTHORIZATION"]
         user_token = request.env["HTTP_AUTHORIZATION"].split(' ').last
         unless user_token
+          logger.debug 'Adapter: Failed due to access token required'
           json_error(400, 'Access token is not provided')
         end
 
         # Validates the token
         logger.debug "Evaluating token= #{user_token}"
         res, code = token_validation(user_token)
+        logger.debug "Adapter: Token validation is #{res.to_s}"
         json_error(400, res.to_s) unless code == '200'
 
         result = is_active?(res)
+        logger.debug "Adapter: Token status is #{result.to_s}"
         json_error(401, 'Token not active') unless result
 
         code, user_info = userinfo(user_token)
