@@ -194,7 +194,7 @@ adapter_secret=$(get_client_secret $SONATA_REALM $adapter_cid)
 # 1. it tests the endpoint: we make sure that the adapter client was created correctly and we have the adapter client secret, and
 # 2. it has the side effect of creating the adapter "service account" user, upon which we would like to assign roles that allow us to create users.
 echo "Testing adapter client token endpoint: $KEYCLOAK_OPENID_TOKEN_ENDPOINT"
-resp=$(curl -k -s -o /dev/null -X POST -H "Content-Type: application/x-www-form-urlencoded" -d "grant_type=client_credentials&client_id=$ADAPTER_CLIENT&client_secret=$adapter_secret" "$KEYCLOAK_OPENID_TOKEN_ENDPOINT")
+resp=$(curl -k -s -o -X POST -H "Content-Type: application/x-www-form-urlencoded" -d "grant_type=client_credentials&client_id=$ADAPTER_CLIENT&client_secret=$adapter_secret" "$KEYCLOAK_OPENID_TOKEN_ENDPOINT")
 token=$(echo $resp | awk '{print $1}' | python -mjson.tool | grep "access_token" | awk -F ':[ \t]*' '{print $2}' | sed 's/,//g' | sed 's/"//g')
 echo "Token data="$token
 #if [ $endpoint_ret -ne 200 ]; then
