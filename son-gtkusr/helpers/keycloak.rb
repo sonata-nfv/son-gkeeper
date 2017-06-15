@@ -37,17 +37,6 @@ require 'uri'
 require_relative 'helpers'
 
 
-#def parse_json(message)
-  # Check JSON message format
-#  begin
-#    parsed_message = JSON.parse(message)
-#  rescue JSON::ParserError => e
-    # If JSON not valid, return with errors
-#    return message, e.to_s + "\n"
-#  end
-#  return parsed_message, nil
-#end
-
 class Keycloak < Sinatra::Application
   # logger.info "Adapter: Starting configuration"
   # Load configurations
@@ -66,8 +55,8 @@ class Keycloak < Sinatra::Application
   @@address = ENV['KEYCLOAK_ADDRESS']
 
   # TODO: Add admin custom credentials
-  # @@admin_name = ENV['ADMIN_NAME']
-  # @@admin_password = ENV['ADMIN_PASSWORD']
+  @@admin_name = ENV['ADMIN_NAME'] || 'admin'
+  @@admin_password = ENV['ADMIN_PASSWORD'] || 'admin'
 
   # TODO: remove this or comment enable/disable local testing
   #@@address = 'localhost'
@@ -97,8 +86,8 @@ class Keycloak < Sinatra::Application
     begin
       url = URI("http://#{@@address.to_s}:#{@@port.to_s}/#{@@uri.to_s}/realms/#{@@realm_name}/protocol/openid-connect/token")
       res = Net::HTTP.post_form(url, 'client_id' => @@client_name, 'client_secret' => @@client_secret,
-                                'username' => "admin",
-                                'password' => "admin",
+                                'username' => "admin", # @@admin_name
+                                'password' => "admin", # @@admin_password
                                 'grant_type' => "client_credentials")
 
       parsed_res, errors = parse_json(res.body)

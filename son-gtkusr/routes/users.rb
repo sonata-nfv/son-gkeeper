@@ -79,6 +79,42 @@ class Keycloak < Sinatra::Application
       halt json_error(400, 'Bad registration form')
     end
 
+    if form['attributes']['userType'].is_a?(Array)
+      if form['attributes']['userType'].include?('admin')
+        # Return if Authorization is invalid
+        halt 400 unless request.env["HTTP_AUTHORIZATION"]
+        user_token = request.env["HTTP_AUTHORIZATION"].split(' ').last
+        unless user_token
+          json_error(400, 'Access token is not provided')
+        end
+
+        # Validates the token
+        logger.debug "Evaluating token= #{user_token}"
+        res, code = token_validation(user_token)
+        json_error(400, res.to_s) unless code == '200'
+
+        result = is_active?(res)
+        json_error(401, 'Token not active') unless result
+
+        code, user_info = userinfo(user_token)
+        if code != '200'
+          halt code.to_i, {'Content-type' => 'application/json'}, user_info
+        end
+
+        code, user_data = get_user(user_info['sub'])
+        if code != '200'
+          halt code.to_i, {'Content-type' => 'application/json'}, user_data
+        end
+
+        #TODO: Allow custom name service-account-$
+        unless (user_data['username'] == 'service-account-adapter') ||
+            (user_data['attributes']['userType'].include?('admin'))
+          logger.debug 'Adapter: leaving POST /register/user with userType error'
+          json_error(400, 'Registration failed! Only admin users can register a new admin')
+        end
+      end
+    end
+
     logger.info "Registering new user"
     user_id, error_code, error_msg = register_user(form)
 

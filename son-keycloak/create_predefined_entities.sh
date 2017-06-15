@@ -171,8 +171,8 @@ create_realm_role $SONATA_REALM son-gkeeper "\${role_access-catalogue},\${role_a
 create_realm_role $SONATA_REALM son-catalogue ""
 create_realm_role $SONATA_REALM son-repositories "\${role_read-catalogue}"
 create_realm_role $SONATA_REALM son-monitor "\${role_read-catalogue},\${role_read-repositories}"
-create_realm_role $SONATA_REALM customer "\${role_read-repositories},\${role_write-repositories},\${role_execute-catalogue}"
-create_realm_role $SONATA_REALM developer "\${role_read-catalogue},\${role_write-catalogue},\${role_read-monitor}"
+create_realm_role $SONATA_REALM customer "\${role_read-repositories},\${role_write-repositories},\${role_execute-catalogue},\${role_read-monitoring}"
+create_realm_role $SONATA_REALM developer "\${role_read-catalogue},\${role_write-catalogue},\${role_read-monitoring}"
 create_realm_role $SONATA_REALM admin "\${role_realm-admin}"
 
 # Update 'admin' role to composite-role type with 'realm-admin' role
@@ -194,7 +194,9 @@ adapter_secret=$(get_client_secret $SONATA_REALM $adapter_cid)
 # 1. it tests the endpoint: we make sure that the adapter client was created correctly and we have the adapter client secret, and
 # 2. it has the side effect of creating the adapter "service account" user, upon which we would like to assign roles that allow us to create users.
 echo "Testing adapter client token endpoint: $KEYCLOAK_OPENID_TOKEN_ENDPOINT"
-curl -k -s -o /dev/null -X POST -H "Content-Type: application/x-www-form-urlencoded" -d "grant_type=client_credentials&client_id=$ADAPTER_CLIENT&client_secret=$adapter_secret" "$KEYCLOAK_OPENID_TOKEN_ENDPOINT"
+resp=$(curl -k -s -o /dev/null -X POST -H "Content-Type: application/x-www-form-urlencoded" -d "grant_type=client_credentials&client_id=$ADAPTER_CLIENT&client_secret=$adapter_secret" "$KEYCLOAK_OPENID_TOKEN_ENDPOINT")
+token=$(echo $resp | awk '{print $1}' | python -mjson.tool | grep "access_token" | awk -F ':[ \t]*' '{print $2}' | sed 's/,//g' | sed 's/"//g')
+echo "Token data="$token
 #if [ $endpoint_ret -ne 200 ]; then
 #	echo "Got $endpoint_ret instead of 200 OK"
 #	return 1
@@ -228,7 +230,7 @@ fi
 sleep 3
 
 printf "\n\n======== POST Admin User (predefined) Registration form to GTKUSR ==\n\n\n"
-resp=$(curl -qSfsw '\n%{http_code}' -H "Content-Type: application/json" \
+resp=$(curl -qSfsw '\n%{http_code}' -H "Content-Type: application/json" -H "Authorization: Bearer $token"\
 -d "$(admin_reg_data)" \
 -X POST http://sp.int3.sonata-nfv.eu:5600/api/v1/register/user)
 echo $resp
