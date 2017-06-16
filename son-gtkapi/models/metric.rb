@@ -144,12 +144,9 @@ class Metric < ManagerService
   def asynch_monitoring_data(params)
     log_message = LOG_MESSAGE + "##{__method__}"
     GtkApi.logger.debug(log_message) {"entered with params=#{params}"}
-    body = {}
-    body[:name]=@name
-    body[:start]=params[:start]
-    body[:end]=params[:end]
-    body[:step]=params[:step]
-    body[:labels]=[{labeltag:'id', labelid: params[:instance_id]}, {labeltag: 'exported_job', labelid: 'vnf'}]
+    vnfc_uuid = params.delete(:vnfc_id)
+    body = params.merge({name: @name})
+    body = body.merge!({labels: [{labeltag:'id', labelid: vnfc_uuid}, {labeltag: 'exported_job', labelid: 'vnf'}]})
     
     begin
       resp = postCurb(url: @@url+'/prometheus/metrics/data', body: body)
@@ -175,12 +172,12 @@ class Metric < ManagerService
   # -H "Content-Type:application/json" 
   # -X POST --data '{"metric":"vm_cpu_perc","filters":["id='123456asdas255sdas'","type='vnf'"]}' 
   # "http://<mon_manager_url>/api/v1/ws/new"
-  def synch_monitoring_data(function_instance_id)
+  def synch_monitoring_data(vnfc_uuid)
     log_message = LOG_MESSAGE + ".#{__method__}"
-    GtkApi.logger.debug(log_message) {"entered with function_instance_id=#{function_instance_id}"}
+    GtkApi.logger.debug(log_message) {"entered with vnfc_uuid=#{vnfc_uuid}"}
     body = {}
     body[:metric]=@name
-    body[:filters]=["id='#{function_instance_id}'", "type='vnf'"]
+    body[:filters]=["id='#{vnfc_uuid}'", "type='vnf'"]
     begin
       resp = postCurb(url: @@url+'/ws/new', body: body)
       GtkApi.logger.debug(log_message) {"resp=#{resp}"}
@@ -189,13 +186,13 @@ class Metric < ManagerService
         GtkApi.logger.debug(log_message) {"request=#{resp[:items]}"}
         self
       else
-        GtkApi.logger.error(log_message) {"Status #{resp[:status]} Synch monitoring data with params #{function_instance_id} was not created"} 
-        raise SynchMonitoringDataRequestNotCreatedError.new "Synch monitoring data with params #{function_instance_id} was not created"
+        GtkApi.logger.error(log_message) {"Status #{resp[:status]} Synch monitoring data with params #{vnfc_uuid} was not created"} 
+        raise SynchMonitoringDataRequestNotCreatedError.new "Synch monitoring data with params #{vnfc_uuid} was not created"
       end
     rescue  => e
       GtkApi.logger.error(log_message) {"Error during processing: #{$!}"}
       GtkApi.logger.error(log_message) {"Backtrace:\n\t#{e.backtrace.join("\n\t")}"}
-      raise SynchMonitoringDataRequestNotCreatedError.new "Synch monitoring data with params #{function_instance_id} was not created"
+      raise SynchMonitoringDataRequestNotCreatedError.new "Synch monitoring data with params #{vnfc_uuid} was not created"
     end
   end
   
