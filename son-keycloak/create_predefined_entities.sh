@@ -232,13 +232,13 @@ sleep 3
 printf "\n\n======== POST Admin User (predefined) Registration form to GTKUSR ==\n\n\n"
 resp=$(curl -qSfsw '\n%{http_code}' -H "Content-Type: application/json" -H "Authorization: Bearer $token" \
 -d "$(admin_reg_data)" \
--X POST http://son-gtkusr:5600/api/v1/register/user)
+-X POST $KEYCLOAK_URL/auth/admin/realms/sonata/users) # http://son-gtkusr:5600/api/v1/register/user)
 echo $resp
-
-username=$(echo $resp | grep "username")
-
 code=$(echo "$resp" | tail -n1)
 echo "Code: $code"
+
+# Add role=admin to user=sonata
+$KCADMIN_SCRIPT add-roles --uusername sonata --rolename admin -r $SONATA_REALM
 
 printf "\n\n======== POST Demo User (predefined) Registration form to GTKUSR ==\n\n\n"
 resp=$(curl -qSfsw '\n%{http_code}' -H "Content-Type: application/json" \
