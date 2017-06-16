@@ -239,6 +239,15 @@ echo "Code: $code"
 
 # Add role=admin to user=sonata
 $KCADMIN_SCRIPT add-roles --uusername sonata --rolename admin -r $SONATA_REALM
+# Get user=sonata data
+resp=$($KCADMIN_SCRIPT get users -r $SONATA_REALM -q username=sonata)
+echo "GET_USERS="$resp
+# Parse user=sonata data to get "id"
+id=$(echo $resp | python -mjson.tool | grep "id" | awk -F ':[ \t]*' '{print $2}' | sed 's/,//g' | sed 's/"//g')
+echo "USER_ID="$id
+
+# Update user=sonata credentials
+$KCADMIN_SCRIPT update users/$id/reset-password -r $SONATA_REALM -s type=password -s value=1234 -s temporary=false -n
 
 printf "\n\n======== POST Demo User (predefined) Registration form to GTKUSR ==\n\n\n"
 resp=$(curl -qSfsw '\n%{http_code}' -H "Content-Type: application/json" \
