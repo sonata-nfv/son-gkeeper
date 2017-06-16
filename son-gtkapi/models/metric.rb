@@ -149,7 +149,7 @@ class Metric < ManagerService
     body = body.merge!({labels: [{labeltag:'id', labelid: vnfc_uuid}, {labeltag: 'exported_job', labelid: 'vnf'}]})
     
     begin
-      resp = postCurb(url: @@url+'/prometheus/metrics/data', body: body)
+      resp = Metric.postCurb(url: @@url+'/prometheus/metrics/data', body: body)
       GtkApi.logger.debug(log_message) {"resp=#{resp}"}
       case resp[:status]
       when 200..202
@@ -179,7 +179,7 @@ class Metric < ManagerService
     body[:metric]=@name
     body[:filters]=["id='#{vnfc_uuid}'", "type='vnf'"]
     begin
-      resp = postCurb(url: @@url+'/ws/new', body: body)
+      resp = Metric.postCurb(url: @@url+'/ws/new', body: body)
       GtkApi.logger.debug(log_message) {"resp=#{resp}"}
       case resp[:status]
       when 200..202
