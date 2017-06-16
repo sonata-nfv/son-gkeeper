@@ -36,9 +36,9 @@ class GtkApi < Sinatra::Base
     # .../metric=cpu_util,disk_usage,packets_sent&...
     
     # GET Asynchronous data request
-    get '/metrics/:instance_uuid/:vdu_id/:vnfc_uuid/asynch-mon-data/?' do
+    get '/metrics/:instance_uuid/:vdu_id/:vc_uuid/asynch-mon-data/?' do
       began_at = Time.now.utc
-      log_message = 'GtkApi::GET /api/v2/functions/instances/:instance_uuid/:vdu_id/:vnfc_uuid/asynch-mon-data/?'
+      log_message = 'GtkApi::GET /api/v2/functions/metrics/:instance_uuid/:vdu_id/:vc_uuid/asynch-mon-data/?'
       logger.debug(log_message) {"entered with params #{params}"}
       
       content_type :json
@@ -50,7 +50,7 @@ class GtkApi < Sinatra::Base
       
       require_param(param: 'instance_uuid', params: params, error_message: 'Function instance uuid', log_message: log_message, began_at: began_at)
       require_param(param: 'vdu_id', params: params, error_message: 'VDU id', log_message: log_message, began_at: began_at)
-      require_param(param: 'vnfc_uuid', params: params, error_message: 'VNFC instance uuid', log_message: log_message, began_at: began_at)
+      require_param(param: 'vc_uuid', params: params, error_message: 'Virtual component uuid', log_message: log_message, began_at: began_at)
       require_param(param: 'metrics', params: params, error_message: 'Metrics list', log_message: log_message, began_at: began_at)
       require_param(param: 'since', params: params, error_message: 'Starting date', log_message: log_message, began_at: began_at)
       require_param(param: 'until', params: params, error_message: 'Ending date', log_message: log_message, began_at: began_at)
@@ -86,7 +86,7 @@ class GtkApi < Sinatra::Base
         begin
           resp = metric.asynch_monitoring_data({
             start: params[:since].to_s, end: params[:until].to_s,
-            step: params[:step], vnfc_id: params[:vnfc_uuid]
+            step: params[:step], vnfc_id: params[:vc_uuid]
           })
           # In the end, :status will be the one of the last metric processed
           status = resp[:status]
@@ -96,12 +96,12 @@ class GtkApi < Sinatra::Base
           next
         end
       end
-      count_synch_monitoring_data_requests(labels: {result: "ok", uuid: params[:instance_uuid], elapsed_time: (Time.now.utc-began_at).to_s})
+      count_synch_monitoring_data_requests(labels: {result: "ok", uuid: params[:vc_uuid], elapsed_time: (Time.now.utc-began_at).to_s})
       return_data = {
         status: status,
         function_instance_uuid: params[:instance_uuid],
         vdu_id: params[:vdu_id],
-        vnfc_uuid: params[:vnfc_uuid],
+        vc_uuid: params[:vc_uuid],
         metrics: metrics_names,
         requested_data: requested_data
       }
@@ -110,9 +110,9 @@ class GtkApi < Sinatra::Base
     end
     
     # GET synchronous data request
-    get '/metrics/:instance_uuid/:vdu_id/:vnfc_uuid/synch-mon-data/?' do
+    get '/metrics/:instance_uuid/:vdu_id/:vc_uuid/synch-mon-data/?' do
       began_at = Time.now.utc
-      log_message = 'GtkApi::GET /api/v2/functions/metrics/:instance_uuid/:vdu_id/:vnfc_uuid/synch-mon-data/?'
+      log_message = 'GtkApi::GET /api/v2/functions/metrics/:instance_uuid/:vdu_id/:vc_uuid/synch-mon-data/?'
       logger.debug(log_message) {"entered with params #{params}"}
       
       content_type :json
@@ -124,7 +124,7 @@ class GtkApi < Sinatra::Base
       
       require_param(param: 'instance_uuid', params: params, error_message: 'Function instance uuid', log_message: log_message, began_at: began_at)
       require_param(param: 'vdu_id', params: params, error_message: 'VDU id', log_message: log_message, began_at: began_at)
-      require_param(param: 'vnfc_uuid', params: params, error_message: 'VNFC instance uuid', log_message: log_message, began_at: began_at)
+      require_param(param: 'vc_uuid', params: params, error_message: 'Virtual component uuid', log_message: log_message, began_at: began_at)
       require_param(param: 'metrics', params: params, error_message: 'Metrics list ', log_message: log_message, began_at: began_at)
 
       token = get_token( request.env, log_message)
@@ -134,7 +134,7 @@ class GtkApi < Sinatra::Base
       end
       
       unless User.authorized?(token: token, params: {path: '/functions/metrics', method: 'GET'})
-        count_service_metadata_queries(labels: {result: "forbidden", uuid: params[:instance_uuid], elapsed_time: (Time.now.utc-began_at).to_s})
+        count_service_metadata_queries(labels: {result: "forbidden", uuid: params[:vc_uuid], elapsed_time: (Time.now.utc-began_at).to_s})
         json_error 403, "Forbidden: user could not be authorized to request asynch monitorin data for function instance #{params[:instance_uuid]}", log_message
       end
        
@@ -162,7 +162,7 @@ class GtkApi < Sinatra::Base
       metrics.each do |metric|
         logger.debug(log_message) { "Metric: #{metric.inspect}"}
         begin
-          resp = metric.synch_monitoring_data(params[:vnfc_uuid])
+          resp = metric.synch_monitoring_data(params[:vc_uuid])
           # {"status": "SUCCESS","metric": [<metric_name1>,<matric_name2>], "ws_url":"ws://<ws_server_ip>:8002/ws/<ws_id>"}
           # In the end, :status and :ws_url will be the ones of the last metric processed
           ws_url = resp[:ws_url]
@@ -172,11 +172,12 @@ class GtkApi < Sinatra::Base
           next
         end
       end
-      count_synch_monitoring_data_requests(labels: {result: "ok", uuid: params[:instance_uuid], elapsed_time: (Time.now.utc-began_at).to_s})
+      count_synch_monitoring_data_requests(labels: {result: "ok", uuid: params[:vc_uuid], elapsed_time: (Time.now.utc-began_at).to_s})
       return_data = {
         status: status,
-        #function_uuid: params[:uuid], 
         function_instance_uuid: params[:instance_uuid],
+        vdu_id: params[:vdu_id],
+        vc_uuid: params[:vc_uuid],
         metrics: metrics_names,
         ws_url: ws_url
       }
