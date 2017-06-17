@@ -154,7 +154,7 @@ class Metric < ManagerService
       case resp[:status]
       when 200..202
         GtkApi.logger.debug(log_message) {"request=#{resp[:items]}"}
-        self
+        resp[:items]
       else
         GtkApi.logger.error(log_message) {"Status #{resp[:status]}"} 
         raise AsynchMonitoringDataRequestNotCreatedError.new "Asynch monitoring data with params #{params} was not created "
@@ -184,7 +184,7 @@ class Metric < ManagerService
       case resp[:status]
       when 200..202
         GtkApi.logger.debug(log_message) {"request=#{resp[:items]}"}
-        self
+        resp[:items]
       else
         GtkApi.logger.error(log_message) {"Status #{resp[:status]} Synch monitoring data with params #{vnfc_uuid} was not created"} 
         raise SynchMonitoringDataRequestNotCreatedError.new "Synch monitoring data with params #{vnfc_uuid} was not created"
