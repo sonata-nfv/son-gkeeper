@@ -59,7 +59,7 @@ class GtkApi < Sinatra::Base
       token = validate_token( request.env, began_at, log_message)
       
       unless User.authorized?(token: token, params: {path: '/functions/metrics', method: 'GET'})
-        count_service_metadata_queries(labels: {result: "forbidden", uuid: params[:instance_uuid], elapsed_time: (Time.now.utc-began_at).to_s})
+        count_asynch_monitoring_data_requests(labels: {result: "forbidden", uuid: params[:instance_uuid], elapsed_time: (Time.now.utc-began_at).to_s})
         json_error 403, "Forbidden: user could not be authorized to request asynch monitorin data for function instance #{params[:instance_uuid]}", log_message
       end
       
@@ -68,7 +68,7 @@ class GtkApi < Sinatra::Base
       logger.debug(log_message) { "params without metrics=#{params}"}
 
       if metrics_names.empty?
-        count_synch_monitoring_data_requests(labels: {result: "not found", uuid: '', elapsed_time: (Time.now.utc-began_at).to_s})
+        count_asynch_monitoring_data_requests(labels: {result: "not found", uuid: '', elapsed_time: (Time.now.utc-began_at).to_s})
         json_error 404, "At least one metric must be requested", log_message
       end
       
@@ -92,7 +92,7 @@ class GtkApi < Sinatra::Base
           next
         end
       end
-      count_synch_monitoring_data_requests(labels: {result: "ok", uuid: params[:vc_uuid], elapsed_time: (Time.now.utc-began_at).to_s})
+      count_asynch_monitoring_data_requests(labels: {result: "ok", uuid: params[:vc_uuid], elapsed_time: (Time.now.utc-began_at).to_s})
       return_data = {
         status: status,
         function_instance_uuid: params[:instance_uuid],
@@ -194,9 +194,14 @@ class GtkApi < Sinatra::Base
     params
   end
   
+  def count_asynch_monitoring_data_requests(labels:)
+    name = __method__.to_s.split('_')[1..-1].join('_')
+    desc = "how many asynchronous monitoring data requests have been made"
+    Metric.counter_kpi({name: name, docstring: desc, base_labels: labels.merge({method: 'GET', module: 'metrics'})})
+  end
   def count_synch_monitoring_data_requests(labels:)
     name = __method__.to_s.split('_')[1..-1].join('_')
-    desc = "how many synch monitoring data requests have been made"
+    desc = "how many synchronous monitoring data requests have been made"
     Metric.counter_kpi({name: name, docstring: desc, base_labels: labels.merge({method: 'GET', module: 'metrics'})})
   end
 end
