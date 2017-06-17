@@ -88,4 +88,27 @@ module GtkApiHelper
     logger.debug(log_message) {"entered with request.env['HTTP_SIGNATURE']=#{env['HTTP_SIGNATURE']}"}
     env['HTTP_SIGNATURE'] ? env['HTTP_SIGNATURE'] : ''
   end
+
+  def require_param(param:, params:, error_message:, log_message:, began_at:)
+    if (!params.key?(param) || params[param].empty?)
+      count_synch_monitoring_data_requests(labels: {result: "bad request", uuid: '', elapsed_time: (Time.now.utc-began_at).to_s})
+      json_error 400, error_message+' is missing', log_message
+    end 
+  end
+
+  def validate_token(env, began_at, message)
+    token = get_token( env, message)
+    if (token.to_s.empty?)
+      count_synch_monitoring_data_requests(labels: {result: "bad request", uuid: '', elapsed_time: (Time.now.utc-began_at).to_s})
+      json_error 400, 'A valid user access token was not provided', log_message
+    end
+    token
+  end
+  
+  def validate_user_authorization(token:, action: '', uuid:, path:, method:, began_at:, log_message: '')
+    unless User.authorized?(token: token, params: {path: path, method: method})
+      count_synch_monitoring_data_requests(labels: {result: "forbidden", uuid: uuid, elapsed_time: (Time.now.utc-began_at).to_s})
+      json_error 403, 'Forbidden: user could not be authorized to '+action, log_message
+    end
+  end
 end
