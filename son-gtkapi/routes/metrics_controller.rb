@@ -56,11 +56,7 @@ class GtkApi < Sinatra::Base
       require_param(param: 'until', params: params, error_message: 'Ending date', log_message: log_message, began_at: began_at)
       require_param(param: 'step', params: params, error_message: 'Step of collection', log_message: log_message, began_at: began_at)
        
-      token = get_token( request.env, log_message)
-      if (token.nil? || token.empty?)
-        count_synch_monitoring_data_requests(labels: {result: "bad request", uuid: '', elapsed_time: (Time.now.utc-began_at).to_s})
-        json_error 400, 'A valid user access token was not provided', log_message
-      end
+      token = validate_token( request.env, began_at, log_message)
       
       unless User.authorized?(token: token, params: {path: '/functions/metrics', method: 'GET'})
         count_service_metadata_queries(labels: {result: "forbidden", uuid: params[:instance_uuid], elapsed_time: (Time.now.utc-began_at).to_s})
@@ -127,14 +123,9 @@ class GtkApi < Sinatra::Base
       require_param(param: 'vc_uuid', params: params, error_message: 'Virtual component uuid', log_message: log_message, began_at: began_at)
       require_param(param: 'metrics', params: params, error_message: 'Metrics list ', log_message: log_message, began_at: began_at)
 
-      token = get_token( request.env, log_message)
-      if (token.nil? || token.empty?)
-        count_synch_monitoring_data_requests(labels: {result: "bad request", uuid: '', elapsed_time: (Time.now.utc-began_at).to_s})
-        json_error 400, 'A valid user access token was not provided', log_message
-      end
-      
+      token = validate_token( request.env, began_at, log_message)
       unless User.authorized?(token: token, params: {path: '/functions/metrics', method: 'GET'})
-        count_service_metadata_queries(labels: {result: "forbidden", uuid: params[:vc_uuid], elapsed_time: (Time.now.utc-began_at).to_s})
+        count_synch_monitoring_data_requests(labels: {result: "forbidden", uuid: params[:vc_uuid], elapsed_time: (Time.now.utc-began_at).to_s})
         json_error 403, "Forbidden: user could not be authorized to request asynch monitorin data for function instance #{params[:instance_uuid]}", log_message
       end
        
@@ -207,12 +198,5 @@ class GtkApi < Sinatra::Base
     name = __method__.to_s.split('_')[1..-1].join('_')
     desc = "how many synch monitoring data requests have been made"
     Metric.counter_kpi({name: name, docstring: desc, base_labels: labels.merge({method: 'GET', module: 'metrics'})})
-  end
-  
-  def require_param(param:, params:, error_message:, log_message:, began_at:)
-    if (!params.key?(param) || params[param].empty?)
-      count_synch_monitoring_data_requests(labels: {result: "bad request", uuid: '', elapsed_time: (Time.now.utc-began_at).to_s})
-      json_error 400, error_message+' is missing', log_message
-    end 
   end
 end
