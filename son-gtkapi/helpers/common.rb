@@ -104,4 +104,11 @@ module GtkApiHelper
     end
     token
   end
+  
+  def validate_user_authorization(token:, action: '', uuid:, path:, method:, began_at:, log_message: '')
+    unless User.authorized?(token: token, params: {path: path, method: method})
+      count_synch_monitoring_data_requests(labels: {result: "forbidden", uuid: uuid, elapsed_time: (Time.now.utc-began_at).to_s})
+      json_error 403, 'Forbidden: user could not be authorized to '+action, log_message
+    end
+  end
 end

@@ -57,11 +57,7 @@ class GtkApi < Sinatra::Base
       require_param(param: 'step', params: params, error_message: 'Step of collection', log_message: log_message, began_at: began_at)
        
       token = validate_token( request.env, began_at, log_message)
-      
-      unless User.authorized?(token: token, params: {path: '/functions/metrics', method: 'GET'})
-        count_asynch_monitoring_data_requests(labels: {result: "forbidden", uuid: params[:instance_uuid], elapsed_time: (Time.now.utc-began_at).to_s})
-        json_error 403, "Forbidden: user could not be authorized to request asynch monitorin data for function instance #{params[:instance_uuid]}", log_message
-      end
+      validate_user_authorization(token: token, action: 'request asynch monitoring data', uuid: params[:vc_uuid], path: '/functions/metrics', method: 'GET', began_at: began_at, log_message: log_message)
       
       # Remove list of wanted fields from the query parameter list
       metrics_names = params.delete('metrics').split(',')
@@ -116,7 +112,7 @@ class GtkApi < Sinatra::Base
       logger.debug(log_message) { 'query_string='+request.env['QUERY_STRING']}
       params.delete('splat')
       params.delete('captures')
-      params.merge(parse_query_string(request.env['QUERY_STRING']))
+      params.merge(parse_query_string(request.env['QUERY_STRING'])) # TODO: check this?!?
       
       require_param(param: 'instance_uuid', params: params, error_message: 'Function instance uuid', log_message: log_message, began_at: began_at)
       require_param(param: 'vdu_id', params: params, error_message: 'VDU id', log_message: log_message, began_at: began_at)
@@ -124,10 +120,7 @@ class GtkApi < Sinatra::Base
       require_param(param: 'metrics', params: params, error_message: 'Metrics list ', log_message: log_message, began_at: began_at)
 
       token = validate_token( request.env, began_at, log_message)
-      unless User.authorized?(token: token, params: {path: '/functions/metrics', method: 'GET'})
-        count_synch_monitoring_data_requests(labels: {result: "forbidden", uuid: params[:vc_uuid], elapsed_time: (Time.now.utc-began_at).to_s})
-        json_error 403, "Forbidden: user could not be authorized to request asynch monitorin data for function instance #{params[:instance_uuid]}", log_message
-      end
+      validate_user_authorization(token: token, action: 'request synch monitoring data', uuid: params[:vc_uuid], path: '/functions/metrics', method: 'GET', began_at: began_at, log_message: log_message)
        
       # do not treat 'for=<length in seconds> now
       unless params['for'].to_s.empty?
