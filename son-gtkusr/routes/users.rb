@@ -114,6 +114,7 @@ class Keycloak < Sinatra::Application
         if code != '200'
           halt code.to_i, {'Content-type' => 'application/json'}, user_data
         end
+        user_data = parse_json(user_data)[0]
 
         unless user_data['attributes']['userType'].include?('admin')
           logger.debug 'Adapter: leaving POST /register/user with userType error'
