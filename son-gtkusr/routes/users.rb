@@ -109,8 +109,8 @@ class Keycloak < Sinatra::Application
           json_error(401, 'Token not active') unless result
         end
 
-        logger.debug "Adapter: Querying user info: #{user_info['sub']}"
-        code, user_data = get_user(user_info['sub'])
+        logger.debug "Adapter: Querying user info: #{parse_json(user_info)[0]['sub']}"
+        code, user_data = get_user(parse_json(user_info)[0]['sub'])
         if code != '200'
           halt code.to_i, {'Content-type' => 'application/json'}, user_data
         end
