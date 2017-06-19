@@ -96,6 +96,7 @@ class Keycloak < Sinatra::Application
         if code != '200'
           halt code.to_i, {'Content-type' => 'application/json'}, user_info
         end
+        logger.debug "Adapter: User info: #{user_info}"
 
         #TODO: Allow custom name service-account-$
         unless user_info['username'] == 'service-account-adapter'
@@ -108,7 +109,7 @@ class Keycloak < Sinatra::Application
           json_error(401, 'Token not active') unless result
         end
 
-        logger.debug "Adapter: Querying user info: #{result.to_s}"
+        logger.debug "Adapter: Querying user info: #{user_info['sub']}"
         code, user_data = get_user(user_info['sub'])
         if code != '200'
           halt code.to_i, {'Content-type' => 'application/json'}, user_data
@@ -749,6 +750,20 @@ class Keycloak < Sinatra::Application
     end
     logger.debug 'Adapter: leaving PUT /attributes/ with no username specified'
     json_error 400, 'No username specified'
+  end
+
+  put '/roles/:username/?' do
+    # Update user account attributes
+    unless params[:username].nil?
+      logger.debug "Adapter: entered PUT /attributes/#{params[:username]}"
+
+      # Return if Authorization is invalid
+      # halt 400 unless request.env["HTTP_AUTHORIZATION"]
+      user_token = request.env["HTTP_AUTHORIZATION"].split(' ').last
+      unless user_token
+        json_error(400, 'Access token is not provided')
+      end
+    end
   end
 
   # TODO: ADD ADMIN USERS OPERATIONS
