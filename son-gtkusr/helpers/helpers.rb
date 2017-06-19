@@ -40,7 +40,7 @@ def parse_json(message)
     parsed_message = JSON.parse(message) # parse json message
   rescue JSON::ParserError => e
     # If JSON not valid, return with errors
-    logger.error "JSON parsing: #{e}"
+    # logger.error "JSON parsing: #{e}"
     return message, e.to_s + "\n"
   end
 

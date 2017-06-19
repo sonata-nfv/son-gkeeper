@@ -79,6 +79,50 @@ class Keycloak < Sinatra::Application
       halt json_error(400, 'Bad registration form')
     end
 
+    if form['attributes']['userType'].is_a?(Array)
+      if form['attributes']['userType'].include?('admin')
+        # Return if Authorization is invalid
+        logger.debug 'Adapter: leaving POST /register/user '
+        halt 400 unless request.env["HTTP_AUTHORIZATION"]
+        user_token = request.env["HTTP_AUTHORIZATION"].split(' ').last
+        unless user_token
+          logger.debug 'Adapter: Failed due to access token required'
+          json_error(400, 'Access token is not provided')
+        end
+
+        # Validates the token
+        logger.debug "Evaluating token=#{user_token}"
+        code, user_info = userinfo(user_token)
+        if code != '200'
+          halt code.to_i, {'Content-type' => 'application/json'}, user_info
+        end
+        logger.debug "Adapter: User info: #{user_info}"
+
+        #TODO: Allow custom name service-account-$
+        unless user_info['username'] == 'service-account-adapter'
+          res, code = token_validation(user_token)
+          logger.debug "Adapter: Token validation is #{res.to_s}"
+          json_error(400, res.to_s) unless code == '200'
+
+          result = is_active?(res)
+          logger.debug "Adapter: Token status is #{result.to_s}"
+          json_error(401, 'Token not active') unless result
+        end
+
+        logger.debug "Adapter: Querying user info: #{parse_json(user_info)[0]['sub']}"
+        code, user_data = get_user(parse_json(user_info)[0]['sub'])
+        if code != '200'
+          halt code.to_i, {'Content-type' => 'application/json'}, user_data
+        end
+        user_data = parse_json(user_data)[0]
+
+        unless user_data['attributes']['userType'].include?('admin')
+          logger.debug 'Adapter: leaving POST /register/user with userType error'
+          json_error(400, 'Registration failed! Only admin users can register a new admin')
+        end
+      end
+    end
+
     logger.info "Registering new user"
     user_id, error_code, error_msg = register_user(form)
 
@@ -707,6 +751,20 @@ class Keycloak < Sinatra::Application
     end
     logger.debug 'Adapter: leaving PUT /attributes/ with no username specified'
     json_error 400, 'No username specified'
+  end
+
+  put '/roles/:username/?' do
+    # Update user account attributes
+    unless params[:username].nil?
+      logger.debug "Adapter: entered PUT /attributes/#{params[:username]}"
+
+      # Return if Authorization is invalid
+      # halt 400 unless request.env["HTTP_AUTHORIZATION"]
+      user_token = request.env["HTTP_AUTHORIZATION"].split(' ').last
+      unless user_token
+        json_error(400, 'Access token is not provided')
+      end
+    end
   end
 
   # TODO: ADD ADMIN USERS OPERATIONS

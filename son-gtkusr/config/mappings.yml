@@ -38,13 +38,19 @@ paths:
         vims:
                  GET: read
 
-    gatekeeper:
-        resource:
+    monitoring:
+        services:
                  GET: read
                  POST: write
                  PUT: write
                  DEL: write
-    monitoring:
+        functions:
+                 GET: read
+                 POST: write
+                 PUT: write
+                 DEL: write
+
+    gatekeeper:
         resource:
                  GET: read
                  POST: write
