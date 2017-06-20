@@ -138,7 +138,6 @@ module Gtk
             redis.call("setex", timestamp_key, ttl, now)
           end
 
-          -- return { allowed, bucket_capacity - tokens_in_bucket } 
           -- We use  math.max (x,y) because bucket capacity may be redefined.
           return { tostring(allowed), math.max(0, bucket_capacity  - tokens_in_bucket) }
       eos
