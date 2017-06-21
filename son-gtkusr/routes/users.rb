@@ -374,7 +374,8 @@ class Keycloak < Sinatra::Application
         new_reg_users << merged_user_data
       rescue Mongoid::Errors::DocumentNotFound => e
         logger.debug 'Adapter: Error caused by DocumentNotFound in user database'
-        new_reg_users = reg_users
+        # new_reg_users = reg_users
+        new_reg_users << user_data
       end
     end
 
@@ -796,17 +797,36 @@ class Keycloak < Sinatra::Application
         end
 
         # Update attributes
-        code, @msg = update_user(params[:username], nil, user_data)
+        code, msg = update_user(params[:username], nil, user_data)
         logger.debug "Update_attributes code #{code}"
-        logger.debug "Update_attributes response #{@msg}"
-        # json_error(400, 'Bad query')
+        logger.debug "Update_attributes user_id=#{msg}"
+        json_error(code, msg) unless code.nil?
 
         # Update roles
+        form['userType'] = [form['userType']] unless form['userType'].is_a?(Array)
+        form['userType'].each { |role|
+          # puts "SETTING_USER_ROLE", attr
+          logger.debug "Adding new user to groups"
+          res_code, res_msg = set_user_groups(role, user_id)
+          if res_code != 204
 
-        # Update groups
+            delete_user(form['username'])
 
+            halt res_code.to_i, {'Content-type' => 'application/json'}, res_msg
+          end
+          # Update groups
+          logger.debug "Adding new user roles"
+          res_code, res_msg = set_user_roles(role, user_id)
+          if res_code != 204
+
+            delete_user(form['username'])
+
+            halt res_code.to_i, {'Content-type' => 'application/json'}, res_msg
+          end
+        }
       end
-
+      logger.debug 'Adapter: leaving PUT /attributes/ with invalid username'
+      json_error 400, 'Provided username do not match token owner'
     end
     logger.debug 'Adapter: leaving PUT /attributes/ with no username specified'
     json_error 400, 'No username specified'

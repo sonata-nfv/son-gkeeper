@@ -32,5 +32,92 @@ require_relative '../helpers/init'
 
 # Adapter-Keycloak API class
 class Keycloak < Sinatra::Application
+  get '/groups' do
+    #TODO: QUERIES NOT SUPPORTED -> Check alternatives!!
+    # This endpoint allows queries for the next fields:
+    # search, lastName, firstName, email, username, first, max
+    logger.debug 'Adapter: entered GET /groups'
+    # Return if Authorization is invalid
+    # json_error(400, 'Authorization header not set') unless request.env["HTTP_AUTHORIZATION"]
+    queriables = %w(id name)
+    keyed_params = keyed_hash(params)
+    keyed_params.each { |k, v|
+      unless queriables.include? k
+        json_error(400, 'Bad query')
+      end
+    }
+    code, realm_groups = get_groups(keyed_params)
+
+    params['offset'] ||= DEFAULT_OFFSET
+    params['limit'] ||= DEFAULT_LIMIT
+    realm_groups = apply_limit_and_offset(JSON.parse(realm_groups), offset=params[:offset], limit=params[:limit])
+    halt code.to_i, {'Content-type' => 'application/json'}, realm_groups.to_json
+  end
+
+  post '/groups' do
+    # POST /admin/realms/{realm}/groups
+    # BodyParameter GroupRepresentation
+    logger.debug 'Adapter: entered POST /groups'
+    logger.info "Content-Type is " + request.media_type
+    halt 415 unless (request.content_type == 'application/json')
+
+    form, errors = parse_json(request.body.read)
+    halt 400, {'Content-type' => 'application/json'}, errors.to_json if errors
+    halt 400 unless form.is_a?(Hash)
+    json_error 400, 'Usertype not provided' unless form.key?('userType')
+
+
+  end
+
+  put '/groups' do
+    logger.debug 'Adapter: entered PUT /groups'
+    # PUT /admin/realms/{realm}/groups/{id}
+    # BodyParameter GroupRepresentation
+  end
+
+  delete '/groups' do
+    logger.debug 'Adapter: entered DELETE /groups'
+    # DELETE /admin/realms/{realm}/groups/{id}
+  end
+
+  post '/groups/assign' do
+    # Assign user to a group
+    logger.debug 'Adapter: entered POST /groups/assign'
+    logger.info "Content-Type is " + request.media_type
+    halt 415 unless (request.content_type == 'application/json')
+
+    form, errors = parse_json(request.body.read)
+    halt 400, {'Content-type' => 'application/json'}, errors.to_json if errors
+    halt 400 unless form.is_a?(Hash)
+    json_error 400, 'Username not provided' unless form.key?('username')
+    json_error 400, 'Group name not provided' unless form.key?('group')
+
+    #Translate from username to User_id
+    user_id = get_user_id(form['username'])
+    json_error 404, 'Username not found' if user_id.nil?
+
+    code , msg = assign_group(form['group'], user_id)
+    halt code, {'Content-type' => 'application/json'}, msg
+  end
+
+  post '/groups/unassign' do
+    # Unassign user to a group
+    logger.debug 'Adapter: entered POST /groups/unassign'
+    logger.info "Content-Type is " + request.media_type
+    halt 415 unless (request.content_type == 'application/json')
+
+    form, errors = parse_json(request.body.read)
+    halt 400, {'Content-type' => 'application/json'}, errors.to_json if errors
+    halt 400 unless form.is_a?(Hash)
+    json_error 400, 'Username not provided' unless form.key?('username')
+    json_error 400, 'Group name not provided' unless form.key?('group')
+
+    #Translate from username to User_id
+    user_id = get_user_id(form['username'])
+    json_error 404, 'Username not found' if user_id.nil?
+
+    code , msg = unassign_group(form['group'], user_id)
+    halt code, {'Content-type' => 'application/json'}, msg
+  end
 
 end
