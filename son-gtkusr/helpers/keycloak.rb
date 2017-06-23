@@ -1395,7 +1395,8 @@ class Keycloak < Sinatra::Application
   def assign_group(group_name, user_id)
     refresh_adapter
     # Search group
-    group_data, errors = parse_json(get_groups({'name' => group_name}))
+    group_data, errors = parse_json(get_groups) # ({'name' => group_name})
+    group_data = parse_json(group_data)[0].find {|group| group['name'] == group_name}
     unless group_data
       return 401, ({'Error' => 'Group not found'}).to_json
     end
