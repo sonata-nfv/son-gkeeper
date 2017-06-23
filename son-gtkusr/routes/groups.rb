@@ -54,7 +54,7 @@ class Keycloak < Sinatra::Application
     halt code.to_i, {'Content-type' => 'application/json'}, realm_groups.to_json
   end
 
-  post '/groups' do
+  post '/groups/new/?' do
     # POST /admin/realms/{realm}/groups
     # BodyParameter GroupRepresentation
     logger.debug 'Adapter: entered POST /groups'
@@ -80,7 +80,7 @@ class Keycloak < Sinatra::Application
     # DELETE /admin/realms/{realm}/groups/{id}
   end
 
-  post '/groups/assign' do
+  post '/groups/assign/?' do
     # Assign user to a group
     logger.debug 'Adapter: entered POST /groups/assign'
     logger.info "Content-Type is " + request.media_type
@@ -100,7 +100,7 @@ class Keycloak < Sinatra::Application
     halt code, {'Content-type' => 'application/json'}, msg
   end
 
-  post '/groups/unassign' do
+  post '/groups/unassign/?' do
     # Unassign user to a group
     logger.debug 'Adapter: entered POST /groups/unassign'
     logger.info "Content-Type is " + request.media_type

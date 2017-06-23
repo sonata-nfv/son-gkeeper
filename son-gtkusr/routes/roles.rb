@@ -55,7 +55,7 @@ class Keycloak < Sinatra::Application
     halt code.to_i, {'Content-type' => 'application/json'}, realm_roles.to_json
   end
 
-  post '/roles/?' do
+  post '/roles/new/?' do
     # POST /admin/realms/{realm}/roles
     # BodyParameter
     logger.debug 'Adapter: entered POST /roles'
