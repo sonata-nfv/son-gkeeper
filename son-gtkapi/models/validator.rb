@@ -53,7 +53,7 @@ class Validator < ManagerService
     # prepare post data
     fields_hash = {source:'embedded', syntax: true, integrity: true, topology: true, signature: signature}
     post_data = fields_hash.map { |k, v| Curl::PostField.content(k, v.to_s) }
-    post_data << Curl::PostField.file('file', file_name), 
+    post_data << Curl::PostField.file('file', file_name)
 
     begin
       # post
