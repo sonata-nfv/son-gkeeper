@@ -7,7 +7,7 @@ WORKDIR /app
 COPY Gemfile /app
 RUN bundle install
 COPY . /app
-EXPOSE 5000
+EXPOSE 5150
 WORKDIR /app
 ENV PORT 5000
 ENV REDIS_URL redis://127.0.0.1:6379
