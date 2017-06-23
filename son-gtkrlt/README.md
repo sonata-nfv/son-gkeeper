@@ -7,7 +7,7 @@ This is the folder of the Rate Limiter micro-service.
 The rate limiter is based on the [leaky bucket
 algorithm](https://en.wikipedia.org/wiki/Leaky_bucket). Each client/limit has
 an empty bucket assigned with a given capacity (according to a limit
-definition). Each request goes to the bucket, that is leaking requests at a
+definition). Each request goes into the bucket, that is leaking requests at a
 given rate (again according to a limit definition). A client is allowed to
 perform the request if there are remaining capacity in the bucket.
 
@@ -136,9 +136,34 @@ This operation can return the following HTTP status codes:
 
 
 
-# Running
-TODO...
+# Quick start
+NOTE: In order to try this example you must have access to a redis instance. Set the
+  `REDIS_URL` if necessary (defaults to "redis://127.0.0.1:6379") and `REDIS_PASSWORD` (not required)
+  with the appropriate values.
 
+Here's a quick start how to use the rate limiter. First start by creating a limit 
+definition. In our example we're creating a limit that will allow one request 
+each five seconds. 
+
+```sh
+curl -XPUT http://localhost:5000/limits/meaningfull_limit_id -d '{
+  "period": 5,
+  "limit": 1,
+  "description": "Can check account balance 10 times / hour"
+}'
+```
+Now that we have out limit definition, we can start sending requests. If you 
+send a second request without waiting a few seconds, it will not be allowed.
+```sh
+curl -XPOST http://localhost:5000/check -d '{"limit_id": "meaningfull_limit_id", "client_id": "client1"}'
+{"allowed":true,"remaining":0}
+
+curl -XPOST http://localhost:5000/check -d '{"limit_id": "meaningfull_limit_id", "client_id": "client1"}'
+{"allowed":false,"remaining":0}
+```
+
+Wait a few seconds and try again...
+ 
 ## License
 The license of the SONATA Gatekeeper is Apache 2.0 (please see the
 [license](https://github.com/sonata-nfv/son-editorgkeeper/blob/master/LICENSE)
