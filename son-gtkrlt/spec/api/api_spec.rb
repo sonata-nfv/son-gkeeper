@@ -108,7 +108,7 @@ RSpec.describe Gtk::RateLimiter do
       expect(store).to receive(:delete_limit).exactly(1).times.with("some_limit").and_return(nil)
       delete '/limits/some_limit'
 
-      expect(last_response).to be_no_content
+      expect(last_response.status).to eq 204 #be_no_content
     end
   end
 

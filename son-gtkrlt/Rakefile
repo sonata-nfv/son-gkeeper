@@ -25,6 +25,7 @@
 ## partner consortium (www.sonata-nfv.eu).
 require 'rspec/core/rake_task'
 require 'ci/reporter/rake/rspec'
+require_relative './lib/gtk/rate_limiter'
 
 task default: ['ci:all']
 
