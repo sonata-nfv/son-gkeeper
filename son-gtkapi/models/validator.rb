@@ -44,26 +44,25 @@ class Validator < ManagerService
     GtkApi.logger.debug(log_message) {'entered with url='+url}
   end
   
-  def self.valid_package?(file_content:, signature: '')
+  def self.valid_package?(file_name:, signature: '')
     log_message = LOG_MESSAGE + '#'+__method__.to_s
     # /validate/package
     # POST {'source':'embedded', 'file':'...', 'syntax': True, 'integrity': True, 'topology':True}
     GtkApi.logger.debug(log_message) {"entered with file content #{file_content}"}
     
-    begin
-      curl = Curl::Easy.new(@@url+'/validate/package')
-      curl.headers["Content-Type"] = "multipart/form-data"
-      #curl.multipart_form_post = true
+    # prepare post data
+    fields_hash = {source:'embedded', syntax: true, integrity: true, topology: true, signature: signature}
+    post_data = fields_hash.map { |k, v| Curl::PostField.content(k, v.to_s) }
+    post_data << Curl::PostField.file('file', file_name), 
 
-      curl.http_post( Curl::PostField.content('source', 'embedded'), Curl::PostField.file('file', file_content),
-        Curl::PostField.content('syntax', 'true'), Curl::PostField.content('integrity', 'true'), Curl::PostField.content('topology', 'true'),
-        Curl::PostField.content('signature', signature)
-      )                              
+    begin
+      # post
+      curl = Curl::Easy.new(@@url+'/validate/package')
+      curl.multipart_form_post = true
+      #curl.headers["Content-Type"] = "multipart/form-data"
+      curl.http_post(post_data)
       GtkApi.logger.debug(log_message) {"curl.body_str=#{curl.body_str}"}
-      #body = {source:'embedded', file: file, syntax: 'true', integrity: 'true', topology: 'true'}
-      #headers = {'Content-Type'=>'multipart/form-data'} #{'Content-Type'=>'text/html'}
-      #resp = postCurb(url: @@url+'/validate/package', body: body, headers: headers)
-      resp = {status: ManagerService.status_from_response_headers(curl.header_str), items: [JSON.parse(curl.body_str)]}
+      resp = {status: curl.response_code, items: [JSON.parse(curl.body_str)]} # ManagerService.status_from_response_headers(curl.header_str)
       case resp[:status]
       when 200
         GtkApi.logger.debug(log_message) {"Validator result=#{resp[:items]}"}
