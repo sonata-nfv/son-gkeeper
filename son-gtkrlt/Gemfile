@@ -1,10 +1,21 @@
 source 'https://rubygems.org'
 
+gem 'rake', '11.2.2'
 gem 'sinatra', '1.4.7', require: 'sinatra/base'
 gem 'sinatra-logger', '0.1.1'
 gem 'foreman', '0.82.0'
 gem 'redis', '~>3.2'
+gem 'ci_reporter_rspec', '1.0.0'
+gem 'rubocop', '0.42.0'
+gem 'rubocop-checkstyle_formatter', '0.3.0', require: false
 
 group :test do
   gem 'rspec', '3.5.0'
 end
+
+
+gem 'sinatra-contrib', '1.4.7', require: false
+gem 'puma', '3.6.2'
+gem 'rest-client', '2.0.0'
+gem 'rack-parser', '0.7.0', require: 'rack/parser'
+gem 'sinatra-cross_origin', '0.3.2'
