@@ -33,7 +33,7 @@ require_relative '../helpers/init'
 # Adapter-Keycloak API class
 class Keycloak < Sinatra::Application
   # Get a role by query
-  get '/roles' do
+  get '/roles/?' do
     #TODO: QUERIES NOT SUPPORTED -> Check alternatives!!
     # This endpoint allows queries for the next fields:
     # search, lastName, firstName, email, username, first, max
@@ -55,7 +55,7 @@ class Keycloak < Sinatra::Application
     halt code.to_i, {'Content-type' => 'application/json'}, realm_roles.to_json
   end
 
-  post '/roles' do
+  post '/roles/?' do
     # POST /admin/realms/{realm}/roles
     # BodyParameter
     logger.debug 'Adapter: entered POST /roles'
@@ -69,19 +69,19 @@ class Keycloak < Sinatra::Application
   end
 
   # Update a role by name
-  put '/roles' do
+  put '/roles/?' do
     # PUT /admin/realms/{realm}/roles/{id}
     # BodyParameter
 
   end
   # Delete a role by name
-  delete '/roles' do
+  delete '/roles/?' do
     logger.debug 'Adapter: entered DELETE /roles'
     # DELETE /admin/realms/{realm}/roles/{id}
 
   end
 
-  post '/roles/assign' do
+  post '/roles/assign/?' do
     # Assign user to a role
     logger.debug 'Adapter: entered POST /roles/assign'
     logger.info "Content-Type is " + request.media_type
@@ -101,7 +101,7 @@ class Keycloak < Sinatra::Application
     halt code, {'Content-type' => 'application/json'}, msg
   end
 
-  post '/roles/unassign' do
+  post '/roles/unassign/?' do
     # Unassign user to a role
     logger.debug 'Adapter: entered POST /roles/unassign'
     logger.info "Content-Type is " + request.media_type
