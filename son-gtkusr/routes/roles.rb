@@ -33,7 +33,7 @@ require_relative '../helpers/init'
 # Adapter-Keycloak API class
 class Keycloak < Sinatra::Application
   # Get a role by query
-  get '/roles/?' do
+  get '/roles' do
     #TODO: QUERIES NOT SUPPORTED -> Check alternatives!!
     # This endpoint allows queries for the next fields:
     # search, lastName, firstName, email, username, first, max
@@ -69,16 +69,15 @@ class Keycloak < Sinatra::Application
   end
 
   # Update a role by name
-  put '/roles/?' do
+  put '/roles' do
     # PUT /admin/realms/{realm}/roles/{id}
     # BodyParameter
 
   end
   # Delete a role by name
-  delete '/roles/?' do
+  delete '/roles' do
     logger.debug 'Adapter: entered DELETE /roles'
     # DELETE /admin/realms/{realm}/roles/{id}
-
   end
 
   post '/roles/assign/?' do

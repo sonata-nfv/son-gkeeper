@@ -32,6 +32,7 @@ require_relative '../helpers/init'
 
 # Adapter-Keycloak API class
 class Keycloak < Sinatra::Application
+  # Get a group by query
   get '/groups' do
     #TODO: QUERIES NOT SUPPORTED -> Check alternatives!!
     # This endpoint allows queries for the next fields:
@@ -65,8 +66,6 @@ class Keycloak < Sinatra::Application
     halt 400, {'Content-type' => 'application/json'}, errors.to_json if errors
     halt 400 unless form.is_a?(Hash)
     json_error 400, 'Usertype not provided' unless form.key?('userType')
-
-
   end
 
   put '/groups' do
