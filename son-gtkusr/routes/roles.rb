@@ -96,7 +96,7 @@ class Keycloak < Sinatra::Application
     user_id = get_user_id(form['username'])
     json_error 404, 'Username not found' if user_id.nil?
 
-    code , msg = assign_group(form['role'], user_id)
+    code , msg = assign_role(form['role'], user_id)
     halt code, {'Content-type' => 'application/json'}, msg
   end
 
@@ -116,7 +116,7 @@ class Keycloak < Sinatra::Application
     user_id = get_user_id(form['username'])
     json_error 404, 'Username not found' if user_id.nil?
 
-    code , msg = unassign_group(form['role'], user_id)
+    code , msg = unassign_role(form['role'], user_id)
     halt code, {'Content-type' => 'application/json'}, msg
   end
 end
