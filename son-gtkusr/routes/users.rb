@@ -374,7 +374,8 @@ class Keycloak < Sinatra::Application
         new_reg_users << merged_user_data
       rescue Mongoid::Errors::DocumentNotFound => e
         logger.debug 'Adapter: Error caused by DocumentNotFound in user database'
-        new_reg_users = reg_users
+        # new_reg_users = reg_users
+        new_reg_users << user_data
       end
     end
 
@@ -688,19 +689,14 @@ class Keycloak < Sinatra::Application
 
       # Validate token
       res, code = token_validation(user_token)
+      logger.debug "Adapter: Token validation is #{res.to_s}"
+      json_error(400, res.to_s) unless code == '200'
       token_contents = JSON.parse(res)
 
-      if code == '200'
-        result = is_active?(res)
-        case result
-          when false
-            json_error(401, 'Token not active')
-          else
-            # continue
-        end
-      else
-        json_error(400, res.to_s)
-      end
+      result = is_active?(res)
+      logger.debug "Adapter: Token status is #{result.to_s}"
+      json_error(401, 'Token not active') unless result
+
       logger.debug "Adapter: Token contents #{token_contents}"
       logger.debug "Adapter: Username #{params[:username]}"
       # if token_contents['sub'] == :username
@@ -720,10 +716,6 @@ class Keycloak < Sinatra::Application
         halt 400 unless form.is_a?(Hash)
         unless form.key?('public_key')
           json_error 400, 'Developer public key not provided'
-        end
-
-        unless form.key? ('certificate')
-          form['certs'] = nil
         end
 
         # Get user attributes
@@ -753,10 +745,97 @@ class Keycloak < Sinatra::Application
     json_error 400, 'No username specified'
   end
 
-  put '/roles/:username/?' do
-    # Update user account attributes
+  put '/usertypes/:username/?' do
+    # Update user account usertypes and roles
     unless params[:username].nil?
-      logger.debug "Adapter: entered PUT /attributes/#{params[:username]}"
+      logger.debug "Adapter: entered PUT /usertypes/#{params[:username]}"
+
+      # Return if Authorization is invalid
+      user_token = request.env["HTTP_AUTHORIZATION"].split(' ').last
+      unless user_token
+        json_error(400, 'Access token is not provided')
+      end
+
+      # Validate token
+      res, code = token_validation(user_token)
+      logger.debug "Adapter: Token validation is #{res.to_s}"
+      json_error(400, res.to_s) unless code == '200'
+      token_contents = JSON.parse(res)
+
+      result = is_active?(res)
+      logger.debug "Adapter: Token status is #{result.to_s}"
+      json_error(401, 'Token not active') unless result
+
+      logger.debug "Adapter: Token contents #{token_contents}"
+      logger.debug "Adapter: Username #{params[:username]}"
+
+      if token_contents['username'].to_s == params[:username].to_s
+        logger.debug "Adapter: #{params[:username]} matches Access Token"
+        #Translate from username to User_id
+        user_id = get_user_id(params[:username])
+        json_error 404, 'Username not found' if user_id.nil?
+
+        logger.info "Content-Type is " + request.media_type
+        halt 415 unless (request.content_type == 'application/json')
+
+        form, errors = parse_json(request.body.read)
+        halt 400, {'Content-type' => 'application/json'}, errors.to_json if errors
+        halt 400 unless form.is_a?(Hash)
+        json_error 400, 'Usertype not provided' unless form.key?('userType')
+
+        # Get user attributes
+        user_data = get_users({'id' => user_id})
+        user_data = JSON.parse(user_data)[0]
+        logger.debug "parsed_user_data #{user_data}"
+
+        if form['userType'].is_a?(Array)
+          form['userType'].each { |k|
+            user_data['attributes']['userType'] << k
+          }
+        else
+          user_data['attributes']['userType'] << form['userType']
+        end
+
+        # Update attributes
+        code, msg = update_user(params[:username], nil, user_data)
+        logger.debug "Update_attributes code #{code}"
+        logger.debug "Update_attributes user_id=#{msg}"
+        json_error(code, msg) unless code.nil?
+
+        # Update roles
+        form['userType'] = [form['userType']] unless form['userType'].is_a?(Array)
+        form['userType'].each { |role|
+          # puts "SETTING_USER_ROLE", attr
+          logger.debug "Adding new user to groups"
+          res_code, res_msg = set_user_groups(role, user_id)
+          if res_code != 204
+
+            delete_user(form['username'])
+
+            halt res_code.to_i, {'Content-type' => 'application/json'}, res_msg
+          end
+          # Update groups
+          logger.debug "Adding new user roles"
+          res_code, res_msg = set_user_roles(role, user_id)
+          if res_code != 204
+
+            delete_user(form['username'])
+
+            halt res_code.to_i, {'Content-type' => 'application/json'}, res_msg
+          end
+        }
+      end
+      logger.debug 'Adapter: leaving PUT /attributes/ with invalid username'
+      json_error 400, 'Provided username do not match token owner'
+    end
+    logger.debug 'Adapter: leaving PUT /attributes/ with no username specified'
+    json_error 400, 'No username specified'
+  end
+
+  delete '/usertypes/:username/?' do
+    # Delete user account usertypes and roles
+    unless params[:username].nil?
+      logger.debug "Adapter: entered DELETE /usertypes/#{params[:username]}"
 
       # Return if Authorization is invalid
       # halt 400 unless request.env["HTTP_AUTHORIZATION"]
@@ -768,5 +847,8 @@ class Keycloak < Sinatra::Application
   end
 
   # TODO: ADD ADMIN USERS OPERATIONS
-  # ADMIN OPS http://sp.int3.sonata-nfv.eu:5601/auth/admin/sonata/console/
+  get '/console' do
+    # ADMIN OPS http://sp.int3.sonata-nfv.eu:5601/auth/admin/sonata/console/
+    redirect "http://#{@@address.to_s}:#{@@port.to_s}/#{@@uri.to_s}/auth/admin/#{@@realm_name}/console/"
+  end
 end
