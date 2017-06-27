@@ -124,7 +124,8 @@ class PackageManagerService < ManagerService
     begin
       response = RestClient.get(@@url+'/packages', headers)
       GtkApi.logger.debug(method) {"response #{response}"}
-      JSON.parse response, symbolize_names: true
+      package=JSON.parse(response, symbolize_names: true)
+      
     rescue => e
       GtkApi.logger.error(method) {"Error during processing: #{$!}"}
       GtkApi.logger.error(method) {"Backtrace:\n\t#{e.backtrace.join("\n\t")}"}
@@ -211,6 +212,9 @@ class PackageManagerService < ManagerService
       GtkApi.logger.error(method) {"Backtrace:\n\t#{e.backtrace.join("\n\t")}"}
       nil
     end
+  end
+  
+  def is_licensed?(user_id)
   end
   
 end

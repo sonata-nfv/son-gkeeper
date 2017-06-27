@@ -72,15 +72,23 @@ module GtkApiHelper
     links.join(",")
   end
   
-  def get_token( env, log_message)
-    json_error(401, 'Unauthorized: missing authorization header', log_message) if (env['HTTP_AUTHORIZATION'].to_s.empty?)
+  def get_token( env, began_at, method, log_message)
+    count_package_on_boardings()
+    
+    if (env['HTTP_AUTHORIZATION'].to_s.empty?)
+      method.call(labels: {result: "Unauthorized", uuid: '', elapsed_time: (Time.now.utc-began_at).to_s}) if method
+      json_error(401, 'Unauthorized: missing authorization header', log_message) 
+    end
     logger.debug(log_message) {"entered with request.env['HTTP_AUTHORIZATION']="+env['HTTP_AUTHORIZATION']}
 
     authorization=env['HTTP_AUTHORIZATION']
     logger.debug(log_message) {'authorization='+authorization}
 
     bearer_token = authorization.split(' ')
-    json_error(400, 'Unprocessable entity: authorization header must be "Bearer <token>"', log_message) unless (bearer_token.size == 2 && bearer_token[0].downcase == 'bearer')
+    unless (bearer_token.size == 2 && bearer_token[0].downcase == 'bearer')
+      method.call(labels: {result: "bad request", uuid: '', elapsed_time: (Time.now.utc-began_at).to_s}) if method
+      json_error(400, 'Unprocessable entity: authorization header must be "Bearer <token>"', log_message)
+    end
     bearer_token[1]
   end
   
@@ -96,15 +104,6 @@ module GtkApiHelper
     end 
   end
 
-  def validate_token(env, began_at, message)
-    token = get_token( env, message)
-    if (token.to_s.empty?)
-      count_synch_monitoring_data_requests(labels: {result: "bad request", uuid: '', elapsed_time: (Time.now.utc-began_at).to_s})
-      json_error 400, 'A valid user access token was not provided', log_message
-    end
-    token
-  end
-  
   def validate_user_authorization(token:, action: '', uuid:, path:, method:, began_at:, log_message: '')
     unless User.authorized?(token: token, params: {path: path, method: method})
       count_synch_monitoring_data_requests(labels: {result: "forbidden", uuid: uuid, elapsed_time: (Time.now.utc-began_at).to_s})
