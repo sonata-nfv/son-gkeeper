@@ -48,7 +48,7 @@ class Validator < ManagerService
     log_message = LOG_MESSAGE + '#'+__method__.to_s
     # /validate/package
     # POST {'source':'embedded', 'file':'...', 'syntax': True, 'integrity': True, 'topology':True}
-    GtkApi.logger.debug(log_message) {"entered with file content #{file_content}"}
+    GtkApi.logger.debug(log_message) {"entered with file name #{file_name}"}
     
     # prepare post data
     fields_hash = {source:'embedded', syntax: true, integrity: true, topology: true, signature: signature}
