@@ -161,6 +161,7 @@ class GtkApi < Sinatra::Base
 
     # GET potentially many packages
     get '/?' do
+      began_at = Time.now.utc
       log_message = 'GtkApi::GET /api/v2/packages/?'
       logger.debug(log_message) {'entered with '+query_string}
     
