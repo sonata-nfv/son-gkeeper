@@ -48,14 +48,21 @@ class GtkApi < Sinatra::Base
       params.delete('captures')
       params.merge(parse_query_string(request.env['QUERY_STRING']))
       
-      require_param(param: 'instance_uuid', params: params, error_message: 'Function instance uuid', log_message: log_message, began_at: began_at)
-      require_param(param: 'vdu_id', params: params, error_message: 'VDU id', log_message: log_message, began_at: began_at)
-      require_param(param: 'vc_uuid', params: params, error_message: 'Virtual component uuid', log_message: log_message, began_at: began_at)
-      require_param(param: 'metrics', params: params, error_message: 'Metrics list', log_message: log_message, began_at: began_at)
-      require_param(param: 'since', params: params, error_message: 'Starting date', log_message: log_message, began_at: began_at)
-      require_param(param: 'until', params: params, error_message: 'Ending date', log_message: log_message, began_at: began_at)
-      require_param(param: 'step', params: params, error_message: 'Step of collection', log_message: log_message, began_at: began_at)
-       
+      EXPECTED_PARAMS = [
+        { name: 'instance_uuid', message: 'Function instance uuid'},
+        { name: 'vdu_id', message: 'VDU id'},
+        { name: 'vc_uuid', message: 'Virtual component uuid'},
+        { name: 'metrics', message: 'Metrics list'},
+        { name: 'since', message: 'Starting date'},
+        { name: 'until', message: 'Ending date'},
+        { name: 'step', message: 'Step of collection'}
+      ]
+      
+      EXPECTED_PARAMS.each do |param|
+        require_param(param: param[:name], params: params, kpi_method: method(:count_synch_monitoring_data_requests),
+          error_message: param[:message], log_message: log_message, began_at: began_at)
+      end
+      
       token = get_token( request.env, began_at, method(:count_asynch_monitoring_data_requests), log_message)
       validate_user_authorization(token: token, action: 'request asynch monitoring data', uuid: params[:vc_uuid], path: '/functions/metrics', method: 'GET', began_at: began_at, log_message: log_message)
       
