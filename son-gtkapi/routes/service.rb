@@ -51,11 +51,7 @@ class GtkApi < Sinatra::Base
       logger.debug(log_message) {"offset=#{@offset}, limit=#{@limit}"}
       logger.debug(log_message) {"params=#{params}"}
       
-      token = get_token( request.env, log_message)
-      if (token.to_s.empty?)
-        count_services_metadata_queries(labels: {result: "bad request", uuid: '', elapsed_time: (Time.now.utc-began_at).to_s})
-        json_error 400, 'Token not provided', log_message
-      end
+      token = get_token( request.env, began_at, method(:count_services_metadata_queries), log_message)
 
       unless User.authorized?(token: token, params: {path: '/services', method: 'GET'})
         GtkApi.logger.debug(log_message) {"User not authorized to list services"}
@@ -87,11 +83,7 @@ class GtkApi < Sinatra::Base
       logger.debug(log_message) {"entered with #{params}"}
       content_type :json
 
-      token = get_token( request.env, log_message)
-      if (token.to_s.empty?)
-        count_service_metadata_queries(labels: {result: "bad request", uuid: params[:uuid], elapsed_time: (Time.now.utc-began_at).to_s})
-        json_error 400, 'Token not provided', log_message
-      end
+      token = get_token( request.env, began_at, method(:count_service_metadata_queries), log_message)
     
       unless valid?(params[:uuid])
         count_service_metadata_queries(labels: {result: "bad request", uuid: params[:uuid], elapsed_time: (Time.now.utc-began_at).to_s})

@@ -56,7 +56,7 @@ class GtkApi < Sinatra::Base
       require_param(param: 'until', params: params, error_message: 'Ending date', log_message: log_message, began_at: began_at)
       require_param(param: 'step', params: params, error_message: 'Step of collection', log_message: log_message, began_at: began_at)
        
-      token = validate_token( request.env, began_at, log_message)
+      token = get_token( request.env, began_at, method(:count_asynch_monitoring_data_requests), log_message)
       validate_user_authorization(token: token, action: 'request asynch monitoring data', uuid: params[:vc_uuid], path: '/functions/metrics', method: 'GET', began_at: began_at, log_message: log_message)
       
       # Remove list of wanted fields from the query parameter list
@@ -119,7 +119,7 @@ class GtkApi < Sinatra::Base
       require_param(param: 'vc_uuid', params: params, error_message: 'Virtual component uuid', log_message: log_message, began_at: began_at)
       require_param(param: 'metrics', params: params, error_message: 'Metrics list ', log_message: log_message, began_at: began_at)
 
-      token = validate_token( request.env, began_at, log_message)
+      token = get_token( request.env, began_at, method(:count_synch_monitoring_data_requests), log_message)
       validate_user_authorization(token: token, action: 'request synch monitoring data', uuid: params[:vc_uuid], path: '/functions/metrics', method: 'GET', began_at: began_at, log_message: log_message)
        
       # do not treat 'for=<length in seconds> now
