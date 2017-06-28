@@ -78,6 +78,7 @@ class GtkApi < Sinatra::Base
     # AKA logout
     delete '/?' do
       log_message = 'GtkApi::DELETE /sessions/?'
+      began_at = Time.now.utc
 
       token = get_token( request.env, began_at, method(:count_user_logout_requests), log_message)
       begin

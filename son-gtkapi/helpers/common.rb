@@ -72,9 +72,7 @@ module GtkApiHelper
     links.join(",")
   end
   
-  def get_token( env, began_at, method, log_message)
-    count_package_on_boardings()
-    
+  def get_token( env, began_at, method, log_message)    
     if (env['HTTP_AUTHORIZATION'].to_s.empty?)
       method.call(labels: {result: "Unauthorized", uuid: '', elapsed_time: (Time.now.utc-began_at).to_s}) if method
       json_error(401, 'Unauthorized: missing authorization header', log_message) 

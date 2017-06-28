@@ -100,6 +100,10 @@ RSpec.describe GtkApi, type: :controller do
       end
     end
     context 'returns Unprocessable entity (400)' do
+      before(:each) do
+        allow(User).to receive(:counter_kpi)
+      end
+      
       it 'without token given' do
         delete '/api/v2/sessions/', {}, {'HTTP_AUTHORIZATION' => ''}
         expect(last_response.status).to eq(401)
