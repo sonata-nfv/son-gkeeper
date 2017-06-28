@@ -36,12 +36,15 @@ class GtkApi < Sinatra::Base
   helpers Sinatra::Streaming
   
   namespace '/api/v2/packages' do
+    before do
+      content_type :json
+    end
+    
     # POST of packages
     post '/?' do
       began_at = Time.now.utc
       log_message = 'GtkApi::POST /api/v2/packages/?'
       logger.info(log_message) {"entered with params=#{params}"}
-      content_type :json
     
       if params[:package].nil?
         count_package_on_boardings(labels: {result: "bad request", uuid: '', elapsed_time: (Time.now.utc-began_at).to_s})
@@ -53,11 +56,7 @@ class GtkApi < Sinatra::Base
         json_error 400, 'Temp file name not provided', log_message
       end
 
-      token = get_token( request.env, log_message)
-      if (token.to_s.empty?)
-        count_package_on_boardings(labels: {result: "bad request", uuid: '', elapsed_time: (Time.now.utc-began_at).to_s})
-        json_error 400, 'Token not provided', log_message
-      end
+      token = get_token( request.env, began_at, method(:count_package_on_boardings), log_message)
 
       signature = get_signature( request.env, log_message)
       GtkApi.logger.error(log_message) {"file name is #{params[:package][:tempfile]}"}
@@ -79,37 +78,31 @@ class GtkApi < Sinatra::Base
         params[:package][:tempfile].rewind
         resp = PackageManagerService.create(params.merge({token: token}))
         logger.debug(log_message) {"resp=#{resp.inspect}"}
+        now = Time.now.utc
         case resp[:status]
         when 201
           logger.info(log_message) {"leaving with package: #{resp[:data][:uuid]}"}
-          now = Time.now.utc
           count_package_on_boardings(labels: {result: "ok", uuid: resp[:data][:uuid], elapsed_time: (now-began_at).to_s, time_stamp: now})
           headers 'Location'=> PackageManagerService.class_variable_get(:@@url)+"/packages/#{resp[:data][:uuid]}", 'Content-Type'=> 'application/json'
           halt 201, resp[:data].to_json
         when 400
-          now = Time.now.utc
           count_package_on_boardings(labels: {result: "bad request", uuid: '', elapsed_time: (now-began_at).to_s, time_stamp: now})
           json_error 400, "Error creating package #{params}", log_message
         when 403
-          now = Time.now.utc
           count_package_on_boardings(labels: {result: "forbidden", uuid: '', elapsed_time: (now-began_at).to_s, time_stamp: now})
           json_error 403, "User not allowed to create package #{params}", log_message
         when 404
-          now = Time.now.utc
           count_package_on_boardings(labels: {result: "not found", uuid: '', elapsed_time: (now-began_at).to_s, time_stamp: now})
           json_error 404, "User name not found", log_message
         when 409
           logger.error(log_message) {"leaving with duplicated package: #{resp[:data]}"}
-          now = Time.now.utc
           count_package_on_boardings(labels: {result: "duplicated", uuid: resp[:data][:uuid], elapsed_time: (now-began_at).to_s, time_stamp: now})
           halt 409, resp[:data].to_json
         else
-          now = Time.now.utc
           count_package_on_boardings(labels: {result: "other error", uuid: '', elapsed_time: (now-began_at).to_s, time_stamp: now})
           json_error resp[:status], "Unknown status: #{resp[:status]} for package #{params}", log_message
         end
       rescue ArgumentError => e
-        now = Time.now.utc
         count_package_on_boardings(labels: {result: "bad request", uuid: '', elapsed_time: (now-began_at).to_s, time_stamp: now})
         json_error 400, "Error creating package #{params}", log_message
       end
@@ -120,75 +113,72 @@ class GtkApi < Sinatra::Base
       began_at = Time.now.utc
       log_message = 'GtkApi::GET /api/v2/packages/:uuid/?'
       logger.debug(log_message) {'entered'}
-      content_type :json
-      unless params[:uuid].nil?
-        logger.debug(log_message) {"params[:uuid]=#{params[:uuid]}"}
-        json_error 400, 'Invalid Package UUID' unless valid? params['uuid']
-        package = PackageManagerService.find_by_uuid(params[:uuid])
-        if package
-          logger.debug(log_message) {"leaving with package #{package}"}
-          count_single_package_queries(labels: {result: "ok", uuid: params[:uuid], elapsed_time: (Time.now.utc-began_at).to_s})
-          content_type :json #headers 'Content-Type'=> 'application/json'
-          halt 200, package.to_json
-        else
-          count_single_package_queries(labels: {result: "not found", uuid: params[:uuid], elapsed_time: (Time.now.utc-began_at).to_s})
-          json_error 404, "No package with UUID=#{params[:uuid]} was found", log_message
-        end
+      if params[:uuid].nil?
+        count_single_package_queries(labels: {result: "bad request", uuid: params[:uuid], elapsed_time: (Time.now.utc-began_at).to_s})
+        json_error 400, 'No package UUID specified', log_message
       end
-      count_single_package_queries(labels: {result: "bad request", uuid: params[:uuid], elapsed_time: (Time.now.utc-began_at).to_s})
-      json_error 400, 'No package UUID specified', log_message     
+      
+      token = get_token( request.env, began_at, method(:count_single_package_queries), log_message)
+      
+      logger.debug(log_message) {"params[:uuid]=#{params[:uuid]}"}
+      json_error 400, 'Invalid Package UUID' unless valid? params['uuid']
+      package = PackageManagerService.find_by_uuid(params[:uuid])
+      unless package
+        count_single_package_queries(labels: {result: "not found", uuid: params[:uuid], elapsed_time: (Time.now.utc-began_at).to_s})
+        json_error 404, "No package with UUID=#{params[:uuid]} was found", log_message
+      end
+      logger.debug(log_message) {"leaving with package #{package}"}
+      count_single_package_queries(labels: {result: "ok", uuid: params[:uuid], elapsed_time: (Time.now.utc-began_at).to_s})
+      halt 200, package.to_json
     end
   
     # GET a specific package's file
-      get '/:uuid/download/?' do
-        began_at = Time.now.utc
-        log_message = 'GtkApi::GET /api/v2/packages/:uuid/download/?'
-        logger.debug(log_message) {'entered with uuid='+params['uuid']}
-        unless params[:uuid].nil?
-          logger.debug(log_message) {"params[:uuid]=#{params[:uuid]}"}
-          json_error 400, 'Invalid Package UUID' unless valid? params['uuid']
-          package = PackageManagerService.find_by_uuid(params[:uuid])
-          if package
-            logger.debug(log_message) {"Found package #{package}"}
-            logger.debug(log_message) {"Looking for the package file name for package file #{package[:son_package_uuid]}..."}
-            file_name = PackageManagerService.download(package[:son_package_uuid])
-            count_package_downloads(labels: {result: "ok", uuid: params[:uuid], elapsed_time: (Time.now.utc-began_at).to_s})
-            send_file file_name
-          else
-            count_package_downloads(labels: {result: "not found", uuid: params[:uuid], elapsed_time: (Time.now.utc-began_at).to_s})
-            json_error 404, "No package with UUID=#{params[:uuid]} was found", log_message
-          end
-        end
+    get '/:uuid/download/?' do
+      began_at = Time.now.utc
+      log_message = 'GtkApi::GET /api/v2/packages/:uuid/download/?'
+      logger.debug(log_message) {'entered with uuid='+params['uuid']}
+
+      token = get_token( request.env, began_at, method(:count_package_downloads), log_message)
+
+      if params[:uuid].nil?
         count_package_downloads(labels: {result: "bad request", uuid: params[:uuid], elapsed_time: (Time.now.utc-began_at).to_s})
-        json_error 400, 'No package UUID specified', log_message    
+        json_error 400, 'No package UUID specified', log_message
       end
+        
+      logger.debug(log_message) {"params[:uuid]=#{params[:uuid]}"}
+      json_error 400, 'Invalid Package UUID' unless valid? params['uuid']
+      package = PackageManagerService.find_by_uuid(params[:uuid])
+      unless package
+        count_package_downloads(labels: {result: "not found", uuid: params[:uuid], elapsed_time: (Time.now.utc-began_at).to_s})
+        json_error 404, "No package with UUID=#{params[:uuid]} was found", log_message
+      end
+      logger.debug(log_message) {"Found package #{package}"}
+      logger.debug(log_message) {"Looking for the package file name for package file #{package[:son_package_uuid]}..."}
+      file_name = PackageManagerService.download(package[:son_package_uuid])
+      count_package_downloads(labels: {result: "ok", uuid: params[:uuid], elapsed_time: (Time.now.utc-began_at).to_s})
+      send_file file_name
+    end
 
     # GET potentially many packages
     get '/?' do
       log_message = 'GtkApi::GET /api/v2/packages/?'
       logger.debug(log_message) {'entered with '+query_string}
-      content_type :json
     
       @offset ||= params[:offset] ||= DEFAULT_OFFSET
       @limit ||= params[:limit] ||= DEFAULT_LIMIT
 
-      token = get_token( request.env, log_message)
-      if (token.nil? || token.empty?)
-        count_package_on_boardings(labels: {result: "bad request", uuid: '', elapsed_time: (Time.now.utc-began_at).to_s})
-        json_error 400, 'Token not provided', log_message
-      end
+      token = get_token( request.env, began_at, method(:count_packages_queries), log_message)
     
       packages = PackageManagerService.find(params)
-      if packages
-        logger.debug(log_message) { "leaving with #{packages}"}
-        # TODO: total must be returned from the PackageManagement service
-        links = build_pagination_headers(url: request_url, limit: @limit.to_i, offset: @offset.to_i, total: packages.size)
-        headers 'Content-Type'=>'application/json', 'Link'=> links
-        halt 200, packages.to_json
-      else
+      unless packages
         error_message = 'No packages found' + (query_string.empty? ? '' : ' with parameters '+query_string)
         json_error 404, error_message, log_message
       end
+      logger.debug(log_message) { "leaving with #{packages}"}
+      # TODO: total must be returned from the PackageManagement service
+      links = build_pagination_headers(url: request_url, limit: @limit.to_i, offset: @offset.to_i, total: packages.size)
+      headers 'Link'=> links
+      halt 200, packages.to_json
     end
   
     # PUT 
@@ -237,6 +227,7 @@ class GtkApi < Sinatra::Base
     desc = "how many packages have been on-boarded"
     PackageManagerService.counter_kpi({name: name, docstring: desc, base_labels: labels.merge({method: 'POST', module: 'packages'})})
   end
+  
   def count_package_downloads(labels:)
     name = __method__.to_s.split('_')[1..-1].join('_')
     desc = "how many package file downloads have been requested"
@@ -246,6 +237,12 @@ class GtkApi < Sinatra::Base
   def count_single_package_queries(labels:)
     name = __method__.to_s.split('_')[1..-1].join('_')
     desc = "how many single package have been requested"
+    PackageManagerService.counter_kpi({name: name, docstring: desc, base_labels: labels.merge({method: 'GET', module: 'packages'})})
+  end
+
+  def count_packages_queries(labels:)
+    name = __method__.to_s.split('_')[1..-1].join('_')
+    desc = "how many packages have been requested"
     PackageManagerService.counter_kpi({name: name, docstring: desc, base_labels: labels.merge({method: 'GET', module: 'packages'})})
   end
 end

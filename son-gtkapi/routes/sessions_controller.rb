@@ -79,7 +79,7 @@ class GtkApi < Sinatra::Base
     delete '/?' do
       log_message = 'GtkApi::DELETE /sessions/?'
 
-      token = get_token( request.env, log_message)
+      token = get_token( request.env, began_at, method(:count_user_logout_requests), log_message)
       begin
         User.logout! token
         logger.debug(log_message) {"User successfuly logged out"}
@@ -93,5 +93,13 @@ class GtkApi < Sinatra::Base
         json_error 400, 'Unprocessable entity: problem logging out user', log_message
       end
     end
+  end
+  
+  private
+  
+  def count_user_logout_requests(labels:)
+    name = __method__.to_s.split('_')[1..-1].join('_')
+    desc = "how many user logout requests have been made"
+    User.counter_kpi({name: name, docstring: desc, base_labels: labels.merge({method: 'DELETE', module: 'users'})})
   end
 end
