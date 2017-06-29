@@ -44,11 +44,11 @@ class Validator < ManagerService
     GtkApi.logger.debug(log_message) {'entered with url='+url}
   end
   
-  def self.valid_package?(file_name:, signature: '')
+  def self.valid_package?(file_path:, signature: '')
     log_message = LOG_MESSAGE + '#'+__method__.to_s
     # /validate/package
     # POST {'source':'embedded', 'file':'...', 'syntax': True, 'integrity': True, 'topology':True}
-    GtkApi.logger.debug(log_message) {"entered with file name #{file_name}"}
+    GtkApi.logger.debug(log_message) {"entered with file name #{file_path}"}
     
     # prepare post data
     #fields_hash = {source:'embedded', syntax: true, integrity: true, topology: true, signature: signature}
@@ -67,7 +67,7 @@ class Validator < ManagerService
         Curl::PostField.content('integrity', 'true'),
         Curl::PostField.content('topology', 'true'),
         Curl::PostField.content('signature', signature),
-        Curl::PostField.file('file', file_name)
+        Curl::PostField.file('file', file_path)
         )
       GtkApi.logger.debug(log_message) {"curl.body_str=#{curl.body_str}"}
       resp = {status: curl.response_code, items: [JSON.parse(curl.body_str)]} # ManagerService.status_from_response_headers(curl.header_str)
