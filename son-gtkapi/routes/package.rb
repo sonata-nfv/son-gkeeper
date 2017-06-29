@@ -46,10 +46,7 @@ class GtkApi < Sinatra::Base
       log_message = 'GtkApi::POST /api/v2/packages/?'
       logger.info(log_message) {"entered with params=#{params}"}
     
-      if params[:package].nil?
-        count_package_on_boardings(labels: {result: "bad request", uuid: '', elapsed_time: (Time.now.utc-began_at).to_s})
-        json_error 400, "No package file specified: #{params}", log_message
-      end
+      require_param(param: 'package', params: params, kpi_method: method(:count_package_on_boardings), error_message: "No package file specified: #{params}", log_message: log_message, began_at: began_at)
       
       if params[:package][:tempfile].nil?
         count_package_on_boardings(labels: {result: "bad request", uuid: '', elapsed_time: (Time.now.utc-began_at).to_s})
@@ -62,7 +59,7 @@ class GtkApi < Sinatra::Base
       GtkApi.logger.error(log_message) {"file name is #{params[:package][:tempfile]}"}
       begin
         # Validate validator's existence first here
-        Validator.valid_package?(file_name: params[:package][:tempfile], signature: signature)
+        Validator.valid_package?(file_name: params[:package][:filename], signature: signature)
       rescue ValidatorError => e
         count_package_on_boardings(labels: {result: "bad request", uuid: '', elapsed_time: (Time.now.utc-began_at).to_s})
         json_error 400, "Error creating package #{params}", log_message
@@ -113,12 +110,9 @@ class GtkApi < Sinatra::Base
       began_at = Time.now.utc
       log_message = 'GtkApi::GET /api/v2/packages/:uuid/?'
       logger.debug(log_message) {'entered'}
-      if params[:uuid].nil?
-        count_single_package_queries(labels: {result: "bad request", uuid: params[:uuid], elapsed_time: (Time.now.utc-began_at).to_s})
-        json_error 400, 'No package UUID specified', log_message
-      end
       
       token = get_token( request.env, began_at, method(:count_single_package_queries), log_message)
+      require_param(param: 'uuid', params: params, kpi_method: method(:count_single_package_queries), error_message: 'No package UUID specified', log_message: log_message, began_at: began_at)
       
       logger.debug(log_message) {"params[:uuid]=#{params[:uuid]}"}
       json_error 400, 'Invalid Package UUID' unless valid? params['uuid']
@@ -139,11 +133,7 @@ class GtkApi < Sinatra::Base
       logger.debug(log_message) {'entered with uuid='+params['uuid']}
 
       token = get_token( request.env, began_at, method(:count_package_downloads), log_message)
-
-      if params[:uuid].nil?
-        count_package_downloads(labels: {result: "bad request", uuid: params[:uuid], elapsed_time: (Time.now.utc-began_at).to_s})
-        json_error 400, 'No package UUID specified', log_message
-      end
+      require_param(param: 'uuid', params: params, kpi_method: method(:count_package_downloads), error_message: 'No package UUID specified', log_message: log_message, began_at: began_at)
         
       logger.debug(log_message) {"params[:uuid]=#{params[:uuid]}"}
       json_error 400, 'Invalid Package UUID' unless valid? params['uuid']
