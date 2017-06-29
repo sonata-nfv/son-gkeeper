@@ -59,7 +59,7 @@ class GtkApi < Sinatra::Base
       GtkApi.logger.error(log_message) {"file name is #{params[:package][:tempfile]}"}
       begin
         # Validate validator's existence first here
-        Validator.valid_package?(file_name: params[:package][:filename], signature: signature)
+        Validator.valid_package?(file_path: params[:package][:tempfile].path, signature: signature)
       rescue ValidatorError => e
         count_package_on_boardings(labels: {result: "bad request", uuid: '', elapsed_time: (Time.now.utc-began_at).to_s})
         json_error 400, "Error creating package #{params}", log_message
