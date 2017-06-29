@@ -51,16 +51,24 @@ class Validator < ManagerService
     GtkApi.logger.debug(log_message) {"entered with file name #{file_name}"}
     
     # prepare post data
-    fields_hash = {source:'embedded', syntax: true, integrity: true, topology: true, signature: signature}
-    post_data = fields_hash.map { |k, v| Curl::PostField.content(k, v.to_s) }
-    post_data << Curl::PostField.file('file', file_name)
+    #fields_hash = {source:'embedded', syntax: true, integrity: true, topology: true, signature: signature}
+    #post_data = fields_hash.map { |k, v| Curl::PostField.content(k, v.to_s) }
+    #post_data << Curl::PostField.file('file', file_name)
 
     begin
       # post
       curl = Curl::Easy.new(@@url+'/validate/package')
       curl.multipart_form_post = true
       #curl.headers["Content-Type"] = "multipart/form-data"
-      curl.http_post(post_data)
+      #curl.http_post(post_data)
+      curl.http_post(
+        Curl::PostField.content('source', 'embedded'),
+        Curl::PostField.content('syntax', 'true'),
+        Curl::PostField.content('integrity', 'true'),
+        Curl::PostField.content('topology', 'true'),
+        Curl::PostField.content('signature', signature),
+        Curl::PostField.file('file', file_name)
+        )
       GtkApi.logger.debug(log_message) {"curl.body_str=#{curl.body_str}"}
       resp = {status: curl.response_code, items: [JSON.parse(curl.body_str)]} # ManagerService.status_from_response_headers(curl.header_str)
       case resp[:status]
