@@ -38,8 +38,8 @@ It is responsible for the launch of the Keycloak server and it is executed by th
 ### create_predefined_entities.sh
 This script configures the User Management adapter and the required entities in Keycloak.
 Important settings are listed below:
-- KEYCLOAK_USER=admin
-- KEYCLOAK_PASSWORD=admin
+- KEYCLOAK_USER=admin (by default)
+- KEYCLOAK_PASSWORD=admin (by default)
 - KEYCLOAK_PORT=5601
 - KEYCLOAK_URL=http://localhost:$KEYCLOAK_PORT
 - KEYCLOAK_OPENID_TOKEN_ENDPOINT=$KEYCLOAK_URL/auth/realms/sonata/protocol/openid-connect/token
