@@ -1018,12 +1018,16 @@ class Keycloak < Sinatra::Application
     if query && query.key?('name')
       group_data = group_list.find {|group| group['name'] == query['name'] }
       group_data.to_json
+    elsif query && query.key?('id')
+      group_data = group_list.find {|group| group['id'] == query['id'] }
+      group_data.to_json
     else
-      group_list
+      group_list.to_json
     end
   end
 
   def get_groups_names(group_list, role)
+    refresh_adapter
     role_group_map = []
     group_list.each { |k|
       if k['id']
@@ -1045,6 +1049,53 @@ class Keycloak < Sinatra::Application
       end
     }
     role_group_map
+  end
+
+  def create_group(group_data)
+    # POST /admin/realms/{realm}/groups
+    # BodyParameter GroupRepresentation
+    # id, name, path, attributes, realmRoles, clientRoles, subGroups
+    refresh_adapter # Refresh admin token if expired
+    url = URI("http://#{@@address.to_s}:#{@@port.to_s}/#{@@uri.to_s}/admin/realms/#{@@realm_name}/groups")
+    http = Net::HTTP.new(url.host, url.port)
+    request = Net::HTTP::Post.new(url.to_s)
+    request["authorization"] = 'Bearer ' + @@access_token
+    request["content-type"] = 'application/json'
+    request.body = group_data.to_json
+
+    response = http.request(request)
+    return response.code, response.body
+  end
+
+  def update_group(group_id, group_data)
+    # PUT /admin/realms/{realm}/groups/{id}
+    # BodyParameter GroupRepresentation
+    # id, name, path, attributes, realmRoles, clientRoles, subGroups
+    refresh_adapter # Refresh admin token if expired
+    url = URI("http://#{@@address.to_s}:#{@@port.to_s}/#{@@uri.to_s}/admin/realms/#{@@realm_name}/groups/#{group_id}")
+    http = Net::HTTP.new(url.host, url.port)
+    request = Net::HTTP::Post.new(url.to_s)
+    request["authorization"] = 'Bearer ' + @@access_token
+    request["content-type"] = 'application/json'
+    request.body = group_data.to_json
+
+    response = http.request(request)
+    return response.code, response.body
+  end
+
+  def delete_group(group_id)
+    # DELETE /admin/realms/{realm}/groups/{id}
+    # BodyParameter GroupRepresentation
+    # id, name, path, attributes, realmRoles, clientRoles, subGroups
+    refresh_adapter # Refresh admin token if expired
+    url = URI("http://#{@@address.to_s}:#{@@port.to_s}/#{@@uri.to_s}/admin/realms/#{@@realm_name}/groups/#{group_id}")
+    http = Net::HTTP.new(url.host, url.port)
+    request = Net::HTTP::Post.new(url.to_s)
+    request["authorization"] = 'Bearer ' + @@access_token
+    request["content-type"] = 'application/json'
+
+    response = http.request(request)
+    return response.code, response.body
   end
 
   def get_clients(query=nil)
@@ -1395,7 +1446,7 @@ class Keycloak < Sinatra::Application
   def assign_group(group_name, user_id)
     refresh_adapter
     # Search group
-    group_list = get_groups # ({'name' => group_name})
+    group_list, errors = parse_json(get_groups) # ({'name' => group_name})
     group_data = group_list.find {|group| group['name'] == group_name}
     unless group_data
       return 401, ({'Error' => 'Group not found'}).to_json
