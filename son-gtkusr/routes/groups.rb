@@ -64,7 +64,7 @@ class Keycloak < Sinatra::Application
 
     new_group_data, errors = parse_json(request.body.read)
     halt 400, {'Content-type' => 'application/json'}, errors.to_json if errors
-    halt 400 unless new_group_data.is_a?(Hash)
+    # halt 400 unless new_group_data.is_a?(Hash)
 
     code, msg = create_group(new_group_data.to_json)
     halt code, {'Content-type' => 'application/json'}, msg
