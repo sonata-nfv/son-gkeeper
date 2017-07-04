@@ -67,7 +67,9 @@ class Keycloak < Sinatra::Application
     # halt 400 unless new_group_data.is_a?(Hash)
 
     code, msg = create_group(new_group_data.to_json)
-    halt code, {'Content-type' => 'application/json'}, msg.to_json
+    logger.debug "CODE #{code}"
+    logger.debug "MESSAGE #{msg}"
+    # halt code, {'Content-type' => 'application/json'}, msg.to_json
   end
 
   put '/groups/?' do
@@ -78,9 +80,9 @@ class Keycloak < Sinatra::Application
     halt 415 unless (request.content_type == 'application/json')
 
     queriables = %w(id name)
-    # logger.debug "params=" + params
+    logger.debug "params=#{params}"
     keyed_params = keyed_hash(params)
-    logger.debug "keyed_params=" + keyed_params
+    # logger.debug "keyed_params=#{keyed_params}"
     json_error(400, 'Group Name or Id are missing') unless keyed_params
 
     keyed_params.each { |k, v|
