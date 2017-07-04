@@ -34,20 +34,19 @@ require_relative '../helpers/init'
 class Keycloak < Sinatra::Application
   # Get a group by query
   get '/groups' do
-    #TODO: QUERIES NOT SUPPORTED -> Check alternatives!!
-    # This endpoint allows queries for the next fields:
-    # search, lastName, firstName, email, username, first, max
     logger.debug 'Adapter: entered GET /groups'
     # Return if Authorization is invalid
     # json_error(400, 'Authorization header not set') unless request.env["HTTP_AUTHORIZATION"]
     queriables = %w(id name)
     keyed_params = keyed_hash(params)
     keyed_params.each { |k, v|
+      logger.debug "Adapter: query #{k}=#{v}"
       unless queriables.include? k
         json_error(400, 'Bad query')
       end
     }
     code, realm_groups = get_groups(keyed_params)
+    logger.debug "Adapter: gathered groups #{realm_groups}"
 
     params['offset'] ||= DEFAULT_OFFSET
     params['limit'] ||= DEFAULT_LIMIT
@@ -55,28 +54,72 @@ class Keycloak < Sinatra::Application
     halt code.to_i, {'Content-type' => 'application/json'}, realm_groups.to_json
   end
 
-  post '/groups/new/?' do
+  # post '/groups/new/?' do
+  post '/groups/?' do
     # POST /admin/realms/{realm}/groups
     # BodyParameter GroupRepresentation
     logger.debug 'Adapter: entered POST /groups'
     logger.info "Content-Type is " + request.media_type
     halt 415 unless (request.content_type == 'application/json')
 
-    form, errors = parse_json(request.body.read)
+    new_group_data, errors = parse_json(request.body.read)
     halt 400, {'Content-type' => 'application/json'}, errors.to_json if errors
-    halt 400 unless form.is_a?(Hash)
-    json_error 400, 'Usertype not provided' unless form.key?('userType')
+    halt 400 unless new_group_data.is_a?(Hash)
+
+    code, msg = create_group(new_group_data.to_json)
+    halt code, {'Content-type' => 'application/json'}, msg
   end
 
-  put '/groups' do
+  put '/groups/?' do
     logger.debug 'Adapter: entered PUT /groups'
     # PUT /admin/realms/{realm}/groups/{id}
     # BodyParameter GroupRepresentation
+    logger.info "Content-Type is " + request.media_type
+    halt 415 unless (request.content_type == 'application/json')
+
+    queriables = %w(id name)
+    keyed_params = keyed_hash(params)
+    json_error(400, 'Group Name or Id are missing') unless keyed_params
+
+    keyed_params.each { |k, v|
+      logger.debug "Adapter: query #{k}=#{v}"
+      unless queriables.include? k
+        json_error(400, 'Bad query')
+      end
+    }
+    code, group_data = get_groups(keyed_params)
+    logger.debug "Adapter: found group_data= #{group_data}"
+    group_data, errors = parse_json(group_data)
+
+    new_group_data, errors = parse_json(request.body.read)
+    halt 400, {'Content-type' => 'application/json'}, errors.to_json if errors
+    halt 400 unless new_group_data.is_a?(Hash)
+
+    code, msg = update_group(group_data['id'], new_group_data.to_json)
+    halt code, {'Content-type' => 'application/json'}, msg
   end
 
-  delete '/groups' do
+  delete '/groups/?' do
     logger.debug 'Adapter: entered DELETE /groups'
     # DELETE /admin/realms/{realm}/groups/{id}
+    # Return if Authorization is invalid
+    # json_error(400, 'Authorization header not set') unless request.env["HTTP_AUTHORIZATION"]
+    queriables = %w(id name)
+    keyed_params = keyed_hash(params)
+    json_error(400, 'Group Name or Id are missing') unless keyed_params
+
+    keyed_params.each { |k, v|
+      logger.debug "Adapter: query #{k}=#{v}"
+      unless queriables.include? k
+        json_error(400, 'Bad query')
+      end
+    }
+    code, group_data = get_groups(keyed_params)
+    logger.debug "Adapter: found group_data= #{group_data}"
+    group_data, errors = parse_json(group_data)
+
+    code, msg = update_group(group_data['id'])
+    halt code, {'Content-type' => 'application/json'}, msg
   end
 
   post '/groups/assign/?' do
@@ -118,5 +161,4 @@ class Keycloak < Sinatra::Application
     code , msg = unassign_group(form['group'], user_id)
     halt code, {'Content-type' => 'application/json'}, msg
   end
-
 end
