@@ -42,16 +42,16 @@ RSpec.describe GtkApi, type: :controller do
     describe 'with no (UU)ID given' do
       context 'and with no query parameters,' do
         it 'should call the Package Management Service model with only the default "offset" and "limit" parameters' do
-          allow(PackageManagerService).to receive(:find).with(hash_including(default_params)).and_return(simplest_package)
-          package = PackageManagerService.find(default_params)
+          allow(Package).to receive(:find).with(hash_including(default_params)).and_return(simplest_package)
+          package = Package.find(default_params)
           expect(package).to include(:name, :vendor, :version)
         end
       end
       context 'and with query parameters,' do
         let(:extended_params) {default_params.merge({version: "0.1"})}
         it 'should call the Package Management Service model with the passed parameters plus "offset" and "limit"' do
-          allow(PackageManagerService).to receive(:find).with(hash_including(extended_params)).and_return(simplest_package)
-          package = PackageManagerService.find(extended_params)
+          allow(Package).to receive(:find).with(hash_including(extended_params)).and_return(simplest_package)
+          package = Package.find(extended_params)
           expect(package).to include(:version)
         end  
       end

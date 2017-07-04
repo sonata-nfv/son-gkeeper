@@ -28,7 +28,7 @@
 development: &common_settings
   services:
     packages:
-      model: PackageManagerService
+      model: Package
       env_var_url: PACKAGE_MANAGEMENT_URL
     services:
       model: ServiceManagerService
@@ -66,15 +66,25 @@ development: &common_settings
     validator:
       model: Validator
       env_var_url: VALIDATOR_URL
+    rate_limiter:
+      model: RateLimiter
+      env_var_url: RATE_LIMITER_URL
+      limits:
+        user_creation:
+          name: user_creation
+          description: Limit imposed to the user creation process (once per minute)
+          period: 60 #in seconds
+          limit: 1
+        others:
+          name: other_operations
+          description: Limit imposed to the remaining operations (once per second)
+          period: 1 #in seconds
+          limit: 1
   level: debug
   defaults:
     page:
       size: 10
       number: 0
-    throttle:
-      max_value: 1
-      value: 1
-      unit: minute
 
 test:
   <<: *common_settings

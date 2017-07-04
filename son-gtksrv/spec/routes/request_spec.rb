@@ -68,8 +68,8 @@ end
 
 #let(:extended_params) {default_params.merge({version: "0.1"})}
 #it 'should call the Package Management Service model with the passed parameters plus "offset" and "limit"' do
-#  allow(PackageManagerService).to receive(:find).with(hash_including(extended_params)).and_return(simplest_package)
-#  package = PackageManagerService.find(extended_params)
+#  allow(Package).to receive(:find).with(hash_including(extended_params)).and_return(simplest_package)
+#  package = Package.find(extended_params)
 #  expect(package).to include(:version)
 #end  
 

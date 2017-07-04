@@ -25,7 +25,7 @@
 ## partner consortium (www.sonata-nfv.eu).
 require_relative '../spec_helper'
 
-RSpec.describe PackageManagerService, type: :model do
+RSpec.describe Package, type: :model do
   let(:user) {{username: 'Unknown', password: 'None'}}
   let(:secret) {Base64.strict_encode64(user[:username]+':'+user[:password])}
   let(:session) {{began_at: Time.now.utc, token: 'abc'}}
@@ -47,7 +47,7 @@ RSpec.describe PackageManagerService, type: :model do
           allow(User).to receive(:authorized?).and_return(true)
           allow(User).to receive(:find_username_by_token).with(session[:token]).and_return(user[:username])
           allow(RestClient).to receive(:post).and_return(status: 200, body: "", headers: {})
-          PackageManagerService.create(package)
+          Package.create(package)
         end
         # Just pointers for the moment        
         it 'checks user authentication' do

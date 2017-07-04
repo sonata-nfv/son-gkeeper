@@ -85,8 +85,7 @@ class LicenceManagerService < ManagerService
     log_message = LOG_MESSAGE + "##{__method__}(#{uuid})"
     GtkApi.logger.debug(log_message) {'entered'}
 
-    headers = { 'Accept'=> 'application/json', 'Content-Type'=>'application/json'}
-    licence = getCurb(url: @@url + LICENCES_URL + uuid + '/', params: {}, headers: headers)
+    licence = getCurb(url: @@url + LICENCES_URL + uuid + '/', params: {}, headers: JSON_HEADERS)
     GtkApi.logger.debug(log_message) {"licence=#{licence}"}
     case licence[:status]
     when 200
@@ -101,9 +100,8 @@ class LicenceManagerService < ManagerService
     
   def self.find(params)
     log_message = LOG_MESSAGE + "##{__method__}(#{params})"
-    headers = { 'Accept'=> 'application/json', 'Content-Type'=>'application/json'}
     GtkApi.logger.debug(log_message) {'entered'}
-    licences = getCurb(url: @@url + LICENCES_URL, params: params, headers: headers)
+    licences = getCurb(url: @@url + LICENCES_URL, params: params, headers: JSON_HEADERS)
     GtkApi.logger.debug(log_message) {"licences=#{licences}"}
     case licences[:status]
     when 200

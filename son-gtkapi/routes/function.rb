@@ -31,6 +31,10 @@ class GtkApi < Sinatra::Base
   register Sinatra::Namespace
   
   namespace '/api/v2/functions' do
+    before do
+      content_type :json
+    end
+
     # GET many functions
     get '/?' do
       began_at = Time.now.utc
@@ -40,34 +44,23 @@ class GtkApi < Sinatra::Base
       @offset ||= params[:offset] ||= DEFAULT_OFFSET 
       @limit ||= params[:limit] ||= DEFAULT_LIMIT
       logger.debug(log_message) {"params=#{params}"}
-      content_type :json
      
       token = get_token( request.env, began_at, method(:count_functions_metadata_queries), log_message)
+      user_name = User.find_username_by_token(token)
       
-      unless User.authorized?(token: token, params: {path: '/functions', method: 'GET'})
-        count_functions_metadata_queries(labels: {result: "forbidden", uuid: params[:uuid], elapsed_time: (Time.now.utc-began_at).to_s})
-        json_error 403, "Forbidden: user could not be authorized to get metadata for functions with params #{params}", log_message
-      end
+      validate_user_authorization(token: token, action: 'get metadata for functions', uuid: '', path: '/functions', method:'GET', kpi_method: method(:count_functions_metadata_queries), began_at: began_at, log_message: log_message)
+      logger.debug(log_message) {"User authorized"}
 
       functions = FunctionManagerService.find(params)
-      unless functions
-        count_functions_metadata_queries(labels: {result: "not found", uuid: '', elapsed_time: (Time.now.utc-began_at).to_s})
-        json_error 404, "No function with params #{params} was found", log_message
-      end
-      
+      validate_collection_existence(collection: functions, name: 'functions', kpi_method: method(:count_functions_metadata_queries), began_at: began_at, log_message: log_message)
       logger.debug(log_message) {"Found functions #{functions}"}
-      case functions[:status]
-      when 200
-        logger.debug(log_message) {"links: request_url=#{request_url}, limit=#{@limit}, offset=#{@offset}, total=#{functions[:count]}"}
-        links = build_pagination_headers(url: request_url, limit: @limit.to_i, offset: @offset.to_i, total: functions[:count].to_i)
-        logger.debug(log_message) {"links: #{links}"}
-        headers 'Link'=> links, 'Record-Count'=> functions[:count].to_s
-        count_functions_metadata_queries(labels: {result: "ok", uuid: '', elapsed_time: (Time.now.utc-began_at).to_s})
-        halt 200, functions[:items].to_json
-      else
-        count_functions_metadata_queries(labels: {result: "not found", uuid: '', elapsed_time: (Time.now.utc-began_at).to_s})
-        json_error 404, "No functions with #{params} were found", log_message
-      end
+      filtered_functions = enhance_collection( collection: functions[:items], user: user_name, keys_to_delete: [:vnfd])
+      logger.debug(log_message) {"links: request_url=#{request_url}, limit=#{@limit}, offset=#{@offset}, total=#{filtered_functions[:count]}"}
+      links = build_pagination_headers(url: request_url, limit: @limit.to_i, offset: @offset.to_i, total: filtered_functions[:count].to_i)
+      logger.debug(log_message) {"links: #{links}"}
+      headers 'Link'=> links, 'Record-Count'=> filtered_functions[:count].to_s
+      count_functions_metadata_queries(labels: {result: "ok", uuid: '', elapsed_time: (Time.now.utc-began_at).to_s})
+      halt 200, filtered_functions.to_json
     end
   
     # GET function by uuid
@@ -75,25 +68,18 @@ class GtkApi < Sinatra::Base
       began_at = Time.now.utc
       log_message = 'GtkApi::GET /api/v2/functions/:uuid/?'
       logger.debug(log_message) {"entered with #{params[:uuid]}"}
-      content_type :json
     
       token = get_token( request.env, began_at, method(:count_function_metadata_queries), log_message)
+      user_name = User.find_username_by_token(token)
 
-      unless valid?(params[:uuid])
-        count_function_metadata_queries(labels: {result: "bad request", uuid: params[:uuid], elapsed_time: (Time.now.utc-began_at).to_s})
-        json_error 404, "Function #{params[:uuid]} not valid", log_message
-      end
-
-      unless User.authorized?(token: token, params: {path: '/functions', method: 'GET'})
-        count_service_metadata_queries(labels: {result: "forbidden", uuid: params[:uuid], elapsed_time: (Time.now.utc-began_at).to_s})
-        json_error 403, "Forbidden: user could not be authorized to get metadata for function #{params[:uuid]}", log_message
-      end
+      validate_uuid(uuid: params[:uuid], kpi_method: method(:count_function_metadata_queries), began_at: began_at, log_message: log_message)
+      validate_user_authorization(token: token, action: 'get metadata for function '+params[:uuid], uuid: params[:uuid], path: '/functions', method:'GET', kpi_method: method(:count_function_metadata_queries), began_at: began_at, log_message: log_message)
+      logger.debug(log_message) {"User authorized"}
       
       function = FunctionManagerService.find_by_uuid(params[:uuid])
-      if !function[:count] || function[:items].empty?
-        count_function_metadata_queries(labels: {result: "not found", uuid: params[:uuid], elapsed_time: (Time.now.utc-began_at).to_s})
-        json_error 404, "Function #{params[:uuid]} not found", log_message
-      end
+      validate_element_existence(uuid: params[:uuid], element: function, name: 'Function', kpi_method: method(:count_function_metadata_queries), began_at: began_at, log_message: log_message)
+      validate_ownership_and_licence(element: function[:items], user_name: user_name, kpi_method: method(:count_function_metadata_queries), began_at: began_at, log_message: log_message)
+      
       count_function_metadata_queries(labels: {result: "ok", uuid: params[:uuid], elapsed_time: (Time.now.utc-began_at).to_s})
       logger.debug(log_message) {"leaving with #{function}"}
       headers 'Record-Count'=> '1'
