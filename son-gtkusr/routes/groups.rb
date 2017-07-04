@@ -33,7 +33,7 @@ require_relative '../helpers/init'
 # Adapter-Keycloak API class
 class Keycloak < Sinatra::Application
   # Get a group by query
-  get '/groups' do
+  get '/groups/?' do
     logger.debug 'Adapter: entered GET /groups'
     # Return if Authorization is invalid
     # json_error(400, 'Authorization header not set') unless request.env["HTTP_AUTHORIZATION"]
@@ -54,8 +54,8 @@ class Keycloak < Sinatra::Application
     halt code.to_i, {'Content-type' => 'application/json'}, realm_groups.to_json
   end
 
-  # post '/groups/new/?' do
-  post '/groups/?' do
+  post '/groups/new/?' do
+  # post '/groups/?' do
     # POST /admin/realms/{realm}/groups
     # BodyParameter GroupRepresentation
     logger.debug 'Adapter: entered POST /groups'
@@ -78,7 +78,9 @@ class Keycloak < Sinatra::Application
     halt 415 unless (request.content_type == 'application/json')
 
     queriables = %w(id name)
+    logger.debug "params=" + params
     keyed_params = keyed_hash(params)
+    logger.debug "keyed_params=" + keyed_params
     json_error(400, 'Group Name or Id are missing') unless keyed_params
 
     keyed_params.each { |k, v|
