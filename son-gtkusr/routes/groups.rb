@@ -54,20 +54,20 @@ class Keycloak < Sinatra::Application
     halt code.to_i, {'Content-type' => 'application/json'}, realm_groups.to_json
   end
 
-  post '/groups/new/?' do
-  # post '/groups/?' do
+  # post '/groups/new/?' do
+  post '/groups/?' do
     # POST /admin/realms/{realm}/groups
     # BodyParameter GroupRepresentation
     logger.debug 'Adapter: entered POST /groups'
-    logger.info "Content-Type is " + request.media_type
-    halt 415 unless (request.content_type == 'application/json')
+    # logger.info "Content-Type is " + request.media_type
+    #halt 415 unless (request.content_type == 'application/json')
 
     new_group_data, errors = parse_json(request.body.read)
     halt 400, {'Content-type' => 'application/json'}, errors.to_json if errors
     # halt 400 unless new_group_data.is_a?(Hash)
 
-    code, msg = create_group(new_group_data.to_json)
-    halt code, {'Content-type' => 'application/json'}, msg
+    #code, msg = create_group(new_group_data.to_json)
+    #halt code, {'Content-type' => 'application/json'}, msg
   end
 
   put '/groups/?' do
