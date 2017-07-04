@@ -155,20 +155,11 @@ class Package < ManagerService
   end
 
   def self.find(params)
-    method = LOG_MESSAGE + "##{__method__}"
-    GtkApi.logger.debug(method) {'entered'}
-    headers = JSON_HEADERS
-    headers[:params] = params if params
-    begin
-      response = RestClient.get(@@url+'/packages', headers)
-      GtkApi.logger.debug(method) {"response #{response}"}
-      package=JSON.parse(response, symbolize_names: true)
-      
-    rescue => e
-      GtkApi.logger.error(method) {"Error during processing: #{$!}"}
-      GtkApi.logger.error(method) {"Backtrace:\n\t#{e.backtrace.join("\n\t")}"}
-      nil
-    end
+    log_message = LOG_MESSAGE + "##{__method__}"
+    GtkApi.logger.debug(log_message) {"entered with params #{params}"}
+    response = getCurb(url: @@url + '/packages', params: params)
+    GtkApi.logger.debug(log_message) {"response=#{response}"}
+    response
   end
   
   def self.download(uuid)
