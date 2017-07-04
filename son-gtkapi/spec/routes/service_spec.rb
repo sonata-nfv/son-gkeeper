@@ -42,12 +42,14 @@ RSpec.describe GtkApi, type: :controller do
       version:"0.1",
       created_at: "2016-11-11T10:21:00.007+00:00",
       updated_at:"2016-11-11T10:21:00.007+00:00",
+      username: 'sonata',
       uuid: SecureRandom.uuid
     }}
     let(:returned_service1) {{status: 200, count: 2, items: service1, message: "OK"}}
     
     before do
       allow(User).to receive(:authorized?).with(token: token, params: {path: '/services', method: 'GET'}).and_return(true)
+      allow(User).to receive(:find_username_by_token).with(token).and_return('sonata')
       allow(ServiceManagerService).to receive(:counter_kpi)
     end
     
@@ -56,6 +58,7 @@ RSpec.describe GtkApi, type: :controller do
       before(:each) do
         allow(ServiceManagerService).to receive(:find_service_by_uuid).with(uuid: service1[:uuid]).and_return(returned_service1)
         #allow(serv_man).to receive(:find_service_by_uuid).with(uuid: service1[:uuid]).and_return(returned_service1)
+        allow(LicenceManagerService).to receive(:find).with({service_uuid: service1[:uuid], user_uuid: service1[:username]}).and_return([])
         get '/api/v2/services/'+service1[:uuid], {}, {'HTTP_AUTHORIZATION' => 'Bearer '+token}
       end
     
@@ -73,6 +76,7 @@ RSpec.describe GtkApi, type: :controller do
         version:"0.2",
         created_at: "2016-11-11T10:21:00.007+00:00",
         updated_at:"2016-11-11T10:21:00.007+00:00",
+        username: 'sonata',
         uuid: SecureRandom.uuid
       }}
       let(:all_services) { [ service1, service2 ]}
@@ -81,6 +85,8 @@ RSpec.describe GtkApi, type: :controller do
       let(:tokenized_default_params) {default_params.merge({'token'=>token})}
       before(:each) do        
         allow(ServiceManagerService).to receive(:find_services).with(default_params).and_return(returned_all_services)
+        allow(LicenceManagerService).to receive(:find).with({service_uuid: service1[:uuid], user_uuid: service1[:username]}).and_return([])
+        allow(LicenceManagerService).to receive(:find).with({service_uuid: service2[:uuid], user_uuid: service2[:username]}).and_return([])
         get '/api/v2/services', {}, {'HTTP_AUTHORIZATION' => 'Bearer '+token}
       end
         

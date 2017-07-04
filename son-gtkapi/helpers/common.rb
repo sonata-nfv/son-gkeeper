@@ -102,10 +102,75 @@ module GtkApiHelper
     end 
   end
 
-  def validate_user_authorization(token:, action: '', uuid:, path:, method:, began_at:, log_message: '')
+  def validate_user_authorization(token:, action: '', uuid:, path:, method:, kpi_method: nil, began_at:, log_message: '')
     unless User.authorized?(token: token, params: {path: path, method: method})
-      count_synch_monitoring_data_requests(labels: {result: "forbidden", uuid: uuid, elapsed_time: (Time.now.utc-began_at).to_s})
+      kpi_method.call(labels: {result: "forbidden", uuid: uuid, elapsed_time: (Time.now.utc-began_at).to_s}) if kpi_method
       json_error 403, 'Forbidden: user could not be authorized to '+action, log_message
     end
+  end
+  
+  def validate_uuid(uuid:, kpi_method: nil, began_at:, log_message: '')
+    uuid.match /[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89aAbB][a-f0-9]{3}-[a-f0-9]{12}/
+    unless uuid == $&
+      kpi_method.call(labels: {result: "bad request", uuid: uuid, elapsed_time: (Time.now.utc-began_at).to_s}) if kpi_method
+      json_error 404, "UUID #{uuid} not valid", log_message
+    end
+  end
+  
+  def validate_element_existence(uuid:, element:, name:, kpi_method:, began_at:, log_message:)
+    if !element[:count] || element[:items].empty?
+      kpi_method.call(labels: {result: "not found", uuid: uuid, elapsed_time: (Time.now.utc-began_at).to_s}) if kpi_method
+      json_error 404, name+" "+uuid+" not found", log_message
+    end
+  end
+  
+  def validate_collection_existence(collection:, name:, kpi_method:, began_at:, log_message:)
+    log_message = "GtkApiHelper##{__method__}"
+    logger.debug(log_message) {"Entered with collection=#{collection}, name=#{name}"}
+    if collection && collection[:status] && collection[:status] != 200
+      kpi_method.call(labels: {result: "not found", uuid: '', elapsed_time: (Time.now.utc-began_at).to_s}) if kpi_method
+      json_error 404, "No #{name} were found", log_message
+    end
+  end
+  
+  def validate_ownership_and_licence(element:, user_name:, kpi_method:, began_at:, log_message:)
+    if element[:licences].to_s.empty? || element[:licences] == 'public' || element[:username] == user_name
+      # public by default or explicitely public or owner
+      return
+    end
+
+    licenced_elements = LicenceManagerService.find({service_uuid: element[:uuid], user_uuid: user_name})
+    if licenced_elements[:items].empty?
+      # there's no licence for this element for this username
+      kpi_method.call(labels: {result: "forbidden", uuid: element[:uuid], elapsed_time: (Time.now.utc-began_at).to_s}) if kpi_method
+      json_error 403, "User not owner and not licenced", log_message
+    end
+  end  
+  
+  def enhance_collection(collection:, user:, keys_to_delete: [])
+    log_message = "GtkApiHelper##{__method__}"
+    logger.debug(log_message) {'collection='+collection.inspect}
+    return collection if (collection.empty? || collection.first.empty?)
+
+    collection.each do |element|
+      logger.debug(log_message) {'element='+element.inspect}
+      licenced_collection = LicenceManagerService.find({service_uuid: element[:uuid], user_uuid: user})
+      logger.debug(log_message) {'licenced_collection='+licenced_collection.inspect}
+      if element[:licences].to_s.empty? || element[:licences] == 'public'
+        element[:licence_type] = 'public'
+      else
+        # it's private
+        if element[:username] == user
+          element[:licence_type] = 'owned'
+        elsif licenced_collection.any? {|l_service| l_service[:uuid] == element[:uuid] }
+          element[:licence_type] = 'licensed'
+        else
+          # if a licence is needed, we're not passing the whole stuff back
+          keys_to_delete.each { |key| element.delete(key) }
+          element[:licence_type] = 'to buy'
+        end
+      end
+    end
+    collection
   end
 end
