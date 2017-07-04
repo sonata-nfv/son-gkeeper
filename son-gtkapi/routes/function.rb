@@ -55,10 +55,10 @@ class GtkApi < Sinatra::Base
       validate_collection_existence(collection: functions, name: 'functions', kpi_method: method(:count_functions_metadata_queries), began_at: began_at, log_message: log_message)
       logger.debug(log_message) {"Found functions #{functions}"}
       filtered_functions = enhance_collection( collection: functions[:items], user: user_name, keys_to_delete: [:vnfd])
-      logger.debug(log_message) {"links: request_url=#{request_url}, limit=#{@limit}, offset=#{@offset}, total=#{filtered_functions[:count]}"}
-      links = build_pagination_headers(url: request_url, limit: @limit.to_i, offset: @offset.to_i, total: filtered_functions[:count].to_i)
+      logger.debug(log_message) {"links: request_url=#{request_url}, limit=#{@limit}, offset=#{@offset}, total=#{functions[:count]}"}
+      links = build_pagination_headers(url: request_url, limit: @limit.to_i, offset: @offset.to_i, total: functions[:count].to_i)
       logger.debug(log_message) {"links: #{links}"}
-      headers 'Link'=> links, 'Record-Count'=> filtered_functions[:count].to_s
+      headers 'Link'=> links, 'Record-Count'=> functions[:count].to_s
       count_functions_metadata_queries(labels: {result: "ok", uuid: '', elapsed_time: (Time.now.utc-began_at).to_s})
       halt 200, filtered_functions.to_json
     end
