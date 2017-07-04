@@ -1029,6 +1029,7 @@ class Keycloak < Sinatra::Application
   def get_groups_names(group_list, role)
     refresh_adapter
     role_group_map = []
+    group_list = parse_json(group_list)[0]
     group_list.each { |k|
       if k['id']
         url = URI("http://#{@@address.to_s}:#{@@port.to_s}/#{@@uri.to_s}/admin/realms/#{@@realm_name}/groups/#{k['id']}")
