@@ -47,7 +47,7 @@ class GtkApi < Sinatra::Base
       logger.info(log_message) {"entered with params=#{params}"}
     
       require_param(param: 'package', params: params, kpi_method: method(:count_package_on_boardings), error_message: "No package file specified: #{params}", log_message: log_message, began_at: began_at)
-      require_param(param: 'tempfile', params: params[:package], kpi_method: method(:count_package_on_boardings), error_message: "Temp file name not provided", log_message: log_message, began_at: began_at)
+      require_param(param: 'tempfile', params: params['package'], kpi_method: method(:count_package_on_boardings), error_message: "Temp file name not provided", log_message: log_message, began_at: began_at)
       GtkApi.logger.error(log_message) {"file name is #{params[:package][:tempfile]}"}
       
       token = get_token( request.env, began_at, method(:count_package_on_boardings), log_message)
