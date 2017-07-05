@@ -96,7 +96,7 @@ module GtkApiHelper
   end
 
   def require_param(param:, params:, kpi_method: nil, error_message:, log_message:, began_at:)
-    if (!params.key?(param) || params[param].empty?)
+    if (!params.key?(param) || params[param].to_s.empty?)
       kpi_method.call(labels: {result: "bad request", uuid: '', elapsed_time: (Time.now.utc-began_at).to_s}) if kpi_method
       json_error 400, error_message+' is missing', log_message
     end 
@@ -147,6 +147,16 @@ module GtkApiHelper
     end
   end  
   
+  def validate_function_ownership(token:, instance_uuid:, kpi_method:, began_at:, log_message:)
+    user_name = User.find_username_by_token(token)
+    record = RecordManagerService.find_records_by_uuid(kind: 'functions', uuid: instance_uuid)
+    descriptor = FunctionManagerService.find_by_uuid(record[:descriptor])
+    unless descriptor[:username] == user_name
+      kpi_method.call(labels: {result: "bad request", uuid: instance_uuid, elapsed_time: (Time.now.utc-began_at).to_s}) if kpi_method
+      json_error 404, 'User '+user_name+' is not the owner of the function', log_message
+    end
+  end
+
   def enhance_collection(collection:, user:, keys_to_delete: [])
     log_message = "GtkApiHelper##{__method__}"
     logger.debug(log_message) {'collection='+collection.inspect}
