@@ -43,7 +43,7 @@ class Keycloak < Sinatra::Application
     queriables = %w(search id name description first max)
     keyed_params = keyed_hash(params)
     keyed_params.each { |k, v|
-      unless queriables.include? k
+      unless queriables.include? k.to_s
         json_error(400, 'Bad query')
       end
     }
@@ -55,29 +55,77 @@ class Keycloak < Sinatra::Application
     halt code.to_i, {'Content-type' => 'application/json'}, realm_roles.to_json
   end
 
-  post '/roles/new/?' do
+  post '/roles/?' do
     # POST /admin/realms/{realm}/roles
     # BodyParameter
     logger.debug 'Adapter: entered POST /roles'
     logger.info "Content-Type is " + request.media_type
     halt 415 unless (request.content_type == 'application/json')
 
-    form, errors = parse_json(request.body.read)
+    new_role_data, errors = parse_json(request.body.read)
     halt 400, {'Content-type' => 'application/json'}, errors.to_json if errors
-    halt 400 unless form.is_a?(Hash)
-    #json_error 400, 'Usertype not provided' unless form.key?('userType')
+    halt 400 unless new_role_data.is_a?(Hash)
+
+    code, msg = create_realm_role(new_role_data)
+    logger.debug "CODE #{code}"
+    logger.debug "MESSAGE #{msg}"
+    halt code, {'Content-type' => 'application/json'}, msg.to_json if msg
+    halt code
   end
 
   # Update a role by name
-  put '/roles' do
+  put '/roles/?' do
+    logger.debug 'Adapter: entered PUT /roles'
     # PUT /admin/realms/{realm}/roles/{id}
     # BodyParameter
+    logger.info "Content-Type is " + request.media_type
+    halt 415 unless (request.content_type == 'application/json')
 
+    queriables = %w(id name)
+    logger.debug "params=#{params}"
+    json_error(400, 'Role Name or Id is missing') if params.empty?
+    keyed_params = keyed_hash(params)
+
+    keyed_params.each { |k, v|
+      logger.debug "Adapter: query #{k}=#{v}"
+      unless queriables.include? k.to_s
+        json_error(400, 'Bad query')
+      end
+    }
+    code, role_data = get_realm_roles(keyed_params)
+    logger.debug "Adapter: found role_data= #{role_data}"
+    role_data, errors = parse_json(role_data)
+
+    new_role_data, errors = parse_json(request.body.read)
+    halt 400, {'Content-type' => 'application/json'}, errors.to_json if errors
+    halt 400 unless new_role_data.is_a?(Hash)
+
+    code, msg = update_realm_role(role_data['name'], new_role_data.to_json)
+    halt code, {'Content-type' => 'application/json'}, msg
   end
+
   # Delete a role by name
-  delete '/roles' do
+  delete '/roles/?' do
     logger.debug 'Adapter: entered DELETE /roles'
     # DELETE /admin/realms/{realm}/roles/{id}
+    # Return if Authorization is invalid
+    # json_error(400, 'Authorization header not set') unless request.env["HTTP_AUTHORIZATION"]
+    queriables = %w(id name)
+    json_error(400, 'Role Name or Id is missing') if params.empty?
+    keyed_params = keyed_hash(params)
+
+    keyed_params.each { |k, v|
+      logger.debug "Adapter: query #{k}=#{v}"
+      unless queriables.include? k.to_s
+        json_error(400, 'Bad query')
+      end
+    }
+    code, role_data = get_realm_roles(keyed_params)
+    logger.debug "Adapter: found role_data= #{role_data}"
+    role_data, errors = parse_json(role_data)
+
+    code, msg = delete_realm_role(role_data['name'])
+    halt code, {'Content-type' => 'application/json'}, msg
   end
 
   post '/roles/assign/?' do

@@ -937,9 +937,48 @@ class Keycloak < Sinatra::Application
     end
   end
 
-  def delete_realm_role(role)
-    # Delete a role by name
+  def create_realm_role(role_data)
+    # Create a new realm role
+    # POST /admin/realms/{realm}/roles
+    refresh_adapter # Refresh admin token if expired
+    url = URI("http://#{@@address.to_s}:#{@@port.to_s}/#{@@uri.to_s}/admin/realms/#{@@realm_name}/roles")
+    http = Net::HTTP.new(url.host, url.port)
+    request = Net::HTTP::Post.new(url.to_s)
+    request["authorization"] = 'Bearer ' + @@access_token
+    request["content-type"] = 'application/json'
+    request.body = role_data.to_json
+
+    response = http.request(request)
+    return response.code, response.body
+  end
+
+  def update_realm_role(role_name, role_data)
+    # Update a realm role by name
+    # PUT /admin/realms/{realm}/roles/{role-name}
+    refresh_adapter # Refresh admin token if expired
+    url = URI("http://#{@@address.to_s}:#{@@port.to_s}/#{@@uri.to_s}/admin/realms/#{@@realm_name}/roles/#{role_name}")
+    http = Net::HTTP.new(url.host, url.port)
+    request = Net::HTTP::Put.new(url.to_s)
+    request["authorization"] = 'Bearer ' + @@access_token
+    request["content-type"] = 'application/json'
+    request.body = role_data.to_json
+
+    response = http.request(request)
+    return response.code, response.body
+  end
+
+  def delete_realm_role(role_name)
+    # Delete a realm role by name
     # DELETE /admin/realms/{realm}/roles/{role-name}
+    refresh_adapter # Refresh admin token if expired
+    url = URI("http://#{@@address.to_s}:#{@@port.to_s}/#{@@uri.to_s}/admin/realms/#{@@realm_name}/roles/#{role_name}")
+    http = Net::HTTP.new(url.host, url.port)
+    request = Net::HTTP::Delete.new(url.to_s)
+    request["authorization"] = 'Bearer ' + @@access_token
+    request["content-type"] = 'application/json'
+
+    response = http.request(request)
+    return response.code, response.body
   end
 
   def update_user(username, user_id, body)
@@ -1075,7 +1114,7 @@ class Keycloak < Sinatra::Application
     refresh_adapter # Refresh admin token if expired
     url = URI("http://#{@@address.to_s}:#{@@port.to_s}/#{@@uri.to_s}/admin/realms/#{@@realm_name}/groups/#{group_id}")
     http = Net::HTTP.new(url.host, url.port)
-    request = Net::HTTP::Post.new(url.to_s)
+    request = Net::HTTP::Put.new(url.to_s)
     request["authorization"] = 'Bearer ' + @@access_token
     request["content-type"] = 'application/json'
     request.body = group_data.to_json
@@ -1091,7 +1130,7 @@ class Keycloak < Sinatra::Application
     refresh_adapter # Refresh admin token if expired
     url = URI("http://#{@@address.to_s}:#{@@port.to_s}/#{@@uri.to_s}/admin/realms/#{@@realm_name}/groups/#{group_id}")
     http = Net::HTTP.new(url.host, url.port)
-    request = Net::HTTP::Post.new(url.to_s)
+    request = Net::HTTP::Delete.new(url.to_s)
     request["authorization"] = 'Bearer ' + @@access_token
     request["content-type"] = 'application/json'
 
@@ -1132,7 +1171,7 @@ class Keycloak < Sinatra::Application
     # GET /admin/realms/{realm}/clients/{id}/service-account-user
   end
 
-  def get_realm_roles(keyed_query=nil)
+  def get_realm_roles(query=nil)
     logger.debug 'Adapter: getting realm roles'
     refresh_adapter # Refresh admin token if expired
     # Get all roles for the realm or client
@@ -1143,7 +1182,17 @@ class Keycloak < Sinatra::Application
     request["authorization"] = 'Bearer ' + @@access_token
 
     response = http.request(request)
-    return response.code, response.body
+    role_list = parse_json(response.read_body)[0]
+
+    if query && query.key?('name')
+      role_data = role_list.find {|role| role['name'] == query['name'] }
+      return response.code, role_data.to_json
+    elsif query && query.key?('id')
+      role_data = role_list.find {|role| role['id'] == query['id'] }
+      return response.code, role_data.to_json
+    else
+      return response.code, response.body
+    end
   end
 
   def get_client_roles(client, keyed_query=nil)

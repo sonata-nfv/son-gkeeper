@@ -41,7 +41,7 @@ class Keycloak < Sinatra::Application
     keyed_params = keyed_hash(params)
     keyed_params.each { |k, v|
       logger.debug "Adapter: query #{k}=#{v}"
-      unless queriables.include? k
+      unless queriables.include? k.to_s
         json_error(400, 'Bad query')
       end
     }
@@ -59,8 +59,8 @@ class Keycloak < Sinatra::Application
     # POST /admin/realms/{realm}/groups
     # BodyParameter GroupRepresentation
     logger.debug 'Adapter: entered POST /groups'
-    # logger.info "Content-Type is " + request.media_type
-    #halt 415 unless (request.content_type == 'application/json')
+    logger.info "Content-Type is " + request.media_type
+    halt 415 unless (request.content_type == 'application/json')
 
     new_group_data, errors = parse_json(request.body.read)
     halt 400, {'Content-type' => 'application/json'}, errors.to_json if errors
@@ -82,9 +82,8 @@ class Keycloak < Sinatra::Application
 
     queriables = %w(id name)
     logger.debug "params=#{params}"
-    json_error(400, 'Group Name or Id are missing') if params.empty?
+    json_error(400, 'Group Name or Id is missing') if params.empty?
     keyed_params = keyed_hash(params)
-
 
     keyed_params.each { |k, v|
       logger.debug "Adapter: query #{k}=#{v}"
@@ -110,7 +109,7 @@ class Keycloak < Sinatra::Application
     # Return if Authorization is invalid
     # json_error(400, 'Authorization header not set') unless request.env["HTTP_AUTHORIZATION"]
     queriables = %w(id name)
-    json_error(400, 'Group Name or Id are missing') if params.empty?
+    json_error(400, 'Group Name or Id is missing') if params.empty?
     keyed_params = keyed_hash(params)
 
     keyed_params.each { |k, v|
@@ -123,7 +122,7 @@ class Keycloak < Sinatra::Application
     logger.debug "Adapter: found group_data= #{group_data}"
     group_data, errors = parse_json(group_data)
 
-    code, msg = update_group(group_data['id'])
+    code, msg = delete_group(group_data['id'])
     halt code, {'Content-type' => 'application/json'}, msg
   end
 
