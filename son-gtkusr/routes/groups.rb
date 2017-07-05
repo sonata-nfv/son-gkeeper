@@ -64,12 +64,12 @@ class Keycloak < Sinatra::Application
 
     new_group_data, errors = parse_json(request.body.read)
     halt 400, {'Content-type' => 'application/json'}, errors.to_json if errors
-    # halt 400 unless new_group_data.is_a?(Hash)
+    halt 400 unless new_group_data.is_a?(Hash)
 
-    code, msg = create_group(new_group_data.to_json)
+    code, msg = create_group(new_group_data) # .to_json)
     logger.debug "CODE #{code}"
     logger.debug "MESSAGE #{msg}"
-    # halt code, {'Content-type' => 'application/json'}, msg.to_json
+    halt code, {'Content-type' => 'application/json'}, msg.to_json
   end
 
   put '/groups/?' do
@@ -81,9 +81,9 @@ class Keycloak < Sinatra::Application
 
     queriables = %w(id name)
     logger.debug "params=#{params}"
+    json_error(400, 'Group Name or Id are missing') if params.empty?
     keyed_params = keyed_hash(params)
-    # logger.debug "keyed_params=#{keyed_params}"
-    json_error(400, 'Group Name or Id are missing') unless keyed_params
+
 
     keyed_params.each { |k, v|
       logger.debug "Adapter: query #{k}=#{v}"
@@ -109,8 +109,8 @@ class Keycloak < Sinatra::Application
     # Return if Authorization is invalid
     # json_error(400, 'Authorization header not set') unless request.env["HTTP_AUTHORIZATION"]
     queriables = %w(id name)
+    json_error(400, 'Group Name or Id are missing') if params.empty?
     keyed_params = keyed_hash(params)
-    json_error(400, 'Group Name or Id are missing') unless keyed_params
 
     keyed_params.each { |k, v|
       logger.debug "Adapter: query #{k}=#{v}"
