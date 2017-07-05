@@ -51,20 +51,24 @@ class GtkApi < Sinatra::Base
       GtkApi.logger.error(log_message) {"file name is #{params[:package][:tempfile]}"}
       
       token = get_token( request.env, began_at, method(:count_package_on_boardings), log_message)
-
       signature = get_signature( request.env, log_message)
+      
       begin
         # Validate validator's existence first here
-        Validator.valid_package?(file_path: params[:package][:tempfile].path, signature: signature)
+        validation_results = Validator.valid_package?(file_path: params[:package][:tempfile].path, signature: signature)
       rescue ValidatorError => e
         count_package_on_boardings(labels: {result: "bad request", uuid: '', elapsed_time: (Time.now.utc-began_at).to_s})
-        json_error 400, "Error creating package #{params}", log_message
+        json_error 400, "Error validating package #{params}", log_message
       rescue ValidatorGenericError => e
-        count_package_on_boardings(labels: {result: "other error", uuid: '', elapsed_time: (Time.now.utc-began_at).to_s})
+        count_package_on_boardings(labels: {result: "bad request", uuid: '', elapsed_time: (Time.now.utc-began_at).to_s})
         GtkApi.logger.error(log_message) {"Error during processing: #{$!}"}
         GtkApi.logger.error(log_message) {"Backtrace:\n\t#{e.backtrace.join("\n\t")}"}
-        #json_error 500, "Status 500 for package #{params}: #{$!}", log_message
-        GtkApi.logger.error(log_message) {"Proceed without package being validated..."}
+        json_error 400, "Error validating package #{params}", log_message
+      end
+      
+      if (validation_results['error_count'] != 0 || validation_results['warning_count'] != 0)
+        count_package_on_boardings(labels: {result: "bad request", uuid: '', elapsed_time: (Time.now.utc-began_at).to_s})
+        json_error 400, "Errors or warnings: #{validation_results}", log_message
       end
       
       begin
