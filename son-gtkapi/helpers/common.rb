@@ -134,7 +134,7 @@ module GtkApiHelper
   end
   
   def validate_ownership_and_licence(element:, user_name:, kpi_method:, began_at:, log_message:)
-    if element[:licences].to_s.empty? || element[:licences] == 'public' || element[:username] == user_name
+    if element[:licence].to_s.empty? || element[:licence][:type] == 'public' || element[:username] == user_name
       # public by default or explicitely public or owner
       return
     end
@@ -143,18 +143,17 @@ module GtkApiHelper
     if licenced_elements[:items].empty?
       # there's no licence for this element for this username
       kpi_method.call(labels: {result: "forbidden", uuid: element[:uuid], elapsed_time: (Time.now.utc-began_at).to_s}) if kpi_method
-      json_error 403, "User not owner and not licenced", log_message
+      json_error 403, 'Package/service/function '+element[:uuid]+' is private, not owned and not licensed to user '+user_name, log_message
     end
   end  
   
   def validate_function_ownership(token:, instance_uuid:, kpi_method:, began_at:, log_message:)
     user_name = User.find_username_by_token(token)
-    record = RecordManagerService.find_records_by_uuid(kind: 'functions', uuid: instance_uuid)
-    descriptor = FunctionManagerService.find_by_uuid(record[:descriptor])
-    unless descriptor[:username] == user_name
-      kpi_method.call(labels: {result: "bad request", uuid: instance_uuid, elapsed_time: (Time.now.utc-began_at).to_s}) if kpi_method
-      json_error 404, 'User '+user_name+' is not the owner of the function', log_message
-    end
+    record = RecordManagerService.find_record_by_uuid(kind: 'functions', uuid: instance_uuid)
+    logger.debug(log_message) {"record=#{record}"}
+    descriptor = FunctionManagerService.find_by_uuid(record[:descriptor_reference])
+    logger.debug(log_message) {"descriptor=#{descriptor}"}
+    validate_ownership_and_licence(element: descriptor, user_name: user_name, kpi_method: kpi_method, began_at: began_at, log_message: log_message)
   end
 
   def enhance_collection(collection:, user:, keys_to_delete: [])
