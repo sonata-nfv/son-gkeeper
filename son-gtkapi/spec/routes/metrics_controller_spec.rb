@@ -45,8 +45,9 @@ RSpec.describe GtkApi, type: :controller do
     let(:until_date) {'2017-04-11T11:31:31Z'}
     let(:single_metric_name) {'vm_cpu_perc'}
     let(:single_metric_list) {[single_metric_name]}
-    let(:spied_function) {spy('function', uuid: function_uuid, instances: [instance_uuid])}
+    let(:spied_function) {spy('function', uuid: function_uuid, instances: [instance_uuid], username: 'sonata')}
     let(:spied_metric) {spy('metric', name: single_metric_list, instances: [instance_uuid])}
+    let(:spied_record) {spy('record', descriptor_reference: SecureRandom.uuid)}
     let(:token) {'abc'}
     let(:base_url) {'/api/v2/functions/metrics/'}
     let(:since_param) {'since='+since_date}
@@ -55,12 +56,16 @@ RSpec.describe GtkApi, type: :controller do
 
     before do
       allow(User).to receive(:authorized?).with(token: token, params: {path: '/functions/metrics', method: 'GET'}).and_return(true)
+      allow(User).to receive(:find_username_by_token).with(token).and_return('sonata')
+      allow(GtkApiHelper).to receive(:validate_function_ownership)
       allow(Metric).to receive(:counter_kpi)
     end
 
     context 'should return Ok (200)' do
       let(:url) {base_url+instance_uuid+'/'+vdu_id+'/'+known_vnfc_uuid+'/asynch-mon-data?metrics='+single_metric_name+'&'+since_param+'&'+until_param+'&'+step_param}
       it 'when all that is needed is given' do
+        allow(RecordManagerService).to receive(:find_record_by_uuid).with({kind: 'functions', uuid: instance_uuid}).and_return(spied_record)
+        allow(FunctionManagerService).to receive(:find_by_uuid).with(spied_record[:descriptor_reference]).and_return({uuid: function_uuid, username: 'sonata'})
         allow(Metric).to receive(:validate_and_create).with(single_metric_list).and_return(spied_metric)
         allow(Metric).to receive(:find_by_name).with(single_metric_list.first).and_return(spied_metric)
         get url, {}, {'HTTP_AUTHORIZATION' => 'Bearer '+token}
