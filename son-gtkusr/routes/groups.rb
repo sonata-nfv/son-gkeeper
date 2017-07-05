@@ -66,10 +66,11 @@ class Keycloak < Sinatra::Application
     halt 400, {'Content-type' => 'application/json'}, errors.to_json if errors
     halt 400 unless new_group_data.is_a?(Hash)
 
-    code, msg = create_group(new_group_data) # .to_json)
+    code, msg = create_group(new_group_data)
     logger.debug "CODE #{code}"
     logger.debug "MESSAGE #{msg}"
-    halt code, {'Content-type' => 'application/json'}, msg.to_json
+    halt code, {'Content-type' => 'application/json'}, msg.to_json if msg
+    halt code
   end
 
   put '/groups/?' do
@@ -87,7 +88,7 @@ class Keycloak < Sinatra::Application
 
     keyed_params.each { |k, v|
       logger.debug "Adapter: query #{k}=#{v}"
-      unless queriables.include? k
+      unless queriables.include? k.to_s
         json_error(400, 'Bad query')
       end
     }
@@ -114,7 +115,7 @@ class Keycloak < Sinatra::Application
 
     keyed_params.each { |k, v|
       logger.debug "Adapter: query #{k}=#{v}"
-      unless queriables.include? k
+      unless queriables.include? k.to_s
         json_error(400, 'Bad query')
       end
     }
