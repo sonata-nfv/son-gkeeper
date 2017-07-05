@@ -31,6 +31,9 @@ class GtkApi < Sinatra::Base
   register Sinatra::Namespace
   
   namespace '/api/v2/functions' do
+    before do
+      content_type :json
+    end
     
     # TODO: how to address multiple metrics like in
     # .../metric=cpu_util,disk_usage,packets_sent&...
@@ -40,8 +43,6 @@ class GtkApi < Sinatra::Base
       began_at = Time.now.utc
       log_message = 'GtkApi::GET /api/v2/functions/metrics/:instance_uuid/:vdu_id/:vc_uuid/asynch-mon-data/?'
       logger.debug(log_message) {"entered with params #{params}"}
-      
-      content_type :json
       
       logger.debug(log_message) { 'query_string='+request.env['QUERY_STRING']}
       params.delete('splat')
@@ -69,15 +70,12 @@ class GtkApi < Sinatra::Base
         path: '/functions/metrics', method: 'GET', kpi_method: method(:count_synch_monitoring_data_requests),
         began_at: began_at, log_message: log_message
       )
+      validate_function_ownership( token: token, instance_uuid: params[:instance_uuid], kpi_method: method(:count_asynch_monitoring_data_requests),
+        began_at: began_at, log_message: log_message)
       
       # Remove list of wanted fields from the query parameter list
       metrics_names = params.delete('metrics').split(',')
       logger.debug(log_message) { "params without metrics=#{params}"}
-
-      if metrics_names.empty?
-        count_asynch_monitoring_data_requests(labels: {result: "not found", uuid: '', elapsed_time: (Time.now.utc-began_at).to_s})
-        json_error 404, "At least one metric must be requested", log_message
-      end
       
       metrics = Metric.validate_and_create(metrics_names)
       status = nil
@@ -118,8 +116,6 @@ class GtkApi < Sinatra::Base
       log_message = 'GtkApi::GET /api/v2/functions/metrics/:instance_uuid/:vdu_id/:vc_uuid/synch-mon-data/?'
       logger.debug(log_message) {"entered with params #{params}"}
       
-      content_type :json
-      
       logger.debug(log_message) { 'query_string='+request.env['QUERY_STRING']}
       params.delete('splat')
       params.delete('captures')
@@ -143,15 +139,12 @@ class GtkApi < Sinatra::Base
         params.delete('for')
       end
       
+      validate_function_ownership( token: token, instance_uuid: params[:instance_uuid], kpi_method: method(:count_synch_monitoring_data_requests),
+        began_at: began_at, log_message: log_message)
+      
       # Remove list of wanted fields from the query parameter list
       metrics_names = params.delete('metrics').split(',')
       logger.debug(log_message) { "params without metrics=#{params}"}
-      
-      # TODO: validate user who's asking here
-      if metrics_names.empty?
-        count_synch_monitoring_data_requests(labels: {result: "not found", uuid: '', elapsed_time: (Time.now.utc-began_at).to_s})
-        json_error 404, "At least one metric must be given", log_message
-      end
       
       metrics = Metric.validate_and_create(metrics_names)
       ws_url = ''
