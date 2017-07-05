@@ -74,7 +74,7 @@ class Validator < ManagerService
       case resp[:status]
       when 200
         GtkApi.logger.debug(log_message) {"Validator result=#{resp[:items]}"}
-        resp[:items]
+        resp[:items].first
       when 400
         GtkApi.logger.error(log_message) {"Status 400: #{resp[:items]}"} 
         raise ValidatorError.new "Errors/warnings in validating the package: #{resp[:items]}"
