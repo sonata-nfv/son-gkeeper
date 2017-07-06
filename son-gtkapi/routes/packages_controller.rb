@@ -112,25 +112,20 @@ class GtkApi < Sinatra::Base
       logger.debug(log_message) {'entered'}
       
       require_param(param: 'uuid', params: params, kpi_method: method(:count_single_package_queries), error_message: 'No package UUID specified', log_message: log_message, began_at: began_at)
+      validate_uuid(uuid: params[:uuid], kpi_method: method(:count_single_package_queries), began_at: began_at, log_message: log_message)
+      logger.debug(log_message) {"params[:uuid]=#{params[:uuid]}"}
 
       token = get_token( request.env, began_at, method(:count_single_package_queries), log_message)
       user_name = User.find_username_by_token(token)
+      validate_user_authorization(token: token, action: "get metadata for package #{params[:uuid]}", uuid: params[:uuid], path: '/packages', method:'GET', kpi_method: method(:count_single_package_queries), began_at: began_at, log_message: log_message)
       
-      logger.debug(log_message) {"params[:uuid]=#{params[:uuid]}"}
-      json_error 400, 'Invalid Package UUID' unless valid? params['uuid']
       package = Package.find_by_uuid(params[:uuid])
-      unless package
-        count_single_package_queries(labels: {result: "not found", uuid: params[:uuid], elapsed_time: (Time.now.utc-began_at).to_s})
-        json_error 404, "No package with UUID=#{params[:uuid]} was found", log_message
-      end
-      unless package[:username] == user_name || LicenceManagerService.find({service_uuid: package[:uuid], user_uuid: user_name})
-        count_single_package_queries(labels: {result: "forbidden", uuid: params[:uuid], elapsed_time: (Time.now.utc-began_at).to_s})
-        json_error 403, "User not owner and not licenced", log_message
-      end
+      validate_element_existence(uuid: params[:uuid], element: package, name: 'Package', kpi_method: method(:count_single_package_queries), began_at: began_at, log_message: log_message)
+      validate_ownership_and_licence(element: package[:items], user_name: user_name, kpi_method: method(:count_single_package_queries), began_at: began_at, log_message: log_message)
         
       logger.debug(log_message) {"leaving with package #{package}"}
       count_single_package_queries(labels: {result: "ok", uuid: params[:uuid], elapsed_time: (Time.now.utc-began_at).to_s})
-      halt 200, package.to_json
+      halt 200, package[:items].to_json
     end
   
     # GET a specific package's file
@@ -140,24 +135,19 @@ class GtkApi < Sinatra::Base
       logger.debug(log_message) {'entered with uuid='+params['uuid']}
 
       require_param(param: 'uuid', params: params, kpi_method: method(:count_package_downloads), error_message: 'No package UUID specified', log_message: log_message, began_at: began_at)
+      validate_uuid(uuid: params['uuid'], kpi_method: method(:count_package_downloads), began_at: began_at, log_message: log_message)
       token = get_token( request.env, began_at, method(:count_package_downloads), log_message)
       user_name = User.find_username_by_token(token)
+      validate_user_authorization(token: token, action: "download package #{params[:uuid]}", uuid: params['uuid'], path: '/packages/download', method:'GET', kpi_method: method(:count_single_package_queries), began_at: began_at, log_message: log_message)
         
       logger.debug(log_message) {"params[:uuid]=#{params[:uuid]}"}
-      json_error 400, 'Invalid Package UUID' unless valid? params['uuid']
-      package = Package.find_by_uuid(params[:uuid])
-      unless package
-        count_package_downloads(labels: {result: "not found", uuid: params[:uuid], elapsed_time: (Time.now.utc-began_at).to_s})
-        json_error 404, "No package with UUID=#{params[:uuid]} was found", log_message
-      end
-      unless package[:username] == user_name || LicenceManagerService.find({service_uuid: package[:uuid], user_uuid: user_name})
-        count_single_package_queries(labels: {result: "forbidden", uuid: params[:uuid], elapsed_time: (Time.now.utc-began_at).to_s})
-        json_error 403, "User not owner and not licenced", log_message
-      end
-      logger.debug(log_message) {"Found package #{package}"}
-      logger.debug(log_message) {"Looking for the package file name for package file #{package[:son_package_uuid]}..."}
-      file_name = Package.download(package[:son_package_uuid])
-      count_package_downloads(labels: {result: "ok", uuid: params[:uuid], elapsed_time: (Time.now.utc-began_at).to_s})
+      package = Package.find_by_uuid(params['uuid'])
+      validate_element_existence(uuid: params['uuid'], element: package[:items], name: 'Package', kpi_method: method(:count_package_downloads), began_at: began_at, log_message: log_message)
+      validate_ownership_and_licence(element: package[:items], user_name: user_name, kpi_method: method(:count_package_downloads), began_at: began_at, log_message: log_message)
+      logger.debug(log_message) {"Found package #{package[:items]}"}
+      logger.debug(log_message) {"Looking for the package file name for package file #{package[:items][:son_package_uuid]}..."}
+      file_name = Package.download(package[:items][:son_package_uuid])
+      count_package_downloads(labels: {result: "ok", uuid: params['uuid'], elapsed_time: (Time.now.utc-began_at).to_s})
       send_file file_name
     end
 
@@ -172,30 +162,18 @@ class GtkApi < Sinatra::Base
 
       token = get_token( request.env, began_at, method(:count_packages_queries), log_message)
       user_name = User.find_username_by_token(token)
-    
+      validate_user_authorization(token: token, action: 'get metadata for packages', uuid: '', path: '/packages', method:'GET', kpi_method: method(:count_packages_queries), began_at: began_at, log_message: log_message)
+      logger.debug(log_message) {"User authorized"}
+
       packages = Package.find(params)
-      unless packages
-        error_message = 'No packages found' + (query_string.empty? ? '' : ' with parameters '+query_string)
-        json_error 404, error_message, log_message
-      end
+      validate_collection_existence(collection: packages, name: 'packages', kpi_method: method(:count_packages_queries), began_at: began_at, log_message: log_message)
       
-      filtered_packages = enhance_collection( collection: packages[:items], user: user_name, keys_to_delete: [:pd])
-      logger.debug(log_message) { "leaving with #{filtered_packages}"}
+      enhanced_packages = enhance_collection( collection: packages[:items], user: user_name, keys_to_delete: [:pd])
+      logger.debug(log_message) { "leaving with #{enhanced_packages}"}
       # TODO: total must be returned from the PackageManagement service
-      links = build_pagination_headers(url: request_url, limit: @limit.to_i, offset: @offset.to_i, total: filtered_packages.size)
+      links = build_pagination_headers(url: request_url, limit: @limit.to_i, offset: @offset.to_i, total: enhanced_packages.size)
       headers 'Link'=> links
-      halt 200, filtered_packages.to_json
-    end
-  
-    # PUT 
-    put '/:uuid/?' do
-      # TODO
-      log_message = 'GtkApi::PUT /api/v2/packages/:uuid/?'
-      unless params[:uuid].nil?
-        logger.info(log_message) { "entered with package id #{params[:uuid]}"}
-        logger.info(log_message) { "leaving with \"Not implemented yet\""}
-      end
-      json_error 501, "Not implemented yet", log_message
+      halt 200, enhanced_packages.to_json
     end
   
     # DELETE
