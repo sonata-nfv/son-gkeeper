@@ -48,6 +48,8 @@ class Keycloak < Sinatra::Application
     realm_groups = get_groups(params)
     logger.debug "Adapter: gathered groups #{realm_groups}"
 
+    json_error(404, 'No groups found') if realm_groups == 'null'
+
     params['offset'] ||= DEFAULT_OFFSET
     params['limit'] ||= DEFAULT_LIMIT
     realm_groups = apply_limit_and_offset(JSON.parse(realm_groups), offset=params[:offset], limit=params[:limit])
@@ -93,7 +95,7 @@ class Keycloak < Sinatra::Application
     }
     group_data = get_groups(params)
     logger.debug "Adapter: found group_data= #{group_data}"
-    json_error(400, 'Indicated group not found') if group_data.nil?
+    json_error(400, 'Indicated group not found') if group_data == 'null'
     group_data, errors = parse_json(group_data)
 
     new_group_data, errors = parse_json(request.body.read)
@@ -122,7 +124,7 @@ class Keycloak < Sinatra::Application
     }
     group_data = get_groups(params)
     logger.debug "Adapter: found group_data= #{group_data}"
-    json_error(400, 'Indicated group not found') if group_data.nil?
+    json_error(400, 'Indicated group not found') if group_data == 'null'
     group_data, errors = parse_json(group_data)
 
     code, msg = delete_group(group_data['id'])

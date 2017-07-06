@@ -41,13 +41,13 @@ class Keycloak < Sinatra::Application
     # Return if Authorization is invalid
     # json_error(400, 'Authorization header not set') unless request.env["HTTP_AUTHORIZATION"]
     queriables = %w(search id name description first max)
-    keyed_params = keyed_hash(params)
-    keyed_params.each { |k, v|
+    # keyed_params = keyed_hash(params)
+    params.each { |k, v|
       unless queriables.include? k.to_s
         json_error(400, 'Bad query')
       end
     }
-    code, realm_roles = get_realm_roles(keyed_params)
+    code, realm_roles = get_realm_roles(params)
 
     params['offset'] ||= DEFAULT_OFFSET
     params['limit'] ||= DEFAULT_LIMIT
@@ -94,7 +94,7 @@ class Keycloak < Sinatra::Application
     }
     code, role_data = get_realm_roles(params)
     logger.debug "Adapter: found role_data= #{role_data}"
-    json_error(400, 'Indicated role not found') if role_data.nil?
+    json_error(400, 'Indicated role not found') if role_data == 'null'
     role_data, errors = parse_json(role_data)
 
     new_role_data, errors = parse_json(request.body.read)
@@ -124,7 +124,7 @@ class Keycloak < Sinatra::Application
     }
     code, role_data = get_realm_roles(keyed_params)
     logger.debug "Adapter: found role_data= #{role_data}"
-    json_error(400, 'Indicated role not found') if role_data.nil?
+    json_error(400, 'Indicated role not found') if role_data == 'null'
     role_data, errors = parse_json(role_data)
 
     code, msg = delete_realm_role(role_data['name'])
