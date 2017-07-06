@@ -55,7 +55,7 @@ RSpec.describe FunctionManagerService, type: :model do
       resp = OpenStruct.new(header_str: "HTTP/1.1 200 OK\nRecord-Count: 2", body: created_function_1.to_json)      
       allow(Curl).to receive(:get).with(functions_url+'?limit=1&offset=0').and_return(resp) 
       functions = FunctionManagerService.find({limit: 1, offset: 0})
-      expect(functions).to eq({status: 200, count: 2, items: created_function_1, message: "OK"})      
+      expect(functions).to eq({status: 200, count: 2, items: [created_function_1], message: "OK"})      
     end
   end
   describe '#find_by_uuid' do

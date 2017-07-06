@@ -56,14 +56,16 @@ class ManagerService
     end
     GtkApi.logger.debug(log_message) {"header_str=#{res.header_str}"}
     GtkApi.logger.debug(log_message) {"response body=#{res.body}"}
-    #count = record_count_from_response_headers(res.header_str)
+    count = record_count_from_response_headers(res.header_str)
     status = status_from_response_headers(res.header_str)
     case status
     when 200..202
       begin
         parsed_response = res.body.empty? ? {} : JSON.parse(res.body, symbolize_names: true)
         GtkApi.logger.debug(log_message) {"parsed_response=#{parsed_response}"}
-        count = parsed_response.is_a?(Hash) ? 1 : parsed_response.count
+        unless count
+          count = parsed_response.is_a?(Hash) ? 1 : parsed_response.count
+        end
         {status: status, count: count, items: parsed_response, message: "OK"}
       rescue => e
         GtkApi.logger.error(log_message) {"Error during processing: #{$!}"}
