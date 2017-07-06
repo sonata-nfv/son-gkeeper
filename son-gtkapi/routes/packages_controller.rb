@@ -140,9 +140,9 @@ class GtkApi < Sinatra::Base
       user_name = User.find_username_by_token(token)
       validate_user_authorization(token: token, action: "download package #{params[:uuid]}", uuid: params['uuid'], path: '/packages/download', method:'GET', kpi_method: method(:count_single_package_queries), began_at: began_at, log_message: log_message)
         
-      logger.debug(log_message) {"params[:uuid]=#{params[:uuid]}"}
-      package = Package.find_by_uuid(params['uuid'])
-      validate_element_existence(uuid: params['uuid'], element: package[:items], name: 'Package', kpi_method: method(:count_package_downloads), began_at: began_at, log_message: log_message)
+      package = Package.find_by_uuid(params[:uuid])
+      logger.debug(log_message) {"package=#{package}"}
+      validate_element_existence(uuid: params[:uuid], element: package, name: 'Package', kpi_method: method(:count_package_downloads), began_at: began_at, log_message: log_message)
       validate_ownership_and_licence(element: package[:items], user_name: user_name, kpi_method: method(:count_package_downloads), began_at: began_at, log_message: log_message)
       logger.debug(log_message) {"Found package #{package[:items]}"}
       logger.debug(log_message) {"Looking for the package file name for package file #{package[:items][:son_package_uuid]}..."}
