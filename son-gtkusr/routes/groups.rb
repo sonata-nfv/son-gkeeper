@@ -38,20 +38,20 @@ class Keycloak < Sinatra::Application
     # Return if Authorization is invalid
     # json_error(400, 'Authorization header not set') unless request.env["HTTP_AUTHORIZATION"]
     queriables = %w(id name)
-    keyed_params = keyed_hash(params)
-    keyed_params.each { |k, v|
+    # keyed_params = keyed_hash(params)
+    params.each { |k, v|
       logger.debug "Adapter: query #{k}=#{v}"
       unless queriables.include? k.to_s
         json_error(400, 'Bad query')
       end
     }
-    code, realm_groups = get_groups(keyed_params)
+    realm_groups = get_groups(params)
     logger.debug "Adapter: gathered groups #{realm_groups}"
 
     params['offset'] ||= DEFAULT_OFFSET
     params['limit'] ||= DEFAULT_LIMIT
     realm_groups = apply_limit_and_offset(JSON.parse(realm_groups), offset=params[:offset], limit=params[:limit])
-    halt code.to_i, {'Content-type' => 'application/json'}, realm_groups.to_json
+    halt 200, {'Content-type' => 'application/json'}, realm_groups.to_json
   end
 
   # post '/groups/new/?' do
@@ -69,15 +69,8 @@ class Keycloak < Sinatra::Application
     code, msg = create_group(new_group_data)
     logger.debug "CODE #{code}"
     logger.debug "MESSAGE #{msg}"
-    if msg.nil?
-      logger.debug "No message returned"
-      halt code
-    else
-      logger.debug "Message returned"
-      halt code, {'Content-type' => 'application/json'}, msg
-    end
-    # halt code, {'Content-type' => 'application/json'}, msg unless msg.nil?
-    # halt code
+    halt code, {'Content-type' => 'application/json'}, msg unless msg.empty?
+    halt code
   end
 
   put '/groups/?' do
@@ -98,7 +91,7 @@ class Keycloak < Sinatra::Application
         json_error(400, 'Bad query')
       end
     }
-    code, group_data = get_groups(params)
+    group_data = get_groups(params)
     logger.debug "Adapter: found group_data= #{group_data}"
     json_error(400, 'Indicated group not found') if group_data.nil?
     group_data, errors = parse_json(group_data)
@@ -108,7 +101,8 @@ class Keycloak < Sinatra::Application
     halt 400 unless new_group_data.is_a?(Hash)
 
     code, msg = update_group(group_data['id'], new_group_data.to_json)
-    halt code, {'Content-type' => 'application/json'}, msg
+    halt code, {'Content-type' => 'application/json'}, msg unless msg.empty?
+    halt code
   end
 
   delete '/groups/?' do
@@ -126,13 +120,14 @@ class Keycloak < Sinatra::Application
         json_error(400, 'Bad query')
       end
     }
-    code, group_data = get_groups(params)
+    group_data = get_groups(params)
     logger.debug "Adapter: found group_data= #{group_data}"
     json_error(400, 'Indicated group not found') if group_data.nil?
     group_data, errors = parse_json(group_data)
 
     code, msg = delete_group(group_data['id'])
-    halt code, {'Content-type' => 'application/json'}, msg
+    halt code, {'Content-type' => 'application/json'}, msg unless msg.empty?
+    halt code
   end
 
   post '/groups/assign/?' do

@@ -69,7 +69,7 @@ class Keycloak < Sinatra::Application
     code, msg = create_realm_role(new_role_data)
     logger.debug "CODE #{code}"
     logger.debug "MESSAGE #{msg}"
-    halt code, {'Content-type' => 'application/json'}, msg unless msg.nil?
+    halt code, {'Content-type' => 'application/json'}, msg unless msg.empty?
     halt code
   end
 
@@ -102,7 +102,8 @@ class Keycloak < Sinatra::Application
     halt 400 unless new_role_data.is_a?(Hash)
 
     code, msg = update_realm_role(role_data['name'], new_role_data.to_json)
-    halt code, {'Content-type' => 'application/json'}, msg
+    halt code, {'Content-type' => 'application/json'}, msg unless msg.empty?
+    halt code
   end
 
   # Delete a role by name
@@ -127,7 +128,8 @@ class Keycloak < Sinatra::Application
     role_data, errors = parse_json(role_data)
 
     code, msg = delete_realm_role(role_data['name'])
-    halt code, {'Content-type' => 'application/json'}, msg
+    halt code, {'Content-type' => 'application/json'}, msg unless msg.empty?
+    halt code
   end
 
   post '/roles/assign/?' do
