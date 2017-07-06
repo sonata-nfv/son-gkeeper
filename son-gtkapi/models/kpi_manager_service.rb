@@ -40,8 +40,8 @@ class KpiManagerService < ManagerService
   end
 
   def self.update_metric(params)
-    method = LOG_MESSAGE + "##{__method__}(#{params})"
-    GtkApi.logger.debug(method) {"entered"}
+    method = LOG_MESSAGE + "##{__method__}"
+    GtkApi.logger.debug(method) {"entered with #{params}"}
     
     begin
       GtkApi.logger.debug(method) {"url = "+@@url}      

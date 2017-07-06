@@ -127,15 +127,11 @@ class Package < ManagerService
   end
   
   def self.find_by_uuid(uuid)
-    method = LOG_MESSAGE + "##{__method__}"
-    GtkApi.logger.debug(method) {'entered'}
-    begin
-      response = RestClient.get(@@url+"/packages/#{uuid}", JSON_HEADERS)
-      GtkApi.logger.debug(method) {"response #{response}"}
-      JSON.parse response, symbolize_names: true
-    rescue => e
-      e.to_json
-    end
+    log_message = LOG_MESSAGE + "##{__method__}"
+    GtkApi.logger.debug(log_message) {"entered with uuid #{uuid}"}
+    response = getCurb(url: @@url + '/packages/'+uuid)
+    GtkApi.logger.debug(log_message) {"response=#{response}"}
+    response
   end
 
   def self.find_package_file_name(uuid)

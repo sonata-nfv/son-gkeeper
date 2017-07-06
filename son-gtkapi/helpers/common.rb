@@ -118,7 +118,7 @@ module GtkApiHelper
   end
   
   def validate_element_existence(uuid:, element:, name:, kpi_method:, began_at:, log_message:)
-    if !element[:count] || element[:items].empty?
+    if element[:count]==0 || element[:items].empty?
       kpi_method.call(labels: {result: "not found", uuid: uuid, elapsed_time: (Time.now.utc-began_at).to_s}) if kpi_method
       json_error 404, name+" "+uuid+" not found", log_message
     end

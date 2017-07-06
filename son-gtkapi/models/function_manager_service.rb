@@ -81,7 +81,7 @@ class FunctionManagerService < ManagerService
     GtkApi.logger.debug(log_message) {"entered with params #{params}"}
     response = getCurb(url: @@url + '/functions', params: params)
     GtkApi.logger.debug(log_message) {"response=#{response}"}
-    response
+    vectorize_hash response
   end
   
   def load_instances(uuid)
