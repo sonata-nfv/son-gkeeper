@@ -84,15 +84,15 @@ class Keycloak < Sinatra::Application
     queriables = %w(id name)
     logger.debug "params=#{params}"
     json_error(400, 'Role Name or Id is missing') if params.empty?
-    keyed_params = keyed_hash(params)
+    # keyed_params = keyed_hash(params)
 
-    keyed_params.each { |k, v|
+    params.each { |k, v|
       logger.debug "Adapter: query #{k}=#{v}"
       unless queriables.include? k.to_s
         json_error(400, 'Bad query')
       end
     }
-    code, role_data = get_realm_roles(keyed_params)
+    code, role_data = get_realm_roles(params)
     logger.debug "Adapter: found role_data= #{role_data}"
     json_error(400, 'Indicated role not found') if role_data.nil?
     role_data, errors = parse_json(role_data)
@@ -113,7 +113,7 @@ class Keycloak < Sinatra::Application
     # json_error(400, 'Authorization header not set') unless request.env["HTTP_AUTHORIZATION"]
     queriables = %w(id name)
     json_error(400, 'Role Name or Id is missing') if params.empty?
-    keyed_params = keyed_hash(params)
+    # keyed_params = keyed_hash(params)
 
     keyed_params.each { |k, v|
       logger.debug "Adapter: query #{k}=#{v}"

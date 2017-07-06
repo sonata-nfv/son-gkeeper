@@ -69,8 +69,15 @@ class Keycloak < Sinatra::Application
     code, msg = create_group(new_group_data)
     logger.debug "CODE #{code}"
     logger.debug "MESSAGE #{msg}"
-    halt code, {'Content-type' => 'application/json'}, msg unless msg.nil?
-    halt code
+    if msg.nil?
+      logger.debug "No message returned"
+      halt code
+    else
+      logger.debug "Message returned"
+      halt code, {'Content-type' => 'application/json'}, msg
+    end
+    # halt code, {'Content-type' => 'application/json'}, msg unless msg.nil?
+    # halt code
   end
 
   put '/groups/?' do
@@ -83,15 +90,15 @@ class Keycloak < Sinatra::Application
     queriables = %w(id name)
     logger.debug "params=#{params}"
     json_error(400, 'Group Name or Id is missing') if params.empty?
-    keyed_params = keyed_hash(params)
+    # keyed_params = keyed_hash(params)
 
-    keyed_params.each { |k, v|
+    params.each { |k, v|
       logger.debug "Adapter: query #{k}=#{v}"
       unless queriables.include? k.to_s
         json_error(400, 'Bad query')
       end
     }
-    code, group_data = get_groups(keyed_params)
+    code, group_data = get_groups(params)
     logger.debug "Adapter: found group_data= #{group_data}"
     json_error(400, 'Indicated group not found') if group_data.nil?
     group_data, errors = parse_json(group_data)
@@ -111,15 +118,15 @@ class Keycloak < Sinatra::Application
     # json_error(400, 'Authorization header not set') unless request.env["HTTP_AUTHORIZATION"]
     queriables = %w(id name)
     json_error(400, 'Group Name or Id is missing') if params.empty?
-    keyed_params = keyed_hash(params)
+    # keyed_params = keyed_hash(params)
 
-    keyed_params.each { |k, v|
+    params.each { |k, v|
       logger.debug "Adapter: query #{k}=#{v}"
       unless queriables.include? k.to_s
         json_error(400, 'Bad query')
       end
     }
-    code, group_data = get_groups(keyed_params)
+    code, group_data = get_groups(params)
     logger.debug "Adapter: found group_data= #{group_data}"
     json_error(400, 'Indicated group not found') if group_data.nil?
     group_data, errors = parse_json(group_data)
