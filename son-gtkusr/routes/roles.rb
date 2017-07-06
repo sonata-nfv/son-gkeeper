@@ -69,7 +69,7 @@ class Keycloak < Sinatra::Application
     code, msg = create_realm_role(new_role_data)
     logger.debug "CODE #{code}"
     logger.debug "MESSAGE #{msg}"
-    halt code, {'Content-type' => 'application/json'}, msg.to_json if msg
+    halt code, {'Content-type' => 'application/json'}, msg unless msg.nil?
     halt code
   end
 
@@ -94,6 +94,7 @@ class Keycloak < Sinatra::Application
     }
     code, role_data = get_realm_roles(keyed_params)
     logger.debug "Adapter: found role_data= #{role_data}"
+    json_error(400, 'Indicated role not found') if role_data.nil?
     role_data, errors = parse_json(role_data)
 
     new_role_data, errors = parse_json(request.body.read)
@@ -122,6 +123,7 @@ class Keycloak < Sinatra::Application
     }
     code, role_data = get_realm_roles(keyed_params)
     logger.debug "Adapter: found role_data= #{role_data}"
+    json_error(400, 'Indicated role not found') if role_data.nil?
     role_data, errors = parse_json(role_data)
 
     code, msg = delete_realm_role(role_data['name'])

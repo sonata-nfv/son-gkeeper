@@ -69,7 +69,7 @@ class Keycloak < Sinatra::Application
     code, msg = create_group(new_group_data)
     logger.debug "CODE #{code}"
     logger.debug "MESSAGE #{msg}"
-    halt code, {'Content-type' => 'application/json'}, msg.to_json if msg
+    halt code, {'Content-type' => 'application/json'}, msg unless msg.nil?
     halt code
   end
 
@@ -93,6 +93,7 @@ class Keycloak < Sinatra::Application
     }
     code, group_data = get_groups(keyed_params)
     logger.debug "Adapter: found group_data= #{group_data}"
+    json_error(400, 'Indicated group not found') if group_data.nil?
     group_data, errors = parse_json(group_data)
 
     new_group_data, errors = parse_json(request.body.read)
@@ -120,6 +121,7 @@ class Keycloak < Sinatra::Application
     }
     code, group_data = get_groups(keyed_params)
     logger.debug "Adapter: found group_data= #{group_data}"
+    json_error(400, 'Indicated group not found') if group_data.nil?
     group_data, errors = parse_json(group_data)
 
     code, msg = delete_group(group_data['id'])
