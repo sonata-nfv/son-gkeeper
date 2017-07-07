@@ -104,7 +104,7 @@ class Keycloak < Sinatra::Application
     logger.debug "IS_A_HASH?" unless new_role_data.is_a?(Hash)
     halt 400 unless new_role_data.is_a?(Hash)
 
-    code, msg = update_realm_role(role_data['name'], new_role_data.to_json)
+    code, msg = update_realm_role(role_data['name'], new_role_data)
     halt code.to_i, {'Content-type' => 'application/json'}, msg unless msg.empty?
     halt code.to_i
   end

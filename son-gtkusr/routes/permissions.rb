@@ -100,50 +100,44 @@ class Keycloak < Sinatra::Application
 
     # Compatibility support for JSON content-type
     # Parses and validates JSON format
-    form, errors = parse_json(request.body.read)
+    new_resource, errors = parse_json(request.body.read)
     halt 400, {'Content-type' => 'application/json'}, errors.to_json if errors
 
     # JSON form evaluation processes
-    unless form.key?('enabled')
-      form = form.merge({'enabled'=> true})
-    end
+    #unless form.key?('enabled')
+    #  form = form.merge({'enabled'=> true})
+    #end
+
+    # Validate Resource object
+    json_error 400, 'ERROR: Resource Vendor not found' unless new_resource.has_key?('resource_owner_name')
+    json_error 400, 'ERROR: Resource Name not found' unless new_resource.has_key?('role')
+    json_error 400, 'ERROR: Resource Version not found' unless new_resource.has_key?('resources')
+    json_error 400, 'ERROR: Resource Version not found' unless new_resource.has_key?('policies')
 
     # Check if resource already exists in the database
     begin
-      user = Sp_resource.find_by({'username' => form['resource_owner_name']})
-      json_error 409, 'Duplicated username'
+      resource = Sp_resource.find_by({'resource_owner_name' => new_resource['resource_owner_name']})
+      json_error 409, 'Duplicated resource object'
     rescue Mongoid::Errors::DocumentNotFound => e
-      # Continue
-    end
-    # Check if user ID already exists in the database
-    begin
-      user = Sp_user.find_by({ '_id' => user_id })
-      json_error 409, 'Duplicated user ID'
-    rescue Mongoid::Errors::DocumentNotFound => e
+      logger.debug 'Resource not found, proceeding to save...'
       # Continue
     end
 
-    # Save new resource to DB
+    # Save to DB
     begin
-      new_user = {}
-      new_user['_id'] = user_id
-      new_user['username'] = form['username']
-      new_user['public_key'] = pkey
-      new_user['certificate'] = cert
-      user = Sp_user.create!(new_user)
+      # Generate the UUID for the resource object
+      new_resource['_id'] = SecureRandom.uuid
+      # new_resource['status'] = 'active'
+      resource = Sp_resource.create!(new_resource)
     rescue Moped::Errors::OperationFailure => e
-      delete_user(form['username'])
-      json_error 409, 'Duplicated user ID' if e.message.include? 'E11000'
+      json_error 400, e.to_s
     end
 
-    logger.debug "Database: New user #{form['username']} with ID #{user_id} has been added"
-
-    logger.info "New user #{form['username']} has been registered"
-    response = {'username' => form['username'], 'userId' => user_id.to_s}
-    halt 201, {'Content-type' => 'application/json'}, response.to_json
+    logger.debug "New resource object added with id=#{new_resource['_id']}"
+    halt 201, {'Content-type' => 'application/json'}, resource.to_json
   end
 
-  put '/resources' do
+  put '/resources/?' do
     logger.debug 'Adapter: entered PUT /resources'
     # Return if Authorization is invalid
     halt 400 unless request.env["HTTP_AUTHORIZATION"]
@@ -155,19 +149,48 @@ class Keycloak < Sinatra::Application
     if res != 200
       json_error(401, res)
     end
+
+    # TODO: Implement
   end
 
-  delete '/resources' do
+  delete '/resources/?' do
     logger.debug 'Adapter: entered DELETE /resources'
-    # Return if Authorization is invalid
-    halt 400 unless request.env["HTTP_AUTHORIZATION"]
-    user_token = request.env["HTTP_AUTHORIZATION"].split(' ').last
-    unless user_token
-      json_error(400, 'Access token is not provided')
-    end
-    res = token_expired?(user_token)
-    if res != 200
-      json_error(401, res)
+    # logger.info "Content-Type is " + request.media_type
+    # halt 415 unless (request.content_type == 'application/json')
+
+    # Transform 'string' params Hash into keys
+    keyed_params = keyed_hash(params)
+    headers = {'Accept' => 'application/json', 'Content-Type' => 'application/json'}
+    # headers[:params] = params unless params.empty?
+
+    json_error 400, 'Resource id or clientId is not provided' unless keyed_params.key?(:id) or
+        keyed_params.key?(:clientId)
+
+    if keyed_params.has_key?(:clientId)
+      begin
+        resource = Sp_resource.find_by({ 'clientId' => keyed_params[:clientId] })
+        logger.debug 'Resource is found'
+      rescue Mongoid::Errors::DocumentNotFound => e
+        logger.error e
+        json_error 404, "Resource object #{keyed_params[:clientId]} not found"
+      end
+      logger.debug "Adapter: leaving DELETE /resources? with resource object #{keyed_params[:clientId]} deleted"
+      resource.destroy
+      halt 204
+    elsif keyed_params.has_key?(:id)
+      begin
+        resource = Sp_resource.find(keyed_params[:id])
+        logger.debug 'Resource is found'
+      rescue Mongoid::Errors::DocumentNotFound => e
+        logger.error e
+        json_error 404, "Resource object #{keyed_params[:id]} not found" unless resource
+      end
+      logger.debug "Adapter: leaving DELETE /resources? with resource object #{keyed_params[:id]} deleted"
+      resource.destroy
+      halt 204
+    else
+      logger.debug 'Adapter: leaving DELETE /resources? with no valid resource object specified'
+      json_error 400, 'No valid resource object specified'
     end
   end
 end

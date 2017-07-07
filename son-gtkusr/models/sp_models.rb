@@ -48,10 +48,13 @@ class Sp_resource
   include Mongoid::Attributes::Dynamic
   store_in collection: 'sp_resources'
 
-  field :name, type: String
-  field :roles, type: Array
+  field :resource_owner_name, type: String
+  field :role, type: String
+  field :resources, type: Array
+  field :policies, type: Array
+  # field :scopes, type: Array
 
-  validates :name, presence: true
+  validates :resource_owner_name, :role, :resources, :policies, presence: true
 end
 
 # Class model for SP permissions
