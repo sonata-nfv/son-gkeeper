@@ -99,7 +99,9 @@ class Keycloak < Sinatra::Application
     group_data, errors = parse_json(group_data)
 
     new_group_data, errors = parse_json(request.body.read)
+    logger.debug "ERRORS", errors if errors
     halt 400, {'Content-type' => 'application/json'}, errors.to_json if errors
+    logger.debug "IS_A_HASH?" unless new_group_data.is_a?(Hash)
     halt 400 unless new_group_data.is_a?(Hash)
 
     code, msg = update_group(group_data['id'], new_group_data.to_json)
@@ -128,7 +130,7 @@ class Keycloak < Sinatra::Application
     group_data, errors = parse_json(group_data)
 
     code, msg = delete_group(group_data['id'])
-    halt code.to_i, {'Content-type' => 'application/json'}, msg unless msg.empty?
+    halt code.to_i, {'Content-type' => 'application/json'}, msg unless msg.nil?
     halt code.to_i
   end
 

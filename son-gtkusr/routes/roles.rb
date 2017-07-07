@@ -69,7 +69,8 @@ class Keycloak < Sinatra::Application
     code, msg = create_realm_role(new_role_data)
     logger.debug "CODE #{code}"
     logger.debug "MESSAGE #{msg}"
-    halt code.to_i, {'Content-type' => 'application/json'}, msg unless msg.empty?
+    # halt code.to_i, {'Content-type' => 'application/json'}, msg unless msg.empty?
+    json_error(code.to_i, msg.to_s) unless msg.empty?
     halt code.to_i
   end
 
@@ -98,7 +99,9 @@ class Keycloak < Sinatra::Application
     role_data, errors = parse_json(role_data)
 
     new_role_data, errors = parse_json(request.body.read)
+    logger.debug "ERRORS", errors if errors
     halt 400, {'Content-type' => 'application/json'}, errors.to_json if errors
+    logger.debug "IS_A_HASH?" unless new_role_data.is_a?(Hash)
     halt 400 unless new_role_data.is_a?(Hash)
 
     code, msg = update_realm_role(role_data['name'], new_role_data.to_json)
@@ -116,19 +119,19 @@ class Keycloak < Sinatra::Application
     json_error(400, 'Role Name or Id is missing') if params.empty?
     # keyed_params = keyed_hash(params)
 
-    keyed_params.each { |k, v|
+    params.each { |k, v|
       logger.debug "Adapter: query #{k}=#{v}"
       unless queriables.include? k.to_s
         json_error(400, 'Bad query')
       end
     }
-    code, role_data = get_realm_roles(keyed_params)
+    code, role_data = get_realm_roles(params)
     logger.debug "Adapter: found role_data= #{role_data}"
     json_error(400, 'Indicated role not found') if role_data == 'null'
     role_data, errors = parse_json(role_data)
 
     code, msg = delete_realm_role(role_data['name'])
-    halt code.to_i, {'Content-type' => 'application/json'}, msg unless msg.empty?
+    halt code.to_i, {'Content-type' => 'application/json'}, msg unless msg.nil?
     halt code.to_i
   end
 
