@@ -71,7 +71,8 @@ class Keycloak < Sinatra::Application
     code, msg = create_group(new_group_data)
     logger.debug "CODE #{code}"
     logger.debug "MESSAGE #{msg}"
-    halt code.to_i, {'Content-type' => 'application/json'}, msg unless msg.empty?
+    # halt code.to_i, {'Content-type' => 'application/json'}, msg unless msg.empty?
+    json_error(code.to_i, msg.to_s) unless msg.empty?
     halt code.to_i
   end
 
