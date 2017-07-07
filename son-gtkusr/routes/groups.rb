@@ -71,8 +71,8 @@ class Keycloak < Sinatra::Application
     code, msg = create_group(new_group_data)
     logger.debug "CODE #{code}"
     logger.debug "MESSAGE #{msg}"
-    halt code, {'Content-type' => 'application/json'}, msg unless msg.empty?
-    halt code
+    halt code.to_i, {'Content-type' => 'application/json'}, msg unless msg.empty?
+    halt code.to_i
   end
 
   put '/groups/?' do
@@ -103,8 +103,8 @@ class Keycloak < Sinatra::Application
     halt 400 unless new_group_data.is_a?(Hash)
 
     code, msg = update_group(group_data['id'], new_group_data.to_json)
-    halt code, {'Content-type' => 'application/json'}, msg unless msg.empty?
-    halt code
+    halt code.to_i, {'Content-type' => 'application/json'}, msg unless msg.nil?
+    halt code.to_i
   end
 
   delete '/groups/?' do
@@ -128,8 +128,8 @@ class Keycloak < Sinatra::Application
     group_data, errors = parse_json(group_data)
 
     code, msg = delete_group(group_data['id'])
-    halt code, {'Content-type' => 'application/json'}, msg unless msg.empty?
-    halt code
+    halt code.to_i, {'Content-type' => 'application/json'}, msg unless msg.empty?
+    halt code.to_i
   end
 
   post '/groups/assign/?' do
@@ -149,7 +149,7 @@ class Keycloak < Sinatra::Application
     json_error 404, 'Username not found' if user_id.nil?
 
     code , msg = assign_group(form['group'], user_id)
-    halt code, {'Content-type' => 'application/json'}, msg
+    halt code.to_i, {'Content-type' => 'application/json'}, msg
   end
 
   post '/groups/unassign/?' do
@@ -169,6 +169,6 @@ class Keycloak < Sinatra::Application
     json_error 404, 'Username not found' if user_id.nil?
 
     code , msg = unassign_group(form['group'], user_id)
-    halt code, {'Content-type' => 'application/json'}, msg
+    halt code.to_i, {'Content-type' => 'application/json'}, msg
   end
 end

@@ -69,8 +69,8 @@ class Keycloak < Sinatra::Application
     code, msg = create_realm_role(new_role_data)
     logger.debug "CODE #{code}"
     logger.debug "MESSAGE #{msg}"
-    halt code, {'Content-type' => 'application/json'}, msg unless msg.empty?
-    halt code
+    halt code.to_i, {'Content-type' => 'application/json'}, msg unless msg.empty?
+    halt code.to_i
   end
 
   # Update a role by name
@@ -102,8 +102,8 @@ class Keycloak < Sinatra::Application
     halt 400 unless new_role_data.is_a?(Hash)
 
     code, msg = update_realm_role(role_data['name'], new_role_data.to_json)
-    halt code, {'Content-type' => 'application/json'}, msg unless msg.empty?
-    halt code
+    halt code.to_i, {'Content-type' => 'application/json'}, msg unless msg.empty?
+    halt code.to_i
   end
 
   # Delete a role by name
@@ -128,8 +128,8 @@ class Keycloak < Sinatra::Application
     role_data, errors = parse_json(role_data)
 
     code, msg = delete_realm_role(role_data['name'])
-    halt code, {'Content-type' => 'application/json'}, msg unless msg.empty?
-    halt code
+    halt code.to_i, {'Content-type' => 'application/json'}, msg unless msg.empty?
+    halt code.to_i
   end
 
   post '/roles/assign/?' do
@@ -149,7 +149,7 @@ class Keycloak < Sinatra::Application
     json_error 404, 'Username not found' if user_id.nil?
 
     code , msg = assign_role(form['role'], user_id)
-    halt code, {'Content-type' => 'application/json'}, msg
+    halt code.to_i, {'Content-type' => 'application/json'}, msg
   end
 
   post '/roles/unassign/?' do
@@ -169,6 +169,6 @@ class Keycloak < Sinatra::Application
     json_error 404, 'Username not found' if user_id.nil?
 
     code , msg = unassign_role(form['role'], user_id)
-    halt code, {'Content-type' => 'application/json'}, msg
+    halt code.to_i, {'Content-type' => 'application/json'}, msg
   end
 end
