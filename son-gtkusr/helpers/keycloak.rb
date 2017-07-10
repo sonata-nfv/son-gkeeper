@@ -937,9 +937,48 @@ class Keycloak < Sinatra::Application
     end
   end
 
-  def delete_realm_role(role)
-    # Delete a role by name
+  def create_realm_role(role_data)
+    # Create a new realm role
+    # POST /admin/realms/{realm}/roles
+    refresh_adapter # Refresh admin token if expired
+    url = URI("http://#{@@address.to_s}:#{@@port.to_s}/#{@@uri.to_s}/admin/realms/#{@@realm_name}/roles")
+    http = Net::HTTP.new(url.host, url.port)
+    request = Net::HTTP::Post.new(url.to_s)
+    request["authorization"] = 'Bearer ' + @@access_token
+    request["content-type"] = 'application/json'
+    request.body = role_data.to_json
+
+    response = http.request(request)
+    return response.code, response.body
+  end
+
+  def update_realm_role(role_name, role_data)
+    # Update a realm role by name
+    # PUT /admin/realms/{realm}/roles/{role-name}
+    refresh_adapter # Refresh admin token if expired
+    url = URI("http://#{@@address.to_s}:#{@@port.to_s}/#{@@uri.to_s}/admin/realms/#{@@realm_name}/roles/#{role_name}")
+    http = Net::HTTP.new(url.host, url.port)
+    request = Net::HTTP::Put.new(url.to_s)
+    request["authorization"] = 'Bearer ' + @@access_token
+    request["content-type"] = 'application/json'
+    request.body = role_data.to_json
+
+    response = http.request(request)
+    return response.code, response.body
+  end
+
+  def delete_realm_role(role_name)
+    # Delete a realm role by name
     # DELETE /admin/realms/{realm}/roles/{role-name}
+    refresh_adapter # Refresh admin token if expired
+    url = URI("http://#{@@address.to_s}:#{@@port.to_s}/#{@@uri.to_s}/admin/realms/#{@@realm_name}/roles/#{role_name}")
+    http = Net::HTTP.new(url.host, url.port)
+    request = Net::HTTP::Delete.new(url.to_s)
+    request["authorization"] = 'Bearer ' + @@access_token
+    request["content-type"] = 'application/json'
+
+    response = http.request(request)
+    return response.code, response.body
   end
 
   def update_user(username, user_id, body)
@@ -1018,13 +1057,18 @@ class Keycloak < Sinatra::Application
     if query && query.key?('name')
       group_data = group_list.find {|group| group['name'] == query['name'] }
       group_data.to_json
+    elsif query && query.key?('id')
+      group_data = group_list.find {|group| group['id'] == query['id'] }
+      group_data.to_json
     else
-      group_list
+      group_list.to_json
     end
   end
 
   def get_groups_names(group_list, role)
+    refresh_adapter
     role_group_map = []
+    group_list = parse_json(group_list)[0]
     group_list.each { |k|
       if k['id']
         url = URI("http://#{@@address.to_s}:#{@@port.to_s}/#{@@uri.to_s}/admin/realms/#{@@realm_name}/groups/#{k['id']}")
@@ -1045,6 +1089,53 @@ class Keycloak < Sinatra::Application
       end
     }
     role_group_map
+  end
+
+  def create_group(group_data)
+    # POST /admin/realms/{realm}/groups
+    # BodyParameter GroupRepresentation
+    # id, name, path, attributes, realmRoles, clientRoles, subGroups
+    refresh_adapter # Refresh admin token if expired
+    url = URI("http://#{@@address.to_s}:#{@@port.to_s}/#{@@uri.to_s}/admin/realms/#{@@realm_name}/groups")
+    http = Net::HTTP.new(url.host, url.port)
+    request = Net::HTTP::Post.new(url.to_s)
+    request["authorization"] = 'Bearer ' + @@access_token
+    request["content-type"] = 'application/json'
+    request.body = group_data.to_json
+
+    response = http.request(request)
+    return response.code, response.body
+  end
+
+  def update_group(group_id, group_data)
+    # PUT /admin/realms/{realm}/groups/{id}
+    # BodyParameter GroupRepresentation
+    # id, name, path, attributes, realmRoles, clientRoles, subGroups
+    refresh_adapter # Refresh admin token if expired
+    url = URI("http://#{@@address.to_s}:#{@@port.to_s}/#{@@uri.to_s}/admin/realms/#{@@realm_name}/groups/#{group_id}")
+    http = Net::HTTP.new(url.host, url.port)
+    request = Net::HTTP::Put.new(url.to_s)
+    request["authorization"] = 'Bearer ' + @@access_token
+    request["content-type"] = 'application/json'
+    request.body = group_data.to_json
+
+    response = http.request(request)
+    return response.code, response.body
+  end
+
+  def delete_group(group_id)
+    # DELETE /admin/realms/{realm}/groups/{id}
+    # BodyParameter GroupRepresentation
+    # id, name, path, attributes, realmRoles, clientRoles, subGroups
+    refresh_adapter # Refresh admin token if expired
+    url = URI("http://#{@@address.to_s}:#{@@port.to_s}/#{@@uri.to_s}/admin/realms/#{@@realm_name}/groups/#{group_id}")
+    http = Net::HTTP.new(url.host, url.port)
+    request = Net::HTTP::Delete.new(url.to_s)
+    request["authorization"] = 'Bearer ' + @@access_token
+    request["content-type"] = 'application/json'
+
+    response = http.request(request)
+    return response.code, response.body
   end
 
   def get_clients(query=nil)
@@ -1080,7 +1171,7 @@ class Keycloak < Sinatra::Application
     # GET /admin/realms/{realm}/clients/{id}/service-account-user
   end
 
-  def get_realm_roles(keyed_query=nil)
+  def get_realm_roles(query=nil)
     logger.debug 'Adapter: getting realm roles'
     refresh_adapter # Refresh admin token if expired
     # Get all roles for the realm or client
@@ -1091,7 +1182,17 @@ class Keycloak < Sinatra::Application
     request["authorization"] = 'Bearer ' + @@access_token
 
     response = http.request(request)
-    return response.code, response.body
+    role_list = parse_json(response.read_body)[0]
+
+    if query && query.key?('name')
+      role_data = role_list.find {|role| role['name'] == query['name'] }
+      return response.code, role_data.to_json
+    elsif query && query.key?('id')
+      role_data = role_list.find {|role| role['id'] == query['id'] }
+      return response.code, role_data.to_json
+    else
+      return response.code, response.body
+    end
   end
 
   def get_client_roles(client, keyed_query=nil)
@@ -1395,7 +1496,7 @@ class Keycloak < Sinatra::Application
   def assign_group(group_name, user_id)
     refresh_adapter
     # Search group
-    group_list = get_groups # ({'name' => group_name})
+    group_list, errors = parse_json(get_groups) # ({'name' => group_name})
     group_data = group_list.find {|group| group['name'] == group_name}
     unless group_data
       return 401, ({'Error' => 'Group not found'}).to_json
