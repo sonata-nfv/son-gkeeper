@@ -140,17 +140,67 @@ class Keycloak < Sinatra::Application
   put '/resources/?' do
     logger.debug 'Adapter: entered PUT /resources'
     # Return if Authorization is invalid
-    halt 400 unless request.env["HTTP_AUTHORIZATION"]
-    user_token = request.env["HTTP_AUTHORIZATION"].split(' ').last
-    unless user_token
-      json_error(400, 'Access token is not provided')
-    end
-    res = token_expired?(user_token)
-    if res != 200
-      json_error(401, res)
+    # halt 400 unless request.env["HTTP_AUTHORIZATION"]
+    # user_token = request.env["HTTP_AUTHORIZATION"].split(' ').last
+    # unless user_token
+    #   json_error(400, 'Access token is not provided')
+    # end
+    # res = token_expired?(user_token)
+    # if res != 200
+    #   json_error(401, res)
+    # end
+
+    keyed_params = keyed_hash(params)
+    headers = {'Accept' => 'application/json', 'Content-Type' => 'application/json'}
+
+    json_error 400, 'Resource id or clientId is not provided' unless keyed_params.key?(:id) or
+        keyed_params.key?(:clientId)
+
+    if keyed_params.has_key?(:clientId)
+      begin
+        resource = Sp_resource.find_by({ 'clientId' => keyed_params[:clientId] })
+        logger.debug 'Resource is found'
+      rescue Mongoid::Errors::DocumentNotFound => e
+        logger.error e
+        json_error 404, "Resource object #{keyed_params[:clientId]} not found"
+      end
+      # logger.debug "Adapter: leaving DELETE /resources? with resource object #{keyed_params[:clientId]} deleted"
+    elsif keyed_params.has_key?(:id)
+      begin
+        resource = Sp_resource.find(keyed_params[:id])
+        logger.debug 'Resource is found'
+      rescue Mongoid::Errors::DocumentNotFound => e
+        logger.error e
+        json_error 404, "Resource object #{keyed_params[:id]} not found" unless resource
+      end
+    else
+      logger.debug 'Adapter: leaving DELETE /resources? with no valid resource object specified'
+      json_error 400, 'No valid resource object specified'
     end
 
-    # TODO: Implement
+    new_resource, errors = parse_json(request.body.read)
+    halt 400, {'Content-type' => 'application/json'}, errors.to_json if errors
+
+    # Validate Resource object
+    json_error 400, 'ERROR: Resource Vendor not found' unless new_resource.has_key?('resource_owner_name')
+    json_error 400, 'ERROR: Resource Name not found' unless new_resource.has_key?('role')
+    json_error 400, 'ERROR: Resource Version not found' unless new_resource.has_key?('resources')
+    json_error 400, 'ERROR: Resource Version not found' unless new_resource.has_key?('policies')
+
+    # Save to DB
+    begin
+      # Generate the UUID for the resource object
+      resource.update_attributes(resource_owner_name: new_resource['resource_owner_name'],
+                                 role: new_resource['role'],
+                                 resources: new_resource['resources'],
+                                 policies: new_resource['policies'])
+    rescue Moped::Errors::OperationFailure => e
+      json_error 400, e.to_s
+    end
+
+    logger.debug "New resource object updated with id=#{resource['_id']}"
+    halt 200, {'Content-type' => 'application/json'}, resource.to_json
+
   end
 
   delete '/resources/?' do
