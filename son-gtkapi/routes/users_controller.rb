@@ -165,7 +165,7 @@ class GtkApi < Sinatra::Base
         json_error 400, "A public key must be provided as part of the body", log_message
       end
       
-      token = get_token( request.env, log_message)
+      token = get_token( request.env, began_at, method(:count_user_update_public_key_requests), log_message)
       
       user = User.find_by_name(params[:username])
       unless user
@@ -224,6 +224,12 @@ class GtkApi < Sinatra::Base
     name = __method__.to_s.split('_')[1..-1].join('_')
     desc = "how many users have been registered"
     User.counter_kpi({name: name, docstring: desc, base_labels: labels.merge({method: 'POST', module: 'users'})})
+  end
+  
+  def count_user_update_public_key_requests(labels:)
+    name = __method__.to_s.split('_')[1..-1].join('_')
+    desc = "how many users have requested to update their public keys"
+    User.counter_kpi({name: name, docstring: desc, base_labels: labels.merge({method: 'PATCH', module: 'users'})})
   end
   
 end

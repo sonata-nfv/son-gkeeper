@@ -28,7 +28,7 @@
 require 'tempfile'
 require './models/manager_service.rb'
 
-class PackageManagerService < ManagerService
+class Package < ManagerService
 
   LOG_MESSAGE = 'GtkApi::' + self.name
 
@@ -39,12 +39,50 @@ class PackageManagerService < ManagerService
   def self.config(url:)
     method = LOG_MESSAGE + "##{__method__}"
     GtkApi.logger.debug(method) {'entered with url='+url}
-    raise ArgumentError.new('PackageManagerService can not be configured with nil or empty url') if url.to_s.empty?
+    raise ArgumentError.new('Package can not be configured with nil or empty url') if url.to_s.empty?
     @@url = url
-    @@catalogue_url = ENV[GtkApi.services['catalogue']['environment']] || GtkApi.services['catalogue']['url']
-    GtkApi.logger.debug(method) {'@@catalogue_url='+@@catalogue_url}
+    @@catalogue_url = ENV[GtkApi.services['catalogue']['env_var_url']]
+    GtkApi.logger.debug(method) {"@@catalogue_url=#{@@catalogue_url}"}
   end
 
+   def initialize(params)
+=begin
+{
+    "created_at": "2017-06-29T13:34:48.049+00:00", 
+    "md5": "49ce3e2f15aec5c012ef35575255ebfb", 
+    "pd": {
+        "description": "SONATA RING service for qualification environment", 
+        "descriptor_version": "1.0", 
+        "entry_service_template": "/service_descriptors/sonata-qual-1vnf-1pop.yml", 
+        "maintainer": "Felipe Vicens, ATOS, felipe.vicens@atos.net", 
+        "name": "sonata-ring-service", 
+        "package_content": [
+            {
+                "content-type": "application/sonata.service_descriptor", 
+                "md5": "3480169189d000dc70dfe5b022629c21", 
+                "name": "/service_descriptors/sonata-qual-1vnf-1pop.yml"
+            }, 
+            {
+                "content-type": "application/sonata.function_descriptor", 
+                "md5": "7dac616660f603911ac6268aa3846095", 
+                "name": "/function_descriptors/vring-vnf-vnfd.yml"
+            }
+        ], 
+        "schema": "https://raw.githubusercontent.com/sonata-nfv/son-schema/master/package-descriptor/pd-schema.yml", 
+        "sealed": true, 
+        "vendor": "eu.sonata-nfv.package", 
+        "version": "0.1"
+    }, 
+    "signature": null, 
+    "son-package-uuid": "e7856eec-b8b1-4c1a-9d0d-7aed074cdd13", 
+    "status": "active", 
+    "updated_at": "2017-06-29T13:34:48.049+00:00", 
+    "username": "sonata", 
+    "uuid": "d6b0d11b-8a06-4123-a882-c1bd1d4fd91d"
+}
+=end     
+   end
+  
   def self.create(params)
     method = LOG_MESSAGE + "##{__method__}"
     GtkApi.logger.debug(method) {"entered with params #{params}"}
@@ -89,15 +127,11 @@ class PackageManagerService < ManagerService
   end
   
   def self.find_by_uuid(uuid)
-    method = LOG_MESSAGE + "##{__method__}"
-    GtkApi.logger.debug(method) {'entered'}
-    begin
-      response = RestClient.get(@@url+"/packages/#{uuid}", JSON_HEADERS)
-      GtkApi.logger.debug(method) {"response #{response}"}
-      JSON.parse response, symbolize_names: true
-    rescue => e
-      e.to_json
-    end
+    log_message = LOG_MESSAGE + "##{__method__}"
+    GtkApi.logger.debug(log_message) {"entered with uuid #{uuid}"}
+    response = getCurb(url: @@url + '/packages/'+uuid)
+    GtkApi.logger.debug(log_message) {"response=#{response}"}
+    response
   end
 
   def self.find_package_file_name(uuid)
@@ -117,19 +151,11 @@ class PackageManagerService < ManagerService
   end
 
   def self.find(params)
-    method = LOG_MESSAGE + "##{__method__}"
-    GtkApi.logger.debug(method) {'entered'}
-    headers = JSON_HEADERS
-    headers[:params] = params if params
-    begin
-      response = RestClient.get(@@url+'/packages', headers)
-      GtkApi.logger.debug(method) {"response #{response}"}
-      JSON.parse response, symbolize_names: true
-    rescue => e
-      GtkApi.logger.error(method) {"Error during processing: #{$!}"}
-      GtkApi.logger.error(method) {"Backtrace:\n\t#{e.backtrace.join("\n\t")}"}
-      nil
-    end
+    log_message = LOG_MESSAGE + "##{__method__}"
+    GtkApi.logger.debug(log_message) {"entered with params #{params}"}
+    response = getCurb(url: @@url + '/packages', params: params)
+    GtkApi.logger.debug(log_message) {"response=#{response}"}
+    response
   end
   
   def self.download(uuid)
@@ -211,6 +237,9 @@ class PackageManagerService < ManagerService
       GtkApi.logger.error(method) {"Backtrace:\n\t#{e.backtrace.join("\n\t")}"}
       nil
     end
+  end
+  
+  def is_licensed?(user_id)
   end
   
 end

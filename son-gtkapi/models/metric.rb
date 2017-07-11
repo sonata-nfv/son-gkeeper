@@ -41,7 +41,7 @@ class Metric < ManagerService
   # GET http://sp.int3.sonata-nfv.eu:8000/api/v1/prometheus/metrics/list
   # POST http://sp.int3.sonata-nfv.eu:8000/api/v1/ws/new -d {"metric":"vm_cpu_perc","filters":["id='123456asdas255sdas'","type='vnf'"]}
   
-  attr_accessor :name
+  attr_accessor :name, :instances
   
   def self.config(url:)
     log_message = LOG_MESSAGE + "##{__method__}"
@@ -54,11 +54,14 @@ class Metric < ManagerService
     log_message = LOG_MESSAGE + "##{__method__}"
     GtkApi.logger.debug(log_message) {"entered with params=#{params}"}
     @name = params[:name]
+    # instance IDs could be used to validate if required metric name was available for that instance
+    @instances = params[:instances]
   end
   
   # Get list of the available metrics.
   # curl -s http://<mon_manager_url>/api/v1/prometheus/metrics/list
   def self.find(params)
+    # TODO: re-implement this like find_by_name: results are more complex than these
     log_message = LOG_MESSAGE + "##{__method__}"
     GtkApi.logger.debug(log_message) {"entered with params=#{params}"}
     response = getCurb(url: @@url+'/prometheus/metrics/list', params: params)
@@ -85,13 +88,19 @@ class Metric < ManagerService
     log_message = LOG_MESSAGE + "##{__method__}"
     raise MetricNameCanNotBeNilOrEmptyError.new('Metric name can not be nil or empty') if (name.nil? || name.empty?)
     GtkApi.logger.debug(log_message) {'entered with name='+name}
-    response = getCurb(url: @@url+'/prometheus/metrics/name/'+name)
+    response = getCurb(url: @@url+'/prometheus/metrics/name/'+name+'/')
     GtkApi.logger.debug(log_message) {"response=#{response}"}
-    if response[:status] == 200
-      Metric.new(response[:items])
-    else
-      raise MetricNameNotFoundError.new('Metric with name '+name+' was not found')
+    
+    raise MetricNameNotFoundError.new('Metric with name '+name+' was not found') unless response[:status] == 200
+    raise MetricNameNotFoundError.new('Metric with name '+name+' was not found') if response[:items][:metrics].empty?
+    
+    metrics = response[:items][:metrics][:result]
+    GtkApi.logger.debug(log_message) {"found #{metrics.size} with name #{name}"}
+    ids = []
+    metrics.each do |metric|
+      ids << metric[:metric][:id]
     end
+    Metric.new({name: name, instances: ids})
   end
 
   def self.get_kpis(params)
@@ -130,17 +139,22 @@ class Metric < ManagerService
   # -H "Content-Type:application/json" 
   # -X POST --data '{"name":"vm_mem_perc","start": "'$tw_start'", "end": "'$tw_end'", "step": "10s", "labels": [{"labeltag":"exported_job", "labelid":"vnf"}]}' 
   # "http://<mon_manager_url>/api/v1/prometheus/metrics/data"
+  # {"name":"vm_mem_perc","start": "'$tw_start'", "end": "'$tw_end'", "step": "10s", "labels": [{"labeltag":"exported_job", "labelid":"vnf"}]}
+  # labels:[{"labeltag":"id", "labelid":"123456asdas255sdas"}]}'
   def asynch_monitoring_data(params)
     log_message = LOG_MESSAGE + "##{__method__}"
     GtkApi.logger.debug(log_message) {"entered with params=#{params}"}
-        
+    vnfc_uuid = params.delete(:vnfc_id)
+    body = params.merge({name: @name})
+    body = body.merge!({labels: [{labeltag:'id', labelid: vnfc_uuid}, {labeltag: 'exported_job', labelid: 'vnf'}]})
+    
     begin
-      resp = postCurb(url: @@url+'/prometheus/metrics/data', body: params.merge({name: @name}))
+      resp = Metric.postCurb(url: @@url+'/prometheus/metrics/data', body: body)
       GtkApi.logger.debug(log_message) {"resp=#{resp}"}
       case resp[:status]
       when 200..202
         GtkApi.logger.debug(log_message) {"request=#{resp[:items]}"}
-        self
+        resp[:items]
       else
         GtkApi.logger.error(log_message) {"Status #{resp[:status]}"} 
         raise AsynchMonitoringDataRequestNotCreatedError.new "Asynch monitoring data with params #{params} was not created "
@@ -158,24 +172,27 @@ class Metric < ManagerService
   # -H "Content-Type:application/json" 
   # -X POST --data '{"metric":"vm_cpu_perc","filters":["id='123456asdas255sdas'","type='vnf'"]}' 
   # "http://<mon_manager_url>/api/v1/ws/new"
-  def synch_monitoring_data(params)
-    log_message = LOG_MESSAGE + "##{__method__}"
-    GtkApi.logger.debug(log_message) {"entered with params=#{params}"}
+  def synch_monitoring_data(vnfc_uuid)
+    log_message = LOG_MESSAGE + ".#{__method__}"
+    GtkApi.logger.debug(log_message) {"entered with vnfc_uuid=#{vnfc_uuid}"}
+    body = {}
+    body[:metric]=@name
+    body[:filters]=["id='#{vnfc_uuid}'", "type='vnf'"]
     begin
-      resp = postCurb(url: @@url+'/ws/new', body: params.merge({name: @name}))
+      resp = Metric.postCurb(url: @@url+'/ws/new', body: body)
       GtkApi.logger.debug(log_message) {"resp=#{resp}"}
       case resp[:status]
       when 200..202
         GtkApi.logger.debug(log_message) {"request=#{resp[:items]}"}
-        self
+        resp[:items]
       else
-        GtkApi.logger.error(log_message) {"Status #{resp[:status]}"} 
-        raise SynchMonitoringDataRequestNotCreatedError.new "Synch monitoring data with params #{params} was not created "
+        GtkApi.logger.error(log_message) {"Status #{resp[:status]} Synch monitoring data with params #{vnfc_uuid} was not created"} 
+        raise SynchMonitoringDataRequestNotCreatedError.new "Synch monitoring data with params #{vnfc_uuid} was not created"
       end
     rescue  => e
       GtkApi.logger.error(log_message) {"Error during processing: #{$!}"}
       GtkApi.logger.error(log_message) {"Backtrace:\n\t#{e.backtrace.join("\n\t")}"}
-      raise SynchMonitoringDataRequestNotCreatedError.new "Synch monitoring data with params #{params} was not created "
+      raise SynchMonitoringDataRequestNotCreatedError.new "Synch monitoring data with params #{vnfc_uuid} was not created"
     end
   end
   

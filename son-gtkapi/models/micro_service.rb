@@ -40,7 +40,7 @@ class MicroService < ManagerService
   attr_accessor :uuid, :clientId, :redirectUris, :secret, :token
   
   def self.config(url:)
-    method = LOG_MESSAGE + "#config(url=#{url})"
+    method = LOG_MESSAGE + "#config"
     raise ArgumentError.new('MicroService Manager Service can not be configured with nil or empty url') if (url.nil? || url.empty?)
     @@url = url
     GtkApi.logger.debug(method) {'entered with url '+url}

@@ -1,4 +1,3 @@
-##
 ## Copyright (c) 2015 SONATA-NFV [, ANY ADDITIONAL AFFILIATION]
 ## ALL RIGHTS RESERVED.
 ## 
@@ -25,17 +24,16 @@
 ## acknowledge the contributions of their colleagues of the SONATA 
 ## partner consortium (www.sonata-nfv.eu).
 # encoding: utf-8
-require './models/manager_service.rb'
+# spec/spec_helper.rb
+require 'rspec'
+require 'rack/test'
 
-class Catalogue < ManagerService
-    
-  #JSON_HEADERS = { 'Accept'=> 'application/json', 'Content-Type'=>'application/json'}
-  LOG_MESSAGE = 'GtkApi::' + self.name
-  
-  def self.config(url:)
-    method = LOG_MESSAGE + "#config"
-    raise ArgumentError.new('Catalogue can not be configured with nil or empty url') if (url.to_s.empty?)
-    @@url = url
-    GtkApi.logger.debug(method) {'entered with url='+url}
-  end
+ENV['RACK_ENV'] = 'test'
+
+$LOAD_PATH << File.expand_path('../../lib', __FILE__)
+require 'rate_limiter'
+
+
+RSpec.configure do |config|
+  config.mock_with :rspec
 end

@@ -63,6 +63,9 @@ class ManagerService
       begin
         parsed_response = res.body.empty? ? {} : JSON.parse(res.body, symbolize_names: true)
         GtkApi.logger.debug(log_message) {"parsed_response=#{parsed_response}"}
+        if count == 0 && !parsed_response.to_s.empty?
+          count = parsed_response.is_a?(Hash) ? 1 : parsed_response.count
+        end
         {status: status, count: count, items: parsed_response, message: "OK"}
       rescue => e
         GtkApi.logger.error(log_message) {"Error during processing: #{$!}"}

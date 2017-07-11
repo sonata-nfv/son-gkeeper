@@ -28,12 +28,13 @@ require_relative '../spec_helper'
 RSpec.describe Metric, type: :model do
   def app() GtkApi end
   
-  let(:known_metric_name1) {'cpu_util'}
+  let(:known_metric_name1) {'vm_cpu_perc'}
   let(:known_metric_name2) {'ram_util'}
   let(:known_metric) {{name: known_metric_name1}}
+  let(:known_metrics_response) {{:metrics=>{:resultType=>"vector", :result=>[{:metric=>{:exported_instance=>"INT-SRV-3", :core=>"cpu", :group=>"development", :exported_job=>"vm", :instance=>"pushgateway:9091", :job=>"sonata", :__name__=>"vm_cpu_perc", :id=>"a44a4d56-9bf4-4e15-aef4-0e5a52d0aec2"}, :value=>[1497360728.608, "5.94"]}, {:metric=>{:exported_instance=>"vtc-vnf", :core=>"cpu1", :group=>"development", :exported_job=>"vnf", :instance=>"pushgateway:9091", :job=>"sonata", :__name__=>"vm_cpu_perc", :id=>"d467cc91-12d3-4d81-bf90-b71acabaad61"}, :value=>[1497360728.608, "0"]}, {:metric=>{:exported_instance=>"TEST-VNF", :core=>"cpu1", :group=>"development", :exported_job=>"vnf", :instance=>"pushgateway:9091", :job=>"sonata", :__name__=>"vm_cpu_perc", :id=>"a44a4d56-9bf4-4e15-aef4-0e5a52d0aec2"}, :value=>[1497360728.608, "8.08"]}, {:metric=>{:exported_instance=>"TEST-VNF", :core=>"cpu", :group=>"development", :exported_job=>"vnf", :instance=>"pushgateway:9091", :job=>"sonata", :__name__=>"vm_cpu_perc", :id=>"a44a4d56-9bf4-4e15-aef4-0e5a52d0aec2"}, :value=>[1497360728.608, "8.96"]}, {:metric=>{:exported_instance=>"INT-SRV-3", :core=>"cpu1", :group=>"development", :exported_job=>"vm", :instance=>"pushgateway:9091", :job=>"sonata", :__name__=>"vm_cpu_perc", :id=>"a44a4d56-9bf4-4e15-aef4-0e5a52d0aec2"}, :value=>[1497360728.608, "6.93"]}, {:metric=>{:exported_instance=>"INT-SRV-3", :core=>"cpu0", :group=>"development", :exported_job=>"vm", :instance=>"pushgateway:9091", :job=>"sonata", :__name__=>"vm_cpu_perc", :id=>"a44a4d56-9bf4-4e15-aef4-0e5a52d0aec2"}, :value=>[1497360728.608, "5.88"]}, {:metric=>{:exported_instance=>"vtc-vnf", :core=>"cpu0", :group=>"development", :exported_job=>"vnf", :instance=>"pushgateway:9091", :job=>"sonata", :__name__=>"vm_cpu_perc", :id=>"d467cc91-12d3-4d81-bf90-b71acabaad61"}, :value=>[1497360728.608, "0"]}, {:metric=>{:exported_instance=>"vtc-vnf", :core=>"cpu", :group=>"development", :exported_job=>"vnf", :instance=>"pushgateway:9091", :job=>"sonata", :__name__=>"vm_cpu_perc", :id=>"d467cc91-12d3-4d81-bf90-b71acabaad61"}, :value=>[1497360728.608, "0"]}, {:metric=>{:exported_instance=>"TEST-VNF", :core=>"cpu0", :group=>"development", :exported_job=>"vnf", :instance=>"pushgateway:9091", :job=>"sonata", :__name__=>"vm_cpu_perc", :id=>"a44a4d56-9bf4-4e15-aef4-0e5a52d0aec2"}, :value=>[1497360728.608, "9.8"]}]}}}
   let(:unknown_metric_name1) {'abcd'}
   let(:unknown_metric_name2) {'efgh'}
-  let(:metrics_url) {'http://sp.int3.sonata-nfv.eu:8000/api/v1/prometheus/metrics/name'}
+  let(:metrics_url) {Metric.class_variable_get(:@@url)+'/prometheus/metrics/name' }
   let(:ok_response) {{status: 200, count: 1, items: [known_metric], message: 'OK'}}
   let(:not_found_response) {{status: 404, count: 0, items: [], message: 'Not Found'}}
 
@@ -46,8 +47,8 @@ RSpec.describe Metric, type: :model do
   describe '#find_by_name' do
     context 'with a known metric name' do
       before(:each) do
-        resp = OpenStruct.new(header_str: "HTTP/1.1 200 OK\nRecord-Count: 1", body: known_metric.to_json)      
-        allow(Curl).to receive(:get).with(metrics_url+'/'+known_metric_name1).and_return(resp) 
+        resp = OpenStruct.new(header_str: "HTTP/1.1 200 OK\nRecord-Count: 1", body: known_metrics_response.to_json)      
+        allow(Curl).to receive(:get).with(metrics_url+'/'+known_metric_name1+'/').and_return(resp) 
       end
       it 'should return a Metric instance' do
         expect(Metric.find_by_name(known_metric_name1)).to be_a Metric
@@ -66,7 +67,7 @@ RSpec.describe Metric, type: :model do
       end
       it 'unknown, should raise a MetricNameNotFoundError exception' do
         resp = OpenStruct.new(header_str: "HTTP/1.1 404 OK\nRecord-Count: 0", body: not_found_response)
-        allow(Curl).to receive(:get).with(metrics_url+'/'+unknown_metric_name1).and_return(resp) 
+        allow(Curl).to receive(:get).with(metrics_url+'/'+unknown_metric_name1+'/').and_return(resp) 
         expect{Metric.find_by_name(unknown_metric_name1)}.to raise_error(MetricNameNotFoundError)
       end
     end

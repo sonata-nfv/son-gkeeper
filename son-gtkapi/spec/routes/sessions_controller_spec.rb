@@ -46,7 +46,7 @@ RSpec.describe GtkApi, type: :controller do
         before(:each) do
           #allow(user_spied).to receive(:authenticated?).and_return(user_spied)
           #allow(User).to receive(:find_by_name).with(auth_info[:username]).and_return(user_spied)
-          allow(User).to receive(:authenticated?).with(Base64.strict_encode64(auth_info[:username]+':'+auth_info[:password])).and_return(user_spied)
+          allow(User).to receive(:authenticated?).with(username: auth_info[:username], password: auth_info[:password]).and_return(user_spied)
           post '/api/v2/sessions/', auth_info.to_json
         end
         it 'returns Ok (200)' do
@@ -58,9 +58,7 @@ RSpec.describe GtkApi, type: :controller do
       end
       context 'but user is not authenticated,' do
         before(:each) do
-          #allow(user_spied).to receive(:authenticated?).and_return(nil)
-          #allow(User).to receive(:find_by_name).with(auth_info[:username]).and_return(user_spied)
-          allow(User).to receive(:authenticated?).with(Base64.strict_encode64(auth_info[:username]+':'+auth_info[:password])).and_raise(UserNotAuthenticatedError)
+          allow(User).to receive(:authenticated?).with(username: auth_info[:username], password: auth_info[:password]).and_raise(UserNotAuthenticatedError)
           post '/api/v2/sessions/', auth_info.to_json
         end
         it 'calls User.authenticated?' do
@@ -102,6 +100,10 @@ RSpec.describe GtkApi, type: :controller do
       end
     end
     context 'returns Unprocessable entity (400)' do
+      before(:each) do
+        allow(User).to receive(:counter_kpi)
+      end
+      
       it 'without token given' do
         delete '/api/v2/sessions/', {}, {'HTTP_AUTHORIZATION' => ''}
         expect(last_response.status).to eq(401)

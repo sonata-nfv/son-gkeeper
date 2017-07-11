@@ -72,15 +72,114 @@ module GtkApiHelper
     links.join(",")
   end
   
-  def get_token( env, log_message)
-    json_error(401, 'Unauthorized: missing authorization header', log_message) if (env['HTTP_AUTHORIZATION'].to_s.empty?)
+  def get_token( env, began_at, method, log_message)    
+    if (env['HTTP_AUTHORIZATION'].to_s.empty?)
+      method.call(labels: {result: "Unauthorized", uuid: '', elapsed_time: (Time.now.utc-began_at).to_s}) if method
+      json_error(401, 'Unauthorized: missing authorization header', log_message) 
+    end
     logger.debug(log_message) {"entered with request.env['HTTP_AUTHORIZATION']="+env['HTTP_AUTHORIZATION']}
 
     authorization=env['HTTP_AUTHORIZATION']
     logger.debug(log_message) {'authorization='+authorization}
 
     bearer_token = authorization.split(' ')
-    json_error(400, 'Unprocessable entity: authorization header must be "Bearer <token>"', log_message) unless (bearer_token.size == 2 && bearer_token[0].downcase == 'bearer')
+    unless (bearer_token.size == 2 && bearer_token[0].downcase == 'bearer')
+      method.call(labels: {result: "bad request", uuid: '', elapsed_time: (Time.now.utc-began_at).to_s}) if method
+      json_error(400, 'Unprocessable entity: authorization header must be "Bearer <token>"', log_message)
+    end
     bearer_token[1]
+  end
+  
+  def get_signature(env, log_message)
+    logger.debug(log_message) {"entered with request.env['HTTP_SIGNATURE']=#{env['HTTP_SIGNATURE']}"}
+    env['HTTP_SIGNATURE'] ? env['HTTP_SIGNATURE'] : ''
+  end
+
+  def require_param(param:, params:, kpi_method: nil, error_message:, log_message:, began_at:)
+    if (!params.key?(param) || params[param].to_s.empty?)
+      kpi_method.call(labels: {result: "bad request", uuid: '', elapsed_time: (Time.now.utc-began_at).to_s}) if kpi_method
+      json_error 400, error_message+' is missing', log_message
+    end 
+  end
+
+  def validate_user_authorization(token:, action: '', uuid:, path:, method:, kpi_method: nil, began_at:, log_message: '')
+    unless User.authorized?(token: token, params: {path: path, method: method})
+      kpi_method.call(labels: {result: "forbidden", uuid: uuid, elapsed_time: (Time.now.utc-began_at).to_s}) if kpi_method
+      json_error 403, 'Forbidden: user could not be authorized to '+action, log_message
+    end
+  end
+  
+  def validate_uuid(uuid:, kpi_method: nil, began_at:, log_message: '')
+    uuid.match /[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89aAbB][a-f0-9]{3}-[a-f0-9]{12}/
+    unless uuid == $&
+      kpi_method.call(labels: {result: "bad request", uuid: uuid, elapsed_time: (Time.now.utc-began_at).to_s}) if kpi_method
+      json_error 404, "UUID #{uuid} not valid", log_message
+    end
+  end
+  
+  def validate_element_existence(uuid:, element:, name:, kpi_method:, began_at:, log_message:)
+    if element[:count]==0 || element[:items].empty?
+      kpi_method.call(labels: {result: "not found", uuid: uuid, elapsed_time: (Time.now.utc-began_at).to_s}) if kpi_method
+      json_error 404, name+" "+uuid+" not found", log_message
+    end
+  end
+  
+  def validate_collection_existence(collection:, name:, kpi_method:, began_at:, log_message:)
+    log_message = "GtkApiHelper##{__method__}"
+    logger.debug(log_message) {"Entered with collection=#{collection}, name=#{name}"}
+    if collection && collection[:status] && collection[:status] != 200
+      kpi_method.call(labels: {result: "not found", uuid: '', elapsed_time: (Time.now.utc-began_at).to_s}) if kpi_method
+      json_error 404, "No #{name} were found", log_message
+    end
+  end
+  
+  def validate_ownership_and_licence(element:, user_name:, kpi_method:, began_at:, log_message:)
+    if element[:licence].to_s.empty? || element[:licence][:type] == 'public' || element[:username] == user_name
+      # public by default or explicitely public or owner
+      return
+    end
+
+    licenced_elements = LicenceManagerService.find({service_uuid: element[:uuid], user_uuid: user_name})
+    if licenced_elements[:items].empty?
+      # there's no licence for this element for this username
+      kpi_method.call(labels: {result: "forbidden", uuid: element[:uuid], elapsed_time: (Time.now.utc-began_at).to_s}) if kpi_method
+      json_error 403, 'Package/service/function '+element[:uuid]+' is private, not owned and not licensed to user '+user_name, log_message
+    end
+  end  
+  
+  def validate_function_ownership(token:, instance_uuid:, kpi_method:, began_at:, log_message:)
+    user_name = User.find_username_by_token(token)
+    record = RecordManagerService.find_record_by_uuid(kind: 'functions', uuid: instance_uuid)
+    logger.debug(log_message) {"record=#{record}"}
+    descriptor = FunctionManagerService.find_by_uuid(record[:descriptor_reference])
+    logger.debug(log_message) {"descriptor=#{descriptor}"}
+    validate_ownership_and_licence(element: descriptor, user_name: user_name, kpi_method: kpi_method, began_at: began_at, log_message: log_message)
+  end
+
+  def enhance_collection(collection:, user:, keys_to_delete: [])
+    log_message = "GtkApiHelper##{__method__}"
+    logger.debug(log_message) {'collection='+collection.inspect}
+    return collection if (collection.empty? || collection.first.empty?)
+
+    collection.each do |element|
+      logger.debug(log_message) {'element='+element.inspect}
+      licenced_collection = LicenceManagerService.find({service_uuid: element[:uuid], user_uuid: user})
+      logger.debug(log_message) {'licenced_collection='+licenced_collection.inspect}
+      if element[:licences].to_s.empty? || element[:licences] == 'public'
+        element[:licence_type] = 'public'
+      else
+        # it's private
+        if element[:username] == user
+          element[:licence_type] = 'owned'
+        elsif licenced_collection.any? {|l_service| l_service[:uuid] == element[:uuid] }
+          element[:licence_type] = 'licensed'
+        else
+          # if a licence is needed, we're not passing the whole stuff back
+          keys_to_delete.each { |key| element.delete(key) }
+          element[:licence_type] = 'to buy'
+        end
+      end
+    end
+    collection
   end
 end
