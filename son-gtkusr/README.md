@@ -36,6 +36,7 @@ The libraries the Gatekeep depends on are the following:
 * [`curb`](https://github.com/taf2/curb) >=0.9.3 (MIT)
 * [`jwt`](https://github.com/jwt/ruby-jwt) >=1.5.5 (MIT)
 * [`mongoid`](https://github.com/mongodb/mongoid) >=4.0 (MIT)
+* [`mongoid-pagination`](https://github.com/ajsharp/mongoid-pagination) >=0.2 (MIT)
 * [`puma`](https://github.com/puma/puma) >=3.4.0 (BSD-3-CLAUSE)
 * [`rake`](https://github.com/ruby/rake) >=11.2.2 (MIT)
 * [`rest-client`](https://github.com/rest-client/rest-client) >=2.0.0 (Apache 2.0)

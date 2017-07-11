@@ -12,5 +12,5 @@ gem 'sinatra-contrib', '1.4.7', require: false
 
 # Database
 gem 'mongoid', '~>4.0' # MongoDB driver
-# gem 'mongoid-pagination', '~>0.2' # Pagination library
+gem 'mongoid-pagination', '~>0.2' # Pagination library
 
