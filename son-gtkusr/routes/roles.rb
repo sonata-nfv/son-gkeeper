@@ -48,6 +48,8 @@ class Keycloak < Sinatra::Application
       end
     }
     code, realm_roles = get_realm_roles(params)
+    logger.debug "Adapter: gathered roles #{realm_roles}"
+    json_error(404, 'No roles found') if realm_roles == 'null'
 
     params['offset'] ||= DEFAULT_OFFSET
     params['limit'] ||= DEFAULT_LIMIT

@@ -123,6 +123,10 @@ class Keycloak < Sinatra::Application
       # Continue
     end
 
+    # TODO: Automatically generate 'role' if it does not exists
+    # code, msg = create_realm_role(new_resource['role'])
+    # json_error 400 unless code.to_i == 201
+
     # Save to DB
     begin
       # Generate the UUID for the resource object
@@ -170,7 +174,7 @@ class Keycloak < Sinatra::Application
         resource = Sp_resource.find(keyed_params[:id])
         logger.debug 'Resource is found'
       rescue Mongoid::Errors::DocumentNotFound => e
-        logger.error e
+        logger.error "DocumentNotFound error for #{keyed_params[:id]}"
         json_error 404, "Resource object #{keyed_params[:id]} not found" unless resource
       end
     else
@@ -188,6 +192,10 @@ class Keycloak < Sinatra::Application
     json_error 400, 'Resource role not provided' unless new_resource.has_key?('role')
     json_error 400, 'Resource resources not provided' unless new_resource.has_key?('resources')
     json_error 400, 'Resource policies not provided' unless new_resource.has_key?('policies')
+
+    # TODO: Automatically generate 'role' if it does not exists
+    # code, msg = create_realm_role(new_resource['role'])
+    # json_error 400 unless code.to_i == 201 || code.to_i == 409
 
     # Save to DB
     begin

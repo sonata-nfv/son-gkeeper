@@ -164,7 +164,7 @@ class Keycloak < Sinatra::Application
       case result
         when false
           logger.debug 'Adapter: exit POST /authorize without invalid access token'
-          json_error(401, 'Token not active')
+          json_error(401, 'Invalid token or not active')
         else
           # continue
       end
