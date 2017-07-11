@@ -107,13 +107,14 @@ class Keycloak < Sinatra::Application
       halt 401
     end
     if defined? @@client_secret
-      json_error(409, "Secret key is already defined")
+      json_error(409, 'Secret key is already defined')
     end
 
     @@client_secret = params['secret']
     get_oidc_endpoints
     get_adapter_install_json
     @@access_token = self.get_adapter_token
+    # TODO: Contact to Mongo Database
     logger.debug 'Adapter: exit POST /config with secret and access_token configured'
     logger.info 'User Management is configured and ready'
     halt 200
@@ -171,6 +172,31 @@ class Keycloak < Sinatra::Application
       logger.debug 'Adapter: exit POST /authorize with unauthorized access token'
       halt 401, {'Content-type' => 'application/json'}, val_res
     end
+
+    # Validates the token
+    logger.debug "Evaluating token=#{user_token}"
+    token_content = parse_json(val_res)[0]
+    # code, user_info = userinfo(user_token)
+    # if code != '200'
+    #  halt code.to_i, {'Content-type' => 'application/json'}, user_info
+    # end
+    # logger.debug "Adapter: User info: #{user_info}"
+
+    # Role check; Allows total authorization to admin roles
+    realm_roles = token_content['realm_access']['roles']
+    resource_roles = token_content['resource_access']['realm-management']['roles']
+    if realm_roles.include?('admin')
+      if resource_roles.include?('realm-admin')
+        logger.info "Adapter: Authorized access to administrator Id=#{token_content['sub']}"
+        halt 200
+      end
+    end
+
+    #code, user_data = get_user(parse_json(user_info)[0]['sub'])
+    #if code != '200'
+    #  halt code.to_i, {'Content-type' => 'application/json'}, user_data
+    #end
+    #user_data = parse_json(user_data)[0]
     logger.info 'Authorization request received at /authorize'
     # Return if content-type is not valid
     # log_file = File.new("#{settings.root}/log/#{settings.environment}.log", 'a+')

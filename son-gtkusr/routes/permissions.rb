@@ -74,8 +74,8 @@ class Keycloak < Sinatra::Application
       logger.info "Adapter: leaving GET /resources?#{query_string} with #{resource_data}"
       resource_data = resource_data.paginate(offset: params[:offset], limit: params[:limit])
     else
-      logger.info "Adapter: leaving GET /resources?#{query_string} with no resources found"
       # We could not find the resource you are looking for
+      logger.info "Adapter: leaving GET /resources?#{query_string} with no resources found"
     end
 
     response = resource_data.to_json
@@ -127,7 +127,6 @@ class Keycloak < Sinatra::Application
     begin
       # Generate the UUID for the resource object
       new_resource['_id'] = SecureRandom.uuid
-      # new_resource['status'] = 'active'
       resource = Sp_resource.create!(new_resource)
     rescue Moped::Errors::OperationFailure => e
       json_error 400, e.to_s
@@ -156,6 +155,7 @@ class Keycloak < Sinatra::Application
     json_error 400, 'Resource id or clientId is not provided' unless keyed_params.key?(:id) or
         keyed_params.key?(:clientId)
 
+    resource = nil
     if keyed_params.has_key?(:clientId)
       begin
         resource = Sp_resource.find_by({ 'clientId' => keyed_params[:clientId] })
@@ -177,20 +177,22 @@ class Keycloak < Sinatra::Application
       logger.debug 'Adapter: leaving DELETE /resources? with no valid resource object specified'
       json_error 400, 'No valid resource object specified'
     end
+    json_error 404, 'Resource object not found' if resource.nil?
 
     new_resource, errors = parse_json(request.body.read)
     halt 400, {'Content-type' => 'application/json'}, errors.to_json if errors
 
     # Validate Resource object
-    json_error 400, 'ERROR: Resource Vendor not found' unless new_resource.has_key?('resource_owner_name')
-    json_error 400, 'ERROR: Resource Name not found' unless new_resource.has_key?('role')
-    json_error 400, 'ERROR: Resource Version not found' unless new_resource.has_key?('resources')
-    json_error 400, 'ERROR: Resource Version not found' unless new_resource.has_key?('policies')
+    json_error 400, 'Resource clientId not provided' unless new_resource.has_key?('clientId')
+    json_error 400, 'Resource resource_owner_name not provided' unless new_resource.has_key?('resource_owner_name')
+    json_error 400, 'Resource role not provided' unless new_resource.has_key?('role')
+    json_error 400, 'Resource resources not provided' unless new_resource.has_key?('resources')
+    json_error 400, 'Resource policies not provided' unless new_resource.has_key?('policies')
 
     # Save to DB
     begin
-      # Generate the UUID for the resource object
-      resource.update_attributes(resource_owner_name: new_resource['resource_owner_name'],
+      resource.update_attributes(clientId: new_resource['clientId'],
+                                 resource_owner_name: new_resource['resource_owner_name'],
                                  role: new_resource['role'],
                                  resources: new_resource['resources'],
                                  policies: new_resource['policies'])
@@ -200,7 +202,6 @@ class Keycloak < Sinatra::Application
 
     logger.debug "New resource object updated with id=#{resource['_id']}"
     halt 200, {'Content-type' => 'application/json'}, resource.to_json
-
   end
 
   delete '/resources/?' do
