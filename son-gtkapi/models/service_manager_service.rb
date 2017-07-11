@@ -41,34 +41,34 @@ class ServiceManagerService < ManagerService
   end
 
   def self.find_service_by_uuid(uuid:, params: {})
-    log_message = LOG_MESSAGE + "##{__method__}"
-    GtkApi.logger.debug(log_message) {"entered with params #{params}"}
+    message = LOG_MESSAGE+"##{__method__}"
+    GtkApi.logger.debug(message) {"entered with #{params}"}
     find(url: @@url + '/services/' + uuid, params: params, log_message: LOG_MESSAGE + "##{__method__}(#{uuid})")
   end
   
   def self.find_services(params)
-    log_message = LOG_MESSAGE + "##{__method__}"
-    GtkApi.logger.debug(log_message) {"entered with params #{params}"}    
+    message = LOG_MESSAGE+"##{__method__}"
+    GtkApi.logger.debug(message) {"entered with #{params}"}
     services=find(url: @@url + '/services', params: params, log_message: LOG_MESSAGE + "##{__method__}(#{params})")
     vectorize_hash services
  end
 
   def self.find_requests(params)
-    log_message = LOG_MESSAGE + "##{__method__}(#{params})"
-    GtkApi.logger.debug(log_message) {'entered'}
+    message = LOG_MESSAGE+"##{__method__}"
+    GtkApi.logger.debug(message) {"entered with #{params}"}
     requests=find(url: @@url + '/requests', params: params, log_message: LOG_MESSAGE + "##{__method__}(#{params})")
     vectorize_hash requests
   end
   
   def self.find_requests_by_uuid(uuid)
-    log_message = LOG_MESSAGE + "##{__method__}(#{params})"
-    GtkApi.logger.debug(log_message) {'entered'}
+    message = LOG_MESSAGE+"##{__method__}"
+    GtkApi.logger.debug(message) {"entered with #{params}"}
     find(url: @@url + '/requests/' + uuid, log_message: LOG_MESSAGE + "##{__method__}(#{uuid})")
   end
   
   def self.create_service_intantiation_request(params)
-    method = LOG_MESSAGE + "##{__method__}(#{params})"
-    GtkApi.logger.debug(method) {'entered'}
+    message = LOG_MESSAGE+"##{__method__}"
+    GtkApi.logger.debug(message) {"entered with #{params}"}
 
     begin
       GtkApi.logger.debug(method) {"@url = "+@@url}
@@ -83,8 +83,8 @@ class ServiceManagerService < ManagerService
   end
   
   def self.create_service_update_request(nsr_uuid:, nsd:)
-    message = LOG_MESSAGE+'.create_service_update_request'
-    GtkApi.logger.debug(message) {'entered'}
+    message = LOG_MESSAGE+"##{__method__}"
+    GtkApi.logger.debug(message) {"entered with #{params}"}
     GtkApi.logger.debug(message) {"service instance=#{nsr_uuid}, nsd=#{nsd}"}
     begin
       GtkApi.logger.debug(message) {"@url = "+@@url}
