@@ -83,7 +83,7 @@ class GtkApi < Sinatra::Base
       user_name = User.find_username_by_token(token)
 
       validate_user_authorization(token: token, action: 'get requests data', uuid: '', path: '/requests', method:'GET', kpi_method: method(:count_function_metadata_queries), began_at: began_at, log_message: MESSAGE)
-      logger.debug(log_message) {"User authorized"}
+      logger.debug(MESSAGE) {"User authorized"}
       
       requests = ServiceManagerService.find_requests(params)
       logger.debug(MESSAGE) {"requests = #{requests}"}
