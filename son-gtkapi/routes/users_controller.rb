@@ -177,7 +177,7 @@ class GtkApi < Sinatra::Base
         user.save_public_key(parsed_body, token)
         logger.debug(log_message) {"user found=#{user.to_h.to_json}"}
         halt 200, user.to_h.to_json
-      rescue UserTokenNotActiveError
+      rescue UserTokenDoesNotMatchError
         json_error 400, "User #{params[:username]} does not match with token", log_message
       rescue UserTokenNotActiveError
         json_error 401, "User provided token was not valid", log_message

@@ -35,6 +35,7 @@ class MQServer
   attr_accessor :url
   
   QUEUE = 'service.instances.create'
+  CLASS = self.name
   
   def initialize(url,logger)
     @url = url
@@ -46,7 +47,7 @@ class MQServer
   end
 
   def publish(msg, correlation_id)
-    logmsg= 'MQServer.publish'
+    logmsg= CLASS+'.'+__method__.to_s
     @logger.debug(logmsg) {"msg="+msg+", correlation_id="+correlation_id}
     @topic.publish(msg, :content_type =>'text/yaml', :routing_key => QUEUE, :correlation_id => correlation_id, 
       :reply_to => @queue.name, :app_id => 'son-gkeeper')
@@ -54,7 +55,7 @@ class MQServer
   end
   
   def consume
-    logmsg= 'MQServer.consume'
+    logmsg= CLASS+'.'+__method__.to_s
     @logger.debug(logmsg) {" entered"}
     @queue.subscribe do |delivery_info, properties, payload|
       begin

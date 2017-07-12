@@ -30,7 +30,11 @@ class GtkApi < Sinatra::Base
 
   register Sinatra::Namespace
   
-  namespace '/api/v2/requests' do  
+  namespace '/api/v2/requests' do
+    before do
+      content_type :json
+    end
+    
     options '/?' do
       response.headers['Access-Control-Allow-Origin'] = '*'
       response.headers['Access-Control-Allow-Methods'] = 'POST,PUT'      
@@ -41,10 +45,15 @@ class GtkApi < Sinatra::Base
     # POST a request
     post '/?' do
       began_at = Time.now.utc
-      content_type :json
       log_message = 'GtkApi::POST /api/v2/requests/'
       params = JSON.parse(request.body.read)
       logger.debug(log_message) {"entered with params=#{params}"}
+      
+      token = get_token( request.env, began_at, method(:count_service_instantiation_requests), log_message)
+      user_name = User.find_username_by_token(token)
+      
+      validate_user_authorization(token: token, action: 'get metadata for functions', uuid: '', path: '/functions', method:'GET', kpi_method: method(:count_service_instantiation_requests), began_at: began_at, log_message: log_message)
+      logger.debug(log_message) {"User authorized"}
       
       if params.nil?
         count_service_instantiation_requests(labels: {result: "bad request", uuid: '', elapsed_time: (Time.now.utc-began_at).to_s})
@@ -52,52 +61,61 @@ class GtkApi < Sinatra::Base
       end
         
       new_request = ServiceManagerService.create_service_intantiation_request(params)
-      if new_request
-        count_service_instantiation_requests(labels: {result: "ok", uuid: new_request[:id], elapsed_time: (Time.now.utc-began_at).to_s})
-        logger.debug(log_message) { "new_request =#{new_request}"}
-        halt 201, new_request.to_json
-      else
+      unless new_request
         count_service_instantiation_requests(labels: {result: "bad request", uuid: '', elapsed_time: (Time.now.utc-began_at).to_s})
         json_error 400, 'No request was created', log_message
       end
+      count_service_instantiation_requests(labels: {result: "ok", uuid: new_request[:id], elapsed_time: (Time.now.utc-began_at).to_s})
+      logger.debug(log_message) { "new_request =#{new_request}"}
+      halt 201, new_request.to_json
     end
 
     # GET many requests
     get '/?' do
+      began_at = Time.now.utc
       MESSAGE = 'GtkApi::GET /api/v2/requests/'
     
       @offset ||= params['offset'] ||= DEFAULT_OFFSET 
       @limit ||= params['limit'] ||= DEFAULT_LIMIT
 
       logger.info(MESSAGE) {'entered with '+query_string}
+      token = get_token( request.env, began_at, method(:count_services_instantiation_requests_queries), MESSAGE)
+      user_name = User.find_username_by_token(token)
+
+      validate_user_authorization(token: token, action: 'get requests data', uuid: '', path: '/requests', method:'GET', kpi_method: method(:count_function_metadata_queries), began_at: began_at, log_message: MESSAGE)
+      logger.debug(MESSAGE) {"User authorized"}
+      
       requests = ServiceManagerService.find_requests(params)
       logger.debug(MESSAGE) {"requests = #{requests}"}
-      if requests
-        links = build_pagination_headers(url: request_url, limit: @limit.to_i, offset: @offset.to_i, total: requests[:count])
-        headers 'Link' => links, 'Record-Count' => requests[:count].to_s, 'Content-Type'=>'application/json'
-        halt 200, requests[:items].to_json
-      else
-        ERROR_MESSAGE = 'No requests with '+query_string+' were found'
-        logger.info(MESSAGE) {"leaving with '"+ERROR_MESSAGE+"'"}
-        json_error 400, ERROR_MESSAGE
-      end
+      validate_collection_existence(collection: requests, name: 'requests', kpi_method: method(:count_services_instantiation_requests_queries), began_at: began_at, log_message: MESSAGE)
+      
+      links = build_pagination_headers(url: request_url, limit: @limit.to_i, offset: @offset.to_i, total: requests[:count])
+      headers 'Link' => links, 'Record-Count' => requests[:count].to_s, 'Content-Type'=>'application/json'
+      count_services_instantiation_requests_queries(labels: {result: "ok", uuid: '', elapsed_time: (Time.now.utc-began_at).to_s})
+      halt 200, requests[:items].to_json
     end
   
     # GET one specific request
     get '/:uuid/?' do
-      METHOD = "GtkApi::GET /api/v2/requests/:uuid/?"
-      unless params[:uuid].nil?
-        logger.debug(METHOD) {"entered"}
-        json_error 400, 'Invalid request UUID' unless valid? params[:uuid]
-      
-        request = ServiceManagerService.find_requests_by_uuid(params['uuid'])
-        json_error 404, "The request UUID #{params[:uuid]} does not exist" unless request
+      began_at = Time.now.utc
+      log_message = 'GtkApi::GET /api/v2/requests/:uuid/?'
+      logger.debug(log_message) {"entered with #{params[:uuid]}"}
+      validate_uuid(uuid: params[:uuid], kpi_method: method(:count_service_instantiation_requests_queries), began_at: began_at, log_message: log_message)
+    
+      token = get_token( request.env, began_at, method(:count_service_instantiation_requests_queries), log_message)
+      user_name = User.find_username_by_token(token)
 
-        logger.debug(METHOD) {"leaving with request #{request}"}
-        halt 200, request.to_json
-      end
-      logger.debug(METHOD) { "leaving with 'No requests UUID specified'"}
-      json_error 400, 'No requests UUID specified'
+      validate_user_authorization(token: token, action: 'get request '+params[:uuid]+' data', uuid: params[:uuid], path: '/requests', method:'GET', kpi_method: method(:count_service_instantiation_requests_queries), began_at: began_at, log_message: log_message)
+      logger.debug(log_message) {"User authorized"}
+      
+      request = ServiceManagerService.find_requests_by_uuid(params['uuid'])
+      validate_element_existence(uuid: params[:uuid], element: request, name: 'Request', kpi_method: method(:count_service_instantiation_requests_queries), began_at: began_at, log_message: log_message)
+      validate_ownership_and_licence(element: function[:items], user_name: user_name, kpi_method: method(:count_service_instantiation_requests_queries), began_at: began_at, log_message: log_message)
+      
+      count_service_instantiation_requests_queries(labels: {result: "ok", uuid: params[:uuid], elapsed_time: (Time.now.utc-began_at).to_s})
+      logger.debug(log_message) {"leaving with #{request}"}
+      headers 'Record-Count'=> '1'
+      halt 200, request[:items].to_json
     end
   end
 
@@ -120,5 +138,17 @@ class GtkApi < Sinatra::Base
     name = __method__.to_s.split('_')[1..-1].join('_')
     desc = "how many service instantiations have been requested"
     ServiceManagerService.counter_kpi({name: name, docstring: desc, base_labels: labels.merge({method: 'POST', module: 'services'})})
+  end
+  
+  def count_services_instantiation_requests_queries(labels:)
+    name = __method__.to_s.split('_')[1..-1].join('_')
+    desc = "how many service instantiation requests are there"
+    ServiceManagerService.counter_kpi({name: name, docstring: desc, base_labels: labels.merge({method: 'GET', module: 'services'})})
+  end
+  
+  def count_service_instantiation_requests_queries(labels:)
+    name = __method__.to_s.split('_')[1..-1].join('_')
+    desc = "how many specific service instantiation requests are there"
+    ServiceManagerService.counter_kpi({name: name, docstring: desc, base_labels: labels.merge({method: 'GET', module: 'services'})})
   end
 end
