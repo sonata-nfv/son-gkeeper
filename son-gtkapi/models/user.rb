@@ -37,6 +37,7 @@ class UserNotUpdatedError < StandardError; end
 class UserNameAlreadyInUseError < StandardError; end
 class UserNotLoggedOutError < StandardError; end
 class UserTokenNotActiveError < StandardError; end
+class UserTokenDoesNotMatchError < StandardError; end
 class UserPublicKeyNotUpdatedError < StandardError; end
 
 class User < ManagerService
@@ -227,7 +228,7 @@ class User < ManagerService
       self
     when 400 # Provided username does not match with Access Token, No username specified or Developer public key not provided
       GtkApi.logger.debug(method) {'Username '+@username+' does not match with token'}
-      raise UserTokenNotActiveError.new 'Username '+@username+' does not match with token'
+      raise UserTokenDoesNotMatchError.new 'Username '+@username+' does not match with token'
     when 401 # Token is not valid
       GtkApi.logger.debug(method) {'Username '+@username+' provided a token that is not valid'}
       raise UserTokenNotActiveError.new 'Username '+@username+' provided a token that is not valid'
