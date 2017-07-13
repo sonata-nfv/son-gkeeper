@@ -2,6 +2,7 @@
 resources:
   - catalogue
   - repositories
+  - slm
   - gatekeeper
   - monitoring
 
@@ -51,6 +52,12 @@ paths:
                  DEL: write
 
     gatekeeper:
+        resource:
+                 GET: read
+                 POST: write
+                 PUT: write
+                 DEL: write
+    slm:
         resource:
                  GET: read
                  POST: write

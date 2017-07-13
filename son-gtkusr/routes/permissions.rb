@@ -74,8 +74,8 @@ class Keycloak < Sinatra::Application
       logger.info "Adapter: leaving GET /resources?#{query_string} with #{resource_data}"
       resource_data = resource_data.paginate(offset: params[:offset], limit: params[:limit])
     else
-      logger.info "Adapter: leaving GET /resources?#{query_string} with no resources found"
       # We could not find the resource you are looking for
+      logger.info "Adapter: leaving GET /resources?#{query_string} with no resources found"
     end
 
     response = resource_data.to_json
@@ -123,11 +123,14 @@ class Keycloak < Sinatra::Application
       # Continue
     end
 
+    # TODO: Automatically generate 'role' if it does not exists
+    # code, msg = create_realm_role(new_resource['role'])
+    # json_error 400 unless code.to_i == 201
+
     # Save to DB
     begin
       # Generate the UUID for the resource object
       new_resource['_id'] = SecureRandom.uuid
-      # new_resource['status'] = 'active'
       resource = Sp_resource.create!(new_resource)
     rescue Moped::Errors::OperationFailure => e
       json_error 400, e.to_s
@@ -140,17 +143,73 @@ class Keycloak < Sinatra::Application
   put '/resources/?' do
     logger.debug 'Adapter: entered PUT /resources'
     # Return if Authorization is invalid
-    halt 400 unless request.env["HTTP_AUTHORIZATION"]
-    user_token = request.env["HTTP_AUTHORIZATION"].split(' ').last
-    unless user_token
-      json_error(400, 'Access token is not provided')
+    # halt 400 unless request.env["HTTP_AUTHORIZATION"]
+    # user_token = request.env["HTTP_AUTHORIZATION"].split(' ').last
+    # unless user_token
+    #   json_error(400, 'Access token is not provided')
+    # end
+    # res = token_expired?(user_token)
+    # if res != 200
+    #   json_error(401, res)
+    # end
+
+    keyed_params = keyed_hash(params)
+    headers = {'Accept' => 'application/json', 'Content-Type' => 'application/json'}
+
+    json_error 400, 'Resource id or clientId is not provided' unless keyed_params.key?(:id) or
+        keyed_params.key?(:clientId)
+
+    resource = nil
+    if keyed_params.has_key?(:clientId)
+      begin
+        resource = Sp_resource.find_by({ 'clientId' => keyed_params[:clientId] })
+        logger.debug 'Resource is found'
+      rescue Mongoid::Errors::DocumentNotFound => e
+        logger.error e
+        json_error 404, "Resource object #{keyed_params[:clientId]} not found"
+      end
+      # logger.debug "Adapter: leaving DELETE /resources? with resource object #{keyed_params[:clientId]} deleted"
+    elsif keyed_params.has_key?(:id)
+      begin
+        resource = Sp_resource.find(keyed_params[:id])
+        logger.debug 'Resource is found'
+      rescue Mongoid::Errors::DocumentNotFound => e
+        logger.error "DocumentNotFound error for #{keyed_params[:id]}"
+        json_error 404, "Resource object #{keyed_params[:id]} not found" unless resource
+      end
+    else
+      logger.debug 'Adapter: leaving DELETE /resources? with no valid resource object specified'
+      json_error 400, 'No valid resource object specified'
     end
-    res = token_expired?(user_token)
-    if res != 200
-      json_error(401, res)
+    json_error 404, 'Resource object not found' if resource.nil?
+
+    new_resource, errors = parse_json(request.body.read)
+    halt 400, {'Content-type' => 'application/json'}, errors.to_json if errors
+
+    # Validate Resource object
+    json_error 400, 'Resource clientId not provided' unless new_resource.has_key?('clientId')
+    json_error 400, 'Resource resource_owner_name not provided' unless new_resource.has_key?('resource_owner_name')
+    json_error 400, 'Resource role not provided' unless new_resource.has_key?('role')
+    json_error 400, 'Resource resources not provided' unless new_resource.has_key?('resources')
+    json_error 400, 'Resource policies not provided' unless new_resource.has_key?('policies')
+
+    # TODO: Automatically generate 'role' if it does not exists
+    # code, msg = create_realm_role(new_resource['role'])
+    # json_error 400 unless code.to_i == 201 || code.to_i == 409
+
+    # Save to DB
+    begin
+      resource.update_attributes(clientId: new_resource['clientId'],
+                                 resource_owner_name: new_resource['resource_owner_name'],
+                                 role: new_resource['role'],
+                                 resources: new_resource['resources'],
+                                 policies: new_resource['policies'])
+    rescue Moped::Errors::OperationFailure => e
+      json_error 400, e.to_s
     end
 
-    # TODO: Implement
+    logger.debug "New resource object updated with id=#{resource['_id']}"
+    halt 200, {'Content-type' => 'application/json'}, resource.to_json
   end
 
   delete '/resources/?' do

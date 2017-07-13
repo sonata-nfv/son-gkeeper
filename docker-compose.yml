@@ -166,6 +166,9 @@ services:
     environment:
       - KEYCLOAK_USER=admin
       - KEYCLOAK_PASSWORD=admin
+      - SONATA_USER=sonata
+      - SONATA_PASSWORD=1234
+      - SONATA_EMAIL=sonata.admin@email.com
     container_name: son-keycloak
 
   postgres:

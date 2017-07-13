@@ -1,3 +1,5 @@
+# THIS IS TEST FILE; REMOVE
+
 require 'json'
 require 'net/http'
 require 'jwt'
@@ -15,26 +17,32 @@ def parse_json(message)
 end
 
 # "token_endpoint":"http://localhost:8081/auth/realms/master/protocol/openid-connect/token"
-def adminbased()
-  @@address = 'localhost'
-  @port = '8081'
-  @uri = 'auth'
+def adminbased(client_secret)
+  # @@address = 'localhost'
+  # @port = '8081'
+  # @uri = 'auth'
   @client_name = 'adapter'
-  @client_secret = 'df7e816d-0337-4fbe-a3f4-7b5263eaba9f'
-  @access_token = nil
+  # @client_secret = 'df7e816d-0337-4fbe-a3f4-7b5263eaba9f'
+  # @access_token = nil
 
-  url = URI('http://' + @@address.to_s + ':' + @port.to_s + '/' + @uri.to_s + '/realms/master/protocol/openid-connect/token')
+  # url = URI('http://' + @@address.to_s + ':' + @port.to_s + '/' + @uri.to_s + '/realms/master/protocol/openid-connect/token')
+  http_path = "http://sp.int3.sonata-nfv.eu:5601/auth/realms/sonata/protocol/openid-connect/token"
+  url = URI(http_path)
 
-  res = Net::HTTP.post_form(url, 'client_id' => @client_name, 'client_secret' => @client_secret,
+  res = Net::HTTP.post_form(url, 'client_id' => @client_name, 'client_secret' => client_secret,
                             'username' => "admin",
                             'password' => "admin",
-                            'grant_type' => "password")
+                            'grant_type' => "client_credentials")
+
+  puts "RES.CODE: ", res.code
+  puts "RES.BODY: ", res.body
 
   if res.body['access_token']
     parsed_res, code = parse_json(res.body)
     @access_token = parsed_res['access_token']
     puts "ACCESS_TOKEN RECEIVED" , parsed_res['access_token']
-    parsed_res['access_token']
+    # parsed_res['access_token']
+    parse_json(res.body)[0]
   end
 end
 
@@ -42,7 +50,7 @@ end
 def userbased(client_secret)
   # curl -d "client_id=admin-cli" -d "username=user1" -d "password=1234" -d "grant_type=password" "http://localhost:8081/auth/realms/SONATA/protocol/openid-connect/token"
   client_id = "adapter"
-  username = "jenkins"
+  username = "sonata"
   pwd = "1234"
   grt_type = "password"
   http_path = "http://sp.int3.sonata-nfv.eu:5601/auth/realms/sonata/protocol/openid-connect/token"
@@ -138,6 +146,7 @@ def token_validation(token, client_secret)
   # decode_token(token, keycloak_pub_key)
   # url = URI("http://localhost:8081/auth/realms/master/clients-registrations/openid-connect/")
   url = URI("http://sp.int3.sonata-nfv.eu:5601/auth/realms/sonata/protocol/openid-connect/token/introspect")
+  #url = URI("http://sp.int3.sonata-nfv.eu:5600/api/v1/token-status")
 
   # request = Net::HTTP::Post.new(url.to_s)
   # request = Net::HTTP::Get.new(url.to_s)
@@ -479,8 +488,9 @@ def set_user_roles(token)
   #TODO: Implement
 end
 
-def get_realm_roles(token)
-  http_path = "http://sp.int3.sonata-nfv.eu:5601/auth/realms/sonata/protocol/openid-connect/userinfo"
+def get_realm_roles(token, query=nil)
+  # http_path = "http://sp.int3.sonata-nfv.eu:5601/auth/realms/sonata/protocol/openid-connect/userinfo"
+  http_path = "http://sp.int3.sonata-nfv.eu:5601/auth/admin/realms/sonata/roles"
   url = URI(http_path)
   http = Net::HTTP.new(url.host, url.port)
   # request = Net::HTTP::Post.new(url.to_s)
@@ -493,11 +503,25 @@ def get_realm_roles(token)
   response = http.request(request)
   puts "RESPONSE", response.read_body
   puts "CODE", response.code
-  response_json = parse_json(response.read_body)[0]
+  role_list = parse_json(response.read_body)[0]
+
+  if query && query.key?('name')
+    puts "name", query['name']
+    role_data = role_list.find {|role| role['name'] == query['name'] }
+    if role_data.nil?
+      puts "role_data_is_nil", role_data
+    end
+    return response.code, role_data.to_json
+  elsif query && query.key?('id')
+    role_data = role_list.find {|role| role['id'] == query['id'] }
+    return response.code, role_data.to_json
+  else
+    return response.code, response.body
+  end
 end
 
 def login_user_bis (token, username=nil, credentials=nil)
-  url = URI("http://sp.int3.sonata-nfv.eu:5601/auth/realms/sonata/protocol/openid-connect/token")
+  url = URI("http://localhost:5601/auth/realms/sonata/protocol/openid-connect/token")
   http = Net::HTTP.new(url.host, url.port)
   request = Net::HTTP::Post.new(url.to_s)
   request["authorization"] = 'Bearer ' + token
@@ -505,7 +529,7 @@ def login_user_bis (token, username=nil, credentials=nil)
 
 
   request.set_form_data({'client_id' => 'adapter',
-                         'client_secret' => 'b3929fe7-268b-4c8e-8b1a-c5d9e0f090cb',
+                         'client_secret' => '3b1f06a2-6116-4042-a64c-19a576e2b0f8',
                          'username' => 'admin',
                          'password' => 'admin',
                          'grant_type' => 'password'})
@@ -994,6 +1018,53 @@ def get_groups_names(token, group_list, role)
     puts 'group_name=', group_name }
 end
 
+def create_group(token, group_data)
+  # POST /admin/realms/{realm}/groups
+  # BodyParameter GroupRepresentation
+  # id, name, path, attributes, realmRoles, clientRoles, subGroups
+  url = URI("http://sp.int3.sonata-nfv.eu:5601/auth/admin/realms/sonata/groups")
+  http = Net::HTTP.new(url.host, url.port)
+  request = Net::HTTP::Post.new(url.to_s)
+  request["authorization"] = 'Bearer ' + token
+  request["content-type"] = 'application/json'
+  # body = {"requiredActions" => []}
+  request.body = group_data.to_json
+
+  puts "BODY", request.body
+
+  response = http.request(request)
+  return response.code, response.body
+end
+
+def update_group(token, group_id, group_data)
+  # POST /admin/realms/{realm}/groups
+  # BodyParameter GroupRepresentation
+  # id, name, path, attributes, realmRoles, clientRoles, subGroups
+  url = URI("http://sp.int3.sonata-nfv.eu:5601/auth/admin/realms/sonata/groups/#{group_id}")
+  http = Net::HTTP.new(url.host, url.port)
+  request = Net::HTTP::Put.new(url.to_s)
+  request["authorization"] = 'Bearer ' + token
+  request["content-type"] = 'application/json'
+  request.body = group_data.to_json
+
+  response = http.request(request)
+  return response.code, response.body
+end
+
+def delete_group(token, group_id)
+  # POST /admin/realms/{realm}/groups
+  # BodyParameter GroupRepresentation
+  # id, name, path, attributes, realmRoles, clientRoles, subGroups
+  url = URI("http://sp.int3.sonata-nfv.eu:5601/auth/admin/realms/sonata/groups/#{group_id}")
+  http = Net::HTTP.new(url.host, url.port)
+  request = Net::HTTP::Delete.new(url.to_s)
+  request["authorization"] = 'Bearer ' + token
+  request["content-type"] = 'application/json'
+
+  response = http.request(request)
+  return response.code, response.body
+end
+
 
 =begin
 "grant_types_supported":["authorization_code","implicit","refresh_token","password","client_credentials"]
@@ -1014,15 +1085,16 @@ end
 =end
 
 #test_form
-token = userbased('dc2eb6eb-4221-47b7-81e3-62d72db7b1e6')
-#token = clientbased('f50d8d0f-1411-44c8-9431-3a48e930deb1')
-#token = adminbased
+#token = userbased('5569e754-b2d8-4c63-9a6e-9e3b4225fffe')
+token = clientbased('ce4a7c50-7cca-4ef0-85e0-257d66bbcfae')
+#token = adminbased('d5bfecf8-14ef-4d81-8975-965b2d4c82b2')
 #pub = get_public_key
-#token_validation(token)
+#token_validation(token['access_token'], '638af094-c6f1-48d8-98f6-f52e38c00190')
 # certificates
 #authenticate(token)
-userinfo(token['access_token'])
-# {"jti":"bc1200e5-3b6d-43f2-a125-dc4ed45c7ced","exp":1486105972,"nbf":0,"iat":1486051972,"iss":"http://localhost:8081/auth/realms/master","aud":"adapter","sub":"67cdf213-349b-4539-bdb2-43351bf3f56e","typ":"Bearer","azp":"adapter","auth_time":0,"session_state":"608a2a72-198d-440b-986f-ddf37883c802","name":"","preferred_username":"service-account-adapter","email":"service-account-adapter@placeholder.org","acr":"1","client_session":"2c31bbd9-c13d-43f1-bb30-d9bd46e3c0ab","allowed-origins":[],"realm_access":{"roles":["create-realm","admin","uma_authorization"]},"resource_access":{"adapter":{"roles":["uma_protection"]},"master-realm":{"roles":["view-identity-providers","view-realm","manage-identity-providers","impersonation","create-client","manage-users","view-authorization","manage-events","manage-realm","view-events","view-users","view-clients","manage-authorization","manage-clients"]},"account":{"roles":["manage-account","view-profile"]}},"clientHost":"127.0.0.1","clientId":"adapter","clientAddress":"127.0.0.1","client_id":"adapter","username":"service-account-adapter","active":true}
+# userinfo(token['access_token'])
+# jwt {"jti":"bc1200e5-3b6d-43f2-a125-dc4ed45c7ced","exp":1486105972,"nbf":0,"iat":1486051972,"iss":"http://localhost:8081/auth/realms/master","aud":"adapter","sub":"67cdf213-349b-4539-bdb2-43351bf3f56e","typ":"Bearer","azp":"adapter","auth_time":0,"session_state":"608a2a72-198d-440b-986f-ddf37883c802","name":"","preferred_username":"service-account-adapter","email":"service-account-adapter@placeholder.org","acr":"1","client_session":"2c31bbd9-c13d-43f1-bb30-d9bd46e3c0ab","allowed-origins":[],"realm_access":{"roles":["create-realm","admin","uma_authorization"]},"resource_access":{"adapter":{"roles":["uma_protection"]},"master-realm":{"roles":["view-identity-providers","view-realm","manage-identity-providers","impersonation","create-client","manage-users","view-authorization","manage-events","manage-realm","view-events","view-users","view-clients","manage-authorization","manage-clients"]},"account":{"roles":["manage-account","view-profile"]}},"clientHost":"127.0.0.1","clientId":"adapter","clientAddress":"127.0.0.1","client_id":"adapter","username":"service-account-adapter","active":true}
+# userinfo {"sub":"532a3844-d96e-44d8-998c-43e86303fb0b","name":"","preferred_username":"service-account-adapter","email":"service-account-adapter@placeholder.org"}
 #decode_token(token, pub)
 #registration = register_client(token, pub)
 #register_client_bis(token, pub)
@@ -1033,7 +1105,10 @@ userinfo(token['access_token'])
 #sleep(3)
 #logout_user(token,)
 #sleep(3)
-#token_validation(token['access_token'], 'dc2eb6eb-4221-47b7-81e3-62d72db7b1e6')
+contents = token_validation(token['access_token'], 'ce4a7c50-7cca-4ef0-85e0-257d66bbcfae')
+puts "TOKEN CONTENTS", parse_json(contents)[0]['realm_access']['roles']
+resource_contents = parse_json(contents)[0]['resource_access']['realm-management']['roles']
+puts "TOKEN RESOURCES" if resource_contents.include?('realm-admin')
 #management(token)
 #logout(token2)
 #sleep(2)
@@ -1052,9 +1127,34 @@ userinfo(token['access_token'])
 # get_role_details(token)
 # authorize_browser
 #authorize(token)
+#code, res = get_realm_roles(token['access_token'], {"name"=>"admin"})
 #get_users(token['access_token'])
-#group_list = get_groups(token['access_token'], {'name' => 'developers'})
-#puts "GROUP_LIST", group_list
+#group_list = get_groups(token['access_token']) #, {'name' => 'developers'})
+#group_data = group_list.find {|group| group['name'] == keyed_params[:name]}
+
+new_group_data = {
+    "name" => "guests",
+    "path" => "/guests",
+    "attributes" => {"string":["SAMPLE"]},
+    "realmRoles" => [],
+    "clientRoles" => {},
+    "subGroups" => nil
+}
+
+params = {"clientId"=>"guests"}
+params.each { |k, v|
+  puts "Adapter: query #{k}=#{v}"
+}
+keyed_params = Hash[params.map { |(k, v)| [k.to_sym, v] }]
+puts 'Username not provided' unless keyed_params.key?(:id) or keyed_params.key?(:clientId)
+if keyed_params.has_key?(:id)
+  puts "HAS ID"
+elsif keyed_params.has_key?(:clientId)
+  puts "HAS CLIENTID"
+else
+  puts "HAS NOTHING"
+end
+
 #get_groups_names(token['access_token'], group_list, 'developer')
 #service_user(token)
 #code, token_h = refresh_token(token)
@@ -1064,48 +1164,6 @@ userinfo(token['access_token'])
 # delete_client(token['access_token'], 'son-catalogue')
 # user_sessions(token['access_token'], '671808aa-2226-4f51-9f53-3bbf5047a2fe')
 
-=begin
-    "software_version",
-    "tos_uri",
-    "application_type",
-    "redirect_uris",
-    "client_id",
-    "sector_identifier_uri",
-    "request_object_signing_alg",
-    "contacts",
-    "scope",
-    "post_logout_redirect_uris",
-    "grant_types",
-    "client_id_issued_at",
-    "logo_uri",
-    "client_secret_expires_at",
-    "userinfo_signed_response_alg",
-    "policy_uri",
-    "id_token_encrypted_response_enc",
-    "jwks_uri",
-    "id_token_encrypted_response_alg",
-    "client_secret",
-    "registration_access_token",
-    "default_max_age",
-    "require_auth_time",
-    "subject_type",
-    "request_object_encryption_enc",
-    "token_endpoint_auth_signing_alg",
-    "default_acr_values",
-    "request_object_encryption_alg",
-    "initiate_login_uri",
-    "software_id",
-    "token_endpoint_auth_method",
-    "jwks",
-    "id_token_signed_response_alg",
-    "request_uris",
-    "client_uri",
-    "response_types",
-    "userinfo_encrypted_response_enc",
-    "registration_client_uri",
-    "client_name",
-    "userinfo_encrypted_response_alg"
-=end
 
 =begin
 {"jti"=>"4da6654f-8a8e-4f50-b0ec-97356dd614d1",
