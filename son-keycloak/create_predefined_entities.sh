@@ -1,10 +1,13 @@
 #!/bin/bash
 
+# Keycloak master administrator
 KEYCLOAK_USER=${1:-admin}
 KEYCLOAK_PASSWORD=${2:-admin}
 
-# KEYCLOAK_USER=admin
-# KEYCLOAK_PASSWORD=admin
+# SONATA default admin
+SONATA_USER=${3:-sonata}
+SONATA_PASSWORD=${4:-sonata}
+SONATA_EMAIL=${5:-sonata.admin@email.com}
 
 KEYCLOAK_PORT=5601
 KEYCLOAK_URL=http://localhost:$KEYCLOAK_PORT
@@ -16,17 +19,16 @@ KCADMIN_SCRIPT=/opt/jboss/keycloak/bin/kcadm.sh
 SONATA_REALM=sonata
 ADAPTER_CLIENT=adapter
 
-# SONATA realm Admin user registration JSON object, remove before using in production
+# SONATA default realm-admin registration JSON object
 admin_reg_data() {
     cat << EOF
-{"username": "sonata",
+{"username": "$SONATA_USER",
  "enabled": true,
  "totp": false,
  "emailVerified": false,
  "firstName": "Admin",
- "lastName": "sample",
- "email": "sonata.admin@email.com",
- "credentials": [{"type": "password","value": "1234"}],
+ "lastName": "Default",
+ "email": "$SONATA_EMAIL",
  "requiredActions": [],
  "federatedIdentities": [],
  "attributes": {"userType": ["admin"]},
@@ -229,33 +231,56 @@ fi
 
 sleep 3
 
-printf "\n\n======== POST Admin User (predefined) Registration form to GTKUSR ==\n\n\n"
+printf "\n\n======== Registering default SONATA administrator user to GTKUSR ==\n\n\n"
 resp=$(curl -qSfsw '\n%{http_code}' -H "Content-Type: application/json" -H "Authorization: Bearer $token" \
--d "$(admin_reg_data)" \
--X POST $KEYCLOAK_URL/auth/admin/realms/sonata/users) # http://son-gtkusr:5600/api/v1/register/user)
+-d "$(admin_reg_data)" -X POST $KEYCLOAK_URL/auth/admin/realms/sonata/users)
 echo $resp
 code=$(echo "$resp" | tail -n1)
 echo "Code: $code"
 
-# Add role=admin to user=sonata
-$KCADMIN_SCRIPT add-roles --uusername sonata --rolename admin -r $SONATA_REALM
-# Get user=sonata data
-resp=$($KCADMIN_SCRIPT get users -r $SONATA_REALM -q username=sonata)
+# Add role=admin to default admin user
+$KCADMIN_SCRIPT add-roles --uusername $SONATA_USER --rolename admin -r $SONATA_REALM
+
+# Get default admin user data
+resp=$($KCADMIN_SCRIPT get users -r $SONATA_REALM -q username=$SONATA_USER)
 echo "GET_USERS="$resp
-# Parse user=sonata data to get "id"
-id=$(echo $resp | python -mjson.tool | grep "id" | awk -F ':[ \t]*' '{print $2}' | sed 's/,//g' | sed 's/"//g')
-echo "USER_ID="$id
 
-# Update user=sonata credentials
-$KCADMIN_SCRIPT update users/$id/reset-password -r $SONATA_REALM -s type=password -s value=1234 -s temporary=false -n
+# Parse default admin user data to get "id"
+USER_ID=$(echo $resp | python -mjson.tool | grep "id" | awk -F ':[ \t]*' '{print $2}' | sed 's/,//g' | sed 's/"//g')
+echo "USER_ID="$USER_ID
 
-printf "\n\n======== POST Demo User (predefined) Registration form to GTKUSR ==\n\n\n"
-resp=$(curl -qSfsw '\n%{http_code}' -H "Content-Type: application/json" \
--d "$(demo_reg_data)" \
+# Update default admin user credentials
+$KCADMIN_SCRIPT update users/$USER_ID/reset-password -r $SONATA_REALM -s type=password -s value=$SONATA_PASSWORD -s temporary=false -n
+
+# Get groups data
+resp=$($KCADMIN_SCRIPT get groups -r $SONATA_REALM)
+echo "GET_GROUPS="$resp
+group_data0=$(echo $resp | awk '{print $0}' | python -mjson.tool | awk '/"id"/' | awk -F ':[ \t]*' '{print $2}' | sed 's/,//g' | sed 's/"//g' )
+group_data1=$(echo $resp | awk '{print $0}' | python -mjson.tool | awk '/"name"/' | awk -F ':[ \t]*' '{print $2}' | sed 's/,//g' | sed 's/"//g' )
+echo $group_data0
+echo $group_data1
+
+# Obtain Admins group identifier
+count=1
+LINES=`echo $group_data1`
+for LINE in $LINES ; do
+    if [ "$LINE" == "admins" ]; then
+        echo "$count"
+        echo $LINE
+        GROUP_ID=$(echo $group_data0 |  awk -v var=$count '{ print $var }')
+        echo $GROUP_ID
+    fi
+    (( count++ ))
+done
+
+# Add default admin user to Admins group
+$KCADMIN_SCRIPT update users/$USER_ID/groups/$GROUP_ID -r $SONATA_REALM -s realm=$SONATA_REALM -s userId=$USER_ID -s groupId=$GROUP_ID -n
+
+printf "\n\n======== Registering default Demo User to GTKUSR ==\n\n\n"
+resp=$(curl -qSfsw '\n%{http_code}' -H "Content-Type: application/json" -d "$(demo_reg_data)" \
 -X POST http://son-gtkusr:5600/api/v1/register/user)
 echo $resp
 
 username=$(echo $resp | grep "username")
-
 code=$(echo "$resp" | tail -n1)
 echo "Code: $code"

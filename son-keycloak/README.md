@@ -40,6 +40,9 @@ This script configures the User Management adapter and the required entities in 
 Important settings are listed below:
 - KEYCLOAK_USER=admin (by default)
 - KEYCLOAK_PASSWORD=admin (by default)
+- SONATA_USER=sonata (by default)
+- SONATA_PASSWORD=sonata (by default)
+- SONATA_EMAIL=sonata.admin@email.com (by default, it must be changed)
 - KEYCLOAK_PORT=5601
 - KEYCLOAK_URL=http://localhost:$KEYCLOAK_PORT
 - KEYCLOAK_OPENID_TOKEN_ENDPOINT=$KEYCLOAK_URL/auth/realms/sonata/protocol/openid-connect/token
@@ -55,7 +58,7 @@ It is recommended to leave the settings as default in order to avoid breaking th
 To run this module you can do it by this way:
 
 ```sh
-$ docker run --name son-keycloak -d -p 5601:5601 --net=sonata --network-alias=son-keycloak -e KEYCLOAK_USER=admin -e KEYCLOAK_PASSWORD=admin --log-driver=gelf --log-opt gelf-address=udp://10.30.0.219:12900 registry.sonata-nfv.eu:5000/son-keycloak
+$ docker run --name son-keycloak -d -p 5601:5601 --net=sonata --network-alias=son-keycloak -e KEYCLOAK_USER=admin -e KEYCLOAK_PASSWORD=admin  -e SONATA_USER=sonata -e SONATA_PASSWORD=1234 -e SONATA_EMAIL=sonata.admin@email.com --log-driver=gelf --log-opt gelf-address=udp://10.30.0.219:12900 registry.sonata-nfv.eu:5000/son-keycloak
 
 ```
 
@@ -63,8 +66,9 @@ OPTIONS:
 * --name = Container name
 * --net = Network with the other Service Platform components
 * -p = 5601:5601 External port 5601 -> Internal port 5601
-* -e = KEYCLOAK_USER and KEYCLOAK_PASSWORD creates the default admin user required by Keycloak. If they are not provided, admin/admin are set by default
-
+* -e = KEYCLOAK_USER and KEYCLOAK_PASSWORD creates the default "master" admin user required by Keycloak. If they are not provided, admin/admin are set by default
+* -e = SONATA_USER and SONATA_PASSWORD creates the default SONATA realm admin user. If they are not provided, sonata/sonata are set by default
+* -e = SONATA_EMAIL sets the email address to the default SONATA realm admin user. It must be set in order to be effective
 
 ## Documentation
 Information about Keycloak can be found in [`Keycloak Documentation`](http://www.keycloak.org/documentation.html) section.
