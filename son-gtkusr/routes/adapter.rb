@@ -184,14 +184,13 @@ class Keycloak < Sinatra::Application
 
     # Role check; Allows total authorization to admin roles
     realm_roles = token_content['realm_access']['roles']
-    resource_roles = token_content['resource_access']['realm-management']['roles']
-    if realm_roles.include?('admin')
-      if resource_roles.include?('realm-admin')
-        logger.info "Adapter: Authorized access to administrator Id=#{token_content['sub']}"
-        halt 200
+    if token_content['resource_access'].include?('realm-management')
+      resource_roles = token_content['resource_access']['realm-management']['roles']
+      if (realm_roles.include?('admin')) && (resource_roles.include?('realm-admin'))
+          logger.info "Adapter: Authorized access to administrator Id=#{token_content['sub']}"
+          halt 200
       end
     end
-
     #code, user_data = get_user(parse_json(user_info)[0]['sub'])
     #if code != '200'
     #  halt code.to_i, {'Content-type' => 'application/json'}, user_data
