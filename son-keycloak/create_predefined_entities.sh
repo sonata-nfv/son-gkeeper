@@ -5,9 +5,13 @@ KEYCLOAK_USER=${1:-admin}
 KEYCLOAK_PASSWORD=${2:-admin}
 
 # SONATA default admin
-SONATA_USER=${3:-sonata}
-SONATA_PASSWORD=${4:-sonata}
-SONATA_EMAIL=${5:-sonata.admin@email.com}
+#SONATA_USER=${3:-sonata}
+#SONATA_PASSWORD=${4:-sonata}
+#SONATA_EMAIL=${5:-sonata.admin@email.com}
+
+SONATA_USER="sonata"
+SONATA_PASSWORD="1234"
+SONATA_EMAIL="sonata.admin@email.com"
 
 KEYCLOAK_PORT=5601
 KEYCLOAK_URL=http://localhost:$KEYCLOAK_PORT
@@ -234,7 +238,8 @@ sleep 3
 
 printf "\n\n======== Registering default SONATA administrator user to GTKUSR ==\n\n\n"
 resp=$(curl -qSfsw '\n%{http_code}' -H "Content-Type: application/json" -H "Authorization: Bearer $token" \
--d "$(admin_reg_data)" -X POST $KEYCLOAK_URL/auth/admin/realms/sonata/users)
+-d "$(admin_reg_data)" \
+-X POST $KEYCLOAK_URL/auth/admin/realms/sonata/users) # http://son-gtkusr:5600/api/v1/register/user)
 echo $resp
 code=$(echo "$resp" | tail -n1)
 echo "Code: $code"
