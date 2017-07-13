@@ -48,25 +48,21 @@ class GtkApi < Sinatra::Base
       log_message = 'GtkApi::POST /api/v2/requests/'
       params = JSON.parse(request.body.read)
       logger.debug(log_message) {"entered with params=#{params}"}
+      require_param(param: 'service_uuid', params: params, kpi_method: method(:count_service_instantiation_requests), error_message: 'Service UUID', log_message: log_message, began_at: began_at)
       
       token = get_token( request.env, began_at, method(:count_service_instantiation_requests), log_message)
       user_name = User.find_username_by_token(token)
       
-      validate_user_authorization(token: token, action: 'get metadata for functions', uuid: '', path: '/functions', method:'GET', kpi_method: method(:count_service_instantiation_requests), began_at: began_at, log_message: log_message)
+      validate_user_authorization(token: token, action: 'post service instantiation request', uuid: params['service_uuid'], path: '/services', method:'POST', kpi_method: method(:count_service_instantiation_requests), began_at: began_at, log_message: log_message)
       logger.debug(log_message) {"User authorized"}
       
-      if params.nil?
-        count_service_instantiation_requests(labels: {result: "bad request", uuid: '', elapsed_time: (Time.now.utc-began_at).to_s})
-        json_error 400, 'No service id specified for the request', log_message
-      end
-        
       new_request = ServiceManagerService.create_service_intantiation_request(params)
+      logger.debug(log_message) { "new_request =#{new_request}"}
       unless new_request
         count_service_instantiation_requests(labels: {result: "bad request", uuid: '', elapsed_time: (Time.now.utc-began_at).to_s})
         json_error 400, 'No request was created', log_message
       end
       count_service_instantiation_requests(labels: {result: "ok", uuid: new_request[:id], elapsed_time: (Time.now.utc-began_at).to_s})
-      logger.debug(log_message) { "new_request =#{new_request}"}
       halt 201, new_request.to_json
     end
 

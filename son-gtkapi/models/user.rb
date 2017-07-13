@@ -103,16 +103,17 @@ class User < ManagerService
         saved_params[:uuid] = user[:userId] unless user.empty?
         User.new(saved_params)
       when 409
-        GtkApi.logger.error(method) {"Status 409"} 
+        GtkApi.logger.debug(method) {"Status 409"} 
         raise UserNameAlreadyInUseError.new "User name #{params[:username]} already in use"
       else
         GtkApi.logger.error(method) {"Status #{resp[:status]}"} 
         raise UserNotCreatedError.new "User not created with params #{params}"
       end
-    rescue  => e
-      GtkApi.logger.error(method) {"Error during processing: #{$!}"}
-      GtkApi.logger.error(method) {"Backtrace:\n\t#{e.backtrace.join("\n\t")}"}
-      raise UserNotCreatedError.new "User not created with params #{params}"
+      #rescue  => e
+      #GtkApi.logger.debug(method) {"resp=#{resp}"}
+      #GtkApi.logger.error(method) {"Error during processing: #{$!}"}
+      #GtkApi.logger.error(method) {"Backtrace:\n\t#{e.backtrace.join("\n\t")}"}
+      #raise UserNotCreatedError.new "User not created with params #{params}"
     end
   end
 
@@ -139,10 +140,10 @@ class User < ManagerService
         GtkApi.logger.error(method) {"Status #{resp[:status]}"} 
         raise UserNotAuthenticatedError.new "User not authenticated with params #{secret}"
       end
-    rescue  => e
-      GtkApi.logger.error(method) {"Error during processing: #{$!}"}
-      GtkApi.logger.error(method) {"Backtrace:\n\t#{e.backtrace.join("\n\t")}"}
-      raise UserNotAuthenticatedError.new "User not authenticated with params #{secret}"
+      #rescue  => e
+      #GtkApi.logger.error(method) {"Error during processing: #{$!}"}
+      #GtkApi.logger.error(method) {"Backtrace:\n\t#{e.backtrace.join("\n\t")}"}
+      #raise UserNotAuthenticatedError.new "User not authenticated with params #{secret}"
     end
   end
 
@@ -267,10 +268,10 @@ class User < ManagerService
       else
         raise UserNotFoundError.new 'User with uuid '+uuid+' was not found'
       end
-    rescue => e
-      GtkApi.logger.error(method) {"Error during processing: #{$!}"}
-      GtkApi.logger.error(method) {"Backtrace:\n\t#{e.backtrace.join("\n\t")}"}
-      nil
+      #rescue => e
+      #GtkApi.logger.error(method) {"Error during processing: #{$!}"}
+      #GtkApi.logger.error(method) {"Backtrace:\n\t#{e.backtrace.join("\n\t")}"}
+      #nil
     end
   end
 
@@ -292,10 +293,10 @@ class User < ManagerService
       else
         raise UserNotFoundError.new 'User named '+name+' was not found'
       end
-    rescue => e
-      GtkApi.logger.error(method) {"Error during processing: #{$!}"}
-      GtkApi.logger.error(method) {"Backtrace:\n\t#{e.backtrace.join("\n\t")}"}
-      nil
+      #rescue => e
+      #GtkApi.logger.error(method) {"Error during processing: #{$!}"}
+      #GtkApi.logger.error(method) {"Backtrace:\n\t#{e.backtrace.join("\n\t")}"}
+      #nil
     end
   end
   
@@ -320,10 +321,10 @@ class User < ManagerService
       else 
         raise UsersNotFoundError.new "Users with params #{params} were not found(code #{response[:code]})"
       end
-    rescue StandardError => e
-      GtkApi.logger.error(method) {"Error during processing: #{$!}"}
-      GtkApi.logger.error(method) {"Backtrace:\n\t#{e.backtrace.join("\n\t")}"}
-      []
+      #rescue StandardError => e
+      #GtkApi.logger.error(method) {"Error during processing: #{$!}"}
+      #GtkApi.logger.error(method) {"Backtrace:\n\t#{e.backtrace.join("\n\t")}"}
+      #[]
     end
   end
   
@@ -391,6 +392,10 @@ class User < ManagerService
       GtkApi.logger.error(method) {"Backtrace:\n\t#{e.backtrace.join("\n\t")}"}
       raise PublicKeyNotFoundError.new('No public key received from User Management micro-service')
     end
+  end
+  
+  def self.is_admin?(token)
+    find_user_type_by_username(find_username_by_token(token)) == 'admin'
   end
 
   def to_h
