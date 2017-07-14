@@ -5,13 +5,9 @@ KEYCLOAK_USER=${1:-admin}
 KEYCLOAK_PASSWORD=${2:-admin}
 
 # SONATA default admin
-#SONATA_USER=${3:-sonata}
-#SONATA_PASSWORD=${4:-sonata}
-#SONATA_EMAIL=${5:-sonata.admin@email.com}
-
-SONATA_USER="sonata"
-SONATA_PASSWORD="1234"
-SONATA_EMAIL="sonata.admin@email.com"
+SONATA_USER=${3:-sonata}
+SONATA_PASSWORD=${4:-sonata}
+SONATA_EMAIL=${5:-sonata.admin@email.com}
 
 KEYCLOAK_PORT=5601
 KEYCLOAK_URL=http://localhost:$KEYCLOAK_PORT
@@ -33,6 +29,7 @@ admin_reg_data() {
  "firstName": "Admin",
  "lastName": "Default",
  "email": "$SONATA_EMAIL",
+ "credentials": [{"type": "password","value": "$SONATA_PASSWORD"}],
  "requiredActions": [],
  "federatedIdentities": [],
  "attributes": {"userType": ["admin"]},
@@ -167,7 +164,7 @@ echo "Increasing Access Token Lifespan to 1200"
 $KCADMIN_SCRIPT update realms/$SONATA_REALM -s accessTokenLifespan=1200
 
 # Creating the Service Platform adapter client:
-create_client_out=$(create_client $SONATA_REALM $ADAPTER_CLIENT "http://son-gtkusr:5600/") #"http://localhost:8081/adapter")
+create_client_out=$(create_client $SONATA_REALM $ADAPTER_CLIENT "http://son-gtkusr:5600/")
 echo $create_client_out
 adapter_cid=$(echo $create_client_out | awk -F id= '{print $2}')
 #echo "adapter_cid=$adapter_cid"
@@ -240,6 +237,15 @@ printf "\n\n======== Registering default SONATA administrator user to GTKUSR ==\
 resp=$(curl -qSfsw '\n%{http_code}' -H "Content-Type: application/json" -H "Authorization: Bearer $token" \
 -d "$(admin_reg_data)" \
 -X POST $KEYCLOAK_URL/auth/admin/realms/sonata/users) # http://son-gtkusr:5600/api/v1/register/user)
+echo $resp
+body=$(echo "$resp" | awk '{print $1}')
+echo "Code: $body"
+code=$(echo "$resp" | tail -n1)
+echo "Code: $code"
+
+resp=$(curl -qSfsw '\n%{http_code}' -H "Content-Type: application/json" -H "Authorization: Bearer $token" \
+-d "{"code": "$code", "body": "$body"}" \
+-X POST http://son-gtkusr:5600/api/v1/register/admin) # http://son-gtkusr:5600/api/v1/register/user)
 echo $resp
 code=$(echo "$resp" | tail -n1)
 echo "Code: $code"

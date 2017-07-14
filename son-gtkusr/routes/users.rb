@@ -33,6 +33,13 @@ require_relative '../helpers/init'
 # Adapter-Keycloak API class
 class Keycloak < Sinatra::Application
 
+  post 'register/admin' do
+    logger.debug 'Adapter: entered POST /register/admin'
+    form, errors = parse_json(request.body.read)
+    logger.debug "ADMIN_LOG: #{form}"
+    halt 200
+  end
+
   post '/register/user' do
     logger.debug 'Adapter: entered POST /register/user'
     # Return if content-type is not valid
