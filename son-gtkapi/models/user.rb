@@ -401,17 +401,7 @@ class User < ManagerService
   def to_h
     method = LOG_MESSAGE + "##{__method__}"
     GtkApi.logger.debug(method) {"entered"}
-    h={}
-    h[:username]= @username
-    h[:uuid]=@uuid
-    h[:created_at]=@created_at
-    h[:user_type]=@user_type
-    h[:email]=@email
-    h[:last_name]=@last_name
-    h[:first_name]=@first_name
-    h[:public_key] = @public_key
-    h[:certificate] = @certificate
-    h
+    self.instance_variables.each_with_object({}) { |var,hash| hash[var[1..-1].to_sym] = self.instance_variable_get(var) }
   end
   
   private 
