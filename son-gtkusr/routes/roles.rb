@@ -34,13 +34,12 @@ require_relative '../helpers/init'
 class Keycloak < Sinatra::Application
   # Get a role by query
   get '/roles' do
-    #TODO: QUERIES NOT SUPPORTED -> Check alternatives!!
     # This endpoint allows queries for the next fields:
     # search, lastName, firstName, email, username, first, max
     logger.debug 'Adapter: entered GET /roles'
     # Return if Authorization is invalid
     # json_error(400, 'Authorization header not set') unless request.env["HTTP_AUTHORIZATION"]
-    queriables = %w(search id name description first max)
+    queriables = %w(id name)
     # keyed_params = keyed_hash(params)
     params.each { |k, v|
       unless queriables.include? k.to_s
@@ -50,10 +49,13 @@ class Keycloak < Sinatra::Application
     code, realm_roles = get_realm_roles(params)
     logger.debug "Adapter: gathered roles #{realm_roles}"
     json_error(404, 'No roles found') if realm_roles == 'null'
-
-    params['offset'] ||= DEFAULT_OFFSET
-    params['limit'] ||= DEFAULT_LIMIT
-    realm_roles = apply_limit_and_offset(JSON.parse(realm_roles), offset=params[:offset], limit=params[:limit])
+    realm_roles = parse_json(realm_roles)[0]
+    if realm_roles.is_a?(Array)
+      params['offset'] ||= DEFAULT_OFFSET
+      params['limit'] ||= DEFAULT_LIMIT
+      realm_roles = apply_limit_and_offset(realm_roles, offset=params[:offset], limit=params[:limit])
+    end
+    logger.debug "Adapter: leaving GET /roles with #{realm_roles}"
     halt code.to_i, {'Content-type' => 'application/json'}, realm_roles.to_json
   end
 

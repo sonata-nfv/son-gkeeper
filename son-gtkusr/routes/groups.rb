@@ -48,12 +48,13 @@ class Keycloak < Sinatra::Application
     realm_groups = get_groups(params)
     logger.debug "Adapter: gathered groups #{realm_groups}"
     json_error(404, 'No groups found') if realm_groups == 'null'
-
-    params['offset'] ||= DEFAULT_OFFSET
-    params['limit'] ||= DEFAULT_LIMIT
-    realm_groups = apply_limit_and_offset(JSON.parse(realm_groups), offset=params['offset'], limit=params['limit'])
-    logger.debug "Adapter: applied limit-offset to groups #{realm_groups}"
-    logger.debug "Adapter: return groups json #{realm_groups.to_json}"
+    realm_groups = parse_json(realm_groups)[0]
+    if realm_groups.is_a?(Array)
+      params['offset'] ||= DEFAULT_OFFSET
+      params['limit'] ||= DEFAULT_LIMIT
+      realm_groups = apply_limit_and_offset(realm_groups, offset=params['offset'], limit=params['limit'])
+    end
+    logger.debug "Adapter: leaving GET /groups with #{realm_groups}"
     halt 200, {'Content-type' => 'application/json'}, realm_groups.to_json
   end
 

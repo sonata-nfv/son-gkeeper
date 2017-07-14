@@ -29,6 +29,7 @@ admin_reg_data() {
  "firstName": "Admin",
  "lastName": "Default",
  "email": "$SONATA_EMAIL",
+ "credentials": [{"type": "password","value": "$SONATA_PASSWORD"}],
  "requiredActions": [],
  "federatedIdentities": [],
  "attributes": {"userType": ["admin"]},
@@ -163,7 +164,7 @@ echo "Increasing Access Token Lifespan to 1200"
 $KCADMIN_SCRIPT update realms/$SONATA_REALM -s accessTokenLifespan=1200
 
 # Creating the Service Platform adapter client:
-create_client_out=$(create_client $SONATA_REALM $ADAPTER_CLIENT "http://son-gtkusr:5600/") #"http://localhost:8081/adapter")
+create_client_out=$(create_client $SONATA_REALM $ADAPTER_CLIENT "http://son-gtkusr:5600/")
 echo $create_client_out
 adapter_cid=$(echo $create_client_out | awk -F id= '{print $2}')
 #echo "adapter_cid=$adapter_cid"
@@ -184,7 +185,6 @@ $KCADMIN_SCRIPT add-roles -r $SONATA_REALM --rname admin --cclientid realm-manag
 # kcadm.sh add-roles -r sonata --rname admin --cclientid realm-management --rolename realm-admin
 # update_realm_role $SONATA_REALM admin realm-management realm-admin
 
-
 # Creating predefined realm groups where $1=realm_name $2=group_name $3=associated_role_name:
 create_group $SONATA_REALM developers 'attributes.roles=["developer"]'
 create_group $SONATA_REALM customers 'attributes.roles=["customer"]'
@@ -192,6 +192,10 @@ create_group $SONATA_REALM admins 'attributes.roles=["admin"]'
 
 # Capture the adapter client secret for the next set of operations
 adapter_secret=$(get_client_secret $SONATA_REALM $adapter_cid)
+
+# Add the realm-admin role to the service account associated with the adapter client
+echo Adding realm-admin role to adapter service account...
+$KCADMIN_SCRIPT add-roles -r $SONATA_REALM --uusername service-account-$ADAPTER_CLIENT --cclientid realm-management --rolename realm-admin
 
 # Attempt to get access and ID tokens. This serves two purposes:
 # 1. it tests the endpoint: we make sure that the adapter client was created correctly and we have the adapter client secret, and
@@ -204,10 +208,6 @@ echo "Token data="$token
 #	echo "Got $endpoint_ret instead of 200 OK"
 #	return 1
 #fi
-
-# Add the realm-admin role to the service account associated with the adapter client
-echo Adding realm-admin role to adapter service account...
-$KCADMIN_SCRIPT add-roles -r $SONATA_REALM --uusername service-account-$ADAPTER_CLIENT --cclientid realm-management --rolename realm-admin
 
 if [ "$ADAPTER_URL" ]; then
     echo
@@ -234,7 +234,8 @@ sleep 3
 
 printf "\n\n======== Registering default SONATA administrator user to GTKUSR ==\n\n\n"
 resp=$(curl -qSfsw '\n%{http_code}' -H "Content-Type: application/json" -H "Authorization: Bearer $token" \
--d "$(admin_reg_data)" -X POST $KEYCLOAK_URL/auth/admin/realms/sonata/users)
+-d "$(admin_reg_data)" \
+-X POST $KEYCLOAK_URL/auth/admin/realms/sonata/users) # http://son-gtkusr:5600/api/v1/register/user)
 echo $resp
 code=$(echo "$resp" | tail -n1)
 echo "Code: $code"
