@@ -77,13 +77,14 @@ class GtkSrv < Sinatra::Base
     logger.debug(log_msg) {"with params=#{params}"}
     
     # we're not storing egresses or ingresses
-    egresses = params.delete['egresses']
-    ingresses = params.delete['ingresses']
+    #egresses = params.delete['egresses']
+    #ingresses = params.delete['ingresses']
     
     begin
       start_request={}
 
-      si_request = Request.create(params)
+      # we're not storing egresses or ingresses
+      si_request = Request.create({service_uuid: params['service_uuid']})
       logger.debug(log_msg) { "with service_uuid=#{params['service_uuid']}: #{si_request.inspect}"}
       service = NService.new(settings.services_catalogue, logger).find_by_uuid(params['service_uuid'])
       logger.error(log_msg) {"network service not found"} unless service
