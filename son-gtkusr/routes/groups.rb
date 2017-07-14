@@ -52,7 +52,7 @@ class Keycloak < Sinatra::Application
     if realm_groups.is_a?(Array)
       params['offset'] ||= DEFAULT_OFFSET
       params['limit'] ||= DEFAULT_LIMIT
-      realm_groups = apply_limit_and_offset(JSON.parse(realm_groups), offset=params['offset'], limit=params['limit'])
+      realm_groups = apply_limit_and_offset(realm_groups, offset=params['offset'], limit=params['limit'])
     end
     logger.debug "Adapter: leaving GET /groups with #{realm_groups}"
     halt 200, {'Content-type' => 'application/json'}, realm_groups.to_json

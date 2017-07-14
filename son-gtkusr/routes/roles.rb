@@ -53,7 +53,7 @@ class Keycloak < Sinatra::Application
     if realm_roles.is_a?(Array)
       params['offset'] ||= DEFAULT_OFFSET
       params['limit'] ||= DEFAULT_LIMIT
-      realm_roles = apply_limit_and_offset(JSON.parse(realm_roles), offset=params[:offset], limit=params[:limit])
+      realm_roles = apply_limit_and_offset(realm_roles, offset=params[:offset], limit=params[:limit])
     end
     logger.debug "Adapter: leaving GET /roles with #{realm_roles}"
     halt code.to_i, {'Content-type' => 'application/json'}, realm_roles.to_json
