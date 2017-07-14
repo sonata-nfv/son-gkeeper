@@ -77,8 +77,8 @@ class GtkSrv < Sinatra::Base
     logger.debug(log_msg) {"with params=#{params}"}
     
     # we're not storing egresses or ingresses
-    #egresses = params.delete['egresses']
-    #ingresses = params.delete['ingresses']
+    egresses = params.delete 'egresses'
+    ingresses = params.delete 'ingresses'
     
     begin
       start_request={}
