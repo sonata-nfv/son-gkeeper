@@ -167,13 +167,15 @@ module GtkApiHelper
       logger.debug(log_message) {'element='+element.inspect}
       licenced_collection = LicenceManagerService.find({service_uuid: element[:uuid], user_uuid: user})
       logger.debug(log_message) {'licenced_collection='+licenced_collection.inspect}
+      
+      # No licence implies 'public' licence
       if element[:licences].to_s.empty? || element[:licences] == 'public'
         element[:licence_type] = 'public'
       else
         # it's private
         if element[:username] == user
           element[:licence_type] = 'owned'
-        elsif licenced_collection.any? {|l_service| l_service[:uuid] == element[:uuid] }
+        elsif licenced_collection.any? {|licensed_element| licensed_element[:uuid] == element[:uuid] }
           element[:licence_type] = 'licensed'
         else
           # if a licence is needed, we're not passing the whole stuff back
