@@ -195,12 +195,17 @@ class User < ManagerService
     GtkApi.logger.debug(log_message) {"entered with fields=#{fields}"}
     fields.each do |key, value|
       GtkApi.logger.debug(log_message) {"key=#{key}, value=#{value}"}
-      method = "@#{key}=".to_sym
+      #method = "@#{key}=".to_sym
+      method = "#{key}=".to_sym
       if respond_to? method
         GtkApi.logger.debug(log_message) {"user respondes to #{method}"}
         instance_variable_set(method, value)
-        new_val = instance_variable_get("@#{key}")
-        GtkApi.logger.debug(log_message) {"variable @#{key} set to #{new_val}"}
+        #new_val = instance_variable_get("@#{key}")
+        #GtkApi.logger.debug(log_message) {"variable @#{key} set to #{new_val}"}
+        new_val = instance_variable_get("#{key}")
+        GtkApi.logger.debug(log_message) {"variable @{key} set to #{new_val}"}
+      else
+        GtkApi.logger.debug(log_message) {"user does not respond to #{method}"}
       end
     end
   end
