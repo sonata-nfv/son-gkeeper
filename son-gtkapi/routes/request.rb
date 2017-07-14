@@ -49,6 +49,8 @@ class GtkApi < Sinatra::Base
       params = JSON.parse(request.body.read)
       logger.debug(log_message) {"entered with params=#{params}"}
       require_param(param: 'service_uuid', params: params, kpi_method: method(:count_service_instantiation_requests), error_message: 'Service UUID', log_message: log_message, began_at: began_at)
+      require_param(param: 'egresses', params: params, kpi_method: method(:count_service_instantiation_requests), error_message: 'Egresses list', log_message: log_message, began_at: began_at)
+      require_param(param: 'ingresses', params: params, kpi_method: method(:count_service_instantiation_requests), error_message: 'Ingresses list', log_message: log_message, began_at: began_at)
       
       token = get_token( request.env, began_at, method(:count_service_instantiation_requests), log_message)
       user_name = User.find_username_by_token(token)

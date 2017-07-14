@@ -75,6 +75,8 @@ class GtkSrv < Sinatra::Base
     logger.debug(log_msg) {"entered with original_body=#{original_body}"}
     params = JSON.parse(original_body, quirks_mode: true)
     logger.debug(log_msg) {"with params=#{params}"}
+    
+    # we're not storing egresses or ingresses
     egresses = params.delete['egresses']
     ingresses = params.delete['ingresses']
     
@@ -114,7 +116,7 @@ class GtkSrv < Sinatra::Base
     rescue Exception => e
       logger.debug(e.message)
 	    logger.debug(e.backtrace.inspect)
-	    halt 500, 'Internal server error'
+	    halt 500, 'Internal server error'+e.message
     end
   end
 
