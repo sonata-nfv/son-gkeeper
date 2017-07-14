@@ -48,8 +48,8 @@ class LicenceManagerService < ManagerService
     # status, string, mandatory
 
     
-    method = LOG_MESSAGE + "##{__method__}(#{params})"
-    GtkApi.logger.debug(method) {'entered'}
+    method = LOG_MESSAGE + "##{__method__}"
+    GtkApi.logger.debug(method) {"entered: params=#{params}"}
     raise ArgumentError, 'User must be valid' unless User.valid? params[:user_uuid]
     raise ArgumentError, 'Service must be valid' unless ServiceManagerService.valid? params[:service_uuid]
     GtkApi.logger.debug(method) {'Leaving with valid licence data'}
@@ -57,8 +57,8 @@ class LicenceManagerService < ManagerService
   end
   
   def self.create(params)
-    method = LOG_MESSAGE + "##{__method__}(#{params})"
-    GtkApi.logger.debug(method) {'entered'}
+    method = LOG_MESSAGE + "##{__method__}"
+    GtkApi.logger.debug(method) {"entered: params=#{params}"}
     headers = {'Content-Type'=>'application/x-www-form-urlencoded'}
 
     begin
@@ -82,8 +82,8 @@ class LicenceManagerService < ManagerService
   end
 
   def self.find_by_uuid(uuid)
-    log_message = LOG_MESSAGE + "##{__method__}(#{uuid})"
-    GtkApi.logger.debug(log_message) {'entered'}
+    method = LOG_MESSAGE + "##{__method__}"
+    GtkApi.logger.debug(method) {"entered: uuid=#{uuid}"}
 
     licence = getCurb(url: @@url + LICENCES_URL + uuid + '/', params: {}, headers: JSON_HEADERS)
     GtkApi.logger.debug(log_message) {"licence=#{licence}"}
@@ -99,8 +99,8 @@ class LicenceManagerService < ManagerService
   end
     
   def self.find(params)
-    log_message = LOG_MESSAGE + "##{__method__}(#{params})"
-    GtkApi.logger.debug(log_message) {'entered'}
+    log_message = LOG_MESSAGE + "##{__method__}"
+    GtkApi.logger.debug(log_message) {"entered: params=#{params}"}
     licences = getCurb(url: @@url + LICENCES_URL, params: params, headers: JSON_HEADERS)
     GtkApi.logger.debug(log_message) {"licences=#{licences}"}
     case licences[:status]
