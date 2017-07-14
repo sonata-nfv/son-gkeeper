@@ -69,12 +69,12 @@ class ServiceManagerService < ManagerService
   def self.create_service_intantiation_request(params)
     message = LOG_MESSAGE+"##{__method__}"
     GtkApi.logger.debug(message) {"entered with #{params}"}
+    GtkApi.logger.debug(method) {"@@url = "+@@url}
 
     begin
-      GtkApi.logger.debug(method) {"@url = "+@@url}
-      response = self.postCurb(url: @@url+'/requests', body: params) ## TODO: check if this tests ok!! 
-      GtkApi.logger.debug(method) {"response=#{response}"}
-      response
+      resp = self.postCurb(url: @@url+'/requests', body: params) ## TODO: check if this tests ok!! 
+      GtkApi.logger.debug(method) {"resp=#{resp}"}
+      resp
     rescue => e
       GtkApi.logger.error(method) {"Error during processing: #{$!}"}
       GtkApi.logger.error(method) {"Backtrace:\n\t#{e.backtrace.join("\n\t")}"}

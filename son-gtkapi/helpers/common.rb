@@ -96,6 +96,8 @@ module GtkApiHelper
   end
 
   def require_param(param:, params:, kpi_method: nil, error_message:, log_message:, began_at:)
+    log_message = "GtkApiHelper.#{__method__}"
+    logger.debug(log_message) {"param=#{param}, params=#{params}"}
     if (!params.key?(param) || params[param].to_s.empty?)
       kpi_method.call(labels: {result: "bad request", uuid: '', elapsed_time: (Time.now.utc-began_at).to_s}) if kpi_method
       json_error 400, error_message+' is missing', log_message
