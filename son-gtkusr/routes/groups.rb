@@ -51,6 +51,7 @@ class Keycloak < Sinatra::Application
 
     params['offset'] ||= DEFAULT_OFFSET
     params['limit'] ||= DEFAULT_LIMIT
+    logger.debug "Adapter: offset,limit values= #{params['offset']}, #{params['limit']}"
     realm_groups = apply_limit_and_offset(JSON.parse(realm_groups), offset=params['offset'], limit=params['limit'])
     logger.debug "Adapter: applied limit-offset to groups #{realm_groups}"
     logger.debug "Adapter: return groups json #{realm_groups.to_json}"
