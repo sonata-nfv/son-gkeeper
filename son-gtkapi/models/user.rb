@@ -37,6 +37,7 @@ class UserNotUpdatedError < StandardError; end
 class UserNameAlreadyInUseError < StandardError; end
 class UserNotLoggedOutError < StandardError; end
 class UserTokenNotActiveError < StandardError; end
+class UserTokenDoesNotMatchError < StandardError; end
 class UserPublicKeyNotUpdatedError < StandardError; end
 
 class User < ManagerService
@@ -102,16 +103,17 @@ class User < ManagerService
         saved_params[:uuid] = user[:userId] unless user.empty?
         User.new(saved_params)
       when 409
-        GtkApi.logger.error(method) {"Status 409"} 
+        GtkApi.logger.debug(method) {"Status 409"} 
         raise UserNameAlreadyInUseError.new "User name #{params[:username]} already in use"
       else
         GtkApi.logger.error(method) {"Status #{resp[:status]}"} 
         raise UserNotCreatedError.new "User not created with params #{params}"
       end
-    rescue  => e
-      GtkApi.logger.error(method) {"Error during processing: #{$!}"}
-      GtkApi.logger.error(method) {"Backtrace:\n\t#{e.backtrace.join("\n\t")}"}
-      raise UserNotCreatedError.new "User not created with params #{params}"
+      #rescue  => e
+      #GtkApi.logger.debug(method) {"resp=#{resp}"}
+      #GtkApi.logger.error(method) {"Error during processing: #{$!}"}
+      #GtkApi.logger.error(method) {"Backtrace:\n\t#{e.backtrace.join("\n\t")}"}
+      #raise UserNotCreatedError.new "User not created with params #{params}"
     end
   end
 
@@ -138,10 +140,10 @@ class User < ManagerService
         GtkApi.logger.error(method) {"Status #{resp[:status]}"} 
         raise UserNotAuthenticatedError.new "User not authenticated with params #{secret}"
       end
-    rescue  => e
-      GtkApi.logger.error(method) {"Error during processing: #{$!}"}
-      GtkApi.logger.error(method) {"Backtrace:\n\t#{e.backtrace.join("\n\t")}"}
-      raise UserNotAuthenticatedError.new "User not authenticated with params #{secret}"
+      #rescue  => e
+      #GtkApi.logger.error(method) {"Error during processing: #{$!}"}
+      #GtkApi.logger.error(method) {"Backtrace:\n\t#{e.backtrace.join("\n\t")}"}
+      #raise UserNotAuthenticatedError.new "User not authenticated with params #{secret}"
     end
   end
 
@@ -193,12 +195,15 @@ class User < ManagerService
     GtkApi.logger.debug(log_message) {"entered with fields=#{fields}"}
     fields.each do |key, value|
       GtkApi.logger.debug(log_message) {"key=#{key}, value=#{value}"}
-      method = "@#{key}=".to_sym
-      if respond_to? method
-        GtkApi.logger.debug(log_message) {"user respondes to #{method}"}
-        instance_variable_set(method, value)
+      setter = :"#{key}="
+      GtkApi.logger.debug(log_message) {"setter is #{setter}"}
+      if respond_to?(setter)
+        GtkApi.logger.debug(log_message) {"user respondes to #{setter}"}
+        public_send(setter, value)
         new_val = instance_variable_get("@#{key}")
         GtkApi.logger.debug(log_message) {"variable @#{key} set to #{new_val}"}
+      else
+        GtkApi.logger.debug(log_message) {"user does not respond to #{setter}"}
       end
     end
   end
@@ -227,7 +232,7 @@ class User < ManagerService
       self
     when 400 # Provided username does not match with Access Token, No username specified or Developer public key not provided
       GtkApi.logger.debug(method) {'Username '+@username+' does not match with token'}
-      raise UserTokenNotActiveError.new 'Username '+@username+' does not match with token'
+      raise UserTokenDoesNotMatchError.new 'Username '+@username+' does not match with token'
     when 401 # Token is not valid
       GtkApi.logger.debug(method) {'Username '+@username+' provided a token that is not valid'}
       raise UserTokenNotActiveError.new 'Username '+@username+' provided a token that is not valid'
@@ -266,10 +271,10 @@ class User < ManagerService
       else
         raise UserNotFoundError.new 'User with uuid '+uuid+' was not found'
       end
-    rescue => e
-      GtkApi.logger.error(method) {"Error during processing: #{$!}"}
-      GtkApi.logger.error(method) {"Backtrace:\n\t#{e.backtrace.join("\n\t")}"}
-      nil
+      #rescue => e
+      #GtkApi.logger.error(method) {"Error during processing: #{$!}"}
+      #GtkApi.logger.error(method) {"Backtrace:\n\t#{e.backtrace.join("\n\t")}"}
+      #nil
     end
   end
 
@@ -291,10 +296,10 @@ class User < ManagerService
       else
         raise UserNotFoundError.new 'User named '+name+' was not found'
       end
-    rescue => e
-      GtkApi.logger.error(method) {"Error during processing: #{$!}"}
-      GtkApi.logger.error(method) {"Backtrace:\n\t#{e.backtrace.join("\n\t")}"}
-      nil
+      #rescue => e
+      #GtkApi.logger.error(method) {"Error during processing: #{$!}"}
+      #GtkApi.logger.error(method) {"Backtrace:\n\t#{e.backtrace.join("\n\t")}"}
+      #nil
     end
   end
   
@@ -319,10 +324,10 @@ class User < ManagerService
       else 
         raise UsersNotFoundError.new "Users with params #{params} were not found(code #{response[:code]})"
       end
-    rescue StandardError => e
-      GtkApi.logger.error(method) {"Error during processing: #{$!}"}
-      GtkApi.logger.error(method) {"Backtrace:\n\t#{e.backtrace.join("\n\t")}"}
-      []
+      #rescue StandardError => e
+      #GtkApi.logger.error(method) {"Error during processing: #{$!}"}
+      #GtkApi.logger.error(method) {"Backtrace:\n\t#{e.backtrace.join("\n\t")}"}
+      #[]
     end
   end
   
@@ -391,21 +396,15 @@ class User < ManagerService
       raise PublicKeyNotFoundError.new('No public key received from User Management micro-service')
     end
   end
+  
+  def self.is_admin?(token)
+    find_user_type_by_username(find_username_by_token(token)) == 'admin'
+  end
 
   def to_h
     method = LOG_MESSAGE + "##{__method__}"
     GtkApi.logger.debug(method) {"entered"}
-    h={}
-    h[:username]= @username
-    h[:uuid]=@uuid
-    h[:created_at]=@created_at
-    h[:user_type]=@user_type
-    h[:email]=@email
-    h[:last_name]=@last_name
-    h[:first_name]=@first_name
-    h[:public_key] = @public_key
-    h[:certificate] = @certificate
-    h
+    self.instance_variables.each_with_object({}) { |var,hash| hash[var[1..-1].to_sym] = self.instance_variable_get(var) }
   end
   
   private 

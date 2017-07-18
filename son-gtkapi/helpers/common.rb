@@ -96,6 +96,8 @@ module GtkApiHelper
   end
 
   def require_param(param:, params:, kpi_method: nil, error_message:, log_message:, began_at:)
+    log_message = "GtkApiHelper.#{__method__}"
+    logger.debug(log_message) {"param=#{param}, params=#{params}"}
     if (!params.key?(param) || params[param].to_s.empty?)
       kpi_method.call(labels: {result: "bad request", uuid: '', elapsed_time: (Time.now.utc-began_at).to_s}) if kpi_method
       json_error 400, error_message+' is missing', log_message
@@ -165,13 +167,15 @@ module GtkApiHelper
       logger.debug(log_message) {'element='+element.inspect}
       licenced_collection = LicenceManagerService.find({service_uuid: element[:uuid], user_uuid: user})
       logger.debug(log_message) {'licenced_collection='+licenced_collection.inspect}
+      
+      # No licence implies 'public' licence
       if element[:licences].to_s.empty? || element[:licences] == 'public'
         element[:licence_type] = 'public'
       else
         # it's private
         if element[:username] == user
           element[:licence_type] = 'owned'
-        elsif licenced_collection.any? {|l_service| l_service[:uuid] == element[:uuid] }
+        elsif licenced_collection.any? {|licensed_element| licensed_element[:uuid] == element[:uuid] }
           element[:licence_type] = 'licensed'
         else
           # if a licence is needed, we're not passing the whole stuff back

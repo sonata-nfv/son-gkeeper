@@ -76,47 +76,48 @@ class GtkSrv < Sinatra::Base
     params = JSON.parse(original_body, quirks_mode: true)
     logger.debug(log_msg) {"with params=#{params}"}
     
+    # we're not storing egresses or ingresses
+    egresses = params.delete 'egresses'
+    ingresses = params.delete 'ingresses'
+    
     begin
       start_request={}
-      
-      #start_request['app_id']='son-gatekeeper'
-      si_request = Request.create(params)
+
+      # we're not storing egresses or ingresses
+      si_request = Request.create({service_uuid: params['service_uuid']})
       logger.debug(log_msg) { "with service_uuid=#{params['service_uuid']}: #{si_request.inspect}"}
       service = NService.new(settings.services_catalogue, logger).find_by_uuid(params['service_uuid'])
+      logger.error(log_msg) {"network service not found"} unless service
       logger.debug(log_msg) { "service=#{service}"}
-      if service
-        nsd = service['nsd']
-        nsd[:uuid] = service['uuid']
-        start_request['NSD']= nsd
-      
-        nsd['network_functions'].each_with_index do |function, index|
-          logger.debug(log_msg) { "function=['#{function['vnf_name']}', '#{function['vnf_vendor']}', '#{function['vnf_version']}']"}
-          stored_function = VFunction.new(settings.functions_catalogue, logger).find_function(function['vnf_name'],function['vnf_vendor'],function['vnf_version'])
-          if stored_function
-            logger.debug(log_msg) {"function#{index}=#{stored_function}"}
-            vnfd = stored_function[:vnfd]
-            vnfd[:uuid] = stored_function[:uuid]
-            start_request["VNFD#{index}"]=vnfd 
-            logger.debug(log_msg) {"start_request[\"VNFD#{index}\"]=#{vnfd}"}
-          else
-            logger.error(log_msg) {"network function not found"}
-          end
-        end
-        stringified=start_request.deep_stringify_keys
-        start_request_yml = YAML.dump(stringified)
-        logger.debug(log_msg) {"#{params}: "+start_request_yml}
 
-        smresponse = settings.mqserver.publish( start_request_yml.to_s, si_request['id'])
-        json_request = json(si_request, { root: false })
-        logger.info(MODULE) {' returning POST /requests with request='+json_request}
-        halt 201, json_request
-      else
-        logger.error('GtkSrv: POST /requests') {"network service not found"}
+      nsd = service['nsd']
+      nsd[:uuid] = service['uuid']
+      start_request['NSD']= nsd
+    
+      nsd['network_functions'].each_with_index do |function, index|
+        logger.debug(log_msg) { "function=['#{function['vnf_name']}', '#{function['vnf_vendor']}', '#{function['vnf_version']}']"}
+        stored_function = VFunction.new(settings.functions_catalogue, logger).find_function(function['vnf_name'],function['vnf_vendor'],function['vnf_version'])
+        logger.error(log_msg) {"network function not found"} unless stored_function
+        logger.debug(log_msg) {"function#{index}=#{stored_function}"}
+        vnfd = stored_function[:vnfd]
+        vnfd[:uuid] = stored_function[:uuid]
+        start_request["VNFD#{index}"]=vnfd 
+        logger.debug(log_msg) {"start_request[\"VNFD#{index}\"]=#{vnfd}"}
       end
+      start_request['egresses'] = egresses
+      start_request['ingresses'] = ingresses
+      stringified=start_request.deep_stringify_keys
+      start_request_yml = YAML.dump(stringified)
+      logger.debug(log_msg) {"#{params}: "+start_request_yml}
+
+      smresponse = settings.mqserver.publish( start_request_yml.to_s, si_request['id'])
+      json_request = json(si_request, { root: false })
+      logger.info(MODULE) {' returning POST /requests with request='+json_request}
+      halt 201, json_request
     rescue Exception => e
       logger.debug(e.message)
 	    logger.debug(e.backtrace.inspect)
-	    halt 500, 'Internal server error'
+	    halt 500, 'Internal server error'+e.message
     end
   end
 

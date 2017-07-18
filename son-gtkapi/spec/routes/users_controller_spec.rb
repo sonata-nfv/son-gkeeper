@@ -41,7 +41,14 @@ RSpec.describe GtkApi, type: :controller do
       }}
     let(:user_info) {user_basic_info.merge({username: "Unknown", email: "un@known.com", password: "1234", user_type: "developer"})}
     let(:created_user) {{
-      username: "Unknown",
+      certificate: '', 
+      created_at: "2016-11-11T10:21:00.007+00:00", 
+      email: user_info[:email], 
+      first_name: user_info[:first_name], 
+      last_name: user_info[:last_name], 
+      public_key: '', 
+      user_type: user_info[:user_type],
+      username: user_info[:username],
       uuid: SecureRandom.uuid
     }}
     let(:user_with_no_name) {user_basic_info.merge({username: "", email: "un@known.com", password: "1234", user_type: "developer"})}
@@ -55,39 +62,43 @@ RSpec.describe GtkApi, type: :controller do
       expect(last_response.status).to eq(400)
     end
 
-    context 'with user name ' do
+    context 'returns Unprocessable Entity (400) ' do
       let(:user_with_no_password) {user_basic_info.merge({username: "Unknown", email: "user.sample@email.com.br", password: ""} )}
       let(:user_with_no_email) {user_basic_info.merge({username: "Unknown", email: "", password: "1234"})}
       let(:user_with_no_type) {user_basic_info.merge({username: "Unknown", email: "un@known.com", password: "1234", user_type: ""})}
-      it 'given, but no password, returns Unprocessable Entity (400)' do
-        post '/api/v2/users/', user_with_no_password.to_json
-        expect(last_response.status).to eq(400)
-      end
-      it 'given, but no email, returns Unprocessable Entity (400)' do
-        post '/api/v2/users/', user_with_no_email.to_json
-        expect(last_response.status).to eq(400)
-      end
-      it 'given, but no user type, returns Unprocessable Entity (400)' do
-        post '/api/v2/users/', user_with_no_type.to_json
-        expect(last_response.status).to eq(400)
-      end
-      context 'password and user type given' do
-        before(:each) do
-          user = double('User', uuid: created_user[:uuid], username: created_user[:username])
-          allow(User).to receive(:create).with(user_info).and_return(user)
-          post '/api/v2/users/', user_info.to_json
+      context 'with user name ' do
+        it 'given, but no password' do
+          post '/api/v2/users/', user_with_no_password.to_json
+          expect(last_response.status).to eq(400)
         end
-        it 'returns Ok (201)' do
-          expect(last_response.status).to eq(201)
+        it 'given, but no email' do
+          post '/api/v2/users/', user_with_no_email.to_json
+          expect(last_response.status).to eq(400)
         end
-        it 'calls User.create' do
-          expect(User).to have_received(:create)
-        end
-        it 'returns user name and id' do
-          expect(last_response.body).to eq(created_user.to_json)
+        it 'given, but no user type' do
+          post '/api/v2/users/', user_with_no_type.to_json
+          expect(last_response.status).to eq(400)
         end
       end
-      
+    end
+    context 'with user name, password and user type given' do
+      before(:each) do
+        user = double('User')
+        allow(user).to receive(:to_h).and_return(created_user)
+        allow(user).to receive(:uuid).and_return(created_user[:uuid])
+        allow(user).to receive(:username).and_return(created_user[:username])
+        allow(User).to receive(:create).with(user_info).and_return(user)
+        post '/api/v2/users/', user_info.to_json
+      end
+      it 'returns Ok (201)' do
+        expect(last_response.status).to eq(201)
+      end
+      it 'calls User.create' do
+        expect(User).to have_received(:create)
+      end
+      it 'returns a User (in JSON)' do
+        expect(last_response.body).to eq(created_user.to_json)
+      end
     end
   end
 end

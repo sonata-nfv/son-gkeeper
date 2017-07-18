@@ -32,6 +32,10 @@ class GtkApi < Sinatra::Base
   helpers GtkApiHelper
   
   namespace '/api/v2/users' do
+    before do
+      content_type :json
+    end
+
     options '/?' do
       response.headers['Access-Control-Allow-Origin'] = '*'
       response.headers['Access-Control-Allow-Methods'] = 'POST,PUT'      
@@ -47,29 +51,17 @@ class GtkApi < Sinatra::Base
       
       logger.info(log_message) {"entered with params=#{params}"}
             
-      unless valid_param?(params: params, sym: :username)
-        count_user_registrations(labels: {result: "bad request", uuid: '', elapsed_time: (Time.now.utc-began_at).to_s})
-        json_error(400, 'User name is missing', log_message)
-      end
-      unless valid_param?(params: params, sym: :password)
-        count_user_registrations(labels: {result: "bad request", uuid: '', elapsed_time: (Time.now.utc-began_at).to_s})
-        json_error(400, 'User password is missing', log_message)
-      end
-      unless valid_param?(params: params, sym: :email)
-        count_user_registrations(labels: {result: "bad request", uuid: '', elapsed_time: (Time.now.utc-began_at).to_s})
-        json_error(400, 'User email is missing', log_message)
-      end
-      unless valid_param?(params: params, sym: :user_type)
-        count_user_registrations(labels: {result: "bad request", uuid: '', elapsed_time: (Time.now.utc-began_at).to_s})
-        json_error(400, 'User type is missing', log_message)
-      end
+      require_param(param: :username, params: params, kpi_method: method(:count_user_registrations), error_message: "User name", log_message: log_message, began_at: began_at)
+      require_param(param: :password, params: params, kpi_method: method(:count_user_registrations), error_message: "Password", log_message: log_message, began_at: began_at)
+      require_param(param: :email, params: params, kpi_method: method(:count_user_registrations), error_message: "Email", log_message: log_message, began_at: began_at)
+      require_param(param: :user_type, params: params, kpi_method: method(:count_user_registrations), error_message: "User type", log_message: log_message, began_at: began_at)
     
       begin
         user = User.create(params)
         count_user_registrations(labels: {result: "ok", uuid: user.uuid, elapsed_time: (Time.now.utc-began_at).to_s})
         logger.info(log_message) {"leaving with user name #{user.username}"}
         headers 'Location'=> User.class_variable_get(:@@url)+"/api/v2/users/#{user.uuid}", 'Content-Type'=> 'application/json'
-        halt 201, { username: user.username, uuid: user.uuid}.to_json
+        halt 201, user.to_h.to_json
       rescue UserNameAlreadyInUseError
         count_user_registrations(labels: {result: "duplicate", uuid: '', elapsed_time: (Time.now.utc-began_at).to_s})
         json_error 409, "User name #{params[:username]} already in use", log_message
@@ -79,8 +71,43 @@ class GtkApi < Sinatra::Base
       end
     end
     
-    # GET many users
+    # PUT updated info
+    put '/?' do
+      began_at = Time.now.utc
+      log_message = 'GtkApi::PUT /api/v2/users/?'
+      params = JSON.parse(request.body.read, symbolize_names: true)
+      
+      logger.info(log_message) {"entered with params=#{params}"}
+      #require_param(param: 'username', params: params, kpi_method: method(:count_user_profile_updates), error_message: "No user name provided: #{params}", log_message: log_message, began_at: began_at)
+      #require_param(param: 'password', params: params, kpi_method: method(:count_user_profile_updates), error_message: "No password provided: #{params}", log_message: log_message, began_at: began_at)
+      #require_param(param: 'email', params: params, kpi_method: method(:count_user_profile_updates), error_message: "No email provided: #{params}", log_message: log_message, began_at: began_at)
+      #require_param(param: 'user_type', params: params, kpi_method: method(:count_user_profile_updates), error_message: "No user type provided: #{params}", log_message: log_message, began_at: began_at)
+      token = get_token( request.env, began_at, method(:count_user_profile_updates), log_message)
+      user_name = User.find_username_by_token(token)
+      
+      validate_user_authorization(token: token, action: 'get metadata for functions', uuid: '', path: '/functions', method:'GET', kpi_method: method(:count_user_profile_updates), began_at: began_at, log_message: log_message)
+      logger.debug(log_message) {"User authorized"}
+      
+      begin
+        user = User.find_by_name(user_name)
+        updated_info=user.update(params)
+        count_user_profile_updates(labels: {result: "ok", uuid: user.uuid, elapsed_time: (Time.now.utc-began_at).to_s})
+        logger.info(log_message) {"leaving with user name #{user.username}"}
+        headers 'Location'=> User.class_variable_get(:@@url)+"/api/v2/users/#{user.uuid}", 'Content-Type'=> 'application/json'
+        halt 200, user.to_h.to_json
+      rescue UserNameAlreadyInUseError
+        count_user_profile_updates(labels: {result: "duplicate", uuid: '', elapsed_time: (Time.now.utc-began_at).to_s})
+        json_error 409, "User name #{params[:username]} already in use", log_message
+      rescue UserNotCreatedError
+        count_user_profile_updates(labels: {result: "bad request", uuid: '', elapsed_time: (Time.now.utc-began_at).to_s})
+        json_error 400, "Error updating user #{params}", log_message
+      end
+    end
+    
+    # GET many users, if admin
+    # If not, its own info only
     get '/?' do
+      began_at = Time.now.utc
       log_message = 'GtkApi:: GET /api/v2/users'
     
       logger.debug(log_message) {'entered with '+query_string}
@@ -89,24 +116,35 @@ class GtkApi < Sinatra::Base
       @limit ||= params['limit'] ||= DEFAULT_LIMIT
       logger.debug(log_message) {"offset=#{@offset}, limit=#{@limit}"}
       logger.debug(log_message) {"params=#{params}"}
-    
-      begin
-        users = User.find(params)
-        logger.debug(log_message) {"Found users #{users}"}
-        logger.debug(log_message) {"links: request_url=#{request_url}, limit=#{@limit}, offset=#{@offset}, total=#{users.count}"}
-        links = build_pagination_headers(url: request_url, limit: @limit.to_i, offset: @offset.to_i, total: users.count)
-        logger.debug(log_message) {"links: #{links}"}
-        headers 'Link'=> links, 'Record-Count'=> users.count.to_s
-        returned_users = []
-        users.each do |user|
-          returned_users << user.to_h
+
+      token = get_token( request.env, began_at, method(:count_user_profile_requests), log_message)
+      if User.is_admin?(token)
+        begin
+          users = User.find(params)
+          logger.debug(log_message) {"Found users #{users}"}
+          logger.debug(log_message) {"links: request_url=#{request_url}, limit=#{@limit}, offset=#{@offset}, total=#{users.count}"}
+          links = build_pagination_headers(url: request_url, limit: @limit.to_i, offset: @offset.to_i, total: users.count)
+          logger.debug(log_message) {"links: #{links}"}
+          headers 'Link'=> links, 'Record-Count'=> users.count.to_s
+          returned_users = []
+          users.each do |user|
+            returned_users << user.to_h
+          end
+          halt 200, returned_users.to_json
+        rescue UsersNotFoundError
+          logger.debug(log_message) {"Users not found"}
+          content_type :json
+          halt 200, '[]'
         end
-        content_type :json
-        halt 200, returned_users.to_json
-      rescue UsersNotFoundError
-        logger.debug(log_message) {"Users not found"}
-        content_type :json
-        halt 200, '[]'
+      else
+        begin
+          username = User.find_username_by_token(token)
+          user = User.find_by_name(username)
+          logger.debug(log_message) {"Found user #{user}"}
+          halt 200, user.to_h.to_json
+        rescue UsersNotFoundError
+          json_error 404, "User for token #{token} not found", log_message
+        end
       end
     end
   
@@ -120,7 +158,6 @@ class GtkApi < Sinatra::Base
       begin
         username = User.find_username_by_token(token)
         logger.debug(log_message) {"leaving with #{username}"}
-        content_type :json
         halt 200, username.to_json
       rescue UserNotFoundError
         json_error 404, "User for token #{token} not found", log_message
@@ -138,7 +175,6 @@ class GtkApi < Sinatra::Base
         begin
           user = User.find_by_uuid(params[:uuid])
           logger.debug(log_message) {"leaving with #{user}"}
-          content_type :json
           halt 200, user.to_h.to_json
         rescue UserNotFoundError
           json_error 404, "User #{params[:uuid]} not found", log_message
@@ -177,7 +213,7 @@ class GtkApi < Sinatra::Base
         user.save_public_key(parsed_body, token)
         logger.debug(log_message) {"user found=#{user.to_h.to_json}"}
         halt 200, user.to_h.to_json
-      rescue UserTokenNotActiveError
+      rescue UserTokenDoesNotMatchError
         json_error 400, "User #{params[:username]} does not match with token", log_message
       rescue UserTokenNotActiveError
         json_error 401, "User provided token was not valid", log_message
@@ -232,4 +268,15 @@ class GtkApi < Sinatra::Base
     User.counter_kpi({name: name, docstring: desc, base_labels: labels.merge({method: 'PATCH', module: 'users'})})
   end
   
+  def count_user_profile_requests(labels:)
+    name = __method__.to_s.split('_')[1..-1].join('_')
+    desc = "how many user profile requests have been made"
+    User.counter_kpi({name: name, docstring: desc, base_labels: labels.merge({method: 'GET', module: 'users'})})
+  end
+
+  def count_user_profile_updates(labels:)
+    name = __method__.to_s.split('_')[1..-1].join('_')
+    desc = "how many user profile update requestes have been made"
+    User.counter_kpi({name: name, docstring: desc, base_labels: labels.merge({method: 'GET', module: 'users'})})
+  end
 end
