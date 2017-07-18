@@ -78,7 +78,7 @@ class GtkApi < Sinatra::Base
           micro_service = MicroService.find_by_credentials(credentials)
           logger.debug(log_message) {"Found micro-service #{micro_service}"}
           headers content_type: :json
-          halt 200, micro_service.to_json(only: [:token])
+          halt 200, micro_service.to_json # (only: [:token])
         rescue MicroServiceNotFoundError => e
           json_error 400, 'No micro-service with basic authentication '+credentials+' was found', log_message
         end

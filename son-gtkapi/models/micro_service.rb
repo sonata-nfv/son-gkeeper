@@ -81,6 +81,7 @@ class MicroService < ManagerService
     when 201
       GtkApi.logger.debug(method) {"Created micro-service #{micro_service[:items]}"}
       micro_service[:items][:secret] = params[:secret] # Adds client Secret to the micro_service items
+      micro_service[:items][:redirectUris] = params[:redirectUris] # Adds client RedirectUri info to items
       MicroService.new(micro_service[:items])
     when 404
       GtkApi.logger.debug(method) {"Status 404 (Not Found): micro-service #{params} could not be created"}
