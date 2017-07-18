@@ -49,10 +49,10 @@ class MicroService < ManagerService
   def initialize(params)
     method = LOG_MESSAGE + "##{__method__}"
     GtkApi.logger.debug(method) {"entered with params #{params}"}
-    raise ArgumentError.new('MicroService Manager Service can not be instantiated without a client ID') unless (params.key?(:clientID) && !params[:clientID].empty?)
+    raise ArgumentError.new('MicroService Manager Service can not be instantiated without a clientId') unless (params.key?(:clientId) && !params[:clientId].empty?)
     raise ArgumentError.new('MicroService Manager Service can not be instantiated without a secret') unless (params.key?(:secret) && !params[:secret].empty?)
     raise ArgumentError.new('MicroService Manager Service can not be instantiated without redirect URIs') unless (params.key?(:redirectUris) && !params[:redirectUris].empty?)
-    @client_id = params[:clientID]
+    @client_id = params[:clientId]
     @secret = params[:secret]
     @redirect_uris = params[:redirectUris]
     @token = nil

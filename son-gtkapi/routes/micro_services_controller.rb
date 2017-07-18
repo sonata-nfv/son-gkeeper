@@ -74,7 +74,8 @@ class GtkApi < Sinatra::Base
         json_error(400, 'Micro-service basic authentication is needed', log_message) if credentials.empty?
 
         begin
-          micro_service = MicroService.find_by_credentials(Base64.strict_encode64(credentials))
+          # micro_service = MicroService.find_by_credentials(Base64.strict_encode64(credentials))
+          micro_service = MicroService.find_by_credentials(credentials)
           logger.debug(log_message) {"Found micro-service #{micro_service}"}
           headers content_type: :json
           halt 200, micro_service.to_json(only: [:token])
