@@ -75,41 +75,28 @@ class GtkSrv < Sinatra::Base
 
   # PUTs an update on an existing service instance, given the service instance UUID
   put '/services/:uuid/?' do
-    method = MODULE + " PUT /services/#{params[:uuid]}"
-    logger.debug(method) {"called"}
+    method = MODULE + " PUT /services/:uuid"
+    logger.debug(method) {"entered with #{params[:uuid]}"}
     
-    # We are assuming that:
-    # UUID is not null and is a valid UUID
-
     # is it a valid service instance uuid?
     begin
       valid = Request.validate_request(service_instance_uuid: params[:uuid])
       logger.debug(method) {"valid=#{valid.inspect}"}
     
-      if valid
-        nsd = JSON.parse(request.body.read, :quirks_mode => true)
-        logger.debug(method) {"with nsd=#{nsd}"}
+      json_error 400, "Service instance '#{params[:uuid]} not 'READY'", method unless valid
 
-        #nsd.delete(:status) if nsd[:status]
-        nsd.delete('status') if nsd['status']
-        update_response = Request.process_request(nsd: nsd, service_instance_uuid: params[:uuid], update_server: settings.update_server)
-        logger.debug(method) {"update_response=#{update_response}"}
-        if update_response
-          halt 201, update_response.to_json
-        else
-          error_msg = "Update request for service instance '#{params[:uuid]} failled"
-          logger.debug(method) {"leaving with '#{error_msg}"}
-          json_error 400, error_msg
-        end
-      else
-        error_msg = "Service instance '#{params[:uuid]} not 'READY'"
-        logger.debug(method) {"leaving with '#{error_msg}"}
-        json_error 400, error_msg
-      end
+      nsd = JSON.parse(request.body.read, :quirks_mode => true)
+      logger.debug(method) {"with nsd=#{nsd}"}
+
+      #nsd.delete(:status) if nsd[:status]
+      nsd.delete('status') if nsd['status']
+      update_response = Request.process_request(nsd: nsd, service_instance_uuid: params[:uuid], update_server: settings.update_server)
+      logger.debug(method) {"update_response=#{update_response}"}
+      json_error 400, "Update request for service instance '#{params[:uuid]} failled", method unless update_response
+
+      halt 201, update_response.to_json
     rescue Exception=> e
-      error_msg = "Service instance '#{params[:uuid]} not found"
-      logger.debug(method) {"leaving with '#{error_msg}"}
-      json_error 404, error_msg
+      json_error 404, "Service instance '#{params[:uuid]} not found", method
     end
   end
 

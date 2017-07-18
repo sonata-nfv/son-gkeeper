@@ -123,16 +123,16 @@ class GtkSrv < Sinatra::Base
 
   # PUTs an update on an existing instantiation request, given its UUID
   put '/requests/:uuid/?' do
-    logger.debug "GtkSrv: entered PUT /requests with params=#{params}"
+    log_message = MODULE+'PUT /requests/:uuid'
+    logger.debug(log_message) {"entered with params=#{params}"}
     @request = Request.find params[:uuid]
     
-    if @request.update_all(params)
-      logger.debug "GtkSrv: returning PUT /requests with updated request=#{@request}"
-      halt 200, @request.to_json
-    else
-      logger.debug "GtkSrv: returning PUT /requests with 'GtkSrv: Not possible to update the request'"
-      json_error 400, 'GtkSrv: Not possible to update the request'
-    end 
+    # it should be .update( :id, :params)
+    # if @request.update_all(params)
+    json_error 400, 'Not possible to update request with uuid='+params[:uuid], log_message unless @request.update( params[:uuid], params)
+
+    logger.debug(log_message) {"returning with updated request=#{@request}"}
+    halt 200, @request.to_json
   end  
 
   private 
