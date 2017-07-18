@@ -83,7 +83,7 @@ class GtkSrv < Sinatra::Base
 
     # is it a valid service instance uuid?
     begin
-      valid = Request.validate_request(service_instance_uuid: params[:uuid], logger: logger)
+      valid = Request.validate_request(service_instance_uuid: params[:uuid])
       logger.debug(method) {"valid=#{valid.inspect}"}
     
       if valid
@@ -92,7 +92,7 @@ class GtkSrv < Sinatra::Base
 
         #nsd.delete(:status) if nsd[:status]
         nsd.delete('status') if nsd['status']
-        update_response = Request.process_request(nsd: nsd, service_instance_uuid: params[:uuid], update_server: settings.update_server, logger: logger)
+        update_response = Request.process_request(nsd: nsd, service_instance_uuid: params[:uuid], update_server: settings.update_server)
         logger.debug(method) {"update_response=#{update_response}"}
         if update_response
           halt 201, update_response.to_json

@@ -35,8 +35,9 @@ class Request < ActiveRecord::Base
   # validations a la Activerecord
   validates :service_uuid, presence: true
   
-  def self.validate_request(service_instance_uuid:, logger:)
+  def self.validate_request(service_instance_uuid:)
     method = GtkSrv::MODULE + ": Request#validate_request: "
+    logger = GtkSrv.logger
 
     raise Exception.new(method+'A valid service instance UUID is needed') unless service_instance_uuid
     raise Exception.new(method+'A valid logger is needed') unless logger
@@ -61,8 +62,9 @@ class Request < ActiveRecord::Base
     end 
   end
   
-  def self.process_request(nsd:, service_instance_uuid:, update_server:, logger:)
+  def self.process_request(nsd:, service_instance_uuid:, update_server:)
     method = GtkSrv::MODULE + "Request.process_request"
+    logger = GtkSrv.logger
     logger.debug(method) {"entered"}
     raise Exception.new(method+'A valid NSD is needed') unless nsd
     raise Exception.new(method+'A valid service instance UUID is needed') unless service_instance_uuid
