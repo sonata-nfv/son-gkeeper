@@ -57,7 +57,7 @@ class GtkApi < Sinatra::Base
         micro_service = MicroService.create(params)
         logger.info(log_message) {"leaving with user #{micro_service.inspect}"}
         headers content_type: 'application/json' #, authorization: 'Bearer '+micro_service.token
-        halt 201, '' #micro_service.client_id
+        halt 201, {'clientId' => micro_service.client_id}.to_json  # '' #micro_service.client_id
       rescue MicroServiceNotCreatedError => e 
         json_error 400, "Error creating micro-service #{params}", log_message
       rescue MicroServiceAlreadyCreatedError => e
@@ -77,8 +77,8 @@ class GtkApi < Sinatra::Base
           # micro_service = MicroService.find_by_credentials(Base64.strict_encode64(credentials))
           micro_service = MicroService.find_by_credentials(credentials)
           logger.debug(log_message) {"Found micro-service #{micro_service}"}
-          headers content_type: :json
-          halt 200, micro_service.to_json # (only: [:token])
+          # headers content_type: :json
+          halt 200, {'Content-type' => 'application/json'}, micro_service.to_json # (only: [:token])
         rescue MicroServiceNotFoundError => e
           json_error 400, 'No micro-service with basic authentication '+credentials+' was found', log_message
         end
