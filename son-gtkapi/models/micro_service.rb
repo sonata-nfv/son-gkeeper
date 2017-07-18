@@ -49,10 +49,10 @@ class MicroService < ManagerService
   def initialize(params)
     method = LOG_MESSAGE + "##{__method__}"
     GtkApi.logger.debug(method) {"entered with params #{params}"}
-    raise ArgumentError.new('MicroService Manager Service can not be instantiated without a client ID') unless (params.key?(:clientID) && !params[:clientID].empty?)
+    raise ArgumentError.new('MicroService Manager Service can not be instantiated without a clientId') unless (params.key?(:clientId) && !params[:clientId].empty?)
     raise ArgumentError.new('MicroService Manager Service can not be instantiated without a secret') unless (params.key?(:secret) && !params[:secret].empty?)
     raise ArgumentError.new('MicroService Manager Service can not be instantiated without redirect URIs') unless (params.key?(:redirectUris) && !params[:redirectUris].empty?)
-    @client_id = params[:clientID]
+    @client_id = params[:clientId]
     @secret = params[:secret]
     @redirect_uris = params[:redirectUris]
     @token = nil
@@ -80,6 +80,8 @@ class MicroService < ManagerService
     case micro_service[:status]
     when 201
       GtkApi.logger.debug(method) {"Created micro-service #{micro_service[:items]}"}
+      micro_service[:items][:secret] = params[:secret] # Adds client Secret to the micro_service items
+      micro_service[:items][:redirectUris] = params[:redirectUris] # Adds client RedirectUri info to items
       MicroService.new(micro_service[:items])
     when 404
       GtkApi.logger.debug(method) {"Status 404 (Not Found): micro-service #{params} could not be created"}
@@ -100,9 +102,10 @@ class MicroService < ManagerService
     begin
       micro_service = postCurb(url: @@url+'/api/v1/login/service', body: {}, headers: { authorization: 'basic '+credentials})
       case micro_service[:status]
-      when 200
+      when 200 # This only returns the JSON Web Token Hash and do not provide ClientId nor Secret fields!
         GtkApi.logger.debug(method) {"micro_service=#{micro_service[:items]}"}
-        MicroService.new(micro_service)
+        # MicroService.new(micro_service)
+        micro_service[:items]
       when 400
         GtkApi.logger.debug(method) {"Status 400 when looking for micro_service with credentials #{credentials}"}
         raise MicroServiceNotFoundError.new(credentials)
