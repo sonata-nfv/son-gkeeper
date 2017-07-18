@@ -57,7 +57,7 @@ class GtkApi < Sinatra::Base
         micro_service = MicroService.create(params)
         logger.info(log_message) {"leaving with user #{micro_service.inspect}"}
         headers content_type: 'application/json' #, authorization: 'Bearer '+micro_service.token
-        halt 201, {'clientId' => micro_service.client_id}.to_json  # '' #micro_service.client_id
+        halt 201, {'clientId' => params[:clientId]}.to_json  # '' #micro_service.client_id
       rescue MicroServiceNotCreatedError => e 
         json_error 400, "Error creating micro-service #{params}", log_message
       rescue MicroServiceAlreadyCreatedError => e
