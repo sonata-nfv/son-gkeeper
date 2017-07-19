@@ -243,7 +243,6 @@ class User < ManagerService
       GtkApi.logger.error(method) {"Status #{resp[:status]}"} 
       raise UserPublicKeyNotUpdatedError.new 'User public-key not updated'
     end
-    
   end
   
   def self.valid?(params)
@@ -258,23 +257,11 @@ class User < ManagerService
     begin
       response = getCurb(url:@@url + '/api/v1/users?id=' + uuid, headers: JSON_HEADERS)
       GtkApi.logger.debug(method) {"Got response: #{response}"}
-      case response[:status]
-      when 200
-        user = response[:items].first
-        unless user.empty?
-          User.new( User.import(user))
-        else
-          raise UserNotFoundError.new "User with uuid #{uuid} was not found"
-        end
-      when 404
-        raise UserNotFoundError.new 'User with uuid '+uuid+' was not found'
-      else
-        raise UserNotFoundError.new 'User with uuid '+uuid+' was not found'
+      raise UserNotFoundError.new "User with uuid #{uuid} was not found" unless response[:status] == 200
+      if response[:items].empty? || (user = response[:items].first).empty?
+        raise UserNotFoundError.new "User with uuid #{uuid} was not found (code #{response[:status]})"
       end
-      #rescue => e
-      #GtkApi.logger.error(method) {"Error during processing: #{$!}"}
-      #GtkApi.logger.error(method) {"Backtrace:\n\t#{e.backtrace.join("\n\t")}"}
-      #nil
+      User.new( User.import(user))
     end
   end
 
@@ -285,21 +272,12 @@ class User < ManagerService
     begin
       response = getCurb(url:@@url + '/api/v1/users?username=' + name, headers: JSON_HEADERS)
       GtkApi.logger.debug(method) {"Got response: #{response}"}
-      case response[:status]
-      when 200
-        if response[:items].empty? || (user = response[:items].first).empty?
-          raise UserNotFoundError.new "User with name #{name} was not found"
-        end
-        User.new( User.import(user))
-      when 404
-        raise UserNotFoundError.new "User with name #{name} was not found (code 404)"
-      else
-        raise UserNotFoundError.new 'User named '+name+' was not found'
+      raise UserNotFoundError.new "User with name #{name} was not found (code #{response[:status]})" unless response[:status] == 200
+  
+      if response[:items].empty? || (user = response[:items].first).empty?
+        raise UserNotFoundError.new "User with name #{name} was not found (code #{response[:status]})"
       end
-      #rescue => e
-      #GtkApi.logger.error(method) {"Error during processing: #{$!}"}
-      #GtkApi.logger.error(method) {"Backtrace:\n\t#{e.backtrace.join("\n\t")}"}
-      #nil
+      User.new( User.import(user))
     end
   end
   
