@@ -106,33 +106,33 @@ class GtkSrv < Sinatra::Base
       end
       start_request['egresses'] = egresses
       start_request['ingresses'] = ingresses
-      stringified=start_request.deep_stringify_keys
-      start_request_yml = YAML.dump(stringified)
+      
+      start_request_yml = YAML.dump(start_request.deep_stringify_keys)
       logger.debug(log_msg) {"#{params}: "+start_request_yml}
 
-      smresponse = settings.mqserver.publish( start_request_yml.to_s, si_request['id'])
+      smresponse = settings.create_mqserver.publish( start_request_yml.to_s, si_request['id'])
       json_request = json(si_request, { root: false })
-      logger.info(MODULE) {' returning POST /requests with request='+json_request}
+      logger.debug(log_msg) {' returning POST /requests with request='+json_request}
       halt 201, json_request
     rescue Exception => e
-      logger.debug(e.message)
-	    logger.debug(e.backtrace.inspect)
+      logger.debug(log_msg) {e.message}
+	    logger.debug(log_msg) {e.backtrace.inspect}
 	    halt 500, 'Internal server error'+e.message
     end
   end
 
   # PUTs an update on an existing instantiation request, given its UUID
   put '/requests/:uuid/?' do
-    logger.debug "GtkSrv: entered PUT /requests with params=#{params}"
-    @request = Request.find params[:uuid]
+    log_message = MODULE+' PUT /requests/:uuid'
+    logger.debug(log_message) {"entered with params=#{params}"}
+    request = Request.find params[:uuid]
     
-    if @request.update_all(params)
-      logger.debug "GtkSrv: returning PUT /requests with updated request=#{@request}"
-      halt 200, @request.to_json
-    else
-      logger.debug "GtkSrv: returning PUT /requests with 'GtkSrv: Not possible to update the request'"
-      json_error 400, 'GtkSrv: Not possible to update the request'
-    end 
+    # it should be .update( :id, :params)
+    # if request.update_all(params)
+    json_error 400, 'Not possible to update request with uuid='+params[:uuid], log_message unless request.update( params[:uuid], params)
+
+    logger.debug(log_message) {"returning with updated request=#{request}"}
+    halt 200, request.to_json
   end  
 
   private 
