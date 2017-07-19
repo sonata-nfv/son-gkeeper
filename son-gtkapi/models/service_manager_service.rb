@@ -34,8 +34,7 @@ class ServiceManagerService < ManagerService
     
   def self.config(url:)
     method = LOG_MESSAGE + "#config"
-    raise ArgumentError.new('ServiceManagerService can not be configured with nil url') if url.nil?
-    raise ArgumentError.new('ServiceManagerService can not be configured with empty url') if url.empty?
+    raise ArgumentError.new('ServiceManagerService can not be configured with nil or empty url') if url.to_s.empty?
     @@url = url
     GtkApi.logger.debug(method) {"entered with url=#{url}"}
   end
@@ -62,8 +61,14 @@ class ServiceManagerService < ManagerService
   
   def self.find_requests_by_uuid(uuid)
     message = LOG_MESSAGE+"##{__method__}"
-    GtkApi.logger.debug(message) {"entered with #{params}"}
+    GtkApi.logger.debug(message) {"entered with #{uuid}"}
     find(url: @@url + '/requests/' + uuid, log_message: LOG_MESSAGE + "##{__method__}(#{uuid})")
+  end
+  
+  def self.find_requests_by_service_instance_uuid(uuid)
+    message = LOG_MESSAGE+"##{__method__}"
+    GtkApi.logger.debug(message) {"entered with #{uuid}"}
+    find(url: @@url + '/requests?service_instance_uuid=' + uuid, log_message: LOG_MESSAGE + "##{__method__}")
   end
   
   def self.create_service_intantiation_request(params)
@@ -84,8 +89,7 @@ class ServiceManagerService < ManagerService
   
   def self.create_service_update_request(nsr_uuid:, nsd:)
     message = LOG_MESSAGE+"##{__method__}"
-    GtkApi.logger.debug(message) {"entered with #{params}"}
-    GtkApi.logger.debug(message) {"service instance=#{nsr_uuid}, nsd=#{nsd}"}
+    GtkApi.logger.debug(message) {"entered with service instance=#{nsr_uuid}, nsd=#{nsd}"}
     begin
       GtkApi.logger.debug(message) {"@url = "+@@url}
       #response = RestClient.put(@url+'/services/'+nsr_uuid, nsd.to_json, content_type: :json, accept: :json) 
@@ -99,8 +103,29 @@ class ServiceManagerService < ManagerService
     end      
   end
   
+  def self.create_service_termination_request(service_instance_uuid:)
+    message = LOG_MESSAGE+"##{__method__}"
+    GtkApi.logger.debug(message) {"entered with service instance=#{service_instance_uuid}"}
+    
+    descriptor = RecordManagerService.find_record_by_uuid(kind: 'services', uuid: service_instance_uuid)
+    
+    begin
+      response = self.postCurb(url: @@url+'/services/'+service_instance_uuid+'/terminate', body: descriptor) 
+      GtkApi.logger.debug(message) {"response="+response}
+      response
+    rescue => e
+      GtkApi.logger.error(method) {"Error during processing: #{$!}"}
+      GtkApi.logger.error(method) {"Backtrace:\n\t#{e.backtrace.join("\n\t")}"}
+      nil 
+    end      
+  end
+  
   # TODO
-  def self.valid?(user)
-    true
+  def self.valid?(service_uuid)
+    message = LOG_MESSAGE+"##{__method__}"
+    GtkApi.logger.debug(message) {"entered with service uuid=#{service_uuid}"}
+    service = find_service_by_uuid(uuid: service_uuid)
+    GtkApi.logger.debug(message) {"found service =#{service}"}
+    service
   end
 end

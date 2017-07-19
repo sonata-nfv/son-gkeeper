@@ -42,6 +42,7 @@ class UpdateServer
     channel = Bunny.new(url,:automatically_recover => false).start.create_channel
     @topic = channel.topic("son-kernel", :auto_delete => false)
     @queue   = channel.queue(QUEUE, :auto_delete => true).bind(@topic, :routing_key => QUEUE)
+
     self.consume
   end
 

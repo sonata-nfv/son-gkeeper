@@ -34,29 +34,30 @@ require 'json'
 class MQServer
   attr_accessor :url
   
-  QUEUE = 'service.instances.create'
   CLASS = self.name
   
-  def initialize(url,logger)
+  def initialize(queue_name, url)
     @url = url
-    @logger=logger
-    @channel = Bunny.new(url,:automatically_recover => false).start.create_channel
-    @topic = @channel.topic("son-kernel", :auto_delete => false)
-    @queue = @channel.queue(QUEUE, :auto_delete => true).bind(@topic, :routing_key => QUEUE)
-    self.consume
+    @logger=GtkSrv.logger
+    channel = Bunny.new(url,:automatically_recover => false).start.create_channel
+    @topic = channel.topic("son-kernel", :auto_delete => false)
+    @queue = channel.queue(queue_name, :auto_delete => true).bind(@topic, :routing_key => queue_name)
+    method = queue_name.split('.')[-1]
+    self.send(:"consume_#{method}")
+    #self.consume
   end
 
   def publish(msg, correlation_id)
     logmsg= CLASS+'.'+__method__.to_s
     @logger.debug(logmsg) {"msg="+msg+", correlation_id="+correlation_id}
-    @topic.publish(msg, :content_type =>'text/yaml', :routing_key => QUEUE, :correlation_id => correlation_id, 
-      :reply_to => @queue.name, :app_id => 'son-gkeeper')
+    response = @topic.publish(msg, :content_type =>'text/yaml', :routing_key => @queue.name, :correlation_id => correlation_id, :reply_to => @queue.name, :app_id => 'son-gkeeper')
     @logger.debug(logmsg) {"published msg '"+msg+"', with correlation_id="+correlation_id}
+    response
   end
   
-  def consume
+  def consume_create
     logmsg= CLASS+'.'+__method__.to_s
-    @logger.debug(logmsg) {" entered"}
+    @logger.debug(logmsg) {"entered"}
     @queue.subscribe do |delivery_info, properties, payload|
       begin
         @logger.debug(logmsg) { "delivery_info: #{delivery_info}"}
@@ -69,32 +70,120 @@ class MQServer
           parsed_payload = YAML.load(payload)
           @logger.debug(logmsg) { "parsed_payload: #{parsed_payload}"}
           status = parsed_payload['status']
-          if status
-            @logger.debug(logmsg) { "status: #{status}"}
-            request = Request.find_by(id: properties[:correlation_id])
-            if request
-              @logger.debug(logmsg) { "request['status'] #{request['status']} turned into "+status}
-              request['status']=status  
-              
-              # if this is a final answer, there'll be an NSR
-              service_instance = parsed_payload['nsr']
-              if service_instance && service_instance.key?('id')
-                service_instance_uuid = parsed_payload['nsr']['id']
-                @logger.debug(logmsg) { "request['service_instance_uuid'] turned into "+service_instance_uuid}
-                request['service_instance_uuid'] = service_instance_uuid
-              end
-              begin
-                request.save
-                @logger.debug(logmsg) { "request saved"}
-              rescue Exception => e
-                @logger.error e.message
-          	    @logger.error e.backtrace.inspect
-              end
-            else
-              @logger.error(logmsg) { "request "+properties[:correlation_id]+" not found"}
-            end
-          else
+          unless status
             @logger.error(logmsg) {'status not present'}
+            return
+          end
+          @logger.debug(logmsg) { "status: #{status}"}
+          request = Request.find_by(id: properties[:correlation_id])
+          unless request
+            @logger.error(logmsg) { "request "+properties[:correlation_id]+" not found"}
+            return
+          end
+          @logger.debug(logmsg) { "request['status'] #{request['status']} turned into "+status}
+          request['status']=status  
+          
+          # if this is a final answer, there'll be an NSR
+          service_instance = parsed_payload['nsr']
+          if service_instance && service_instance.key?('id')
+            service_instance_uuid = parsed_payload['nsr']['id']
+            @logger.debug(logmsg) { "request['service_instance_uuid'] turned into "+service_instance_uuid}
+            request['service_instance_uuid'] = service_instance_uuid
+          end
+          begin
+            request.save
+            @logger.debug(logmsg) { "request saved"}
+          rescue Exception => e
+            @logger.error e.message
+      	    @logger.error e.backtrace.inspect
+          end
+        end
+        @logger.debug(logmsg) {" leaving..."}
+      rescue Exception => e
+        @logger.error e.message
+  	    @logger.error e.backtrace.inspect
+        @logger.debug(logmsg) {" leaving..."}
+      end
+    end
+  end
+  
+  def consume_update
+    logmsg= CLASS+'.'+__method__.to_s
+    @logger.debug(logmsg) {"entered"}
+    @queue.subscribe do |delivery_info, properties, payload|
+      begin
+        @logger.debug(logmsg) { "delivery_info: #{delivery_info}"}
+        @logger.debug(logmsg) { "properties: #{properties}"}
+        @logger.debug(logmsg) { "payload: #{payload}"}
+
+        # We know our own messages, so just skip them
+        unless properties[:app_id] == 'son-gkeeper'
+          # We're interested in app_id == 'son-plugin.slm'
+          parsed_payload = YAML.load(payload)
+          @logger.debug(logmsg) { "parsed_payload: #{parsed_payload}"}
+          status = parsed_payload['status']
+          unless status
+            @logger.debug(logmsg) {'status not present'}
+            return
+          end
+          @logger.debug(logmsg) { "status: #{status}"}
+          request = Request.find_by(id: properties[:correlation_id])
+          unless request
+            @logger.error(logmsg) { "request "+properties[:correlation_id]+" not found"}
+            return
+          end
+          @logger.debug(logmsg) { "request[status] #{request['status']} turned into "+status}
+          request['status']=status  
+          begin
+            request.save
+            @logger.debug(logmsg) { "request saved"}
+          rescue Exception => e
+            @logger.error(logmsg) {e.message}
+      	    @logger.error(logmsg) {e.backtrace.inspect}
+          end
+        end
+        @logger.debug(logmsg) {" leaving..."}
+      rescue Exception => e
+        @logger.error e.message
+  	    @logger.error e.backtrace.inspect
+        @logger.debug(logmsg) {" leaving..."}
+      end
+    end
+  end
+  
+  def consume_terminate
+    logmsg= CLASS+'.'+__method__.to_s
+    @logger.debug(logmsg) {"entered"}
+    @queue.subscribe do |delivery_info, properties, payload|
+      begin
+        @logger.debug(logmsg) { "delivery_info: #{delivery_info}"}
+        @logger.debug(logmsg) { "properties: #{properties}"}
+        @logger.debug(logmsg) { "payload: #{payload}"}
+
+        # We know our own messages, so just skip them
+        unless properties[:app_id] == 'son-gkeeper'
+          # We're interested in app_id == 'son-plugin.slm'
+          parsed_payload = YAML.load(payload)
+          @logger.debug(logmsg) { "parsed_payload: #{parsed_payload}"}
+          status = parsed_payload['status']
+          unless status
+            @logger.debug(logmsg) {'status not present'}
+            return
+          end
+          @logger.debug(logmsg) { "status: #{status}"}
+          request = Request.find_by(id: properties[:correlation_id])
+          unless request
+            @logger.error(logmsg) { "request "+properties[:correlation_id]+" not found"}
+            return
+          end
+          @logger.debug(logmsg) { "request[status] #{request['status']} turned into "+status}
+          request['status']=status  
+          begin
+            request.save
+            @logger.debug(logmsg) { "request saved"}
+          rescue Exception => e
+            @logger.error(logmsg) {e.message}
+      	    @logger.error(logmsg) {e.backtrace.inspect}
           end
         end
         @logger.debug(logmsg) {" leaving..."}
