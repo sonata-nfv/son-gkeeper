@@ -97,7 +97,7 @@ module GtkApiHelper
       method.call(labels: {result: "unauthorized", uuid: '', elapsed_time: (Time.now.utc-began_at).to_s})
       json_error 401, "Unauthorized: token #{token} is not active", log_message
     rescue UserNotFoundError
-      method.call((labels: {result: "not found", uuid: '', elapsed_time: (Time.now.utc-began_at).to_s})
+      method.call(labels: {result: "not found", uuid: '', elapsed_time: (Time.now.utc-began_at).to_s})
       json_error 404, "Not found: user with token #{token}", log_message
     end
   end
