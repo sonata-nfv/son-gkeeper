@@ -90,9 +90,9 @@ class Keycloak < Sinatra::Application
 
   post '/config' do
     logger.debug 'Adapter: entered POST /config'
-    log_file = File.new("#{settings.root}/log/#{settings.environment}.log", 'a+')
-    STDOUT.reopen(log_file)
-    STDOUT.sync = true
+    # log_file = File.new("#{settings.root}/log/#{settings.environment}.log", 'a+')
+    # STDOUT.reopen(log_file)
+    # STDOUT.sync = true
     begin
       keycloak_address = Resolv::Hosts.new.getaddress(ENV['KEYCLOAK_ADDRESS'])
     rescue
@@ -109,12 +109,7 @@ class Keycloak < Sinatra::Application
     get_adapter_install_json
     @@access_token = self.get_adapter_token
     logger.debug 'Adapter: POST /config obtained access_token'
-    # TODO: Contact to Mongo Database
     begin
-      puts "ENTERED Contact to Mongo Database"
-
-      puts Sp_resource.count
-
       logger.debug 'Adapter: Loading default resource file'
       default_resource = File.read('tests/demo-resource.json')
       resource_hash = JSON.parse(default_resource)
@@ -122,21 +117,18 @@ class Keycloak < Sinatra::Application
         # Generate the UUID for the resource object
         # new_resource['_id'] = SecureRandom.uuid
         resource = Sp_resource.create!(resource_hash)
-        logger.debug "Adapter: POST /config added default permissions to MongoDB"
-        puts "CREATED #{resource.to_s}"
+        logger.debug "Adapter: POST /config added default permissions #{resource.to_s} to MongoDB"
       rescue Moped::Errors::OperationFailure => e
-        # json_error 400, e.to_s
-        puts "ERROR #{e.to_s}"
         logger.debug "Adapter: POST /config MongoDB could not be reached or configured: #{e}"
+      rescue => e
+        logger.error "Adapter: POST /config error=#{e}"
       end
-      # end
     rescue => e
-      puts "DATABASE ERROR #{e}"
       logger.error "Adapter: POST /config connecting MongoDB error: #{e}"
     end
     logger.debug 'Adapter: exit POST /config with secret and access_token configured'
     logger.info 'User Management is configured and ready'
-    STDOUT.sync = false
+    # STDOUT.sync = false
     halt 200
   end
 
