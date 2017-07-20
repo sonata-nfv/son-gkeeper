@@ -217,6 +217,7 @@ class Keycloak < Sinatra::Application
     @s += keycloak_yml['realm_public_key'].scan(/.{1,64}/).join("\n")
     @s += "\n-----END PUBLIC KEY-----\n"
     key = OpenSSL::PKey::RSA.new @s
+    # @@public_key = key
     key
   end
 
@@ -248,20 +249,24 @@ class Keycloak < Sinatra::Application
   # Token Validation Endpoint
   # "token_introspection_endpoint":"http://localhost:8081/auth/realms/master/protocol/openid-connect/token/introspect"
   def token_validation(token, realm=nil)
-    # url = URI("http://localhost:8081/auth/realms/master/clients-registrations/openid-connect/")
-    url = URI("http://#{@@address.to_s}:#{@@port.to_s}/#{@@uri.to_s}/realms/#{@@realm_name}/protocol/openid-connect/token/introspect")
-    res = Net::HTTP.post_form(url, 'client_id' => @@client_name,
-                              'client_secret' => @@client_secret,
-                              'grant_type' => 'client_credentials', 'token' => token)
-
-    # RESPONSE_INTROSPECT:
-      logger.debug "Keycloak: Token validation code: #{res.code.to_s}"
     begin
-      logger.debug "Keycloak: Token validation content: #{parse_json(res.body).to_s}"
+      # url = URI("http://localhost:8081/auth/realms/master/clients-registrations/openid-connect/")
+      url = URI("http://#{@@address.to_s}:#{@@port.to_s}/#{@@uri.to_s}/realms/#{@@realm_name}/protocol/openid-connect/token/introspect")
+      res = Net::HTTP.post_form(url, 'client_id' => @@client_name,
+                                'client_secret' => @@client_secret,
+                                'grant_type' => 'client_credentials', 'token' => token)
+
+      # RESPONSE_INTROSPECT:
+        logger.debug "Keycloak: Token validation code: #{res.code.to_s}"
+      begin
+        logger.debug "Keycloak: Token validation content: #{parse_json(res.body).to_s}"
+      rescue
+        logger.debug "Keycloak: Invalid token validation content"
+      end
+      return res.body, res.code
     rescue
-      logger.debug "Keycloak: Invalid token validation content"
+      return 'Gatekeeper User Management is not available', '503'
     end
-    return res.body, res.code
   end
 
   def register_user(user_form) #, username,firstname, lastname, email, credentials)
@@ -426,9 +431,9 @@ class Keycloak < Sinatra::Application
     return 200, response.body
   end
 
+  # DEPRECATED
   # "token_endpoint":"http://localhost:8081/auth/realms/master/protocol/openid-connect/token"
   def login_client(client_id, client_secret)
-    #TODO: DEPRECATED
     url = URI("http://#{@@address.to_s}:#{@@port.to_s}/#{@@uri.to_s}/realms/#{@@realm_name}/protocol/openid-connect/token")
     http = Net::HTTP.new(url.host, url.port)
     request = Net::HTTP::Post.new(url.to_s)
@@ -443,12 +448,6 @@ class Keycloak < Sinatra::Application
     # puts "RES.BODY: ", res.body
 
     if res.body['access_token']
-      # if env['HTTP_AUTHORIZATION']
-      # puts "env: ", env['HTTP_AUTHORIZATION']
-      # access_token = env['HTTP_AUTHORIZATION'].split(' ').last
-      # puts "access_token: ", access_token
-      # {"access_token":"eyJhbGciOiJSUzI1NiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICIyRG1CZm1UaEJEa3NmNElMWVFnVEpSVmNRMDZJWEZYdWNOMzhVWk1rQ0cwIn0.eyJqdGkiOiJjYzY3MmUzYS1mZTVkLTQ4YjItOTQ4My01ZTYxZDNiNGJjMGEiLCJleHAiOjE0NzY0NDQ1OTAsIm5iZiI6MCwiaWF0IjoxNDc2NDQ0MjkwLCJpc3MiOiJodHRwOi8vbG9jYWxob3N0OjgwODEvYXV0aC9yZWFsbXMvU09OQVRBIiwiYXVkIjoiYWRtaW4tY2xpIiwic3ViIjoiYjFiY2M4YmQtOTJhMy00N2RkLTliOGUtZDY3NGQ2ZTU0ZjJjIiwidHlwIjoiQmVhcmVyIiwiYXpwIjoiYWRtaW4tY2xpIiwiYXV0aF90aW1lIjowLCJzZXNzaW9uX3N0YXRlIjoiNTkwYzlhNGUtYzljNC00OTU1LTg1NDAtYTViOTM2ODM5NjEzIiwiYWNyIjoiMSIsImNsaWVudF9zZXNzaW9uIjoiYjhkODI4ZjAtNWQ3Yy00NjI4LWEzOTEtNGQwNTY0MDNkNTRjIiwiYWxsb3dlZC1vcmlnaW5zIjpbXSwicmVzb3VyY2VfYWNjZXNzIjp7fSwibmFtZSI6InNvbmF0YSB1c2VyIHNvbmF0YSB1c2VyIiwicHJlZmVycmVkX3VzZXJuYW1lIjoidXNlcjEiLCJnaXZlbl9uYW1lIjoic29uYXRhIHVzZXIiLCJmYW1pbHlfbmFtZSI6InNvbmF0YSB1c2VyIiwiZW1haWwiOiJzb25hdGF1c2VyQHNvbmF0YS5uZXQifQ.T_GB_kBtZk-gmFNJ5rC2sJpNl4V3TUyhixq76hOi5MbgDbo_FfuKRomxviAeQi-RdJPIEffdzrVmaYXZVQHufpaYx9p90GQd3THQWMyZD50zMY40j-XlungaGKjizWNxaywvGXBMvDE_qYp0hr4Uewm4evO_NRRI1bWQLeaeJ3oHr1_p9vFZf5Kh8tZYR-dQSWuESvHhZrJAqHTzXlYYMRBqfjDyAgUhm8QbbtmDtPr0kkkIh1TmXevkZbm91mrS-9jWrS4zGZE5LiT5KdWnMs9P8FBR1p3vywwIu_z-0MF8_DIMJWa7ApZAXjtrszXAYVfCKsaisjjD9HacgpE-4w","expires_in":300,"refresh_expires_in":1800,"refresh_token":"eyJhbGciOiJSUzI1NiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICIyRG1CZm1UaEJEa3NmNElMWVFnVEpSVmNRMDZJWEZYdWNOMzhVWk1rQ0cwIn0.eyJqdGkiOiIyOTRmZjc5Yy01ZWIxLTQwNDgtYmM1NS03NjcwOGU1Njg1YzMiLCJleHAiOjE0NzY0NDYwOTAsIm5iZiI6MCwiaWF0IjoxNDc2NDQ0MjkwLCJpc3MiOiJodHRwOi8vbG9jYWxob3N0OjgwODEvYXV0aC9yZWFsbXMvU09OQVRBIiwiYXVkIjoiYWRtaW4tY2xpIiwic3ViIjoiYjFiY2M4YmQtOTJhMy00N2RkLTliOGUtZDY3NGQ2ZTU0ZjJjIiwidHlwIjoiUmVmcmVzaCIsImF6cCI6ImFkbWluLWNsaSIsImF1dGhfdGltZSI6MCwic2Vzc2lvbl9zdGF0ZSI6IjU5MGM5YTRlLWM5YzQtNDk1NS04NTQwLWE1YjkzNjgzOTYxMyIsImNsaWVudF9zZXNzaW9uIjoiYjhkODI4ZjAtNWQ3Yy00NjI4LWEzOTEtNGQwNTY0MDNkNTRjIiwicmVzb3VyY2VfYWNjZXNzIjp7fX0.WGHvTiVc08xuVCDM5YLlvIzvBgz0aJ3OY3-VGmKSyI-fDLfbp9LSLkPsIqiKO9mDjybSfEkrNmPBd60lWecUC43DacVhVbiLEU9cJdMnjQjrU0P3wg1HFQmcG8exylJMzWoAbJzm893SP-kgKVYCnbQ55Os1-oT1ClHr3Ts6BHVgz5FWrc3dk6DqOrGAxmoJLQUgNJ5jdF-udt-j81OcBTtC3b-RXFXlRu3AyJ0p-UPiu4_HkKBVdg0pmycuN0v0it-TxR_mlM9lhvdVMGXLD9_-PUgklfc6XisdCrGa_b9r06aQCiekXGWptLoFF1Oz__g2_v4Gsrzla5YKBZzGfA","token_type":"bearer","id_token":"eyJhbGciOiJSUzI1NiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICIyRG1CZm1UaEJEa3NmNElMWVFnVEpSVmNRMDZJWEZYdWNOMzhVWk1rQ0cwIn0.eyJqdGkiOiI5NWVmMGY0Yi1lODIyLTQwMTAtYWU1NS05N2YyYTEzZWViMzkiLCJleHAiOjE0NzY0NDQ1OTAsIm5iZiI6MCwiaWF0IjoxNDc2NDQ0MjkwLCJpc3MiOiJodHRwOi8vbG9jYWxob3N0OjgwODEvYXV0aC9yZWFsbXMvU09OQVRBIiwiYXVkIjoiYWRtaW4tY2xpIiwic3ViIjoiYjFiY2M4YmQtOTJhMy00N2RkLTliOGUtZDY3NGQ2ZTU0ZjJjIiwidHlwIjoiSUQiLCJhenAiOiJhZG1pbi1jbGkiLCJhdXRoX3RpbWUiOjAsInNlc3Npb25fc3RhdGUiOiI1OTBjOWE0ZS1jOWM0LTQ5NTUtODU0MC1hNWI5MzY4Mzk2MTMiLCJhY3IiOiIxIiwibmFtZSI6InNvbmF0YSB1c2VyIHNvbmF0YSB1c2VyIiwicHJlZmVycmVkX3VzZXJuYW1lIjoidXNlcjEiLCJnaXZlbl9uYW1lIjoic29uYXRhIHVzZXIiLCJmYW1pbHlfbmFtZSI6InNvbmF0YSB1c2VyIiwiZW1haWwiOiJzb25hdGF1c2VyQHNvbmF0YS5uZXQifQ.FrwYdv1S8mqivHjsyA93ycl10z2tisVJraUGcBJzle060nCO69ZEa0fzrMMCbSkjY1JAwjP92d7_ixuWpcUVvQLkesxKOgcBc8LVhClyh3__8p46kIwfrJYMZQt0cJ6f6nASX1yaySE9sDgl3ElkW0vz-i9vhEXkIh6m-EuC7lH0ZIIL-39-occssq7G5hDleDUMThno8sEsl8rgtV-GdAfjKIwi-yOB0X8K1RrfDarccwA3XB0R8nHAbInZGsrF114KsBuaEvWjKki4m86xFkfPPuSlvWaVRtCziiTBqrBZ_Qna6wI9FfAOiTzPXE5AfFtDowih6d-26kT_jd_7GA","not-before-policy":0,"session_state":"590c9a4e-c9c4-4955-8540-a5b936839613"}
-
       parsed_res, code = parse_json(res.body)
       @access_token = parsed_res['access_token']
       # puts "ACCESS_TOKEN RECEIVED", parsed_res['access_token']
@@ -458,6 +457,7 @@ class Keycloak < Sinatra::Application
     end
   end
 
+  # DEPRECATED
   # Method that allows end-user authentication through authorized browser
   # "authorization_endpoint":"http://localhost:8081/auth/realms/master/protocol/openid-connect/auth"
   def authorize_browser(token=nil, realm=nil)
@@ -474,8 +474,6 @@ class Keycloak < Sinatra::Application
     #request["authorization"] = 'bearer ' + token
 
     response = http.request(request)
-    # p "RESPONSE", response.body
-
     File.open('codeflow.html', 'wb') do |f|
       f.puts response.read_body
     end
@@ -496,131 +494,19 @@ class Keycloak < Sinatra::Application
     request["authorization"] = 'bearer ' + @@access_token
     request["content-type"] = 'application/x-www-form-urlencoded'
     # request["content-type"] = 'application/json'
-
     # request.set_form_data({'client_id' => 'adapter',
     #                       'client_secret' => 'df7e816d-0337-4fbe-a3f4-7b5263eaba9f',
     #                       'username' => 'user',
     #                       'password' => '1234',
     #                       'grant_type' => 'password'})
     # request.set_form_data('refresh_token' => token)
-
     # _remove_all_user_sessions_associated_with_the_user
-
     # request.body = body.to_json
 
     response = http.request(request)
     # puts "RESPONSE CODE", response.code
     # puts "RESPONSE BODY", response.body
-    # response_json = parse_json(response.read_body)[0]
-    return response.code.to_i
-  end
-
-  def authenticate(client_id, username, password, grant_type)
-    http_path = "http://#{@@address.to_s}:#{@@port.to_s}/#{@@uri.to_s}/realms/#{@@realm_name}/protocol/openid-connect/token"
-    # puts `curl -X POST --data "client_id=#{client_id}&username=#{usrname}"&password=#{pwd}&grant_type=#{grt_type} #{http_path}`
-
-    uri = URI(http_path)
-    res = nil
-    case grant_type
-      when 'password' # -> user
-        res = Net::HTTP.post_form(uri, 'client_id' => client_id,
-                                  'client_secret' => password,
-                                  'grant_type' => grant_type)
-
-      when 'client_credentials' # -> service
-        res = Net::HTTP.post_form(uri, 'client_id' => client_id,
-                                  'username' => username,
-                                  'password' => password,
-                                  'grant_type' => grant_type)
-      else
-        halt 400
-    end
-
-    if res.body['id_token']
-      parsed_res, code = parse_json(res.body)
-      id_token = parsed_res['id_token']
-      # puts "ID_TOKEN RECEIVED"# , parsed_res['access_token']
-    else
-      halt 401, "ERROR: ACCESS DENIED!"
-    end
-  end
-
-  def authorize?(user_token, request)
-    refresh_adapter
-    # => Check token
-    public_key = get_public_key
-    # p "SETTINGS", settings.keycloak_pub_key
-    token_payload, token_header = decode_token(user_token, public_key)
-    # puts "payload", token_payload
-
-    # => evaluate request
-    # Find mapped resource to path
-    # required_role is build following next pattern:
-    # operation
-    # operation_resource
-    # operation_resource_type
-
-    log_file = File.new("#{settings.root}/log/#{settings.environment}.log", 'a+')
-    STDOUT.reopen(log_file)
-    STDOUT.sync = true
-
-    logger.debug "Adapter: Token Payload: #{token_payload.to_s}, Token Header: #{token_header.to_s}"
-
-    required_role = 'role_' + request['operation'] + '-' + request['resource']
-    # p "REQUIRED ROLE", required_role
-    logger.debug "Adapter: Required Role: #{required_role}"
-
-    # => Check token roles
-    begin
-      token_realm_access_roles = token_payload['realm_access']['roles']
-    rescue
-      json_error(403, 'No permissions')
-    end
-
-    # TODO: Resource access roles (services) will be implemented later
-    token_resource_access_resources = token_payload['resource_access']
-    # .
-    # .
-    # .
-    # TODO: Evaluate special roles (customer,developer,etc...)
-    # .
-    # .
-    # .
-
-    p "realm_access_roles", token_realm_access_roles
-    code, realm_roles = get_realm_roles
-
-    p "realm_roles", realm_roles
-    parsed_realm_roles, errors = parse_json(realm_roles)
-    # p "Realm_roles_PARSED", parsed_realm_roles
-
-    authorized = false
-    token_realm_access_roles.each { |role|
-      # puts "ROLE TO INSPECT", role
-
-      token_role_repr = parsed_realm_roles.find {|x| x['name'] == role}
-      unless token_role_repr
-        json_error(403, 'No permissions')
-      end
-
-      puts "ROLE_DESC", token_role_repr['description']
-      role_perms = token_role_repr['description'].tr('${}', '').split(',')
-      puts "ROLE_PERM", role_perms
-
-      if role_perms.include?(required_role)
-        authorized = true
-      end
-    }
-
-    STDOUT.sync = false
-
-    #=> Response => 20X or 40X
-    case authorized
-      when true
-        return 200, nil
-      else
-        return 403, 'User is not authorized'
-    end
+    response.code.to_i
   end
 
   def refresh_service(token, credentials)
@@ -1389,52 +1275,6 @@ class Keycloak < Sinatra::Application
       response = 'InvalidIatError'
     end
     response
-  end
-
-  def process_request(uri, method)
-    # TODO: REVAMP EVALUATION FUNCTION
-    log_file = File.new("#{settings.root}/log/#{settings.environment}.log", 'a+')
-    STDOUT.reopen(log_file)
-    STDOUT.sync = true
-
-    # Parse uri path
-    path = URI(uri).path.split('/')[1]
-    p "path", path
-
-    # Find mapped resource to path
-    # TODO: CHECK IF IS A VALID RESOURCE FROM DATABASE
-    resources = @@auth_mappings['resources']
-    p "RESOURCES", resources
-
-    resource = nil
-    # p "PATHS", @@auth_mappings['paths']
-    @@auth_mappings['paths'].each { |k, v|
-      puts "k, v", k, v
-      v.each { |kk, vv|
-        puts "kk, vv", kk, vv
-        if kk == path
-          p "Resource found", k, kk
-          resource = [k, kk]
-          break
-        end
-      }
-      p "FOUND_RESOURCE", resource
-      if resource
-        break
-      end
-    }
-    unless resource
-      json_error(403, 'The resource is not available')
-    end
-
-    unless @@auth_mappings['paths'][resource[0]][resource[1]].key?(method)
-      json_error(403, 'The resource operation is not available')
-    else
-      operation = @@auth_mappings['paths'][resource[0]][resource[1]][method]
-      puts "FOUND_OPERATION", operation
-      STDOUT.sync = false
-      request = {"resource" => resource[0], "type" => resource[1], "operation" => operation}
-    end
   end
 
   def assign_role(role_name, user_id)

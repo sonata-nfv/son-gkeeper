@@ -123,9 +123,13 @@ class Keycloak < Sinatra::Application
       # Continue
     end
 
-    # TODO: Automatically generate 'role' if it does not exists
-    # code, msg = create_realm_role(new_resource['role'])
-    # json_error 400 unless code.to_i == 201
+    # Automatically generate 'role' if it does not exists
+    f_role = parse_json(get_realm_roles({'name' => new_resource['role']}))[0]
+    if f_role.nil?
+      code, msg = create_realm_role({'name' => new_resource['role'], 'scopeParamRequired' => false,
+                                     'composite' => false, 'clientRole' => false})
+      json_error 400 unless code.to_i == 201
+    end
 
     # Save to DB
     begin
@@ -168,7 +172,6 @@ class Keycloak < Sinatra::Application
         logger.error e
         json_error 404, "Resource object #{keyed_params[:clientId]} not found"
       end
-      # logger.debug "Adapter: leaving DELETE /resources? with resource object #{keyed_params[:clientId]} deleted"
     elsif keyed_params.has_key?(:id)
       begin
         resource = Sp_resource.find(keyed_params[:id])
@@ -193,9 +196,13 @@ class Keycloak < Sinatra::Application
     json_error 400, 'Resource resources not provided' unless new_resource.has_key?('resources')
     json_error 400, 'Resource policies not provided' unless new_resource.has_key?('policies')
 
-    # TODO: Automatically generate 'role' if it does not exists
-    # code, msg = create_realm_role(new_resource['role'])
-    # json_error 400 unless code.to_i == 201 || code.to_i == 409
+    # Automatically generate 'role' if it does not exists
+    f_role = parse_json(get_realm_roles({'name' => new_resource['role']}))[0]
+    if f_role.nil?
+      code, msg = create_realm_role({'name' => new_resource['role'], 'scopeParamRequired' => false,
+                                     'composite' => false, 'clientRole' => false})
+      json_error 400 unless code.to_i == 201
+    end
 
     # Save to DB
     begin
