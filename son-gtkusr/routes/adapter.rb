@@ -112,22 +112,24 @@ class Keycloak < Sinatra::Application
     # TODO: Contact to Mongo Database
     begin
       puts "ENTERED Contact to Mongo Database"
-      Sp_resource.with(collection: 'sp_resources') do
-        logger.debug 'Adapter: Loading default resource file'
-        default_resource = File.read('tests/demo-resource.json')
-        resource_hash = JSON.parse(default_resource)
-        begin
-          # Generate the UUID for the resource object
-          # new_resource['_id'] = SecureRandom.uuid
-          resource = Sp_resource.create!(resource_hash)
-          logger.debug "Adapter: POST /config added default permissions to MongoDB"
-          puts "CREATED #{resource.to_s}"
-        rescue Moped::Errors::OperationFailure => e
-          # json_error 400, e.to_s
-          puts "ERROR #{e.to_s}"
-          logger.debug "Adapter: POST /config MongoDB could not be reached or configured: #{e}"
-        end
+
+      puts Sp_resource.count
+
+      logger.debug 'Adapter: Loading default resource file'
+      default_resource = File.read('tests/demo-resource.json')
+      resource_hash = JSON.parse(default_resource)
+      begin
+        # Generate the UUID for the resource object
+        # new_resource['_id'] = SecureRandom.uuid
+        resource = Sp_resource.create!(resource_hash)
+        logger.debug "Adapter: POST /config added default permissions to MongoDB"
+        puts "CREATED #{resource.to_s}"
+      rescue Moped::Errors::OperationFailure => e
+        # json_error 400, e.to_s
+        puts "ERROR #{e.to_s}"
+        logger.debug "Adapter: POST /config MongoDB could not be reached or configured: #{e}"
       end
+      # end
     rescue => e
       puts "DATABASE ERROR #{e}"
       logger.error "Adapter: POST /config connecting MongoDB error: #{e}"
