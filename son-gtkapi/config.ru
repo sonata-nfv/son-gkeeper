@@ -32,5 +32,4 @@
 
 root = ::File.dirname(__FILE__)
 require ::File.join(root, 'gtk_api')
-
 run GtkApi
