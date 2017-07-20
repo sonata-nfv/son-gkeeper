@@ -53,7 +53,7 @@ class GtkApi < Sinatra::Base
       require_param(param: 'ingresses', params: params, kpi_method: method(:count_service_instantiation_requests), error_message: 'Ingresses list', log_message: log_message, began_at: began_at)
       
       token = get_token( request.env, began_at, method(:count_service_instantiation_requests), log_message)
-      user_name = User.find_username_by_token(token)
+      user_name = get_username_by_token( token, began_at, method(:count_service_instantiation_requests), log_message)
       
       validate_user_authorization(token: token, action: 'post service instantiation request', uuid: params['service_uuid'], path: '/services', method:'POST', kpi_method: method(:count_service_instantiation_requests), began_at: began_at, log_message: log_message)
       logger.debug(log_message) {"User authorized"}
@@ -78,7 +78,7 @@ class GtkApi < Sinatra::Base
 
       logger.info(MESSAGE) {'entered with '+query_string}
       token = get_token( request.env, began_at, method(:count_services_instantiation_requests_queries), MESSAGE)
-      user_name = User.find_username_by_token(token)
+      user_name = get_username_by_token( token, began_at, method(:count_services_instantiation_requests_queries), MESSAGE)
 
       validate_user_authorization(token: token, action: 'get requests data', uuid: '', path: '/requests', method:'GET', kpi_method: method(:count_function_metadata_queries), began_at: began_at, log_message: MESSAGE)
       logger.debug(MESSAGE) {"User authorized"}
@@ -101,19 +101,41 @@ class GtkApi < Sinatra::Base
       validate_uuid(uuid: params[:uuid], kpi_method: method(:count_service_instantiation_requests_queries), began_at: began_at, log_message: log_message)
     
       token = get_token( request.env, began_at, method(:count_service_instantiation_requests_queries), log_message)
-      user_name = User.find_username_by_token(token)
+      user_name = get_username_by_token( token, began_at, method(:count_service_instantiation_requests_queries), log_message)
 
       validate_user_authorization(token: token, action: 'get request '+params[:uuid]+' data', uuid: params[:uuid], path: '/requests', method:'GET', kpi_method: method(:count_service_instantiation_requests_queries), began_at: began_at, log_message: log_message)
       logger.debug(log_message) {"User authorized"}
       
       request = ServiceManagerService.find_requests_by_uuid(params['uuid'])
       validate_element_existence(uuid: params[:uuid], element: request, name: 'Request', kpi_method: method(:count_service_instantiation_requests_queries), began_at: began_at, log_message: log_message)
-      validate_ownership_and_licence(element: function[:items], user_name: user_name, kpi_method: method(:count_service_instantiation_requests_queries), began_at: began_at, log_message: log_message)
+      validate_ownership_and_licence(element: request[:items], user_name: user_name, kpi_method: method(:count_service_instantiation_requests_queries), began_at: began_at, log_message: log_message)
       
       count_service_instantiation_requests_queries(labels: {result: "ok", uuid: params[:uuid], elapsed_time: (Time.now.utc-began_at).to_s})
       logger.debug(log_message) {"leaving with #{request}"}
       headers 'Record-Count'=> '1'
       halt 200, request[:items].to_json
+    end
+    
+    # PATCH /requests/:service_instance_uuid/stop
+    patch '/:service_instance_uuid/stop/?' do
+      log_message = "GtkApi::PATCH /api/v2/requests/:service_instance_uuid/stop"
+      logger.debug(log_message) {"entered with #{params[:service_instance_uuid]}"}
+
+      validate_uuid(uuid: params[:service_instance_uuid], kpi_method: method(:count_service_instance_termination_requests), began_at: began_at, log_message: log_message)
+      token = get_token( request.env, began_at, method(:count_service_instance_termination_requests), log_message)
+      user_name = get_username_by_token( token, began_at, method(:count_service_instance_termination_requests), log_message)
+
+      validate_user_authorization(token: token, action: 'patch request '+params[:service_instance_uuid]+' data', uuid: params[:service_instance_uuid], path: '/requests', method:'PATCH', kpi_method: method(:count_service_instance_termination_requests), began_at: began_at, log_message: log_message)
+      logger.debug(log_message) {"User authorized"}
+      
+      termination_request = ServiceManagerService.create_service_termination_request(params['service_instance_uuid'])
+      logger.debug(log_message) { "termination_request =#{termination_request}"}
+      if termination_request[:status] != 200
+        count_service_instance_termination_requests(labels: {result: "bad request", uuid: '', elapsed_time: (Time.now.utc-began_at).to_s})
+        json_error 400, 'Service instance termination request failled', log_message
+      end
+      count_service_instance_termination_requests(labels: {result: "ok", uuid: termination_request[:items][:service_uuid], elapsed_time: (Time.now.utc-began_at).to_s})
+      halt 200, termination_request[:items].to_json
     end
   end
 
@@ -138,6 +160,12 @@ class GtkApi < Sinatra::Base
     ServiceManagerService.counter_kpi({name: name, docstring: desc, base_labels: labels.merge({method: 'POST', module: 'services'})})
   end
   
+  def count_service_instance_termination_requests(labels:)
+    name = __method__.to_s.split('_')[1..-1].join('_')
+    desc = "how many service instances termination have been requested"
+    ServiceManagerService.counter_kpi({name: name, docstring: desc, base_labels: labels.merge({method: 'PATCH', module: 'services'})})
+  end
+
   def count_services_instantiation_requests_queries(labels:)
     name = __method__.to_s.split('_')[1..-1].join('_')
     desc = "how many service instantiation requests are there"

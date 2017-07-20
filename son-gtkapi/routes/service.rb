@@ -55,7 +55,7 @@ class GtkApi < Sinatra::Base
       logger.debug(log_message) {"params=#{params}"}
       
       token = get_token( request.env, began_at, method(:count_services_metadata_queries), log_message)
-      user_name = User.find_username_by_token(token)
+      user_name = get_username_by_token( token, began_at, method(:count_services_metadata_queries), log_message)
 
       validate_user_authorization(token: token, action: 'get metadata for services', uuid: '', path: '/services', method:'GET', kpi_method: method(:count_services_metadata_queries), began_at: began_at, log_message: log_message)
       logger.debug(log_message) {"User authorized"}
@@ -81,7 +81,7 @@ class GtkApi < Sinatra::Base
       validate_uuid(uuid: params[:uuid], kpi_method: method(:count_service_metadata_queries), began_at: began_at, log_message: log_message)
 
       token = get_token( request.env, began_at, method(:count_service_metadata_queries), log_message)
-      user_name = User.find_username_by_token(token)
+      user_name = get_username_by_token( token, began_at, method(:count_service_metadata_queries), log_message)
       validate_user_authorization(token: token, action: "get metadata for services #{params[:uuid]}", uuid: params[:uuid], path: '/services', method:'GET', kpi_method: method(:count_service_metadata_queries), began_at: began_at, log_message: log_message)
     
       # TODO: mind that, besides the URL-based uuid we might as well pass other params, like fields we want to show

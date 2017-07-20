@@ -116,7 +116,7 @@ class GtkApi < Sinatra::Base
       logger.debug(log_message) {"params[:uuid]=#{params[:uuid]}"}
 
       token = get_token( request.env, began_at, method(:count_single_package_queries), log_message)
-      user_name = User.find_username_by_token(token)
+      user_name = get_username_by_token( token, began_at, method(:count_single_package_queries), log_message)
       validate_user_authorization(token: token, action: "get metadata for package #{params[:uuid]}", uuid: params[:uuid], path: '/packages', method:'GET', kpi_method: method(:count_single_package_queries), began_at: began_at, log_message: log_message)
       
       package = Package.find_by_uuid(params[:uuid])
@@ -137,7 +137,7 @@ class GtkApi < Sinatra::Base
       require_param(param: 'uuid', params: params, kpi_method: method(:count_package_downloads), error_message: 'No package UUID specified', log_message: log_message, began_at: began_at)
       validate_uuid(uuid: params['uuid'], kpi_method: method(:count_package_downloads), began_at: began_at, log_message: log_message)
       token = get_token( request.env, began_at, method(:count_package_downloads), log_message)
-      user_name = User.find_username_by_token(token)
+      user_name = get_username_by_token( token, began_at, method(:count_package_downloads), log_message)
       validate_user_authorization(token: token, action: "download package #{params[:uuid]}", uuid: params['uuid'], path: '/packages/download', method:'GET', kpi_method: method(:count_single_package_queries), began_at: began_at, log_message: log_message)
         
       package = Package.find_by_uuid(params[:uuid])
@@ -161,7 +161,7 @@ class GtkApi < Sinatra::Base
       @limit ||= params[:limit] ||= DEFAULT_LIMIT
 
       token = get_token( request.env, began_at, method(:count_packages_queries), log_message)
-      user_name = User.find_username_by_token(token)
+      user_name = get_username_by_token( token, began_at, method(:count_packages_queries), log_message)
       validate_user_authorization(token: token, action: 'get metadata for packages', uuid: '', path: '/packages', method:'GET', kpi_method: method(:count_packages_queries), began_at: began_at, log_message: log_message)
       logger.debug(log_message) {"User authorized"}
 

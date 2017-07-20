@@ -75,41 +75,63 @@ class GtkSrv < Sinatra::Base
 
   # PUTs an update on an existing service instance, given the service instance UUID
   put '/services/:uuid/?' do
-    method = MODULE + " PUT /services/#{params[:uuid]}"
-    logger.debug(method) {"called"}
+    method = MODULE + " PUT /services/:uuid"
+    logger.debug(method) {"entered with #{params[:uuid]}"}
     
-    # We are assuming that:
-    # UUID is not null and is a valid UUID
-
     # is it a valid service instance uuid?
     begin
-      valid = Request.validate_request(service_instance_uuid: params[:uuid], logger: logger)
+      valid = Request.validate_request(service_instance_uuid: params[:uuid])
       logger.debug(method) {"valid=#{valid.inspect}"}
     
-      if valid
-        nsd = JSON.parse(request.body.read, :quirks_mode => true)
-        logger.debug(method) {"with nsd=#{nsd}"}
+      json_error 400, "Service instance '#{params[:uuid]} not 'READY'", method unless valid
 
-        #nsd.delete(:status) if nsd[:status]
-        nsd.delete('status') if nsd['status']
-        update_response = Request.process_request(nsd: nsd, service_instance_uuid: params[:uuid], update_server: settings.update_server, logger: logger)
-        logger.debug(method) {"update_response=#{update_response}"}
-        if update_response
-          halt 201, update_response.to_json
-        else
-          error_msg = "Update request for service instance '#{params[:uuid]} failled"
-          logger.debug(method) {"leaving with '#{error_msg}"}
-          json_error 400, error_msg
-        end
-      else
-        error_msg = "Service instance '#{params[:uuid]} not 'READY'"
-        logger.debug(method) {"leaving with '#{error_msg}"}
-        json_error 400, error_msg
-      end
+      nsd = JSON.parse(request.body.read, :quirks_mode => true)
+      logger.debug(method) {"with nsd=#{nsd}"}
+
+      #nsd.delete(:status) if nsd[:status]
+      nsd.delete('status') if nsd['status']
+      update_response = Request.process_request(nsd: nsd, service_instance_uuid: params[:uuid], type: 'UPDATE', mq_server: settings.update_mqserver)
+      logger.debug(method) {"update_response=#{update_response}"}
+      json_error 400, "Update request for service instance '#{params[:uuid]} failled", method unless update_response
+
+      halt 201, update_response.to_json
     rescue Exception=> e
-      error_msg = "Service instance '#{params[:uuid]} not found"
-      logger.debug(method) {"leaving with '#{error_msg}"}
-      json_error 404, error_msg
+      json_error 404, "Service instance '#{params[:uuid]} not found", method
+    end
+  end
+  
+  # PUTs an update on an existing service instance, given the service instance UUID, to terminate it
+  put '/services/:uuid/terminate/?' do
+    method = 'GtkSrv PUT /services/:uuid/terminate'
+    logger.debug(method) {"entered with #{params[:uuid]}"}
+    
+    # is it a valid service instance uuid?
+    begin
+      valid = Request.validate_request(service_instance_uuid: params[:uuid])
+      logger.debug(method) {"valid=#{valid.inspect}"}
+      service_instantiation_request = Request.create({service_uuid: params['service_instance_uuid']})
+      logger.debug(log_msg) { "with service_instance_uuid=#{params['service_instance_uuid']}: #{service_instantiation_request.inspect}"}
+      
+      json_error 400, "Service instance '#{params[:uuid]} not 'READY'", method unless valid
+
+      nsd = build_descriptors(service_instance_uuid: params[:uuid])
+      logger.debug(method) {"with nsd=#{nsd}"}
+
+      nsd.delete('status') if nsd['status']
+      descriptors_yml = YAML.dump(descriptors.deep_stringify_keys)
+      logger.debug(log_msg) {"descriptors_yml=#{descriptors_yml}"}
+
+      smresponse = settings.create_mqserver.publish( descriptors_yml.to_s, service_instantiation_request['id'])
+      formated_descriptors = json(service_instantiation_request, { root: false })
+      logger.debug(log_msg) {'returning with request='+formated_descriptors}
+
+      terminate_response = Request.process_request(nsd: formated_descriptors, service_instance_uuid: params[:uuid], type: 'TERMINATE', mq_server: settings.terminate_mqserver)
+      logger.debug(method) {"terminate_response=#{terminate_response}"}
+      json_error 400, "Terminate request for service instance '#{params[:uuid]} failled", method unless terminate_response
+
+      halt 201, terminate_response.to_json
+    rescue Exception=> e
+      json_error 404, "Service instance '#{params[:uuid]} not found", method
     end
   end
 
@@ -127,5 +149,57 @@ class GtkSrv < Sinatra::Base
     log_message = 'GtkApi::request_url'
     logger.debug(log_message) {"Schema=#{request.env['rack.url_scheme']}, host=#{request.env['HTTP_HOST']}, path=#{request.env['REQUEST_PATH']}"}
     request.env['rack.url_scheme']+'://'+request.env['HTTP_HOST']+request.env['REQUEST_PATH']
+  end
+  
+  def build_descriptors(service_instance_uuid:)
+    log_msg = 'GtkSrv#build_descriptors'
+    logger.debug(log_msg) {"entered with service_instance_uuid=#{service_instance_uuid}"}
+
+    begin
+      payload={}
+      payload['instance_id'] = params['service_instance_uuid']
+
+      service = NService.new(settings.services_catalogue, logger).find_by_uuid(params['service_instance_uuid'])
+      
+      unless service
+        logger.error(log_msg) {"network service not found"}
+        return nil, nil
+      end
+      logger.debug(log_msg) { "service=#{service}"}
+
+      nsd = service['nsd']
+      nsd[:uuid] = service['uuid']
+      payload['NSD']= nsd
+    
+      nsd['network_functions'].each_with_index do |function, index|
+        logger.debug(log_msg) { "function=['#{function['vnf_name']}', '#{function['vnf_vendor']}', '#{function['vnf_version']}']"}
+        stored_function = VFunction.new(settings.functions_catalogue, logger).find_function(function['vnf_name'],function['vnf_vendor'],function['vnf_version'])
+        unless stored_function
+          logger.error(log_msg) {"network function not found"}
+          loop
+        end
+        logger.debug(log_msg) {"function#{index}=#{stored_function}"}
+        vnfd = stored_function[:vnfd]
+        vnfd[:uuid] = stored_function[:uuid]
+        payload["VNFD#{index}"]=vnfd 
+        logger.debug(log_msg) {"payload[\"VNFD#{index}\"]=#{vnfd}"}
+      end
+      return payload
+    rescue Exception => e
+      logger.debug(log_msg) {e.message}
+	    logger.debug(log_msg) {e.backtrace.inspect}
+	    return nil
+    end
+  end
+  
+  def format_descriptors(descriptors, si_request)
+    log_msg = 'GtkSrv#format_descriptors'
+    descriptors_yml = YAML.dump(descriptors.deep_stringify_keys)
+    logger.debug(log_msg) {"descriptors_yml=#{descriptors_yml}"}
+
+    smresponse = settings.create_mqserver.publish( descriptors_yml.to_s, si_request['id'])
+    json_request = json(si_request, { root: false })
+    logger.debug(log_msg) {'returning with request='+json_request}
+    json_request
   end
 end

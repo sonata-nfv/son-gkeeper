@@ -57,6 +57,9 @@ class GtkSrv < Sinatra::Base
   helpers GtkSrvHelper
   
   MODULE='GtkSrv'
+  CREATE = 'service.instances.create'
+  UPDATE = 'service.instances.update'
+  TERMINATE = 'service.instance.terminate'
   
   set :root, File.dirname(__FILE__)
   set :public_folder, File.join(File.dirname(__FILE__), 'public')
@@ -90,8 +93,10 @@ class GtkSrv < Sinatra::Base
     Process.kill('TERM', Process.pid)
   end
   if settings.mqserver_url
-    set :mqserver, MQServer.new(settings.mqserver_url, logger)
-    set :update_server, UpdateServer.new(settings.mqserver_url, logger)
+    set :create_mqserver, MQServer.new(CREATE, settings.mqserver_url)
+    #set :update_server, UpdateServer.new(settings.mqserver_url, logger)
+    set :update_mqserver, MQServer.new(UPDATE, settings.mqserver_url)
+    set :terminate_mqserver, MQServer.new(TERMINATE, settings.mqserver_url)
   else
     logger.error(MODULE) {'>>>MQServer url not defined, application being terminated!!'}
     Process.kill('TERM', Process.pid)
@@ -99,6 +104,8 @@ class GtkSrv < Sinatra::Base
   logger.info(MODULE) {"started at #{settings.time_at_startup}"}
   logger.info(MODULE) {"Services Catalogue: #{settings.services_catalogue.url}"}
   logger.info(MODULE) {"Functions Catalogue: #{settings.functions_catalogue.url}"}
-  logger.info(MODULE) {"MQServer: #{settings.mqserver.url}"}
-  logger.info(MODULE) {"UpdateServer: #{settings.update_server.url}"}
+  logger.info(MODULE) {"Create MQServer: #{settings.create_mqserver.url}"}
+  logger.info(MODULE) {"Update MQServer: #{settings.update_mqserver.url}"}
+  logger.info(MODULE) {"Terminate MQServer: #{settings.terminate_mqserver.url}"}
+  #logger.info(MODULE) {"UpdateServer: #{settings.update_mqserver.url}"}
 end
