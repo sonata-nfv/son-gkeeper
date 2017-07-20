@@ -53,7 +53,7 @@ class GtkApi < Sinatra::Base
       require_param(param: 'ingresses', params: params, kpi_method: method(:count_service_instantiation_requests), error_message: 'Ingresses list', log_message: log_message, began_at: began_at)
       
       token = get_token( request.env, began_at, method(:count_service_instantiation_requests), log_message)
-      user_name = User.find_username_by_token(token)
+      user_name = get_username_by_token( token, began_at, method(:count_service_instantiation_requests), log_message)
       
       validate_user_authorization(token: token, action: 'post service instantiation request', uuid: params['service_uuid'], path: '/services', method:'POST', kpi_method: method(:count_service_instantiation_requests), began_at: began_at, log_message: log_message)
       logger.debug(log_message) {"User authorized"}
@@ -78,7 +78,7 @@ class GtkApi < Sinatra::Base
 
       logger.info(MESSAGE) {'entered with '+query_string}
       token = get_token( request.env, began_at, method(:count_services_instantiation_requests_queries), MESSAGE)
-      user_name = User.find_username_by_token(token)
+      user_name = get_username_by_token( token, began_at, method(:count_services_instantiation_requests_queries), MESSAGE)
 
       validate_user_authorization(token: token, action: 'get requests data', uuid: '', path: '/requests', method:'GET', kpi_method: method(:count_function_metadata_queries), began_at: began_at, log_message: MESSAGE)
       logger.debug(MESSAGE) {"User authorized"}
@@ -101,7 +101,7 @@ class GtkApi < Sinatra::Base
       validate_uuid(uuid: params[:uuid], kpi_method: method(:count_service_instantiation_requests_queries), began_at: began_at, log_message: log_message)
     
       token = get_token( request.env, began_at, method(:count_service_instantiation_requests_queries), log_message)
-      user_name = User.find_username_by_token(token)
+      user_name = get_username_by_token( token, began_at, method(:count_service_instantiation_requests_queries), log_message)
 
       validate_user_authorization(token: token, action: 'get request '+params[:uuid]+' data', uuid: params[:uuid], path: '/requests', method:'GET', kpi_method: method(:count_service_instantiation_requests_queries), began_at: began_at, log_message: log_message)
       logger.debug(log_message) {"User authorized"}
@@ -123,7 +123,7 @@ class GtkApi < Sinatra::Base
 
       validate_uuid(uuid: params[:service_instance_uuid], kpi_method: method(:count_service_instance_termination_requests), began_at: began_at, log_message: log_message)
       token = get_token( request.env, began_at, method(:count_service_instance_termination_requests), log_message)
-      user_name = User.find_username_by_token(token)
+      user_name = get_username_by_token( token, began_at, method(:count_service_instance_termination_requests), log_message)
 
       validate_user_authorization(token: token, action: 'patch request '+params[:service_instance_uuid]+' data', uuid: params[:service_instance_uuid], path: '/requests', method:'PATCH', kpi_method: method(:count_service_instance_termination_requests), began_at: began_at, log_message: log_message)
       logger.debug(log_message) {"User authorized"}

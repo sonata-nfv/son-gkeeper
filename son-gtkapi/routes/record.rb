@@ -52,7 +52,7 @@ class GtkApi < Sinatra::Base
       require_param(param: 'kind', params: params, kpi_method: method(:count_records_requests), error_message: 'Kind of record', log_message: log_message, began_at: began_at)
       
       token = get_token( request.env, began_at, method(:count_records_requests), log_message)
-      user_name = User.find_username_by_token(token)
+      user_name = get_username_by_token( token, began_at, method(:count_records_requests), log_message)
       
       validate_user_authorization(token: token, action: 'get records request', uuid: '', path: '/records', method:'GET', kpi_method: method(:count_records_requests), began_at: began_at, log_message: log_message)
       logger.debug(log_message) {"User authorized"}
@@ -80,7 +80,7 @@ class GtkApi < Sinatra::Base
       validate_uuid(uuid: params[:uuid], kpi_method: method(:count_single_record_queries), began_at: began_at, log_message: log_message)
 
       token = get_token( request.env, began_at, method(:count_single_record_queries), log_message)
-      user_name = User.find_username_by_token(token)
+      user_name = get_username_by_token( token, began_at, method(:count_single_record_queries), log_message)
 
       validate_user_authorization(token: token, action: 'get '+params[:kind]+' record '+params[:uuid]+' data', uuid: params[:uuid], path: '/records', method:'GET', kpi_method: method(:count_single_record_queries), began_at: began_at, log_message: log_message)
       logger.debug(log_message) {"User authorized"}
@@ -106,7 +106,7 @@ class GtkApi < Sinatra::Base
       validate_uuid(uuid: params[:uuid], kpi_method: method(:count_service_instance_update), began_at: began_at, log_message: log_message)
 
       token = get_token( request.env, began_at, method(:count_single_record_queries), log_message)
-      user_name = User.find_username_by_token(token)
+      user_name = get_username_by_token( token, began_at, method(:count_single_record_queries), log_message)
 
       validate_user_authorization(token: token, action: 'put services record '+params[:uuid]+' data', uuid: params[:uuid], path: '/records', method:'GET', kpi_method: method(:count_single_record_queries), began_at: began_at, log_message: log_message)
       logger.debug(log_message) {"User authorized"}

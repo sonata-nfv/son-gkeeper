@@ -318,10 +318,11 @@ class User < ManagerService
 
     method = LOG_MESSAGE + "##{__method__}"
     raise ArgumentError.new __method__.to_s+' requires the login token' if (token.to_s.empty?)
-    GtkApi.logger.debug(method) {"entered"}
+    GtkApi.logger.debug(method) {"entered with token #{token}"}
     headers = {'Content-type'=>'application/json', 'Accept'=> 'application/json', 'Authorization'=>'Bearer '+token}
 
     resp = postCurb(url: @@url+'/api/v1/userinfo', body: {}, headers: headers)
+    GtkApi.logger.debug(method) {"response= #{resp}"}
     case resp[:status]
     when 200
       GtkApi.logger.debug(method) {"resp[:items]=#{resp[:items]}"}
@@ -331,7 +332,7 @@ class User < ManagerService
       raise UserTokenNotActiveError.new "User token was not active"
     else
       GtkApi.logger.error(method) {"Status #{resp[:status]}"} 
-      raise UserNotLoggedOutError.new "User not found with the given token"
+      raise UserNotFoundError.new "User not found with the given token"
     end  
   end
   

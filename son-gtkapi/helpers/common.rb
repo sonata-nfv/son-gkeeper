@@ -90,6 +90,18 @@ module GtkApiHelper
     bearer_token[1]
   end
   
+  def get_username_by_token( token, began_at, method, log_message)
+    begin
+      user_name = User.find_username_by_token(token)
+    rescue UserTokenNotActiveError
+      method.call(labels: {result: "unauthorized", uuid: '', elapsed_time: (Time.now.utc-began_at).to_s})
+      json_error 401, "Unauthorized: token #{token} is not active", log_message
+    rescue UserNotFoundError
+      method.call(labels: {result: "not found", uuid: '', elapsed_time: (Time.now.utc-began_at).to_s})
+      json_error 404, "Not found: user with token #{token}", log_message
+    end
+  end
+  
   def get_signature(env, log_message)
     logger.debug(log_message) {"entered with request.env['HTTP_SIGNATURE']=#{env['HTTP_SIGNATURE']}"}
     env['HTTP_SIGNATURE'] ? env['HTTP_SIGNATURE'] : ''
