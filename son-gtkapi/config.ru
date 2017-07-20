@@ -24,12 +24,6 @@
 ## the Horizon 2020 and 5G-PPP programmes. The authors would like to 
 ## acknowledge the contributions of their colleagues of the SONATA 
 ## partner consortium (www.sonata-nfv.eu).
-
-# https://github.com/sinatra/sinatra-recipes/blob/ecc597b3725bb9eb7ac9e30a89f72b0d9b0c9af5/middleware/rack_parser.md
-#use Rack::Parser, :content_types => {
-#  'application/json' => Proc.new { |body| ::MultiJson.decode body }
-#}
-
 root = ::File.dirname(__FILE__)
 require ::File.join(root, 'gtk_api')
 run GtkApi
