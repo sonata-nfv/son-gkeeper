@@ -83,7 +83,7 @@ class GtkApi < Sinatra::Base
       #require_param(param: 'email', params: params, kpi_method: method(:count_user_profile_updates), error_message: "No email provided: #{params}", log_message: log_message, began_at: began_at)
       #require_param(param: 'user_type', params: params, kpi_method: method(:count_user_profile_updates), error_message: "No user type provided: #{params}", log_message: log_message, began_at: began_at)
       token = get_token( request.env, began_at, method(:count_user_profile_updates), log_message)
-      user_name = User.find_username_by_token(token)
+      user_name = get_username_by_token( token, began_at, method(:count_user_profile_updates), log_message)
       
       validate_user_authorization(token: token, action: 'get metadata for functions', uuid: '', path: '/functions', method:'GET', kpi_method: method(:count_user_profile_updates), began_at: began_at, log_message: log_message)
       logger.debug(log_message) {"User authorized"}
@@ -138,7 +138,7 @@ class GtkApi < Sinatra::Base
         end
       else
         begin
-          username = User.find_username_by_token(token)
+          user_name = get_username_by_token( token, began_at, method(:count_user_profile_requests), log_message)
           user = User.find_by_name(username)
           logger.debug(log_message) {"Found user #{user}"}
           halt 200, user.to_h.to_json
