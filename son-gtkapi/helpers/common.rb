@@ -94,7 +94,7 @@ module GtkApiHelper
     begin
       user_name = User.find_username_by_token(token)
     rescue UserTokenNotActiveError
-      method.call((labels: {result: "unauthorized", uuid: '', elapsed_time: (Time.now.utc-began_at).to_s})
+      method.call(labels: {result: "unauthorized", uuid: '', elapsed_time: (Time.now.utc-began_at).to_s})
       json_error 401, "Unauthorized: token #{token} is not active", log_message
     rescue UserNotFoundError
       method.call((labels: {result: "not found", uuid: '', elapsed_time: (Time.now.utc-began_at).to_s})
