@@ -93,8 +93,6 @@ class Keycloak < Sinatra::Application
     # log_file = File.new("#{settings.root}/log/#{settings.environment}.log", 'a+')
     # STDOUT.reopen(log_file)
     # STDOUT.sync = true
-    # puts "REQUEST.IP:", request.ip.to_s
-    # puts "@@ADDRESS:", @@address.to_s
     begin
       keycloak_address = Resolv::Hosts.new.getaddress(ENV['KEYCLOAK_ADDRESS'])
     rescue
@@ -102,19 +100,16 @@ class Keycloak < Sinatra::Application
     end
     logger.debug "Checking #{request.ip.to_s} with #{keycloak_address.to_s}"
     # STDOUT.sync = false
+    
     # Check if the request comes from keycloak docker.
-    if request.ip.to_s !=  keycloak_address.to_s
-      halt 401
-    end
-    if defined? @@client_secret
-      json_error(409, 'Secret key is already defined')
-    end
+    halt 401 if request.ip.to_s !=  keycloak_address.to_s
+    json_error(409, 'Secret key is already defined') if defined? @@client_secret
 
     @@client_secret = params['secret']
     get_oidc_endpoints
     get_adapter_install_json
     @@access_token = self.get_adapter_token
-    logger.debug 'Adapter: exit POST /config with secret and access_token configured'
+    logger.debug 'Adapter: POST /config obtained access_token'
     # TODO: Contact to Mongo Database
     begin
       Sp_resource.with(collection: 'sp_resources') do
@@ -125,15 +120,16 @@ class Keycloak < Sinatra::Application
           # Generate the UUID for the resource object
           # new_resource['_id'] = SecureRandom.uuid
           resource = Sp_resource.create!(resource_hash)
-          logger.debug "Adapter: added default permissions to MongoDB"
+          logger.debug "Adapter: POST /config added default permissions to MongoDB"
         rescue Moped::Errors::OperationFailure => e
           # json_error 400, e.to_s
-          logger.debug "Adapter: MongoDB could not be reached or configured: #{e}"
+          logger.debug "Adapter: POST /config MongoDB could not be reached or configured: #{e}"
         end
       end
     rescue => e
-      logger.error "Connecting MongoDB error: #{e}"
+      logger.error "Adapter: POST /config connecting MongoDB error: #{e}"
     end
+    logger.debug 'Adapter: exit POST /config with secret and access_token configured'
     logger.info 'User Management is configured and ready'
     halt 200
   end

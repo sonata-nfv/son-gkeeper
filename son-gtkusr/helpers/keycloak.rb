@@ -249,20 +249,24 @@ class Keycloak < Sinatra::Application
   # Token Validation Endpoint
   # "token_introspection_endpoint":"http://localhost:8081/auth/realms/master/protocol/openid-connect/token/introspect"
   def token_validation(token, realm=nil)
-    # url = URI("http://localhost:8081/auth/realms/master/clients-registrations/openid-connect/")
-    url = URI("http://#{@@address.to_s}:#{@@port.to_s}/#{@@uri.to_s}/realms/#{@@realm_name}/protocol/openid-connect/token/introspect")
-    res = Net::HTTP.post_form(url, 'client_id' => @@client_name,
-                              'client_secret' => @@client_secret,
-                              'grant_type' => 'client_credentials', 'token' => token)
-
-    # RESPONSE_INTROSPECT:
-      logger.debug "Keycloak: Token validation code: #{res.code.to_s}"
     begin
-      logger.debug "Keycloak: Token validation content: #{parse_json(res.body).to_s}"
+      # url = URI("http://localhost:8081/auth/realms/master/clients-registrations/openid-connect/")
+      url = URI("http://#{@@address.to_s}:#{@@port.to_s}/#{@@uri.to_s}/realms/#{@@realm_name}/protocol/openid-connect/token/introspect")
+      res = Net::HTTP.post_form(url, 'client_id' => @@client_name,
+                                'client_secret' => @@client_secret,
+                                'grant_type' => 'client_credentials', 'token' => token)
+
+      # RESPONSE_INTROSPECT:
+        logger.debug "Keycloak: Token validation code: #{res.code.to_s}"
+      begin
+        logger.debug "Keycloak: Token validation content: #{parse_json(res.body).to_s}"
+      rescue
+        logger.debug "Keycloak: Invalid token validation content"
+      end
+      return res.body, res.code
     rescue
-      logger.debug "Keycloak: Invalid token validation content"
+      return 'Gatekeeper User Management is not available', '503'
     end
-    return res.body, res.code
   end
 
   def register_user(user_form) #, username,firstname, lastname, email, credentials)
