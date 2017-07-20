@@ -114,8 +114,26 @@ class Keycloak < Sinatra::Application
     get_oidc_endpoints
     get_adapter_install_json
     @@access_token = self.get_adapter_token
-    # TODO: Contact to Mongo Database
     logger.debug 'Adapter: exit POST /config with secret and access_token configured'
+    # TODO: Contact to Mongo Database
+    begin
+      Sp_resource.with(collection: 'sp_resources') do
+        logger.debug 'Adapter: Loading default resource file'
+        default_resource = File.read('tests/demo-resource.json')
+        resource_hash = JSON.parse(default_resource)
+        begin
+          # Generate the UUID for the resource object
+          # new_resource['_id'] = SecureRandom.uuid
+          resource = Sp_resource.create!(resource_hash)
+          logger.debug "Adapter: added default permissions to MongoDB"
+        rescue Moped::Errors::OperationFailure => e
+          # json_error 400, e.to_s
+          logger.debug "Adapter: MongoDB could not be reached or configured: #{e}"
+        end
+      end
+    rescue => e
+      logger.error "Connecting MongoDB error: #{e}"
+    end
     logger.info 'User Management is configured and ready'
     halt 200
   end
@@ -154,35 +172,22 @@ class Keycloak < Sinatra::Application
       json_error(400, 'Access token is not provided')
     end
 
-    # Check token validation
-    val_res, val_code = token_validation(user_token)
-    logger.debug "Token evaluation: #{val_code} - #{val_res}"
+    # Validate token
+    res, code = token_validation(user_token)
+    logger.debug "Adapter: Token validation is #{res.to_s}"
+    logger.debug 'Adapter: exit POST /authorize with unauthorized access token' unless code == '200'
+    json_error(400, res.to_s) unless code == '200'
+    token_content = JSON.parse(res)
+
     # Check token expiration
-    if val_code.to_s == '200'
-      result = is_active?(val_res)
-      # puts "RESULT", result
-      case result
-        when false
-          logger.debug 'Adapter: exit POST /authorize without invalid access token'
-          json_error(401, 'Invalid token or not active')
-        else
-          # continue
-      end
-    else
-      logger.debug 'Adapter: exit POST /authorize with unauthorized access token'
-      halt 401, {'Content-type' => 'application/json'}, val_res
-    end
+    result = is_active?(res)
+    logger.debug "Adapter: Token status is #{result.to_s}"
+    logger.debug 'Adapter: exit POST /authorize with invalid access token'
+    json_error(401, 'Token not active') unless result
 
-    # Validates the token
-    logger.debug "Evaluating token=#{user_token}"
-    token_content = parse_json(val_res)[0]
-    # code, user_info = userinfo(user_token)
-    # if code != '200'
-    #  halt code.to_i, {'Content-type' => 'application/json'}, user_info
-    # end
-    # logger.debug "Adapter: User info: #{user_info}"
-
+    logger.debug "Adapter: Token contents #{token_content}"
     # Role check; Allows total authorization to admin roles
+    # Bool = is_user_an_admin?(token_content)
     realm_roles = token_content['realm_access']['roles']
     if token_content['resource_access'].include?('realm-management')
       resource_roles = token_content['resource_access']['realm-management']['roles']
@@ -191,12 +196,14 @@ class Keycloak < Sinatra::Application
           halt 200
       end
     end
-    #code, user_data = get_user(parse_json(user_info)[0]['sub'])
-    #if code != '200'
-    #  halt code.to_i, {'Content-type' => 'application/json'}, user_data
-    #end
-    #user_data = parse_json(user_data)[0]
-    logger.info 'Authorization request received at /authorize'
+
+    logger.info "Content-Type is " + request.media_type
+    halt 415 unless (request.content_type == 'application/json')
+
+    form, errors = parse_json(request.body.read)
+    halt 400, {'Content-type' => 'application/json'}, errors.to_json if errors
+
+    logger.info 'Authorization started at /authorize'
     # Return if content-type is not valid
     # log_file = File.new("#{settings.root}/log/#{settings.environment}.log", 'a+')
     # STDOUT.reopen(log_file)
