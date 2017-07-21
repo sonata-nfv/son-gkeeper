@@ -72,7 +72,7 @@ class Keycloak < Sinatra::Application
 
     if resource_data && resource_data.size.to_i > 0
       logger.info "Adapter: leaving GET /resources?#{query_string} with #{resource_data}"
-      resource_data = resource_data.paginate(offset: params[:offset], limit: params[:limit])
+      # resource_data = resource_data.paginate(offset: params[:offset], limit: params[:limit])
     else
       # We could not find the resource you are looking for
       logger.info "Adapter: leaving GET /resources?#{query_string} with no resources found"
