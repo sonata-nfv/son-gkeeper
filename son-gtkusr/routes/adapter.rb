@@ -109,23 +109,23 @@ class Keycloak < Sinatra::Application
     get_adapter_install_json
     @@access_token = self.get_adapter_token
     logger.debug 'Adapter: POST /config obtained access_token'
-    begin
-      logger.debug 'Adapter: Loading default resource file'
-      default_resource = File.read('tests/demo-resource.json')
-      resource_hash = JSON.parse(default_resource)
-      begin
-        # Generate the UUID for the resource object
-        # new_resource['_id'] = SecureRandom.uuid
-        resource = Sp_resource.create!(resource_hash)
-        logger.debug "Adapter: POST /config added default permissions #{resource.to_s} to MongoDB"
-      rescue Moped::Errors::OperationFailure => e
-        logger.debug "Adapter: POST /config MongoDB could not be reached or configured: #{e}"
-      rescue => e
-        logger.error "Adapter: POST /config error=#{e}"
-      end
-    rescue => e
-      logger.error "Adapter: POST /config connecting MongoDB error: #{e}"
-    end
+    #begin
+    #  logger.debug 'Adapter: Loading default resource file'
+    #  default_resource = File.read('tests/demo-resource.json')
+    #  resource_hash = JSON.parse(default_resource)
+    #  begin
+    #    # Generate the UUID for the resource object
+    #    # new_resource['_id'] = SecureRandom.uuid
+    #    resource = Sp_resource.create!(resource_hash)
+    #    logger.debug "Adapter: POST /config added default permissions #{resource.to_s} to MongoDB"
+    #  rescue Moped::Errors::OperationFailure => e
+    #    logger.debug "Adapter: POST /config MongoDB could not be reached or configured: #{e}"
+    #  rescue => e
+    #    logger.error "Adapter: POST /config error=#{e}"
+    #  end
+    #rescue => e
+    #  logger.error "Adapter: POST /config connecting MongoDB error: #{e}"
+    #end
     logger.debug 'Adapter: exit POST /config with secret and access_token configured'
     logger.info 'User Management is configured and ready'
     # STDOUT.sync = false

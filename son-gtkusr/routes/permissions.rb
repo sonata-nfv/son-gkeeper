@@ -72,7 +72,7 @@ class Keycloak < Sinatra::Application
 
     if resource_data && resource_data.size.to_i > 0
       logger.info "Adapter: leaving GET /resources?#{query_string} with #{resource_data}"
-      resource_data = resource_data.paginate(offset: params[:offset], limit: params[:limit])
+      # resource_data = resource_data.paginate(offset: params[:offset], limit: params[:limit])
     else
       # We could not find the resource you are looking for
       logger.info "Adapter: leaving GET /resources?#{query_string} with no resources found"
@@ -124,7 +124,7 @@ class Keycloak < Sinatra::Application
     end
 
     # Automatically generate 'role' if it does not exists
-    f_role = parse_json(get_realm_roles({'name' => new_resource['role']}))[0]
+    f_role = parse_json(get_realm_roles({'name' => new_resource['role']})[1])[0]
     if f_role.nil?
       code, msg = create_realm_role({'name' => new_resource['role'], 'scopeParamRequired' => false,
                                      'composite' => false, 'clientRole' => false})
@@ -197,7 +197,7 @@ class Keycloak < Sinatra::Application
     json_error 400, 'Resource policies not provided' unless new_resource.has_key?('policies')
 
     # Automatically generate 'role' if it does not exists
-    f_role = parse_json(get_realm_roles({'name' => new_resource['role']}))[0]
+    f_role = parse_json(get_realm_roles({'name' => new_resource['role']})[1])[0]
     if f_role.nil?
       code, msg = create_realm_role({'name' => new_resource['role'], 'scopeParamRequired' => false,
                                      'composite' => false, 'clientRole' => false})
