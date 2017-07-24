@@ -93,30 +93,42 @@ class Keycloak < Sinatra::Application
     # log_file = File.new("#{settings.root}/log/#{settings.environment}.log", 'a+')
     # STDOUT.reopen(log_file)
     # STDOUT.sync = true
-    # puts "REQUEST.IP:", request.ip.to_s
-    # puts "@@ADDRESS:", @@address.to_s
     begin
       keycloak_address = Resolv::Hosts.new.getaddress(ENV['KEYCLOAK_ADDRESS'])
     rescue
       keycloak_address = Resolv::DNS.new.getaddress(ENV['KEYCLOAK_ADDRESS'])
     end
     logger.debug "Checking #{request.ip.to_s} with #{keycloak_address.to_s}"
-    # STDOUT.sync = false
+
     # Check if the request comes from keycloak docker.
-    if request.ip.to_s !=  keycloak_address.to_s
-      halt 401
-    end
-    if defined? @@client_secret
-      json_error(409, 'Secret key is already defined')
-    end
+    halt 401 if request.ip.to_s !=  keycloak_address.to_s
+    json_error(409, 'Secret key is already defined') if defined? @@client_secret
 
     @@client_secret = params['secret']
     get_oidc_endpoints
     get_adapter_install_json
     @@access_token = self.get_adapter_token
-    # TODO: Contact to Mongo Database
+    logger.debug 'Adapter: POST /config obtained access_token'
+    begin
+      logger.debug 'Adapter: Loading default resource file'
+      default_resource = File.read('tests/demo-resource.json')
+      resource_hash = JSON.parse(default_resource)
+      begin
+        # Generate the UUID for the resource object
+        # new_resource['_id'] = SecureRandom.uuid
+        resource = Sp_resource.create!(resource_hash)
+        logger.debug "Adapter: POST /config added default permissions #{resource.to_s} to MongoDB"
+      rescue Moped::Errors::OperationFailure => e
+        logger.debug "Adapter: POST /config MongoDB could not be reached or configured: #{e}"
+      rescue => e
+        logger.error "Adapter: POST /config error=#{e}"
+      end
+    rescue => e
+      logger.error "Adapter: POST /config connecting MongoDB error: #{e}"
+    end
     logger.debug 'Adapter: exit POST /config with secret and access_token configured'
     logger.info 'User Management is configured and ready'
+    # STDOUT.sync = false
     halt 200
   end
 
@@ -147,42 +159,30 @@ class Keycloak < Sinatra::Application
     # Return if Authorization is invalid
     halt 400 unless request.env["HTTP_AUTHORIZATION"]
 
-    # Get authorization token
+    # 1. Get authorization token
     user_token = request.env["HTTP_AUTHORIZATION"].split(' ').last
     unless user_token
       logger.debug 'Adapter: exit POST /authorize without access token'
       json_error(400, 'Access token is not provided')
     end
 
-    # Check token validation
-    val_res, val_code = token_validation(user_token)
-    logger.debug "Token evaluation: #{val_code} - #{val_res}"
-    # Check token expiration
-    if val_code.to_s == '200'
-      result = is_active?(val_res)
-      # puts "RESULT", result
-      case result
-        when false
-          logger.debug 'Adapter: exit POST /authorize without invalid access token'
-          json_error(401, 'Invalid token or not active')
-        else
-          # continue
-      end
-    else
-      logger.debug 'Adapter: exit POST /authorize with unauthorized access token'
-      halt 401, {'Content-type' => 'application/json'}, val_res
-    end
+    # 2. Validate token
+    res, code = token_validation(user_token)
+    logger.debug "Adapter: Token validation is #{res.to_s}"
+    logger.debug 'Adapter: exit POST /authorize with unauthorized access token' unless code == '200'
+    json_error(400, res.to_s) unless code == '200'
+    token_content = JSON.parse(res)
 
-    # Validates the token
-    logger.debug "Evaluating token=#{user_token}"
-    token_content = parse_json(val_res)[0]
-    # code, user_info = userinfo(user_token)
-    # if code != '200'
-    #  halt code.to_i, {'Content-type' => 'application/json'}, user_info
-    # end
-    # logger.debug "Adapter: User info: #{user_info}"
+    # 3. Check token expiration
+    result = is_active?(res)
+    logger.debug "Adapter: Token status is #{result.to_s}"
+    logger.debug 'Adapter: exit POST /authorize with invalid access token'
+    json_error(401, 'Token not active') unless result
+    logger.debug "Adapter: Token contents #{token_content}"
 
+    # 4. Direct Access for Admins
     # Role check; Allows total authorization to admin roles
+    # Bool = is_user_an_admin?(token_content)
     realm_roles = token_content['realm_access']['roles']
     if token_content['resource_access'].include?('realm-management')
       resource_roles = token_content['resource_access']['realm-management']['roles']
@@ -191,65 +191,44 @@ class Keycloak < Sinatra::Application
           halt 200
       end
     end
-    #code, user_data = get_user(parse_json(user_info)[0]['sub'])
-    #if code != '200'
-    #  halt code.to_i, {'Content-type' => 'application/json'}, user_data
-    #end
-    #user_data = parse_json(user_data)[0]
-    logger.info 'Authorization request received at /authorize'
-    # Return if content-type is not valid
-    # log_file = File.new("#{settings.root}/log/#{settings.environment}.log", 'a+')
-    # STDOUT.reopen(log_file)
-    # STDOUT.sync = true
-    # puts "Content-Type is " + request.content_type
-    if request.content_type
-      logger.info "Request Content-Type is #{request.content_type}"
-    end
-    # halt 415 unless (request.content_type == 'application/x-www-form-urlencoded' or request.content_type == 'application/json')
-    # We will accept both a JSON file, form-urlencoded or query type
-    # Compatibility support
+
+    logger.info 'Authorization started at /authorize'
+
+    # 5. Fetch request data
+    logger.info "Content-Type is " + request.media_type
+    # halt 415 unless (request.content_type == 'application/json')
+
+    # Compatibility support for JSON content-type
+    # Parses and validates JSON format
     case request.content_type
-      when 'application/x-www-form-urlencoded'
+      # when 'application/x-www-form-urlencoded'
         # Validate format
         # form_encoded, errors = request.body.read
         # halt 400, errors.to_json if errors
 
         # p "FORM PARAMS", form_encoded
         # form = Hash[URI.decode_www_form(form_encoded)]
-        # mat
         # p "FORM", form
         # keyed_params = keyed_hash(form)
         # halt 401 unless (keyed_params[:'path'] and keyed_params[:'method'])
 
-        # Request is a QUERY TYPE
-        # Get request parameters
-        logger.info "Request parameters are #{params}"
-        # puts "Input params", params
-        keyed_params = keyed_hash(params)
-        # puts "KEYED_PARAMS", keyed_params
-        # params examples: {:path=>"catalogues", :method=>"GET"}
-        # Halt if 'path' and 'method' are not included
-        json_error(401, 'Parameters "path=" and "method=" not found') unless (keyed_params[:path] and keyed_params[:method])
-
       when 'application/json'
-        # Compatibility support for JSON content-type
-        # Parses and validates JSON format
-        form, errors = parse_json(request.body.read)
+        request_data, errors = parse_json(request.body.read)
         halt 400, errors.to_json if errors
-        # p "FORM", form
-        logger.info "Request parameters are #{form.to_s}"
-        keyed_params = keyed_hash(form)
-        json_error(401, 'Parameters "path=" and "method=" not found') unless (keyed_params[:path] and keyed_params[:method])
+        # p "REQUEST_DATA", request_data
+        logger.info "Request parameters are #{request_data.to_s}"
+        keyed_params = keyed_hash(request_data)
+        json_error(401, 'Parameters "path=" and "method=" not found') unless
+            (keyed_params[:path] and keyed_params[:method])
       else
         # Request is a QUERY TYPE
-        # Get request parameters
         logger.info "Request parameters are #{params}"
         keyed_params = keyed_hash(params)
         # puts "KEYED_PARAMS", keyed_params
         # params examples: {:path=>"catalogues", :method=>"GET"}
         # Halt if 'path' and 'method' are not included
-        json_error(401, 'Parameters "path=" and "method=" not found') unless (keyed_params[:path] and keyed_params[:method])
-      # halt 401, json_error("Invalid Content-type")
+        json_error(401, 'Parameters "path=" and "method=" not found') unless
+            (keyed_params[:path] and keyed_params[:method])
     end
 
     # TODO: Handle alternative authorization requests
@@ -258,6 +237,7 @@ class Keycloak < Sinatra::Application
     # Check the provided path to the resource and the HTTP method, then build the request
     request = process_request(keyed_params[:path], keyed_params[:method])
 
+    # 6. Evaluate Authorization
     logger.info 'Evaluating Authorization request'
     # Authorization process
     auth_code, auth_msg = authorize?(user_token, request)
