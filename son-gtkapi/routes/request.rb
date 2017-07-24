@@ -120,7 +120,6 @@ class GtkApi < Sinatra::Base
     patch '/:service_instance_uuid/stop/?' do
       log_message = "GtkApi::PATCH /api/v2/requests/:service_instance_uuid/stop"
       logger.debug(log_message) {"entered with #{params[:service_instance_uuid]}"}
-      logger.debug(log_message) {"This should soon be transformed into a POST"}
 
       validate_uuid(uuid: params[:service_instance_uuid], kpi_method: method(:count_service_instance_termination_requests), began_at: began_at, log_message: log_message)
       token = get_token( request.env, began_at, method(:count_service_instance_termination_requests), log_message)
