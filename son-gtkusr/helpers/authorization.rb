@@ -126,7 +126,6 @@ class Keycloak < Sinatra::Application
   end
 
   def process_request(uri, method)
-    # TODO: REVAMP EVALUATION FUNCTION
     log_file = File.new("#{settings.root}/log/#{settings.environment}.log", 'a+')
     STDOUT.reopen(log_file)
     STDOUT.sync = true
@@ -139,6 +138,16 @@ class Keycloak < Sinatra::Application
     # TODO: CHECK IF IS A VALID RESOURCE FROM DATABASE
     resources = @@auth_mappings['resources']
     p "RESOURCES", resources
+
+    # Gather database resources
+    # Check if NS already exists in the catalogue by name, vendor and version
+    # begin
+    #  resource = Sp_resource.find_by({ 'resources.resource_name' => new_ns['name'],
+    #                             'resources.URI' => path })
+    # Continue
+    #rescue Mongoid::Errors::DocumentNotFound => e
+    #  json_return 401, 'Resource not found'
+    #end
 
     resource = nil
     # p "PATHS", @@auth_mappings['paths']
@@ -153,13 +162,11 @@ class Keycloak < Sinatra::Application
         end
       }
       p "FOUND_RESOURCE", resource
-      if resource
-        break
-      end
+      break if resource
     }
-    unless resource
-      json_error(403, 'The resource is not available')
-    end
+    json_error(403, 'The resource is not available') unless resource
+
+    # resource_data = resource['resources']
 
     unless @@auth_mappings['paths'][resource[0]][resource[1]].key?(method)
       json_error(403, 'The resource operation is not available')
@@ -169,6 +176,78 @@ class Keycloak < Sinatra::Application
       STDOUT.sync = false
       request = {"resource" => resource[0], "type" => resource[1], "operation" => operation}
     end
+  end
+
+  def new_process_request(uri, method)
+    require 'mongoid'
+    require_relative '../models/init'
+
+    #register Sinatra::ConfigFile
+    # Load configurations
+    #config_file '../config/keycloak.yml'
+    Mongoid.load!('../config/mongoid.yml', :test)
+
+    # Parse uri path
+    path = URI(uri).path.split('/')[1]
+    data = URI(uri).path.split('/')[2]
+    p "PATH=#{path}"
+    p "DATA=#{data}"
+
+    # Find mapped resource to path
+    # TODO: CHECK IF IS A VALID RESOURCE FROM DATABASE
+    # resources = @@auth_mappings['resources']
+    # p "RESOURCES", resources
+
+    # Gather database resources
+    begin
+      resource = Sp_resource.find_by({'resources.URI' => path }) #'resources.resource_name' => new_ns['name'],
+      p "resource=#{resource}"
+        #  p "FOUND_RESOURCE", resource
+        # Continue
+    rescue Mongoid::Errors::DocumentNotFound => e
+      # json_return 401, 'Resource not found'
+      # json_error(403, 'The resource is not available') unless resource
+      p 'Resource not found'
+      return
+    end
+
+    resource = resource.to_json
+    p "RESOURCE_JSON=#{resource}"
+    resource, errors = parse_json(resource)
+    p "RESOURCE_STRING=#{resource}"
+    resource_data = resource['resources'].find {|resource_data| resource_data['URI'] == path }
+    p "resource_data=#{resource_data}"
+
+    operation = nil
+    resource_data['associated_permissions'].each {|permission|
+      operation = permission if permission['action'] == method
+    }
+
+    return if operation.nil?
+    #  json_error(403, 'The resource operation is not available')
+
+    p "FOUND_OPERATION=#{operation}"
+    request = {"resources" => resource_data, "policies" => resource['policies'], "operation" => operation}
+  end
+
+  def get_token_claims(token_content)
+    claims = {}
+    claims['name'] = token_content['name']
+    claims['preferred_username'] = token_content['preferred_username']
+    claims['username'] = token_content['username']
+    claims['email'] = token_content['email']
+    claims['realm_access'] = token_content['realm_access']
+    claims['resource_access'] = token_content['resource_access']
+
+    # "realm_access"=>{"roles"=>["uma_authorization"]}
+    # "resource_access"=>{"realm-management"=>{"roles"=>["view-realm", "view-identity-providers",
+    #                                                    "manage-identity-providers", "impersonation", "realm-admin",
+    #                                                    "create-client", "manage-users", "view-authorization",
+    #                                                    "manage-events", "manage-realm", "view-events", "view-users",
+    #                                                    "view-clients", "manage-authorization", "manage-clients"]},
+    #                     "adapter"=>{"roles"=>["uma_protection"]},
+    #                     "account"=>{"roles"=>["manage-account", "manage-account-links", "view-profile"]}},
+    claims
   end
 
   def authorize?(user_token, request)
