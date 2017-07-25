@@ -118,6 +118,7 @@ class GtkApi < Sinatra::Base
     
     # PATCH /requests/:service_instance_uuid/stop
     patch '/:service_instance_uuid/stop/?' do
+      began_at = Time.now.utc
       log_message = "GtkApi::PATCH /api/v2/requests/:service_instance_uuid/stop"
       logger.debug(log_message) {"entered with #{params[:service_instance_uuid]}"}
 
