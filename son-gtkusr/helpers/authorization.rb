@@ -103,13 +103,13 @@ class Keycloak < Sinatra::Application
   end
 
   def process_request(uri, method)
-    require 'mongoid'
-    require_relative '../models/init'
+    #require 'mongoid'
+    #require_relative '../models/init'
 
     #register Sinatra::ConfigFile
     # Load configurations
     #config_file '../config/keycloak.yml'
-    Mongoid.load!('../config/mongoid.yml', :test)
+    #Mongoid.load!('../config/mongoid.yml', :test)
 
     # Parse uri path
     path = URI(uri).path.split('/')[1]
@@ -132,7 +132,7 @@ class Keycloak < Sinatra::Application
       # json_return 401, 'Resource not found'
       # json_error(403, 'The resource is not available') unless resource
       p 'Resource not found'
-      return
+      return nil
     end
 
     resource = resource.to_json
@@ -149,7 +149,6 @@ class Keycloak < Sinatra::Application
 
     return if operation.nil?
     #  json_error(403, 'The resource operation is not available')
-
     p "FOUND_OPERATION=#{operation}"
     request = {"resources" => resource_data, "policies" => resource['policies'], "operation" => operation}
   end

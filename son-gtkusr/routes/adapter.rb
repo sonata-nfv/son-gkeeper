@@ -246,6 +246,7 @@ class Keycloak < Sinatra::Application
     # Check the provided path to the resource and the HTTP method, then build the request
     #if @@enabled_db...
     request = process_request(keyed_params[:path], keyed_params[:method])
+    json_error('401', 'Resource unavaliable') if request.nil?
 
     # 6. Evaluate Authorization
     logger.info 'Evaluating Authorization request'
