@@ -45,15 +45,15 @@ class Repository
     begin
       response = RestClient.get(@url+"/#{uuid}", JSON_HEADERS) 
       @logger.debug(method) {"response=#{response}"}  
-      services_or_functions = JSON.parse(response.body)
+      service_or_function = JSON.parse(response.body)
       case response.code.to_i
       when 200
-        {status: response.code.to_i, count: 1, items: services_or_functions, message:"OK"}
+        service_or_function
       when 400
       when 404
-        {status: response.code.to_i, count: 0, items: [], message:"Not Found"}
+        nil
       else
-        {status: 500, count: 0, items: [], message:"Internal Error"}
+        nil
       end
     rescue => e
       @logger.error(method) {"response=#{response}"}  
