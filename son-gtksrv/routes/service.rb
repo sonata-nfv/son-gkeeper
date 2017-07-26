@@ -108,12 +108,12 @@ class GtkSrv < Sinatra::Base
     
     # is it a valid service instance uuid?
     begin
-      valid = Request.validate_request(service_instance_uuid: params[:uuid])
-      logger.debug(method) {"valid=#{valid.inspect}"}
-      service_instantiation_request = Request.create({service_uuid: params['service_instance_uuid']})
-      logger.debug(log_msg) { "with service_instance_uuid=#{params['service_instance_uuid']}: #{service_instantiation_request.inspect}"}
+      creation_request = Request.validate_request(service_instance_uuid: params[:uuid])
+      logger.debug(method) {"creation_request=#{creation_request.inspect}"}
       
-      json_error 400, "Service instance '#{params[:uuid]} not 'READY'", method unless valid
+      service_instantiation_request = Request.create({request_type: "TERMINATE", service_instance_uuid: params[:uuid], service_uuid: creation_request[:service_uuid]})
+      json_error 400, "Service instance '#{params[:uuid]}' termination failled", method unless service_instantiation_request
+      logger.debug(log_msg) { "service_instantiation_request= #{service_instantiation_request.inspect}"}
 
       nsd = build_descriptors(service_instance_uuid: params[:uuid])
       logger.debug(method) {"with nsd=#{nsd}"}
@@ -191,16 +191,5 @@ class GtkSrv < Sinatra::Base
 	    logger.debug(log_msg) {e.backtrace.inspect}
 	    return nil
     end
-  end
-  
-  def format_descriptors(descriptors, si_request)
-    log_msg = 'GtkSrv#format_descriptors'
-    descriptors_yml = YAML.dump(descriptors.deep_stringify_keys)
-    logger.debug(log_msg) {"descriptors_yml=#{descriptors_yml}"}
-
-    smresponse = settings.create_mqserver.publish( descriptors_yml.to_s, si_request['id'])
-    json_request = json(si_request, { root: false })
-    logger.debug(log_msg) {'returning with request='+json_request}
-    json_request
   end
 end
