@@ -86,7 +86,7 @@ class GtkApi < Sinatra::Base
       logger.debug(log_message) {"User authorized"}
 
       record = RecordManagerService.find_record_by_uuid(kind: params[:kind], uuid: params[:uuid])
-      validate_element_existence(uuid: params[:uuid], element: request, name: 'Record', kpi_method: method(:count_single_record_queries), began_at: began_at, log_message: log_message)
+      validate_element_existence(uuid: params[:uuid], element: record[:items], name: 'Record', kpi_method: method(:count_single_record_queries), began_at: began_at, log_message: log_message)
       validate_ownership_and_licence(element: record[:items], user_name: user_name, kpi_method: method(:count_single_record_queries), began_at: began_at, log_message: log_message)
 
       unless record[:status] == 200

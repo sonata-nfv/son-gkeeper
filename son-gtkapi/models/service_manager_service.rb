@@ -118,7 +118,7 @@ class ServiceManagerService < ManagerService
       return {status: descriptor[:status], count: 0, items: [], message: descriptor[:message]}
     end
     begin
-      response = self.postCurb(url: @@url+'/services/'+service_instance_uuid+'/terminate', body: descriptor) 
+      response = self.postCurb(url: @@url+'/services/'+service_instance_uuid+'/terminate', body: descriptor[:items]) 
       GtkApi.logger.debug(message) {"response="+response}
       response
     rescue => e
