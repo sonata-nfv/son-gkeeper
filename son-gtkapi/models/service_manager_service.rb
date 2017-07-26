@@ -114,8 +114,8 @@ class ServiceManagerService < ManagerService
       GtkApi.logger.debug(message) {"response="+response}
       response
     rescue => e
-      GtkApi.logger.error(method) {"Error during processing: #{$!}"}
-      GtkApi.logger.error(method) {"Backtrace:\n\t#{e.backtrace.join("\n\t")}"}
+      GtkApi.logger.error(message) {"Error during processing: #{$!}"}
+      GtkApi.logger.error(message) {"Backtrace:\n\t#{e.backtrace.join("\n\t")}"}
       nil 
     end      
   end
