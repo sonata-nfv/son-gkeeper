@@ -130,8 +130,10 @@ class GtkApi < Sinatra::Base
       logger.debug(log_message) {"User authorized"}
       
       termination_request = ServiceManagerService.create_service_termination_request(service_instance_uuid: params[:service_instance_uuid])
+      json_error 400, 'Service instance termination request failled', log_message unless termination_request
+        
       logger.debug(log_message) { "termination_request =#{termination_request}"}
-      if termination_request[:status] != 200
+      unless termination_request[:status] == 200
         count_service_instance_termination_requests(labels: {result: "bad request", uuid: '', elapsed_time: (Time.now.utc-began_at).to_s})
         json_error 400, 'Service instance termination request failled', log_message
       end

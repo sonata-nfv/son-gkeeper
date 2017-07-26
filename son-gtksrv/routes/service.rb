@@ -82,13 +82,14 @@ class GtkSrv < Sinatra::Base
     begin
       valid = Request.validate_request(service_instance_uuid: params[:uuid])
       logger.debug(method) {"valid=#{valid.inspect}"}
-    
+   
       json_error 400, "Service instance '#{params[:uuid]} not 'READY'", method unless valid
 
-      nsd = JSON.parse(request.body.read, :quirks_mode => true)
+      body = request.body.read
+      logger.debug(method) {"with body=#{body}"}
+      nsd = JSON.parse(body, quirks_mode: true)
       logger.debug(method) {"with nsd=#{nsd}"}
 
-      #nsd.delete(:status) if nsd[:status]
       nsd.delete('status') if nsd['status']
       update_response = Request.process_request(nsd: nsd, service_instance_uuid: params[:uuid], type: 'UPDATE', mq_server: settings.update_mqserver)
       logger.debug(method) {"update_response=#{update_response}"}
@@ -96,7 +97,7 @@ class GtkSrv < Sinatra::Base
 
       halt 201, update_response.to_json
     rescue Exception=> e
-      json_error 404, "Service instance '#{params[:uuid]} not found", method
+      json_error 404, "Service instance '#{params[:uuid]}' not found", method
     end
   end
   
