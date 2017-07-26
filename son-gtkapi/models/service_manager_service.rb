@@ -118,8 +118,8 @@ class ServiceManagerService < ManagerService
       return {status: descriptor[:status], count: 0, items: [], message: descriptor[:message]}
     end
     begin
-      response = self.putCurb(url: @@url+'/services/'+service_instance_uuid+'/terminate', body: descriptor[:items]) 
-      GtkApi.logger.debug(message) {"response="+response}
+      response = self.putCurb(url: @@url+'/services/'+service_instance_uuid+'/terminate', body: descriptor[:items][:nsd]) 
+      GtkApi.logger.debug(message) {"response=#{response}"}
       response
     rescue => e
       GtkApi.logger.error(message) {"Error during processing: #{$!}"}
