@@ -113,9 +113,9 @@ class GtkSrv < Sinatra::Base
       
       service_instantiation_request = Request.create({request_type: "TERMINATE", service_instance_uuid: params[:uuid], service_uuid: creation_request[:service_uuid]})
       json_error 400, "Service instance '#{params[:uuid]}' termination failled", method unless service_instantiation_request
-      logger.debug(log_msg) { "service_instantiation_request= #{service_instantiation_request.inspect}"}
+      logger.debug(log_msg) { "service_instantiation_request= #{service_instantiation_request}"}
 
-      nsd = build_descriptors(service_instance_uuid: params[:uuid])
+      nsd = build_descriptors(service_uuid: creation_request[:service_uuid], service_instance_uuid: params[:uuid])
       logger.debug(method) {"with nsd=#{nsd}"}
 
       nsd.delete('status') if nsd['status']
@@ -132,7 +132,7 @@ class GtkSrv < Sinatra::Base
 
       halt 201, terminate_response.to_json
     rescue Exception=> e
-      json_error 404, "Service instance '#{params[:uuid]} not found", method
+      json_error 404, "Service instance '#{params[:uuid]}' not found", method
     end
   end
 
@@ -152,19 +152,19 @@ class GtkSrv < Sinatra::Base
     request.env['rack.url_scheme']+'://'+request.env['HTTP_HOST']+request.env['REQUEST_PATH']
   end
   
-  def build_descriptors(service_instance_uuid:)
+  def build_descriptors(service_uuid:, service_instance_uuid:)
     log_msg = 'GtkSrv#build_descriptors'
     logger.debug(log_msg) {"entered with service_instance_uuid=#{service_instance_uuid}"}
 
     begin
       payload={}
-      payload['instance_id'] = params['service_instance_uuid']
+      payload['instance_id'] = service_instance_uuid
 
-      service = NService.new(settings.services_catalogue, logger).find_by_uuid(params['service_instance_uuid'])
+      service = NService.new(settings.services_catalogue, logger).find_by_uuid(service_uuid)
       
       unless service
         logger.error(log_msg) {"network service not found"}
-        return nil, nil
+        return nil
       end
       logger.debug(log_msg) { "service=#{service}"}
 
