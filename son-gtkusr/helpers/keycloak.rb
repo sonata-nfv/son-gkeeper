@@ -84,13 +84,13 @@ class Keycloak < Sinatra::Application
   def Keycloak.get_adapter_token
     begin
       url = URI("http://#{@@address.to_s}:#{@@port.to_s}/#{@@uri.to_s}/realms/#{@@realm_name}/protocol/openid-connect/token")
-      res = Net::HTTP.post_form(url, 'client_id' => @@client_name, 'client_secret' => @@client_secret,
-                                'username' => "admin", # @@admin_name
-                                'password' => "admin", # @@admin_password
-                                'grant_type' => "client_credentials")
+      res = Net::HTTP.post_form(url, 'client_id' => @@client_name,
+                                'client_secret' => @@client_secret,
+                                'grant_type' => 'client_credentials')
+                                # 'username' => "admin", # @@admin_name
+                                # 'password' => "admin", # @@admin_password
 
       parsed_res, errors = parse_json(res.body)
-
       if parsed_res['access_token']
         File.open('config/token.json', 'w') do |f|
           f.puts parsed_res['access_token']
@@ -107,12 +107,10 @@ class Keycloak < Sinatra::Application
   def get_oidc_endpoints
     # Call http://localhost:8081/auth/realms/master/.well-known/openid-configuration to obtain endpoints
     url = URI.parse("http://#{@@address.to_s}:#{@@port.to_s}/#{@@uri.to_s}/realms/#{@@realm_name}/.well-known/openid-configuration")
-
     http = Net::HTTP.new(url.host, url.port)
     request = Net::HTTP::Get.new(url.to_s)
 
     response = http.request(request)
-    # puts response.read_body # <-- save endpoints file
     File.open('config/endpoints.json', 'w') do |f|
       f.puts response.read_body
     end
@@ -124,13 +122,11 @@ class Keycloak < Sinatra::Application
     # url = URI("http://127.0.0.1:8081/auth/realms/master/clients-registrations/install/adapter")
     url = URI("http://#{@@address.to_s}:#{@@port.to_s}/#{@@uri.to_s}/realms/#{@@realm_name}/clients-registrations/install/adapter")
     http = Net::HTTP.new(url.host, url.port)
-
     request = Net::HTTP::Get.new(url.to_s)
     request.basic_auth(@@client_name.to_s, @@client_secret.to_s)
     request["content-type"] = 'application/json'
 
     response = http.request(request)
-    # puts response.read_body # <-- save endpoints file
     File.open('config/keycloak.json', 'w') do |f|
       f.puts response.read_body
     end
@@ -1380,7 +1376,7 @@ class Keycloak < Sinatra::Application
     return 204 , nil
   end
 
-  def process_request(uri, method)
+  def old_process_request(uri, method)
     # TODO: REVAMP EVALUATION FUNCTION
     log_file = File.new("#{settings.root}/log/#{settings.environment}.log", 'a+')
     STDOUT.reopen(log_file)
@@ -1426,7 +1422,7 @@ class Keycloak < Sinatra::Application
     end
   end
 
-  def authorize?(user_token, request)
+  def old_authorize?(user_token, request)
     refresh_adapter
     # => Check token
     public_key = get_public_key
