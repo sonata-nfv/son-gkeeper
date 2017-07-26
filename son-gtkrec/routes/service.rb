@@ -70,16 +70,12 @@ class GtkRec < Sinatra::Base
     logger.debug(method) {"entered with :uuid=#{params[:uuid]}"}
     
     service = NService.new(settings.services_repository, logger).find_by_uuid(params[:uuid])
-    case service[:status]
-    when 200
-      logger.debug(method) {"service: #{service}"}
-      response = service.to_json
-      logger.debug(method) {"leaving with response="+response}
-      halt 200, response
-    else
-      logger.debug(method) {"leaving with \"No service with uuid #{params[:uuid]} was found\""}
-      json_error 404, "No service with uuid #{params[:uuid]} was found"
-    end
+    json_error 404, "No service with uuid #{params[:uuid]} was found", method unless service      
+
+    logger.debug(method) {"service: #{service}"}
+    response = service.to_json
+    logger.debug(method) {"leaving with response="+response}
+    halt 200, response
   end
 
   get '/admin/logs' do
