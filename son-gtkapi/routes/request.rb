@@ -58,7 +58,7 @@ class GtkApi < Sinatra::Base
       validate_user_authorization(token: token, action: 'post service instantiation request', uuid: params['service_uuid'], path: '/services', method:'POST', kpi_method: method(:count_service_instantiation_requests), began_at: began_at, log_message: log_message)
       logger.debug(log_message) {"User authorized"}
       
-      new_request = ServiceManagerService.create_service_intantiation_request(params)
+      new_request = ServiceManagerService.create_service_instantiation_request(params)
       logger.debug(log_message) { "new_request =#{new_request}"}
       if new_request[:status] != 201
         count_service_instantiation_requests(labels: {result: "bad request", uuid: '', elapsed_time: (Time.now.utc-began_at).to_s})

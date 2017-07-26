@@ -71,7 +71,7 @@ class ServiceManagerService < ManagerService
     find(url: @@url + '/requests?service_instance_uuid=' + uuid, log_message: LOG_MESSAGE + "##{__method__}")
   end
   
-  def self.create_service_intantiation_request(params)
+  def self.create_service_instantiation_request(params)
     message = LOG_MESSAGE+"##{__method__}"
     GtkApi.logger.debug(message) {"entered with #{params}"}
     GtkApi.logger.debug(message) {"@@url = "+@@url}
@@ -97,8 +97,8 @@ class ServiceManagerService < ManagerService
       GtkApi.logger.debug(message) {"response="+response}
       response
     rescue => e
-      GtkApi.logger.error(method) {"Error during processing: #{$!}"}
-      GtkApi.logger.error(method) {"Backtrace:\n\t#{e.backtrace.join("\n\t")}"}
+      GtkApi.logger.error(message) {"Error during processing: #{$!}"}
+      GtkApi.logger.error(message) {"Backtrace:\n\t#{e.backtrace.join("\n\t")}"}
       nil 
     end      
   end
@@ -107,8 +107,8 @@ class ServiceManagerService < ManagerService
     message = LOG_MESSAGE+"##{__method__}"
     GtkApi.logger.debug(message) {"entered with service instance=#{service_instance_uuid}"}
     
-    descriptor = RecordManagerService.find_record_by_uuid(kind: 'services', uuid: service_instance_uuid)
-    
+    record = RecordManagerService.find_record_by_uuid(kind: 'services', uuid: service_instance_uuid)
+    descriptor = find_service_by_uuid(uuid: record[:descriptor_reference])
     begin
       response = self.postCurb(url: @@url+'/services/'+service_instance_uuid+'/terminate', body: descriptor) 
       GtkApi.logger.debug(message) {"response="+response}
