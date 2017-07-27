@@ -24,7 +24,9 @@
 ## the Horizon 2020 and 5G-PPP programmes. The authors would like to 
 ## acknowledge the contributions of their colleagues of the SONATA 
 ## partner consortium (www.sonata-nfv.eu).
+require 'fileutils'
 environment = ENV['RACK_ENV'] || 'production'
+FileUtils.mkdir(File.join('.', 'log')) unless File.exists? File.join('.', 'log')
 stdout_and_stderr_file_name=::File.join('.', 'log', environment+'.log')
 stdout_redirect stdout_and_stderr_file_name, stdout_and_stderr_file_name, true
 

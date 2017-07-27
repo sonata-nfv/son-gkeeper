@@ -48,23 +48,30 @@ class GtkApi < Sinatra::Base
       log_message = 'GtkApi::POST /api/v2/requests/'
       params = JSON.parse(request.body.read)
       logger.debug(log_message) {"entered with params=#{params}"}
-      require_param(param: 'service_uuid', params: params, kpi_method: method(:count_service_instantiation_requests), error_message: 'Service UUID', log_message: log_message, began_at: began_at)
-      require_param(param: 'egresses', params: params, kpi_method: method(:count_service_instantiation_requests), error_message: 'Egresses list', log_message: log_message, began_at: began_at)
-      require_param(param: 'ingresses', params: params, kpi_method: method(:count_service_instantiation_requests), error_message: 'Ingresses list', log_message: log_message, began_at: began_at)
+      params['request_type'] ||= 'CREATE'
+      if params['request_type'] == 'CREATE'
+        kpi_method = method(:count_service_instantiation_requests)
+        require_param(param: 'service_uuid', params: params, kpi_method: kpi_method, error_message: 'Service UUID', log_message: log_message, began_at: began_at)
+      else # 'TERMINATE'
+        kpi_method = method(:count_service_termination_requests)
+        require_param(param: 'service_instance_uuid', params: params, kpi_method: kpi_method, error_message: 'Service UUID', log_message: log_message, began_at: began_at)
+      end
+      require_param(param: 'egresses', params: params, kpi_method: kpi_method, error_message: 'Egresses list', log_message: log_message, began_at: began_at)
+      require_param(param: 'ingresses', params: params, kpi_method: kpi_method, error_message: 'Ingresses list', log_message: log_message, began_at: began_at)
       
-      token = get_token( request.env, began_at, method(:count_service_instantiation_requests), log_message)
-      user_name = get_username_by_token( token, began_at, method(:count_service_instantiation_requests), log_message)
+      token = get_token( request.env, began_at, :kpi_method, log_message)
+      user_name = get_username_by_token( token, began_at, :kpi_method, log_message)
       
-      validate_user_authorization(token: token, action: 'post service instantiation request', uuid: params['service_uuid'], path: '/services', method:'POST', kpi_method: method(:count_service_instantiation_requests), began_at: began_at, log_message: log_message)
+      validate_user_authorization(token: token, action: 'post service instantiation request', uuid: params['service_uuid'], path: '/services', method:'POST', kpi_method: kpi_method, began_at: began_at, log_message: log_message)
       logger.debug(log_message) {"User authorized"}
       
-      new_request = ServiceManagerService.create_service_instantiation_request(params)
+      new_request = ServiceManagerService.create_service_request(params)
       logger.debug(log_message) { "new_request =#{new_request}"}
       if new_request[:status] != 201
-        count_service_instantiation_requests(labels: {result: "bad request", uuid: '', elapsed_time: (Time.now.utc-began_at).to_s})
+        kpi_method.call(labels: {result: "bad request", uuid: '', elapsed_time: (Time.now.utc-began_at).to_s})
         json_error 400, 'No request was created', log_message
       end
-      count_service_instantiation_requests(labels: {result: "ok", uuid: new_request[:items][:service_uuid], elapsed_time: (Time.now.utc-began_at).to_s})
+      kpi_method.call(labels: {result: "ok", uuid: new_request[:items][:service_uuid], elapsed_time: (Time.now.utc-began_at).to_s})
       halt 201, new_request[:items].to_json
     end
 
@@ -160,6 +167,12 @@ class GtkApi < Sinatra::Base
   def count_service_instantiation_requests(labels:)
     name = __method__.to_s.split('_')[1..-1].join('_')
     desc = "how many service instantiations have been requested"
+    ServiceManagerService.counter_kpi({name: name, docstring: desc, base_labels: labels.merge({method: 'POST', module: 'services'})})
+  end
+
+  def count_service_termination_requests(labels:)
+    name = __method__.to_s.split('_')[1..-1].join('_')
+    desc = "how many service terminations have been requested"
     ServiceManagerService.counter_kpi({name: name, docstring: desc, base_labels: labels.merge({method: 'POST', module: 'services'})})
   end
   
