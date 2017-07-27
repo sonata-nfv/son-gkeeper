@@ -56,10 +56,8 @@ class Keycloak < Sinatra::Application
     p "PATH=#{path}"
     p "DATA=#{data}"
 
-    # Find mapped resource to path
-    # TODO: CHECK IF IS A VALID RESOURCE FROM DATABASE
+    # Find mapped resource to path in config mapping
     # resources = @@auth_mappings['resources']
-    # p "RESOURCES", resources
 
     # Gather database resources
     begin
@@ -156,6 +154,9 @@ class Keycloak < Sinatra::Application
         p "role", role
         authorized = token_realm_access_roles.include?(role)
         p "authorized", authorized
+        # Alternative role check in the Keycloak server
+        # code, msg = get_realm_roles({'name' => role}) if authorized
+        # if msg != 'null'
         if authorized
           policy_data = request['policies'].find {|policy| policy['name'] == role}
           p "policy_data", policy_data

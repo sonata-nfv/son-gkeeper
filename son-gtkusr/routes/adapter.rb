@@ -204,10 +204,7 @@ class Keycloak < Sinatra::Application
         # Validate format
         # form_encoded, errors = request.body.read
         # halt 400, errors.to_json if errors
-
-        # p "FORM PARAMS", form_encoded
         # form = Hash[URI.decode_www_form(form_encoded)]
-        # p "FORM", form
         # keyed_params = keyed_hash(form)
         # halt 401 unless (keyed_params[:'path'] and keyed_params[:'method'])
 
@@ -222,7 +219,7 @@ class Keycloak < Sinatra::Application
         # Request is a QUERY TYPE
         logger.info "Request parameters are #{params}"
         keyed_params = keyed_hash(params)
-        # params examples: {:path=>"catalogues", :method=>"GET"}
+        # params examples: {:path=>"/catalogues", :method=>"GET"}
         json_error(401, 'Parameters "path=" and "method=" not found') unless
             (keyed_params[:path] and keyed_params[:method])
     end
@@ -232,7 +229,7 @@ class Keycloak < Sinatra::Application
     # Check the provided path to the resource and the HTTP method, then build the request
     #if @@enabled_db...
     request = process_request(keyed_params[:path], keyed_params[:method])
-    json_error('401', 'Resource unavaliable') if request.nil?
+    json_error(401, 'Resource unavaliable') if request.nil?
 
     # 6. Evaluate Authorization
     logger.info 'Evaluating Authorization request'
