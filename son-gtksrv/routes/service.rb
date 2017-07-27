@@ -110,19 +110,30 @@ class GtkSrv < Sinatra::Base
     begin
       creation_request = Request.validate_request(service_instance_uuid: params[:uuid])
       logger.debug(method) {"creation_request=#{creation_request.inspect}"}
-      
-      service_instantiation_request = Request.create({request_type: "TERMINATE", service_instance_uuid: params[:uuid], service_uuid: creation_request[:service_uuid]})
-      json_error 400, "Service instance '#{params[:uuid]}' termination failled", method unless service_instantiation_request
-      logger.debug(log_msg) { "service_instantiation_request= #{service_instantiation_request}"}
+      logger.debug(method) {"creation_request[:service_uuid]=#{creation_request[:service_uuid]}"}
+      #service_instantiation_request={
+      #  request_type: "TERMINATE", service_instance_uuid: params[:uuid], service_uuid: creation_request[:service_uuid],
+      #  egress: nil, ingress: nil
+      #}
+      service_instantiation_request_result = Request.create(
+        request_type: "TERMINATE", service_instance_uuid: params[:uuid], service_uuid: creation_request[:service_uuid],
+        egress: nil, ingress: nil
+      )
+      json_error 400, "Service instance '#{params[:uuid]}' termination failled", method unless service_instantiation_request_result
+      logger.debug(log_msg) { "service_instantiation_request_result= #{service_instantiation_request_result}"}
 
+      logger.debug(method) {"build_descriptors with service_uuid: #{creation_request[:service_uuid]}, service_instance_uuid: #{params[:uuid]}"}
       nsd = build_descriptors(service_uuid: creation_request[:service_uuid], service_instance_uuid: params[:uuid])
+      
+      json_error 404, "NSD not found for service uuid '#{creation_request[:service_uuid]}'", method unless nsd
+        
       logger.debug(method) {"with nsd=#{nsd}"}
 
       nsd.delete('status') if nsd['status']
       descriptors_yml = YAML.dump(descriptors.deep_stringify_keys)
       logger.debug(log_msg) {"descriptors_yml=#{descriptors_yml}"}
 
-      smresponse = settings.create_mqserver.publish( descriptors_yml.to_s, service_instantiation_request['id'])
+      smresponse = settings.create_mqserver.publish( descriptors_yml.to_s, service_instantiation_request_result['id'])
       formated_descriptors = json(service_instantiation_request, { root: false })
       logger.debug(log_msg) {'returning with request='+formated_descriptors}
 
@@ -154,7 +165,7 @@ class GtkSrv < Sinatra::Base
   
   def build_descriptors(service_uuid:, service_instance_uuid:)
     log_msg = 'GtkSrv#build_descriptors'
-    logger.debug(log_msg) {"entered with service_instance_uuid=#{service_instance_uuid}"}
+    logger.debug(log_msg) {"entered with service_uuid=#{service_uuid}, service_instance_uuid=#{service_instance_uuid}"}
 
     begin
       payload={}

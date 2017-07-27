@@ -77,22 +77,22 @@ class GtkSrv < Sinatra::Base
     logger.debug(log_msg) {"with params=#{params}"}
     
     # we're not storing egresses or ingresses
-    egresses = params.delete 'egresses'
-    ingresses = params.delete 'ingresses'
+    egresses = params.delete 'egresses' if params['egresses']
+    ingresses = params.delete 'ingresses' if params['ingresses']
     
     begin
       start_request={}
 
-      # we're not storing egresses or ingresses
-      si_request = Request.create({service_uuid: params['service_uuid']})
-      logger.debug(log_msg) { "with service_uuid=#{params['service_uuid']}: #{si_request.inspect}"}
+      # we're not storing egresses or ingresses, so we're not passing them
+      si_request = Request.create(service_uuid: params['service_uuid'], service_instance_uuid: params['service_instance_uuid'], request_type: params['request_type'])
+      logger.debug(log_msg) {"with service_uuid=#{params['service_uuid']}: #{si_request.inspect}"}
       service = NService.new(settings.services_catalogue, logger).find_by_uuid(params['service_uuid'])
       logger.error(log_msg) {"network service not found"} unless service
-      logger.debug(log_msg) { "service=#{service}"}
+      logger.debug(log_msg) {"service=#{service}"}
 
       nsd = service['nsd']
       nsd[:uuid] = service['uuid']
-      start_request['NSD']= nsd
+      start_request['NSD']=nsd
     
       nsd['network_functions'].each_with_index do |function, index|
         logger.debug(log_msg) { "function=['#{function['vnf_name']}', '#{function['vnf_vendor']}', '#{function['vnf_version']}']"}
@@ -110,7 +110,8 @@ class GtkSrv < Sinatra::Base
       start_request_yml = YAML.dump(start_request.deep_stringify_keys)
       logger.debug(log_msg) {"#{params}: "+start_request_yml}
 
-      smresponse = settings.create_mqserver.publish( start_request_yml.to_s, si_request['id'])
+      mq_server = params['request_type'] == 'CREATE' ? settings.create_mqserver : settings.terminate_mqserver
+      smresponse = mq_server.publish( start_request_yml.to_s, si_request['id'])
       json_request = json(si_request, { root: false })
       logger.debug(log_msg) {' returning POST /requests with request='+json_request}
       halt 201, json_request
