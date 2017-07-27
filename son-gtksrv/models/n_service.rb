@@ -56,7 +56,7 @@ class NService
     begin
       service = @catalogue.find_by_uuid(uuid)
       @logger.debug "NService.find_by_uuid: #{service}"
-      service.first
+      service.is_a?(Array) ? service.first : service
     rescue CatalogueRecordNotFoundError
       raise NServiceNotFoundError.new 'Service with uuid '+uuid+' was not found'
     rescue Exception => e
