@@ -235,6 +235,7 @@ class Keycloak < Sinatra::Application
     logger.info 'Evaluating Authorization request'
     # Authorization process (Authorization algorithm is permission based)
     auth_code, auth_msg = authorize?(user_token, request)
+    logger.info "Authorization result: #{auth_code}"
     halt auth_code.to_i if auth_code.to_i == 200
     json_error(auth_code, auth_msg)
   end

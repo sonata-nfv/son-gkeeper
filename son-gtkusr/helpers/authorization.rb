@@ -53,38 +53,32 @@ class Keycloak < Sinatra::Application
     # Parse uri path
     path = URI(uri).path.split('/')[1]
     data = URI(uri).path.split('/')[2]
-    p "PATH=#{path}"
-    p "DATA=#{data}"
+    # p "PATH=#{path}"
+    # p "DATA=#{data}"
 
     # Find mapped resource to path in config mapping
     # resources = @@auth_mappings['resources']
 
     # Gather database resources
     begin
-      resource = Sp_resource.find_by({'resources.URI' => path }) #'resources.resource_name' => new_ns['name'],
-      p "resource=#{resource}"
-        # Continue
+      resource = Sp_resource.find_by({'resources.URI' => path }) # 'resources.resource_name' => new_ns['name'],
+      # Continue
     rescue Mongoid::Errors::DocumentNotFound => e
       # 'The resource is not found or available'
-      p 'Resource not found'
       return nil
     end
 
     resource = resource.to_json
-    p "RESOURCE_JSON=#{resource}"
     resource, errors = parse_json(resource)
-    p "RESOURCE_STRING=#{resource}"
-    resource_data = resource['resources'].find {|resource_data| resource_data['URI'] == path }
-    p "resource_data=#{resource_data}"
+    resource_data = resource['resources'].find { |resource_data| resource_data['URI'] == path }
 
     operation = nil
-    resource_data['associated_permissions'].each {|permission|
+    resource_data['associated_permissions'].each { |permission|
       operation = permission if permission['action'] == method
     }
 
     return if operation.nil?
-    # json_error(403, 'The resource operation is not available')
-    p "FOUND_OPERATION=#{operation}"
+    logger.debug 'Adapter: Request successfully processed'
     request = {"resources" => resource_data, "policies" => resource['policies'], "operation" => operation}
   end
 
@@ -103,7 +97,6 @@ class Keycloak < Sinatra::Application
     refresh_adapter
     # Obtain SP Public Key
     @@sp_public_key = get_public_key if @@sp_public_key.nil?
-
     # Check token
     token_payload, token_header = decode_token(user_token, @@sp_public_key)
 
@@ -112,81 +105,56 @@ class Keycloak < Sinatra::Application
     # 2. Check 'policies' for allowed roles
     # 3. Check access token claims
 
-    log_file = File.new("#{settings.root}/log/#{settings.environment}.log", 'a+')
-    STDOUT.reopen(log_file)
-    STDOUT.sync = true
+    # log_file = File.new("#{settings.root}/log/#{settings.environment}.log", 'a+')
+    # STDOUT.reopen(log_file)
+    # STDOUT.sync = true
     logger.debug "Adapter: Token Payload: #{token_payload.to_s}, Token Header: #{token_header.to_s}"
 
-    # requested_action = request['operation']['action']
     allowed_roles = request['operation']['apply_policy']
-
-    # logger.debug "Adapter: Requested Action: #{requested_action}"
     logger.debug "Adapter: Required Role: #{allowed_roles}"
 
     # Check access token claims
     begin
-      logger.debug "Adapter: Token Payload: #{token_payload.to_s}, Token Header: #{token_header.to_s}"
-      logger.debug "Adapter: Token Name=#{token_payload['name']},
-      Preferred_username=#{token_payload['preferred_username']},
-      Username=#{token_payload['username']}"
-      # token_payload['email']
-      # token_payload['realm_access']
-      # token_payload['resource_access']
-
+      logger.debug "Adapter: Preferred_username=#{token_payload['preferred_username']}"
       token_realm_access_roles = token_payload['realm_access']['roles']
-      p 'token_realm_access_roles', token_realm_access_roles
     rescue
       token_realm_access_roles = nil
     end
     # Resource access roles (client based roles)
     begin
       token_resource_access_roles = token_payload['resource_access']
-      p 'token_payload', token_resource_access_roles
     rescue
       token_resource_access_roles = nil
-      p 'token_payload', token_resource_access_roles
     end
 
     authorized = nil
     if allowed_roles.is_a?(Array)
-      p 'required_roles', allowed_roles
       allowed_roles.each { |role|
-        p "role", role
         authorized = token_realm_access_roles.include?(role)
-        p "authorized", authorized
         # Alternative role check in the Keycloak server
         # code, msg = get_realm_roles({'name' => role}) if authorized
         # if msg != 'null'
         if authorized
           policy_data = request['policies'].find {|policy| policy['name'] == role}
-          p "policy_data", policy_data
           authorized = false if policy_data['logic'] != 'positive'
           break
         end
       }
-      p "authorized2", authorized
-
       unless authorized
         allowed_roles.each { |role|
-          p "role", role
           token_resource_access_roles.each { |resource_access, values|
-            p "resource_access", resource_access
             authorized = values['roles'].include?(role)
-            p "authorized3", authorized
             if authorized
               policy_data = request['policies'].find {|policy| policy['name'] == role}
-              p "policy_data", policy_data
               authorized = false if policy_data['logic'] != 'positive'
               break
             end
           }
-          p "authorized4", authorized
           break if authorized
         }
-        p "authorized5", authorized
       end
     end
-    STDOUT.sync = false
+    # STDOUT.sync = false
 
     # Response => 20X or 40X
     case authorized
@@ -200,7 +168,7 @@ class Keycloak < Sinatra::Application
   # DEPRECATED
   def authenticate(client_id, username, password, grant_type)
     http_path = "http://#{@@address.to_s}:#{@@port.to_s}/#{@@uri.to_s}/realms/#{@@realm_name}/protocol/openid-connect/token"
-    # puts `curl -X POST --data "client_id=#{client_id}&username=#{usrname}"&password=#{pwd}&grant_type=#{grt_type} #{http_path}`
+    #`curl -X POST --data "client_id=#{client_id}&username=#{usrname}"&password=#{pwd}&grant_type=#{grt_type} #{http_path}`
 
     uri = URI(http_path)
     res = nil
@@ -360,78 +328,4 @@ class Keycloak < Sinatra::Application
         return 403, 'User is not authorized'
     end
   end
-=begin
-  def _route_authorization
-    logger.info 'Authorization request received at /authorize'
-    # Return if content-type is not valid
-    # log_file = File.new("#{settings.root}/log/#{settings.environment}.log", 'a+')
-    # STDOUT.reopen(log_file)
-    # STDOUT.sync = true
-    # puts "Content-Type is " + request.content_type
-    if request.content_type
-      logger.info "Request Content-Type is #{request.content_type}"
-    end
-    # halt 415 unless (request.content_type == 'application/x-www-form-urlencoded' or request.content_type == 'application/json')
-    # We will accept both a JSON file, form-urlencoded or query type
-    # Compatibility support
-    case request.content_type
-      when 'application/x-www-form-urlencoded'
-        # Validate format
-        # form_encoded, errors = request.body.read
-        # halt 400, errors.to_json if errors
-
-        # p "FORM PARAMS", form_encoded
-        # form = Hash[URI.decode_www_form(form_encoded)]
-        # mat
-        # p "FORM", form
-        # keyed_params = keyed_hash(form)
-        # halt 401 unless (keyed_params[:'path'] and keyed_params[:'method'])
-
-        # Request is a QUERY TYPE
-        # Get request parameters
-        logger.info "Request parameters are #{params}"
-        # puts "Input params", params
-        keyed_params = keyed_hash(params)
-        # puts "KEYED_PARAMS", keyed_params
-        # params examples: {:path=>"catalogues", :method=>"GET"}
-        # Halt if 'path' and 'method' are not included
-        json_error(401, 'Parameters "path=" and "method=" not found') unless (keyed_params[:path] and keyed_params[:method])
-
-      when 'application/json'
-        # Compatibility support for JSON content-type
-        # Parses and validates JSON format
-        form, errors = parse_json(request.body.read)
-        halt 400, errors.to_json if errors
-        # p "FORM", form
-        logger.info "Request parameters are #{form.to_s}"
-        keyed_params = keyed_hash(form)
-        json_error(401, 'Parameters "path=" and "method=" not found') unless (keyed_params[:path] and keyed_params[:method])
-      else
-        # Request is a QUERY TYPE
-        # Get request parameters
-        logger.info "Request parameters are #{params}"
-        keyed_params = keyed_hash(params)
-        # puts "KEYED_PARAMS", keyed_params
-        # params examples: {:path=>"catalogues", :method=>"GET"}
-        # Halt if 'path' and 'method' are not included
-        json_error(401, 'Parameters "path=" and "method=" not found') unless (keyed_params[:path] and keyed_params[:method])
-      # halt 401, json_error("Invalid Content-type")
-    end
-
-    # puts "PATH", keyed_params[:'path']
-    # puts "METHOD",keyed_params[:'method']
-    # Check the provided path to the resource and the HTTP method, then build the request
-    request = process_request(keyed_params[:path], keyed_params[:method])
-
-    logger.info 'Evaluating Authorization request'
-    # Authorization process
-    auth_code, auth_msg = authorize?(user_token, request)
-    if auth_code.to_i == 200
-      halt auth_code.to_i
-    else
-      json_error(auth_code, auth_msg)
-    end
-    # STDOUT.sync = false
-  end
-=end
 end
