@@ -72,7 +72,7 @@ class GtkRec < Sinatra::Base
     method = MODULE + ' GET /functions/:uuid'
     logger.debug(method) {"entered with :uuid=#{params[:uuid]}"}
     
-    function = VFunction.new(settings.functions_catalogue, logger).find_by_uuid(params[:uuid])
+    function = VFunction.new(settings.functions_repository, logger).find_by_uuid(params[:uuid])
     json_error 404, "No function with uuid #{params[:uuid]} was found", method unless function
 
     logger.debug(method) {"function: #{function}"}
