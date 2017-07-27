@@ -52,12 +52,12 @@ class GtkApi < Sinatra::Base
       if params['request_type'] == 'CREATE'
         kpi_method = method(:count_service_instantiation_requests)
         require_param(param: 'service_uuid', params: params, kpi_method: kpi_method, error_message: 'Service UUID', log_message: log_message, began_at: began_at)
+        require_param(param: 'egresses', params: params, kpi_method: kpi_method, error_message: 'Egresses list', log_message: log_message, began_at: began_at)
+        require_param(param: 'ingresses', params: params, kpi_method: kpi_method, error_message: 'Ingresses list', log_message: log_message, began_at: began_at)
       else # 'TERMINATE'
         kpi_method = method(:count_service_termination_requests)
         require_param(param: 'service_instance_uuid', params: params, kpi_method: kpi_method, error_message: 'Service UUID', log_message: log_message, began_at: began_at)
       end
-      require_param(param: 'egresses', params: params, kpi_method: kpi_method, error_message: 'Egresses list', log_message: log_message, began_at: began_at)
-      require_param(param: 'ingresses', params: params, kpi_method: kpi_method, error_message: 'Ingresses list', log_message: log_message, began_at: began_at)
       
       token = get_token( request.env, began_at, :kpi_method, log_message)
       user_name = get_username_by_token( token, began_at, :kpi_method, log_message)
