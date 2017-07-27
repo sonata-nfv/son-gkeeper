@@ -81,7 +81,13 @@
       "associated_permissions": [
         {
           "name": "read",
-          "description": "Read or download a catalogue package resource",
+          "description": "Read a catalogue package resource",
+          "apply_policy": ["developer", "slm"],
+          "action": "GET"
+        },
+        {
+          "name": "download",
+          "description": "Download a catalogue package resource",
           "apply_policy": ["developer", "slm"],
           "action": "GET"
         },
