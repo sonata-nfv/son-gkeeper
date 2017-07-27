@@ -84,13 +84,13 @@ class Keycloak < Sinatra::Application
   def Keycloak.get_adapter_token
     begin
       url = URI("http://#{@@address.to_s}:#{@@port.to_s}/#{@@uri.to_s}/realms/#{@@realm_name}/protocol/openid-connect/token")
-      res = Net::HTTP.post_form(url, 'client_id' => @@client_name, 'client_secret' => @@client_secret,
-                                'username' => "admin", # @@admin_name
-                                'password' => "admin", # @@admin_password
-                                'grant_type' => "client_credentials")
+      res = Net::HTTP.post_form(url, 'client_id' => @@client_name,
+                                'client_secret' => @@client_secret,
+                                'grant_type' => 'client_credentials')
+                                # 'username' => "admin", # @@admin_name
+                                # 'password' => "admin", # @@admin_password
 
       parsed_res, errors = parse_json(res.body)
-
       if parsed_res['access_token']
         File.open('config/token.json', 'w') do |f|
           f.puts parsed_res['access_token']
@@ -107,12 +107,10 @@ class Keycloak < Sinatra::Application
   def get_oidc_endpoints
     # Call http://localhost:8081/auth/realms/master/.well-known/openid-configuration to obtain endpoints
     url = URI.parse("http://#{@@address.to_s}:#{@@port.to_s}/#{@@uri.to_s}/realms/#{@@realm_name}/.well-known/openid-configuration")
-
     http = Net::HTTP.new(url.host, url.port)
     request = Net::HTTP::Get.new(url.to_s)
 
     response = http.request(request)
-    # puts response.read_body # <-- save endpoints file
     File.open('config/endpoints.json', 'w') do |f|
       f.puts response.read_body
     end
@@ -124,13 +122,11 @@ class Keycloak < Sinatra::Application
     # url = URI("http://127.0.0.1:8081/auth/realms/master/clients-registrations/install/adapter")
     url = URI("http://#{@@address.to_s}:#{@@port.to_s}/#{@@uri.to_s}/realms/#{@@realm_name}/clients-registrations/install/adapter")
     http = Net::HTTP.new(url.host, url.port)
-
     request = Net::HTTP::Get.new(url.to_s)
     request.basic_auth(@@client_name.to_s, @@client_secret.to_s)
     request["content-type"] = 'application/json'
 
     response = http.request(request)
-    # puts response.read_body # <-- save endpoints file
     File.open('config/keycloak.json', 'w') do |f|
       f.puts response.read_body
     end
@@ -1378,129 +1374,5 @@ class Keycloak < Sinatra::Application
       return response.code.to_i, response.body
     end
     return 204 , nil
-  end
-
-  def process_request(uri, method)
-    # TODO: REVAMP EVALUATION FUNCTION
-    log_file = File.new("#{settings.root}/log/#{settings.environment}.log", 'a+')
-    STDOUT.reopen(log_file)
-    STDOUT.sync = true
-
-    # Parse uri path
-    path = URI(uri).path.split('/')[1]
-    p "path", path
-
-    # Find mapped resource to path
-    # TODO: CHECK IF IS A VALID RESOURCE FROM DATABASE
-    resources = @@auth_mappings['resources']
-    p "RESOURCES", resources
-
-    resource = nil
-    # p "PATHS", @@auth_mappings['paths']
-    @@auth_mappings['paths'].each { |k, v|
-      puts "k, v", k, v
-      v.each { |kk, vv|
-        puts "kk, vv", kk, vv
-        if kk == path
-          p "Resource found", k, kk
-          resource = [k, kk]
-          break
-        end
-      }
-      p "FOUND_RESOURCE", resource
-      if resource
-        break
-      end
-    }
-    unless resource
-      json_error(403, 'The resource is not available')
-    end
-
-    unless @@auth_mappings['paths'][resource[0]][resource[1]].key?(method)
-      json_error(403, 'The resource operation is not available')
-    else
-      operation = @@auth_mappings['paths'][resource[0]][resource[1]][method]
-      puts "FOUND_OPERATION", operation
-      STDOUT.sync = false
-      request = {"resource" => resource[0], "type" => resource[1], "operation" => operation}
-    end
-  end
-
-  def authorize?(user_token, request)
-    refresh_adapter
-    # => Check token
-    public_key = get_public_key
-    # p "SETTINGS", settings.keycloak_pub_key
-    token_payload, token_header = decode_token(user_token, public_key)
-    # puts "payload", token_payload
-
-    # => evaluate request
-    # Find mapped resource to path
-    # required_role is build following next pattern:
-    # operation
-    # operation_resource
-    # operation_resource_type
-
-    log_file = File.new("#{settings.root}/log/#{settings.environment}.log", 'a+')
-    STDOUT.reopen(log_file)
-    STDOUT.sync = true
-
-    logger.debug "Adapter: Token Payload: #{token_payload.to_s}, Token Header: #{token_header.to_s}"
-
-    required_role = 'role_' + request['operation'] + '-' + request['resource']
-    # p "REQUIRED ROLE", required_role
-    logger.debug "Adapter: Required Role: #{required_role}"
-
-    # => Check token roles
-    begin
-      token_realm_access_roles = token_payload['realm_access']['roles']
-    rescue
-      json_error(403, 'No permissions')
-    end
-
-    # TODO: Resource access roles (services) will be implemented later
-    token_resource_access_resources = token_payload['resource_access']
-    # .
-    # .
-    # .
-    # TODO: Evaluate special roles (customer,developer,etc...)
-    # .
-    # .
-    # .
-
-    p "realm_access_roles", token_realm_access_roles
-    code, realm_roles = get_realm_roles
-
-    p "realm_roles", realm_roles
-    parsed_realm_roles, errors = parse_json(realm_roles)
-    # p "Realm_roles_PARSED", parsed_realm_roles
-
-    authorized = false
-    token_realm_access_roles.each { |role|
-      # puts "ROLE TO INSPECT", role
-
-      token_role_repr = parsed_realm_roles.find {|x| x['name'] == role}
-      unless token_role_repr
-        json_error(403, 'No permissions')
-      end
-
-      puts "ROLE_DESC", token_role_repr['description']
-      role_perms = token_role_repr['description'].tr('${}', '').split(',')
-      puts "ROLE_PERM", role_perms
-
-      if role_perms.include?(required_role)
-        authorized = true
-      end
-    }
-
-    STDOUT.sync = false
-
-    #=> Response => 20X or 40X
-    case authorized
-      when true
-        return 200, nil
-      else
-        return 403, 'User is not authorized'
-    end
   end
 end

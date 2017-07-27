@@ -82,6 +82,7 @@ end
 class Keycloak < Sinatra::Application
 
   @@access_token = nil
+  @@sp_public_key = nil
 
   get '/' do
     headers 'Content-Type' => 'text/plain; charset=utf8'
@@ -118,10 +119,13 @@ class Keycloak < Sinatra::Application
         # new_resource['_id'] = SecureRandom.uuid
         resource = Sp_resource.create!(resource_hash)
         logger.debug "Adapter: POST /config added default permissions #{resource.to_s} to MongoDB"
+        @@enabled_db = true
       rescue Moped::Errors::OperationFailure => e
         logger.debug "Adapter: POST /config MongoDB could not be reached or configured: #{e}"
+        @@enabled_db = false
       rescue => e
         logger.error "Adapter: POST /config error=#{e}"
+        @@enabled_db = false
       end
     rescue => e
       logger.error "Adapter: POST /config connecting MongoDB error: #{e}"
@@ -149,12 +153,12 @@ class Keycloak < Sinatra::Application
     # This endpoint forces the Adapter to refresh the token
     logger.debug 'Adapter: entered GET /refresh'
     code, access_token = refresh_adapter
-    # access_token = Keycloak.get_adapter_token
     logger.debug "Adapter: exit from GET /refresh with token #{access_token}"
     halt code.to_i
   end
 
   post '/authorize' do
+    # The authorize endpoint returns OK if the user’s has enabling permissions to access to the endpoint
     logger.debug 'Adapter: entered POST /authorize'
     # Return if Authorization is invalid
     halt 400 unless request.env["HTTP_AUTHORIZATION"]
@@ -182,21 +186,16 @@ class Keycloak < Sinatra::Application
 
     # 4. Direct Access for Admins
     # Role check; Allows total authorization to admin roles
-    # Bool = is_user_an_admin?(token_content)
-    realm_roles = token_content['realm_access']['roles']
-    if token_content['resource_access'].include?('realm-management')
-      resource_roles = token_content['resource_access']['realm-management']['roles']
-      if (realm_roles.include?('admin')) && (resource_roles.include?('realm-admin'))
-          logger.info "Adapter: Authorized access to administrator Id=#{token_content['sub']}"
-          halt 200
-      end
+
+    result = admin_check(token_content)
+    if result
+      logger.info "Adapter: Authorized access to administrator Id=#{token_content['sub']}"
+      halt 200
     end
 
     logger.info 'Authorization started at /authorize'
-
     # 5. Fetch request data
     logger.info "Content-Type is " + request.media_type
-    # halt 415 unless (request.content_type == 'application/json')
 
     # Compatibility support for JSON content-type
     # Parses and validates JSON format
@@ -205,17 +204,13 @@ class Keycloak < Sinatra::Application
         # Validate format
         # form_encoded, errors = request.body.read
         # halt 400, errors.to_json if errors
-
-        # p "FORM PARAMS", form_encoded
         # form = Hash[URI.decode_www_form(form_encoded)]
-        # p "FORM", form
         # keyed_params = keyed_hash(form)
         # halt 401 unless (keyed_params[:'path'] and keyed_params[:'method'])
 
       when 'application/json'
         request_data, errors = parse_json(request.body.read)
         halt 400, errors.to_json if errors
-        # p "REQUEST_DATA", request_data
         logger.info "Request parameters are #{request_data.to_s}"
         keyed_params = keyed_hash(request_data)
         json_error(401, 'Parameters "path=" and "method=" not found') unless
@@ -224,29 +219,25 @@ class Keycloak < Sinatra::Application
         # Request is a QUERY TYPE
         logger.info "Request parameters are #{params}"
         keyed_params = keyed_hash(params)
-        # puts "KEYED_PARAMS", keyed_params
-        # params examples: {:path=>"catalogues", :method=>"GET"}
-        # Halt if 'path' and 'method' are not included
+        # params examples: {:path=>"/catalogues", :method=>"GET"}
         json_error(401, 'Parameters "path=" and "method=" not found') unless
             (keyed_params[:path] and keyed_params[:method])
     end
 
-    # TODO: Handle alternative authorization requests
-    # puts "PATH", keyed_params[:'path']
-    # puts "METHOD",keyed_params[:'method']
+    # The permissions are used to restrict access to an API endpoint and control users actions
+    # The authorize endpoint essentially returns true if any of the user’s permission has access to the endpoint
     # Check the provided path to the resource and the HTTP method, then build the request
+    #if @@enabled_db...
     request = process_request(keyed_params[:path], keyed_params[:method])
+    json_error(401, 'Resource unavaliable') if request.nil?
 
     # 6. Evaluate Authorization
     logger.info 'Evaluating Authorization request'
-    # Authorization process
+    # Authorization process (Authorization algorithm is permission based)
     auth_code, auth_msg = authorize?(user_token, request)
-    if auth_code.to_i == 200
-      halt auth_code.to_i
-    else
-      json_error(auth_code, auth_msg)
-    end
-    # STDOUT.sync = false
+    logger.info "Authorization result: #{auth_code}"
+    halt auth_code.to_i if auth_code.to_i == 200
+    json_error(auth_code, auth_msg)
   end
 
   # DEPRECATED!
@@ -280,9 +271,7 @@ class Keycloak < Sinatra::Application
     halt 400 unless request.env["HTTP_AUTHORIZATION"]
 
     user_token = request.env["HTTP_AUTHORIZATION"].split(' ').last
-    unless user_token
-      json_error(400, 'Access token is not provided')
-    end
+    json_error(400, 'Access token is not provided') unless user_token
 
     # Validate token
     res, code = token_validation(user_token)
