@@ -138,7 +138,7 @@ class GtkApi < Sinatra::Base
         end
       else
         begin
-          user_name = get_username_by_token( token, began_at, method(:count_user_profile_requests), log_message)
+          username = get_username_by_token( token, began_at, method(:count_user_profile_requests), log_message)
           user = User.find_by_name(username)
           logger.debug(log_message) {"Found user #{user}"}
           halt 200, user.to_h.to_json
