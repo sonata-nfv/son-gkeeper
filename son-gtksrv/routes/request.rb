@@ -82,6 +82,7 @@ class GtkSrv < Sinatra::Base
     
     begin
       start_request={}
+      start_request['instance_id'] = params['service_instance_uuid'] if params['request_type'] == 'TERMINATE'
 
       # we're not storing egresses or ingresses, so we're not passing them
       si_request = Request.create(service_uuid: params['service_uuid'], service_instance_uuid: params['service_instance_uuid'], request_type: params['request_type'])
