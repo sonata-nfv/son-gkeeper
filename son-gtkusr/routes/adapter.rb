@@ -193,20 +193,9 @@ class Keycloak < Sinatra::Application
       halt 200
     end
 
-    #realm_roles = token_content['realm_access']['roles']
-    #if token_content['resource_access'].include?('realm-management')
-    #  resource_roles = token_content['resource_access']['realm-management']['roles']
-    #  if (realm_roles.include?('admin')) && (resource_roles.include?('realm-admin'))
-    #      logger.info "Adapter: Authorized access to administrator Id=#{token_content['sub']}"
-    #      halt 200
-    #  end
-    #end
-
     logger.info 'Authorization started at /authorize'
-
     # 5. Fetch request data
     logger.info "Content-Type is " + request.media_type
-    # halt 415 unless (request.content_type == 'application/json')
 
     # Compatibility support for JSON content-type
     # Parses and validates JSON format
@@ -225,7 +214,6 @@ class Keycloak < Sinatra::Application
       when 'application/json'
         request_data, errors = parse_json(request.body.read)
         halt 400, errors.to_json if errors
-        # p "REQUEST_DATA", request_data
         logger.info "Request parameters are #{request_data.to_s}"
         keyed_params = keyed_hash(request_data)
         json_error(401, 'Parameters "path=" and "method=" not found') unless
@@ -234,9 +222,7 @@ class Keycloak < Sinatra::Application
         # Request is a QUERY TYPE
         logger.info "Request parameters are #{params}"
         keyed_params = keyed_hash(params)
-        # puts "KEYED_PARAMS", keyed_params
         # params examples: {:path=>"catalogues", :method=>"GET"}
-        # Halt if 'path' and 'method' are not included
         json_error(401, 'Parameters "path=" and "method=" not found') unless
             (keyed_params[:path] and keyed_params[:method])
     end
@@ -254,7 +240,6 @@ class Keycloak < Sinatra::Application
     auth_code, auth_msg = authorize?(user_token, request)
     halt auth_code.to_i if auth_code.to_i == 200
     json_error(auth_code, auth_msg)
-    # STDOUT.sync = false
   end
 
   # DEPRECATED!
