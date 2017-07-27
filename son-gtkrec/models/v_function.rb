@@ -45,7 +45,7 @@ class VFunction
   def find_by_uuid(uuid)
     @logger.debug "VFunction.find_by_uuid(#{uuid})"
     function = @repository.find_by_uuid(uuid)
-    @logger.debug "VFunction.find_by_uuid: #{service}"
+    @logger.debug "VFunction.find_by_uuid: #{function}"
     function
   end
   
