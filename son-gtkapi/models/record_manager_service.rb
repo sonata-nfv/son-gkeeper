@@ -45,15 +45,15 @@ class RecordManagerService < ManagerService
     GtkApi.logger.debug(method) {"entered with params=#{params}"}
 
     kind = params.delete('kind')
-    puts "url=#{@@url}/#{kind}"
-    # find(url: @@url + '/records/' + kind, params: params, log_message: LOG_MESSAGE + "##{__method__}(#{params})", logger: @@logger)
+    GtkApi.logger.debug(method) {"url=#{@@url}/#{kind}"}
     records= find(url: "#{@@url}/#{kind}", params: params, log_message: LOG_MESSAGE + "##{__method__}(#{params})")
     vectorize_hash records
   end
   
   def self.find_record_by_uuid(kind: 'services', uuid:)
-    # find(url: @@url + '/services/' + uuid, log_message: LOG_MESSAGE + "##{__method__}(#{uuid})", logger: @@logger)
-    find(url: @@url + '/' + kind + '/' + uuid, log_message: LOG_MESSAGE + "##{__method__}(#{uuid})") #+ '/records/' 
+    log_message = LOG_MESSAGE + "##{__method__}"
+    GtkApi.logger.debug(log_message) {"entered with uuid=#{uuid}"}
+    find(url: @@url + '/' + kind + '/' + uuid, log_message: log_message) # + 'records/'
   end
   
   def self.find_records_by_function_uuid(uuid)

@@ -40,13 +40,25 @@ class Repository
   end
     
   def find_by_uuid(uuid)
-    @logger.debug "Repository.find_by_uuid(#{uuid})"
+    method = "Repository.find_by_uuid"
+    @logger.debug(method) {"entered with uuid #{uuid}"}
     begin
       response = RestClient.get(@url+"/#{uuid}", JSON_HEADERS) 
-      JSON.parse response.body
+      @logger.debug(method) {"response=#{response}"}  
+      service_or_function = JSON.parse(response.body)
+      case response.code.to_i
+      when 200
+        service_or_function
+      when 400
+      when 404
+        nil
+      else
+        nil
+      end
     rescue => e
-      @logger.error format_error(e.backtrace)
-      e.to_json
+      @logger.error(method) {"response=#{response}"}  
+      @logger.error(method) {e.backtrace.each {|l| puts l}} #format_error(e.backtrace)
+      {status: 500, count: 0, items: [], message: "#{e.backtrace.join("\n\t")}"}
     end
   end
   

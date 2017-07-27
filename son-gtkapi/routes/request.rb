@@ -58,7 +58,7 @@ class GtkApi < Sinatra::Base
       validate_user_authorization(token: token, action: 'post service instantiation request', uuid: params['service_uuid'], path: '/services', method:'POST', kpi_method: method(:count_service_instantiation_requests), began_at: began_at, log_message: log_message)
       logger.debug(log_message) {"User authorized"}
       
-      new_request = ServiceManagerService.create_service_intantiation_request(params)
+      new_request = ServiceManagerService.create_service_instantiation_request(params)
       logger.debug(log_message) { "new_request =#{new_request}"}
       if new_request[:status] != 201
         count_service_instantiation_requests(labels: {result: "bad request", uuid: '', elapsed_time: (Time.now.utc-began_at).to_s})
@@ -118,6 +118,7 @@ class GtkApi < Sinatra::Base
     
     # PATCH /requests/:service_instance_uuid/stop
     patch '/:service_instance_uuid/stop/?' do
+      began_at = Time.now.utc
       log_message = "GtkApi::PATCH /api/v2/requests/:service_instance_uuid/stop"
       logger.debug(log_message) {"entered with #{params[:service_instance_uuid]}"}
 
@@ -128,9 +129,11 @@ class GtkApi < Sinatra::Base
       validate_user_authorization(token: token, action: 'patch request '+params[:service_instance_uuid]+' data', uuid: params[:service_instance_uuid], path: '/requests', method:'PATCH', kpi_method: method(:count_service_instance_termination_requests), began_at: began_at, log_message: log_message)
       logger.debug(log_message) {"User authorized"}
       
-      termination_request = ServiceManagerService.create_service_termination_request(params['service_instance_uuid'])
+      termination_request = ServiceManagerService.create_service_termination_request(service_instance_uuid: params[:service_instance_uuid])
+      json_error 400, 'Service instance termination request failled', log_message unless termination_request
+        
       logger.debug(log_message) { "termination_request =#{termination_request}"}
-      if termination_request[:status] != 200
+      unless termination_request[:status] == 200
         count_service_instance_termination_requests(labels: {result: "bad request", uuid: '', elapsed_time: (Time.now.utc-began_at).to_s})
         json_error 400, 'Service instance termination request failled', log_message
       end

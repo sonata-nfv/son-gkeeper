@@ -82,13 +82,14 @@ class GtkSrv < Sinatra::Base
     begin
       valid = Request.validate_request(service_instance_uuid: params[:uuid])
       logger.debug(method) {"valid=#{valid.inspect}"}
-    
+   
       json_error 400, "Service instance '#{params[:uuid]} not 'READY'", method unless valid
 
-      nsd = JSON.parse(request.body.read, :quirks_mode => true)
+      body = request.body.read
+      logger.debug(method) {"with body=#{body}"}
+      nsd = JSON.parse(body, quirks_mode: true)
       logger.debug(method) {"with nsd=#{nsd}"}
 
-      #nsd.delete(:status) if nsd[:status]
       nsd.delete('status') if nsd['status']
       update_response = Request.process_request(nsd: nsd, service_instance_uuid: params[:uuid], type: 'UPDATE', mq_server: settings.update_mqserver)
       logger.debug(method) {"update_response=#{update_response}"}
@@ -96,7 +97,7 @@ class GtkSrv < Sinatra::Base
 
       halt 201, update_response.to_json
     rescue Exception=> e
-      json_error 404, "Service instance '#{params[:uuid]} not found", method
+      json_error 404, "Service instance '#{params[:uuid]}' not found", method
     end
   end
   
@@ -107,14 +108,14 @@ class GtkSrv < Sinatra::Base
     
     # is it a valid service instance uuid?
     begin
-      valid = Request.validate_request(service_instance_uuid: params[:uuid])
-      logger.debug(method) {"valid=#{valid.inspect}"}
-      service_instantiation_request = Request.create({service_uuid: params['service_instance_uuid']})
-      logger.debug(log_msg) { "with service_instance_uuid=#{params['service_instance_uuid']}: #{service_instantiation_request.inspect}"}
+      creation_request = Request.validate_request(service_instance_uuid: params[:uuid])
+      logger.debug(method) {"creation_request=#{creation_request.inspect}"}
       
-      json_error 400, "Service instance '#{params[:uuid]} not 'READY'", method unless valid
+      service_instantiation_request = Request.create({request_type: "TERMINATE", service_instance_uuid: params[:uuid], service_uuid: creation_request[:service_uuid]})
+      json_error 400, "Service instance '#{params[:uuid]}' termination failled", method unless service_instantiation_request
+      logger.debug(log_msg) { "service_instantiation_request= #{service_instantiation_request}"}
 
-      nsd = build_descriptors(service_instance_uuid: params[:uuid])
+      nsd = build_descriptors(service_uuid: creation_request[:service_uuid], service_instance_uuid: params[:uuid])
       logger.debug(method) {"with nsd=#{nsd}"}
 
       nsd.delete('status') if nsd['status']
@@ -131,7 +132,7 @@ class GtkSrv < Sinatra::Base
 
       halt 201, terminate_response.to_json
     rescue Exception=> e
-      json_error 404, "Service instance '#{params[:uuid]} not found", method
+      json_error 404, "Service instance '#{params[:uuid]}' not found", method
     end
   end
 
@@ -151,19 +152,19 @@ class GtkSrv < Sinatra::Base
     request.env['rack.url_scheme']+'://'+request.env['HTTP_HOST']+request.env['REQUEST_PATH']
   end
   
-  def build_descriptors(service_instance_uuid:)
+  def build_descriptors(service_uuid:, service_instance_uuid:)
     log_msg = 'GtkSrv#build_descriptors'
     logger.debug(log_msg) {"entered with service_instance_uuid=#{service_instance_uuid}"}
 
     begin
       payload={}
-      payload['instance_id'] = params['service_instance_uuid']
+      payload['instance_id'] = service_instance_uuid
 
-      service = NService.new(settings.services_catalogue, logger).find_by_uuid(params['service_instance_uuid'])
+      service = NService.new(settings.services_catalogue, logger).find_by_uuid(service_uuid)
       
       unless service
         logger.error(log_msg) {"network service not found"}
-        return nil, nil
+        return nil
       end
       logger.debug(log_msg) { "service=#{service}"}
 
@@ -190,16 +191,5 @@ class GtkSrv < Sinatra::Base
 	    logger.debug(log_msg) {e.backtrace.inspect}
 	    return nil
     end
-  end
-  
-  def format_descriptors(descriptors, si_request)
-    log_msg = 'GtkSrv#format_descriptors'
-    descriptors_yml = YAML.dump(descriptors.deep_stringify_keys)
-    logger.debug(log_msg) {"descriptors_yml=#{descriptors_yml}"}
-
-    smresponse = settings.create_mqserver.publish( descriptors_yml.to_s, si_request['id'])
-    json_request = json(si_request, { root: false })
-    logger.debug(log_msg) {'returning with request='+json_request}
-    json_request
   end
 end

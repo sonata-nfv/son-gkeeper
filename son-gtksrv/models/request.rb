@@ -36,7 +36,7 @@ class Request < ActiveRecord::Base
   validates :service_uuid, presence: true
   
   def self.validate_request(service_instance_uuid:)
-    method = GtkSrv::MODULE + ": Request#validate_request: "
+    method = GtkSrv::MODULE + "Request#validate_request"
     logger = GtkSrv.logger
 
     raise Exception.new(method+'A valid service instance UUID is needed') unless service_instance_uuid
