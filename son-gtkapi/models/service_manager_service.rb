@@ -71,7 +71,7 @@ class ServiceManagerService < ManagerService
     find(url: @@url + '/requests?service_instance_uuid=' + uuid, log_message: LOG_MESSAGE + "##{__method__}")
   end
   
-  def self.create_service_instantiation_request(params)
+  def self.create_service_request(params)
     message = LOG_MESSAGE+"##{__method__}"
     GtkApi.logger.debug(message) {"entered with #{params}"}
     GtkApi.logger.debug(message) {"@@url = "+@@url}

@@ -77,22 +77,26 @@ class GtkSrv < Sinatra::Base
     logger.debug(log_msg) {"with params=#{params}"}
     
     # we're not storing egresses or ingresses
-    egresses = params.delete 'egresses'
-    ingresses = params.delete 'ingresses'
+    egresses = params.delete 'egresses' if params['egresses']
+    ingresses = params.delete 'ingresses' if params['ingresses']
     
     begin
       start_request={}
+      start_request['instance_id'] = params['service_instance_uuid'] if params['request_type'] == 'TERMINATE'
 
-      # we're not storing egresses or ingresses
-      si_request = Request.create({service_uuid: params['service_uuid']})
-      logger.debug(log_msg) { "with service_uuid=#{params['service_uuid']}: #{si_request.inspect}"}
-      service = NService.new(settings.services_catalogue, logger).find_by_uuid(params['service_uuid'])
+      # for TERMINATE, service_uuid has to be found first
+      service = get_service(params)
       logger.error(log_msg) {"network service not found"} unless service
-      logger.debug(log_msg) { "service=#{service}"}
+      logger.debug(log_msg) {"service=#{service}"}
 
+      # we're not storing egresses or ingresses, so we're not passing them
+      si_request = Request.create(service_uuid: service['uuid'], service_instance_uuid: params['service_instance_uuid'], request_type: params['request_type'])
+      json_error 400, 'Not possible to create '+params['request_type']+' request', log_msg unless si_request
+      logger.debug(log_msg) {"with service_uuid=#{params['service_uuid']}, service_instance_uuid=#{params['service_instance_uuid']}: #{si_request.inspect}"}
+      
       nsd = service['nsd']
       nsd[:uuid] = service['uuid']
-      start_request['NSD']= nsd
+      start_request['NSD']=nsd
     
       nsd['network_functions'].each_with_index do |function, index|
         logger.debug(log_msg) { "function=['#{function['vnf_name']}', '#{function['vnf_vendor']}', '#{function['vnf_version']}']"}
@@ -108,9 +112,10 @@ class GtkSrv < Sinatra::Base
       start_request['ingresses'] = ingresses
       
       start_request_yml = YAML.dump(start_request.deep_stringify_keys)
-      logger.debug(log_msg) {"#{params}: "+start_request_yml}
+      logger.debug(log_msg) {"#{params}:\n"+start_request_yml}
 
-      smresponse = settings.create_mqserver.publish( start_request_yml.to_s, si_request['id'])
+      mq_server = params['request_type'] == 'CREATE' ? settings.create_mqserver : settings.terminate_mqserver
+      smresponse = mq_server.publish( start_request_yml.to_s, si_request['id'])
       json_request = json(si_request, { root: false })
       logger.debug(log_msg) {' returning POST /requests with request='+json_request}
       halt 201, json_request
@@ -145,7 +150,20 @@ class GtkSrv < Sinatra::Base
     logger.debug(log_message) {"Schema=#{request.env['rack.url_scheme']}, host=#{request.env['HTTP_HOST']}, path=#{request.env['REQUEST_PATH']}"}
     request.env['rack.url_scheme']+'://'+request.env['HTTP_HOST']+request.env['REQUEST_PATH']
   end
-  
+
+  def get_service(params)
+    log_message = 'GtkApi::get_service'
+    logger.debug(log_message) {"entered with params #{params}"}
+    if params['request_type'] == 'TERMINATE'
+      # Get the service_uuid from the creation request
+      services = Request.where("service_instance_uuid = ? AND request_type = 'CREATE'", params['service_instance_uuid'])
+      logger.debug(log_message) {"services found = #{services}"}
+      params['service_uuid'] = services.to_a[0]['service_uuid']
+    end
+    logger.debug(log_message) {"params #{params}"}
+    NService.new(settings.services_catalogue, logger).find_by_uuid(params['service_uuid'])
+  end
+    
   class Hash
     def deep_stringify_keys
       deep_transform_keys{ |key| key.to_s }
