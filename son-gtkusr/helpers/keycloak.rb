@@ -571,7 +571,7 @@ class Keycloak < Sinatra::Application
     # p "ROLE DATA", role_data
     # Compare user_type with roles
     unless role_data
-      return 401, {'Error' => 'User type is not allowed'}
+      return 401, ({'Error' => 'User type is not allowed'}).to_json
     end
 
     # Add role from roles to user_id
