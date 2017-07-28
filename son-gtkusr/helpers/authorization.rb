@@ -139,6 +139,8 @@ class Keycloak < Sinatra::Application
 
     authorized = nil
     if allowed_roles.is_a?(Array)
+      authorized = allowed_roles.empty?
+
       allowed_roles.each { |role|
         authorized = token_realm_access_roles.include?(role)
         # Alternative role check in the Keycloak server
