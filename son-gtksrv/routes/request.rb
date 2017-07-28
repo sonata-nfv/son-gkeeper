@@ -84,15 +84,16 @@ class GtkSrv < Sinatra::Base
       start_request={}
       start_request['instance_id'] = params['service_instance_uuid'] if params['request_type'] == 'TERMINATE'
 
-      # we're not storing egresses or ingresses, so we're not passing them
-      si_request = Request.create(service_uuid: params['service_uuid'], service_instance_uuid: params['service_instance_uuid'], request_type: params['request_type'])
-      logger.debug(log_msg) {"with service_uuid=#{params['service_uuid']}, service_instance_uuid=#{params['service_instance_uuid']}: #{si_request.inspect}"}
-      
       # for TERMINATE, service_uuid has to be found first
       service = get_service(params)
       logger.error(log_msg) {"network service not found"} unless service
       logger.debug(log_msg) {"service=#{service}"}
 
+      # we're not storing egresses or ingresses, so we're not passing them
+      si_request = Request.create(service_uuid: service['uuid'], service_instance_uuid: params['service_instance_uuid'], request_type: params['request_type'])
+      json_error 400, 'Not possible to create '+params['request_type']+' request', log_msg unless si_request
+      logger.debug(log_msg) {"with service_uuid=#{params['service_uuid']}, service_instance_uuid=#{params['service_instance_uuid']}: #{si_request.inspect}"}
+      
       nsd = service['nsd']
       nsd[:uuid] = service['uuid']
       start_request['NSD']=nsd
