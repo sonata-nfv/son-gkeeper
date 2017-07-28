@@ -52,7 +52,8 @@ class Keycloak < Sinatra::Application
   def process_request(uri, method)
     # Parse uri path
     path = URI(uri).path.split('/')[1]
-    data = URI(uri).path.split('/')[2]
+    data = URI(uri).path.split('/').last
+
     # p "PATH=#{path}"
     # p "DATA=#{data}"
 
@@ -73,9 +74,18 @@ class Keycloak < Sinatra::Application
     resource_data = resource['resources'].find { |resource_data| resource_data['URI'] == path }
 
     operation = nil
-    resource_data['associated_permissions'].each { |permission|
-      operation = permission if permission['action'] == method
-    }
+    if path != data
+      resource_data['associated_permissions'].each {|permission|
+        if (permission['action'] == method) and (permission['name'] == data)
+          operation = permission
+        end
+      }
+    end
+    if operation.nil?
+      resource_data['associated_permissions'].each {|permission|
+        operation = permission if permission['action'] == method
+      }
+    end
 
     return if operation.nil?
     logger.debug 'Adapter: Request successfully processed'
@@ -129,6 +139,8 @@ class Keycloak < Sinatra::Application
 
     authorized = nil
     if allowed_roles.is_a?(Array)
+      authorized = allowed_roles.empty?
+
       allowed_roles.each { |role|
         authorized = token_realm_access_roles.include?(role)
         # Alternative role check in the Keycloak server

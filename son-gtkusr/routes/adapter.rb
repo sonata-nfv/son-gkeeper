@@ -112,7 +112,7 @@ class Keycloak < Sinatra::Application
     logger.debug 'Adapter: POST /config obtained access_token'
     begin
       logger.debug 'Adapter: Loading default resource file'
-      default_resource = File.read('tests/demo-resource.json')
+      default_resource = File.read('config/initial-resource.json')
       resource_hash = JSON.parse(default_resource)
       begin
         # Generate the UUID for the resource object
