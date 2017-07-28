@@ -1,7 +1,7 @@
 {
   "clientId" : "gtkapi",
   "resource_owner_name" : "gatekeeper_api",
-  "role" : null,
+  "role" : "realm-admin",
   "description" : "This is a global rule set to provide authorization permissions to the gtkapi endpoints",
   "resources" : [
     {
