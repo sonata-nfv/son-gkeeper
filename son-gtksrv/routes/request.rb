@@ -86,8 +86,10 @@ class GtkSrv < Sinatra::Base
 
       # we're not storing egresses or ingresses, so we're not passing them
       si_request = Request.create(service_uuid: params['service_uuid'], service_instance_uuid: params['service_instance_uuid'], request_type: params['request_type'])
-      logger.debug(log_msg) {"with service_uuid=#{params['service_uuid']}: #{si_request.inspect}"}
-      service = NService.new(settings.services_catalogue, logger).find_by_uuid(params['service_uuid'])
+      logger.debug(log_msg) {"with service_uuid=#{params['service_uuid']}, service_instance_uuid=#{params['service_instance_uuid']}: #{si_request.inspect}"}
+      
+      # for TERMINATE, service_uuid has to be found first
+      service = get_service(params)
       logger.error(log_msg) {"network service not found"} unless service
       logger.debug(log_msg) {"service=#{service}"}
 
@@ -109,7 +111,7 @@ class GtkSrv < Sinatra::Base
       start_request['ingresses'] = ingresses
       
       start_request_yml = YAML.dump(start_request.deep_stringify_keys)
-      logger.debug(log_msg) {"#{params}: "+start_request_yml}
+      logger.debug(log_msg) {"#{params}:\n"+start_request_yml}
 
       mq_server = params['request_type'] == 'CREATE' ? settings.create_mqserver : settings.terminate_mqserver
       smresponse = mq_server.publish( start_request_yml.to_s, si_request['id'])
@@ -147,7 +149,20 @@ class GtkSrv < Sinatra::Base
     logger.debug(log_message) {"Schema=#{request.env['rack.url_scheme']}, host=#{request.env['HTTP_HOST']}, path=#{request.env['REQUEST_PATH']}"}
     request.env['rack.url_scheme']+'://'+request.env['HTTP_HOST']+request.env['REQUEST_PATH']
   end
-  
+
+  def get_service(params)
+    log_message = 'GtkApi::get_service'
+    logger.debug(log_message) {"entered with params #{params}"}
+    if params['request_type'] == 'TERMINATE'
+      # Get the service_uuid from the creation request
+      services = Request.where("service_instance_uuid = ? AND request_type = 'CREATE'", params['service_instance_uuid'])
+      logger.debug(log_message) {"services found = #{services}"}
+      params['service_uuid'] = services.to_a[0]['service_uuid']
+    end
+    logger.debug(log_message) {"params #{params}"}
+    NService.new(settings.services_catalogue, logger).find_by_uuid(params['service_uuid'])
+  end
+    
   class Hash
     def deep_stringify_keys
       deep_transform_keys{ |key| key.to_s }
