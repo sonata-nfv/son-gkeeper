@@ -300,10 +300,7 @@ class Keycloak < Sinatra::Application
 
     # Validate token
     res = token_expired?(user_token)
-    if res == 200
-      halt 200
-    else
-      json_error(401, res)
-    end
+    json_error(401, res) if res != 200
+    halt 200
   end
 end

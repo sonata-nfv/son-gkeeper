@@ -184,7 +184,6 @@ class Keycloak < Sinatra::Application
 
   def get_public_key
     logger.info 'Building PEM Keycloak Public Key'
-    # TODO: set Public Key as class variable to avoid building PEM every time
     # turn keycloak realm pub key into an actual openssl compat pub key.
     # keycloak_config = JSON.parse(File.read('config/keycloak.json'))
     keycloak_yml = YAML.load_file('config/keycloak.yml')
@@ -229,9 +228,8 @@ class Keycloak < Sinatra::Application
 
   # Token Validation Endpoint
   # "token_introspection_endpoint":"http://localhost:8081/auth/realms/master/protocol/openid-connect/token/introspect"
-  def token_validation(token, realm=nil)
+  def token_validation(token)
     begin
-      # url = URI("http://localhost:8081/auth/realms/master/clients-registrations/openid-connect/")
       url = URI("http://#{@@address.to_s}:#{@@port.to_s}/#{@@uri.to_s}/realms/#{@@realm_name}/protocol/openid-connect/token/introspect")
       res = Net::HTTP.post_form(url, 'client_id' => @@client_name,
                                 'client_secret' => @@client_secret,
@@ -475,9 +473,7 @@ class Keycloak < Sinatra::Application
                 # Then GET a new token
                 logger.debug 'Adapter: Refreshing Adapter token'
                 result = Keycloak.get_adapter_token
-                if result.is_a?(Integer)
-                  halt result
-                end
+                halt result if result.is_a?(Integer) # Error while getting new token
                 @@access_token = result
                 logger.debug "New Access Token saved #{@@access_token}"
                 return 200, @@access_token
@@ -492,9 +488,7 @@ class Keycloak < Sinatra::Application
           # Then GET a new token
           logger.debug 'Adapter: Refreshing Adapter token'
           result = Keycloak.get_adapter_token
-          if result.is_a?(Integer)
-            halt result
-          end
+          halt result if result.is_a?(Integer)
           @@access_token = result
           logger.debug "New Access Token saved #{@@access_token}"
           return 200, @@access_token
@@ -1145,10 +1139,10 @@ class Keycloak < Sinatra::Application
   end
 
   def is_expired?
-    public_key = get_public_key
+    @@sp_public_key = get_public_key if @@sp_public_key.nil?
     logger.debug 'Adapter: Decoding Access Token'
     begin
-      decoded_payload, decoded_header = JWT.decode @@access_token, public_key, true, { :algorithm => 'RS256' }
+      decoded_payload, decoded_header = JWT.decode @@access_token, @@sp_public_key, true, { :algorithm => 'RS256' }
       logger.debug 'Adapter: Access Token decoded successfully'
       response = 200
     rescue JWT::DecodeError
