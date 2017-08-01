@@ -52,14 +52,8 @@ def keyed_hash(hash)
 end
 
 def json_error(code, message)
-  #log_file = File.new("#{settings.root}/log/#{settings.environment}.log", 'a+')
-  #STDOUT.reopen(log_file)
-  #STDOUT.sync = true
-  #puts 'CODE', code.to_s
-  #puts 'MESSAGE', message.to_s
   msg = {'error' => message}
   logger.error(code.to_s + ',' + msg.to_s)
-  #STDOUT.sync = false
   halt code, {'Content-type' => 'application/json'}, msg.to_json
 end
 
@@ -132,17 +126,6 @@ class Adapter < Sinatra::Application
     ]
   end
 
-  def process_request req, scope
-    scopes, user = req.env.values_at :scopes, :user
-    username = user['username'].to_sym
-
-    if scopes.include?(scope) && @accounts.has_key?(username)
-      yield req, username
-    else
-      halt 403
-    end
-  end
-
   def self.assign_group(attr)
     # DEPRECATED
     case attr
@@ -155,35 +138,8 @@ class Adapter < Sinatra::Application
     end
   end
 
-  def authorize!
-    # DEPRECATED
-    # @decoded_token = JWT.decode @access_token, settings.keycloak_pub_key, true, { :algorithm => 'RS256' }
-    @decoded_payload, @decoded_header = JWT.decode @access_token, settings.keycloak_pub_key, true, { :algorithm => 'RS256' }
-    # puts "DECODED_TOKEN: ", @decoded_token
-    puts "DECODED_HEADER: ", @decoded_header
-    puts "DECODED_PAYLOAD: ", @decoded_payload
-
-    # @email = @decoded_token[0]["email"]
-    # @id = @decoded_token[0]["sub"]
-    # @user = @decoded_token[0]["preferred_username"]
-    @email = @decoded_payload["email"]
-    @id = @decoded_payload["sub"]
-    @user = @decoded_payload["preferred_username"]
-    # puts "ID?", @id
-    puts "EMAIL?", @email
-    halt 401, "ACCESS DENIED: No email address provided!" if @email.nil?
-
-    # "realm_access"=>{"roles"=>["uma_authorization"]}
-    @decoded_realm_roles = @decoded_payload["realm_access"]["roles"]
-    puts "REALM_ROLES?", @decoded_realm_roles
-    # "resource_access"=>{"son-connect"=>{"roles"=>["sonata_access"]}}
-    client_access = @decoded_payload["resource_access"].first# [0]["roles"] returns ['son-connect',{'roles'=>['son,...']}]
-    @decoded_user_roles = client_access[1]["roles"] # key, value -> [0][1]
-    puts "USER_ROLES?", @decoded_user_roles
-  end
-
   def set_keycloak_config()
-    #TODO: Implement
+    # DEPRECATED
     conf = YAML::load_file('../config/keycloak.yml') #Load
     conf['address'] = 'localhost'
     conf['port'] = 8081
@@ -197,7 +153,8 @@ class Adapter < Sinatra::Application
   def set_sonata_realm()
     # DEPRECATED
     # Requirement: pre-defined SONATA Realm json template:
-    # ./standalone.sh -Dkeycloak.migration.action=export -Dkeycloak.migration.provider=singleFile -Dkeycloak.migration.file=</path/to/template.json>
+    # ./standalone.sh -Dkeycloak.migration.action=export -Dkeycloak.migration.provider=singleFile
+    # -Dkeycloak.migration.file=</path/to/template.json>
     # Then, import template into Keycloak thorugh REST API:
     # Imports a realm from a full representation of that realm.
     # POST /admin/realms
@@ -243,8 +200,6 @@ class Adapter < Sinatra::Application
     request["content-type"] = 'application/json'
 
     response = http.request(request)
-    p "RESPONSE", response
-    p "RESPONSE.read_body222", response.read_body
   end
 
   def regenerate_client_secret()

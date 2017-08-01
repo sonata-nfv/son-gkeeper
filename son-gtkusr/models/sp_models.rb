@@ -56,16 +56,3 @@ class Sp_resource
 
   validates :resource_owner_name, :role, :resources, :policies, presence: true
 end
-
-# Class model for SP permissions
-#class Sp_permission
-#  include Mongoid::Document
-#  include Mongoid::Timestamps
-  # include Mongoid::Pagination
-#  include Mongoid::Attributes::Dynamic
-#  store_in collection: 'sp_permissions'
-
-#  field :name, type: String
-#  field :roles, type: Array
-#  validates :name, presence: true
-#end

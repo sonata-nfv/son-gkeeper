@@ -33,12 +33,6 @@ require_relative '../helpers/init'
 # Adapter-Keycloak API class
 class Keycloak < Sinatra::Application
 
-  # code, user_info = userinfo(user_token)
-  # if code != '200'
-  #  halt code.to_i, {'Content-type' => 'application/json'}, user_info
-  # end
-  # logger.debug "Adapter: User info: #{user_info}"
-
   # Role check; Allows total authorization to admin roles
   def admin_check(token_content)
     realm_roles = token_content['realm_access']['roles']
@@ -54,12 +48,8 @@ class Keycloak < Sinatra::Application
     path = URI(uri).path.split('/')[1]
     data = URI(uri).path.split('/').last
 
-    # p "PATH=#{path}"
-    # p "DATA=#{data}"
-
     # Find mapped resource to path in config mapping
     # resources = @@auth_mappings['resources']
-
     # Gather database resources
     begin
       resource = Sp_resource.find_by({'resources.URI' => path }) # 'resources.resource_name' => new_ns['name'],
@@ -180,7 +170,8 @@ class Keycloak < Sinatra::Application
   # DEPRECATED
   def authenticate(client_id, username, password, grant_type)
     http_path = "http://#{@@address.to_s}:#{@@port.to_s}/#{@@uri.to_s}/realms/#{@@realm_name}/protocol/openid-connect/token"
-    #`curl -X POST --data "client_id=#{client_id}&username=#{usrname}"&password=#{pwd}&grant_type=#{grt_type} #{http_path}`
+    #`curl -X POST --data "client_id=#{client_id}&username=#{usrname}"&
+    # password=#{pwd}&grant_type=#{grt_type} #{http_path}`
 
     uri = URI(http_path)
     res = nil
@@ -202,7 +193,6 @@ class Keycloak < Sinatra::Application
     if res.body['id_token']
       parsed_res, code = parse_json(res.body)
       id_token = parsed_res['id_token']
-      # puts "ID_TOKEN RECEIVED"# , parsed_res['access_token']
     else
       halt 401, "ERROR: ACCESS DENIED!"
     end
@@ -210,18 +200,13 @@ class Keycloak < Sinatra::Application
 
   # DEPRECATED
   def old_process_request(uri, method)
-    log_file = File.new("#{settings.root}/log/#{settings.environment}.log", 'a+')
-    STDOUT.reopen(log_file)
-    STDOUT.sync = true
-
     # Parse uri path
     path = URI(uri).path.split('/')[1]
-    p "path", path
 
     # Find mapped resource to path
-    # TODO: CHECK IF IS A VALID RESOURCE FROM DATABASE
+    # CHECK IF IS A VALID RESOURCE FROM DATABASE
     resources = @@auth_mappings['resources']
-    p "RESOURCES", resources
+
 
     # Gather database resources
     # Check if NS already exists in the catalogue by name, vendor and version
@@ -236,28 +221,25 @@ class Keycloak < Sinatra::Application
     resource = nil
     # p "PATHS", @@auth_mappings['paths']
     @@auth_mappings['paths'].each { |k, v|
-      puts "k, v", k, v
+      # puts "k, v", k, v
       v.each { |kk, vv|
-        puts "kk, vv", kk, vv
+        # puts "kk, vv", kk, vv
         if kk == path
-          p "Resource found", k, kk
+          # p "Resource found", k, kk
           resource = [k, kk]
           break
         end
       }
-      p "FOUND_RESOURCE", resource
+      # p "FOUND_RESOURCE", resource
       break if resource
     }
     json_error(403, 'The resource is not available') unless resource
-
-    # resource_data = resource['resources']
 
     unless @@auth_mappings['paths'][resource[0]][resource[1]].key?(method)
       json_error(403, 'The resource operation is not available')
     else
       operation = @@auth_mappings['paths'][resource[0]][resource[1]][method]
       puts "FOUND_OPERATION", operation
-      STDOUT.sync = false
       request = {"resource" => resource[0], "type" => resource[1], "operation" => operation}
     end
   end
@@ -265,74 +247,46 @@ class Keycloak < Sinatra::Application
   # DEPRECATED
   def old_authorize?(user_token, request)
     refresh_adapter
-    # => Check token
+    # Check token
     public_key = get_public_key
-    # p "SETTINGS", settings.keycloak_pub_key
     token_payload, token_header = decode_token(user_token, public_key)
-    # puts "payload", token_payload
 
-    # => evaluate request
+    # evaluate request
     # Find mapped resource to path
     # required_role is build following next pattern:
     # operation
     # operation_resource
     # operation_resource_type
-
-    log_file = File.new("#{settings.root}/log/#{settings.environment}.log", 'a+')
-    STDOUT.reopen(log_file)
-    STDOUT.sync = true
-
     logger.debug "Adapter: Token Payload: #{token_payload.to_s}, Token Header: #{token_header.to_s}"
-
     required_role = 'role_' + request['operation'] + '-' + request['resource']
-    # p "REQUIRED ROLE", required_role
     logger.debug "Adapter: Required Role: #{required_role}"
 
-    # => Check token roles
+    # Check token roles
     begin
       token_realm_access_roles = token_payload['realm_access']['roles']
     rescue
       json_error(403, 'No permissions')
     end
 
-    # TODO: Resource access roles (services) will be implemented later
+    # Resource access roles (services) will be implemented later
     token_resource_access_resources = token_payload['resource_access']
-    # .
-    # .
-    # .
-    # TODO: Evaluate special roles (customer,developer,etc...)
-    # .
-    # .
-    # .
-
-    p "realm_access_roles", token_realm_access_roles
     code, realm_roles = get_realm_roles
-
-    p "realm_roles", realm_roles
     parsed_realm_roles, errors = parse_json(realm_roles)
-    # p "Realm_roles_PARSED", parsed_realm_roles
 
     authorized = false
     token_realm_access_roles.each { |role|
-      # puts "ROLE TO INSPECT", role
-
       token_role_repr = parsed_realm_roles.find {|x| x['name'] == role}
       unless token_role_repr
         json_error(403, 'No permissions')
       end
 
-      puts "ROLE_DESC", token_role_repr['description']
       role_perms = token_role_repr['description'].tr('${}', '').split(',')
-      puts "ROLE_PERM", role_perms
-
       if role_perms.include?(required_role)
         authorized = true
       end
     }
 
-    STDOUT.sync = false
-
-    #=> Response => 20X or 40X
+    #Response => 20X or 40X
     case authorized
       when true
         return 200, nil
