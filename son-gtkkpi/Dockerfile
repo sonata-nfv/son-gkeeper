@@ -47,10 +47,7 @@ RUN set -eux; \
 go version
 ENV GOPATH /go
 ENV PATH $GOPATH/bin:/usr/local/go/bin:$PATH
-RUN mkdir -p "$GOPATH/src" "$GOPATH/bin" && chmod -R 777 "$GOPATH"
-RUN go get golang.org/x/sys/unix
-RUN go get github.com/prometheus/prom2json
-RUN go install github.com/prometheus/prom2json
+RUN go get github.com/prometheus/prom2json/cmd/prom2json
 RUN mkdir -p /app
 WORKDIR /app
 COPY Gemfile /app
