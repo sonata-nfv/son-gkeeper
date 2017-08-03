@@ -37,10 +37,7 @@ class Keycloak < Sinatra::Application
     # This endpoint allows queries for the next fields:
     # search, lastName, firstName, email, username, first, max
     logger.debug 'Adapter: entered GET /roles'
-    # Return if Authorization is invalid
-    # json_error(400, 'Authorization header not set') unless request.env["HTTP_AUTHORIZATION"]
     queriables = %w(id name)
-    # keyed_params = keyed_hash(params)
     params.each { |k, v|
       unless queriables.include? k.to_s
         json_error(400, 'Bad query')
@@ -71,9 +68,6 @@ class Keycloak < Sinatra::Application
     halt 400 unless new_role_data.is_a?(Hash)
 
     code, msg = create_realm_role(new_role_data)
-    logger.debug "CODE #{code}"
-    logger.debug "MESSAGE #{msg}"
-    # halt code.to_i, {'Content-type' => 'application/json'}, msg unless msg.empty?
     json_error(code.to_i, msg.to_s) unless msg.empty?
     halt code.to_i
   end
@@ -89,7 +83,6 @@ class Keycloak < Sinatra::Application
     queriables = %w(id name)
     logger.debug "params=#{params}"
     json_error(400, 'Role Name or Id is missing') if params.empty?
-    # keyed_params = keyed_hash(params)
 
     params.each { |k, v|
       logger.debug "Adapter: query #{k}=#{v}"
@@ -103,9 +96,7 @@ class Keycloak < Sinatra::Application
     role_data, errors = parse_json(role_data)
 
     new_role_data, errors = parse_json(request.body.read)
-    logger.debug "ERRORS", errors if errors
     halt 400, {'Content-type' => 'application/json'}, errors.to_json if errors
-    logger.debug "IS_A_HASH?" unless new_role_data.is_a?(Hash)
     halt 400 unless new_role_data.is_a?(Hash)
 
     code, msg = update_realm_role(role_data['name'], new_role_data)
@@ -117,11 +108,8 @@ class Keycloak < Sinatra::Application
   delete '/roles/?' do
     logger.debug 'Adapter: entered DELETE /roles'
     # DELETE /admin/realms/{realm}/roles/{id}
-    # Return if Authorization is invalid
-    # json_error(400, 'Authorization header not set') unless request.env["HTTP_AUTHORIZATION"]
     queriables = %w(id name)
     json_error(400, 'Role Name or Id is missing') if params.empty?
-    # keyed_params = keyed_hash(params)
 
     params.each { |k, v|
       logger.debug "Adapter: query #{k}=#{v}"
@@ -151,7 +139,7 @@ class Keycloak < Sinatra::Application
     json_error 400, 'Username not provided' unless form.key?('username')
     json_error 400, 'Role name not provided' unless form.key?('role')
 
-    #Translate from username to User_id
+    # Translate from username to User_id
     user_id = get_user_id(form['username'])
     json_error 404, 'Username not found' if user_id.nil?
 

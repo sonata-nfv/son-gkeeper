@@ -35,17 +35,14 @@ class Keycloak < Sinatra::Application
 
   post '/register/service' do
     logger.debug 'Adapter: entered POST /register/service'
-    # Return if content-type is not valid
     logger.info "Content-Type is " + request.media_type
     halt 415 unless request.content_type == 'application/json'
 
-    # TODO: Do some validations to the serviceForm
     # Compatibility support for JSON content-type
     # Parses and validates JSON format
     parsed_form, errors = parse_json(request.body.read)
     halt 400, errors.to_json if errors
 
-    # puts "REGISTERING NEW CLIENT"
     logger.info 'Registering new Service client'
     client_id = register_client(parsed_form)
 
@@ -54,16 +51,15 @@ class Keycloak < Sinatra::Application
       json_error(400, 'Service client registration failed')
     end
 
-    # TODO: To solve predefined roles dependency, create a new role based on client registration
+    # To solve predefined roles dependency, create a new role based on client registration
     # New role should have Client Id (name) of service
-    # puts "SETTING CLIENT ROLES"
 
     client_data, role_data, error_code, error_msg = set_service_roles(parsed_form['clientId'])
     if error_code != nil
       delete_client(parsed_form['clientId'])
       halt error_code, {'Content-type' => 'application/json'}, error_msg.to_json
     end
-    # puts "SETTING SERVICE ACCOUNT ROLES"
+
     code, error_msg = set_service_account_roles(client_data['id'], role_data)
     if code != 204
       delete_client(parsed_form['clientId'])
@@ -76,7 +72,6 @@ class Keycloak < Sinatra::Application
 
   post '/login/service' do
     logger.debug 'Adapter: entered POST /login/service'
-    # Return if Authorization is invalid
     halt 400 unless request.env["HTTP_AUTHORIZATION"]
 
     pass = request.env["HTTP_AUTHORIZATION"].split(' ').last
@@ -99,11 +94,8 @@ class Keycloak < Sinatra::Application
   end
 
   get '/services' do
-    # This endpoint allows queries for the next fields:
-    # name
+    # This endpoint allows queries for the next fields: name
     logger.debug 'Adapter: entered GET /services'
-    # Return if Authorization is invalid
-    # json_error(400, 'Authorization header not set') unless request.env["HTTP_AUTHORIZATION"]
     queriables = %w(name id)
 
     if params.length > 1
@@ -112,7 +104,6 @@ class Keycloak < Sinatra::Application
 
     if params.first
       k, v = params.first
-      # logger.debug "Adapter: k value #{k}"
       unless queriables.include? k
         json_error(400, 'Bad query')
       end
@@ -134,12 +125,9 @@ class Keycloak < Sinatra::Application
   end
 
   delete '/services' do
-    # This endpoint allows queries for the next fields:
-    # name
+    # This endpoint allows queries for the next fields: name
     logger.debug 'Adapter: entered DELETE /services'
     logger.debug "Adapter: required query #{params}"
-    # Return if Authorization is invalid
-    # json_error(400, 'Authorization header not set') unless request.env["HTTP_AUTHORIZATION"]
     queriables = %w(name id)
     protected_services = %w(account adapter admin-cli broker realm-management security-admin-console)
 
@@ -180,9 +168,6 @@ class Keycloak < Sinatra::Application
       # Get all service client sessions
       # Returns a list of service client sessions
       logger.debug 'Adapter: entered GET /sessions/services'
-      # Return if Authorization is invalid
-      # json_error(400, 'Authorization header not set') unless request.env["HTTP_AUTHORIZATION"]
-      # adapter_id = get_adapter_id
       ses_code, ses_msg = get_sessions('service', nil)
 
       params['offset'] ||= DEFAULT_OFFSET
@@ -201,9 +186,6 @@ class Keycloak < Sinatra::Application
     # Get all service client sessions
     # Returns a list of service client sessions
     logger.debug 'Adapter: entered GET /sessions/services'
-    # Return if Authorization is invalid
-    # json_error(400, 'Authorization header not set') unless request.env["HTTP_AUTHORIZATION"]
-    # adapter_id = get_adapter_id
     ses_code, ses_msg = get_sessions('service', nil)
 
     params['offset'] ||= DEFAULT_OFFSET
@@ -216,5 +198,4 @@ class Keycloak < Sinatra::Application
     # Get service client sessions
     # Returns a list of sessions associated with the client service user
   end
-
 end

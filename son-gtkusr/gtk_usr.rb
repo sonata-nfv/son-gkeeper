@@ -56,9 +56,9 @@ configure do
   log_file.sync = true
   use Rack::CommonLogger, log_file
 
-  #STDOUT.reopen(log_file)
+  # STDOUT.reopen(log_file)
   STDERR.reopen(log_file)
-  #STDOUT.sync = true
+  # STDOUT.sync = true
   STDERR.sync = true
 
   class Keycloak < Sinatra::Application
@@ -78,7 +78,7 @@ configure do
     DEFAULT_LIMIT = '10'
     DEFAULT_MAX_LIMIT = '100'
 
-    #self.get_realm_public_key
+    # self.get_realm_public_key
     # self.get_oidc_endpoints
     # self.get_adapter_install_json
     # @@access_token = self.get_adapter_token
