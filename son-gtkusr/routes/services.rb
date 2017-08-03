@@ -45,10 +45,10 @@ class Keycloak < Sinatra::Application
     halt 400, errors.to_json if errors
 
     logger.info 'Registering new Service client'
-    client_id = register_client(parsed_form)
+    client_id, code, msg = register_client(parsed_form)
 
     if client_id.nil?
-      logger.debug "Service form client_id.nil=#{client_id}"
+      logger.debug "client_id error=#{code}, #{msg.to_s}"
       delete_client(parsed_form['clientId'])
       json_error(400, 'Service client registration failed')
     end
