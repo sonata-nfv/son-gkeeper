@@ -327,7 +327,8 @@ class Keycloak < Sinatra::Application
     response = http.request(request)
     response_json, code = parse_json(response.read_body)
     if response.code.to_i != 201
-      halt response.code.to_i, {'Content-type' => 'application/json'}, response.body
+      # halt response.code.to_i, {'Content-type' => 'application/json'}, response.body
+      return nil, response.code.to_i, response.body
     end
 
     # GET new registered Client Id

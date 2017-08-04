@@ -41,12 +41,14 @@ class Keycloak < Sinatra::Application
     # Compatibility support for JSON content-type
     # Parses and validates JSON format
     parsed_form, errors = parse_json(request.body.read)
+    logger.debug "Service form errors#{errors}"
     halt 400, errors.to_json if errors
 
     logger.info 'Registering new Service client'
-    client_id = register_client(parsed_form)
+    client_id, code, msg = register_client(parsed_form)
 
     if client_id.nil?
+      logger.debug "client_id error=#{code}, #{msg.to_s}"
       delete_client(parsed_form['clientId'])
       json_error(400, 'Service client registration failed')
     end
