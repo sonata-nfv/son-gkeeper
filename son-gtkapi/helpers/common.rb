@@ -182,17 +182,17 @@ module GtkApiHelper
       
       # No licence implies 'public' licence
       if element[:licences].to_s.empty? || element[:licences] == 'public'
-        element[:licence_type] = 'public'
+        element[:user_licence] = 'public'
       else
         # it's private
         if element[:username] == user
-          element[:licence_type] = 'owned'
+          element[:user_licence] = 'owned'
         elsif licenced_collection.any? {|licensed_element| licensed_element[:uuid] == element[:uuid] }
-          element[:licence_type] = 'licensed'
+          element[:user_licence] = 'licensed'
         else
           # if a licence is needed, we're not passing the whole stuff back
           keys_to_delete.each { |key| element.delete(key) }
-          element[:licence_type] = 'to buy'
+          element[:user_licence] = 'to buy'
         end
       end
     end
