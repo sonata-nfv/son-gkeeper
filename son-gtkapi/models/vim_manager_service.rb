@@ -232,4 +232,3 @@ class VimManagerService < ManagerService
     response
   end
 end
-end
