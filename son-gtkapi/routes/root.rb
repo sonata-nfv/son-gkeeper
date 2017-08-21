@@ -44,8 +44,32 @@ class GtkApi < Sinatra::Base
   end
   
   get '/api/v2/available-services/?' do
+    now = Time.now.utc
+    log_message = 'GtkApi::GET /api/v2/available-services/?'
+    logger.debug(log_message) {'entered'}
+    
     content_type :json
-    halt 200, GtkApi.services.keys.to_json 
+    services = GtkApi.services.keys
+    available_services = []
+    available_services << {name: 'api', alive_since: settings.began_at, seconds: now-settings.began_at}
+    services.each do |service_name|
+      properties = GtkApi.services[service_name]
+      model = Object.const_get(properties['model'])
+      unless model.respond_to? :began_at
+        available_services << { name: service_name, alive_since: nil, seconds: nil} 
+        next
+      end
+      
+      resp = model.began_at
+      logger.debug(log_message) {"resp = #{resp}"}
+      unless resp[:status] == 200
+        available_services << { name: service_name, alive_since: nil, seconds: nil}
+        next
+      end
+      began_at = resp[:items][:began_at]
+      available_services << { name: service_name, alive_since: began_at, seconds: now-Time.parse(began_at)}
+    end
+    halt 200, available_services.to_json 
   end
   
   error Sinatra::NotFound do

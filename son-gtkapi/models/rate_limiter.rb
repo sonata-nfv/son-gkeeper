@@ -28,7 +28,7 @@
 require './models/manager_service.rb'
 require 'active_support'
 
-class Throttle < ManagerService
+class RateLimiter < ManagerService
 
   LOG_MESSAGE = 'GtkApi::' + self.name
   
@@ -44,6 +44,7 @@ class Throttle < ManagerService
     GtkApi.logger.debug(method) {'entered with url='+url}
   end
   
+  # TODO: adapt all this to the true Rate Limiter
   def self.open?(params)
     method = LOG_MESSAGE + __method__.to_s
     GtkApi.logger.debug(method) {"entered with params=#{params}"}

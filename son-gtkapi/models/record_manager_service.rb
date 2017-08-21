@@ -61,4 +61,12 @@ class RecordManagerService < ManagerService
     GtkApi.logger.debug(method) {"entered with uuid=#{uuid}"}
     find(url: @@url + '/functions?function_uuid=' + uuid, log_message: LOG_MESSAGE + "##{__method__}(#{uuid})") #+ '/records/' 
   end
+  
+  def self.began_at
+    log_message=LOG_MESSAGE+"##{__method__}"
+    GtkApi.logger.debug(log_message) {'entered'}    
+    response = getCurb(url: @@url + '/began_at')
+    GtkApi.logger.debug(log_message) {"response=#{response}"}
+    response
+  end
 end

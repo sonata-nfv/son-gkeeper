@@ -206,6 +206,9 @@ class User < ManagerService
         GtkApi.logger.debug(log_message) {"user does not respond to #{setter}"}
       end
     end
+    
+    # TODO
+    # what about actualy updating in the USer Managemen??
   end
   
 =begin
@@ -384,6 +387,14 @@ class User < ManagerService
     method = LOG_MESSAGE + "##{__method__}"
     GtkApi.logger.debug(method) {"entered"}
     self.instance_variables.each_with_object({}) { |var,hash| hash[var[1..-1].to_sym] = self.instance_variable_get(var) }
+  end
+  
+  def self.began_at
+    log_message=LOG_MESSAGE+"##{__method__}"
+    GtkApi.logger.debug(log_message) {'entered'}    
+    response = getCurb(url: @@url + '/began_at')
+    GtkApi.logger.debug(log_message) {"response=#{response}"}
+    response
   end
   
   private 
