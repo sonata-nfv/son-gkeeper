@@ -82,6 +82,13 @@ class GtkFnct < Sinatra::Base
     File.open('log/'+ENV['RACK_ENV']+'.log', 'r').read
   end
   
+  get '/began_at/?' do
+    log_message = 'GtkFnct GET /began_at'
+    logger.debug(log_message) {'entered'}
+    logger.debug(log_message) {"began at #{settings.began_at}"}
+    halt 200, {began_at: settings.began_at}.to_json
+  end
+  
   private
     
   def query_string

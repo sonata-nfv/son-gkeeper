@@ -139,6 +139,13 @@ class GtkSrv < Sinatra::Base
     logger.debug(log_message) {"returning with updated request=#{request}"}
     halt 200, request.to_json
   end  
+  
+  get '/began_at/?' do
+    log_message = 'GtkSrv GET /began_at'
+    logger.debug(log_message) {'entered'}
+    logger.debug(log_message) {"began at #{settings.began_at}"}
+    halt 200, {began_at: settings.began_at}.to_json
+  end
 
   private 
   def query_string
@@ -146,13 +153,13 @@ class GtkSrv < Sinatra::Base
   end
 
   def request_url
-    log_message = 'GtkApi::request_url'
+    log_message = 'GtkSrv::request_url'
     logger.debug(log_message) {"Schema=#{request.env['rack.url_scheme']}, host=#{request.env['HTTP_HOST']}, path=#{request.env['REQUEST_PATH']}"}
     request.env['rack.url_scheme']+'://'+request.env['HTTP_HOST']+request.env['REQUEST_PATH']
   end
 
   def get_service(params)
-    log_message = 'GtkApi::get_service'
+    log_message = 'GtkSrv::get_service'
     logger.debug(log_message) {"entered with params #{params}"}
     if params['request_type'] == 'TERMINATE'
       # Get the service_uuid from the creation request

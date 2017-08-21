@@ -273,7 +273,13 @@ class GtkVim < Sinatra::Base
     halt 500, 'Internal server error'
   end
   end
-
+  
+  get '/began_at/?' do
+    log_message = 'GtkWim /began_at'
+    logger.debug(log_message) {'entered'}
+    logger.debug(log_message) {"began at #{settings.time_at_startup}"}
+    halt 200, {began_at: settings.time_at_startup}.to_json
+  end
 
   get '/admin/logs' do
     logger.debug "GtkSrv: entered GET /admin/logs"
