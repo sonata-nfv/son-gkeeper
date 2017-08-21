@@ -34,7 +34,6 @@ require_relative '../helpers/init'
 # Adapter class
 class Adapter < Sinatra::Application
   # @method get_root
-  # @overload get '/'
   # Get all available interfaces
   # -> Get all interfaces
   get '/' do
@@ -43,13 +42,12 @@ class Adapter < Sinatra::Application
   end
 
   # @method get_log
-  # @overload get '/adapter/log'
   # Returns contents of log file
   # Management method to get log file of adapter remotely
   get '/log' do
     logger.debug 'Adapter: entered GET /admin/log'
     headers 'Content-Type' => 'text/plain; charset=utf8'
-    #filename = 'log/development.log'
+    # filename = 'log/development.log'
     filename = 'log/production.log'
 
     # For testing purposes only
@@ -110,6 +108,9 @@ class Keycloak < Sinatra::Application
     get_adapter_install_json
     @@access_token = self.get_adapter_token
     logger.debug 'Adapter: POST /config obtained access_token'
+    @@sp_public_key = get_public_key if @@sp_public_key.nil?
+    logger.debug 'Adapter: POST /config obtained platform public key'
+
     begin
       logger.debug 'Adapter: Loading default resource file'
       default_resource = File.read('config/initial-resource.json')
@@ -186,7 +187,6 @@ class Keycloak < Sinatra::Application
 
     # 4. Direct Access for Admins
     # Role check; Allows total authorization to admin roles
-
     result = admin_check(token_content)
     if result
       logger.info "Adapter: Authorized access to administrator Id=#{token_content['sub']}"
@@ -227,7 +227,7 @@ class Keycloak < Sinatra::Application
     # The permissions are used to restrict access to an API endpoint and control users actions
     # The authorize endpoint essentially returns true if any of the user’s permission has access to the endpoint
     # Check the provided path to the resource and the HTTP method, then build the request
-    #if @@enabled_db...
+    # if @@enabled_db...
     request = process_request(keyed_params[:path], keyed_params[:method])
     json_error(401, 'Resource unavaliable') if request.nil?
 
@@ -300,10 +300,7 @@ class Keycloak < Sinatra::Application
 
     # Validate token
     res = token_expired?(user_token)
-    if res == 200
-      halt 200
-    else
-      json_error(401, res)
-    end
+    json_error(401, res) if res != 200
+    halt 200
   end
 end

@@ -105,10 +105,11 @@ class VimManagerService < ManagerService
       response3 = postCurb(url:@@url+'/vim/networking-resources', body: nparams)
       GtkApi.logger.debug(method) {"response3="+response3.to_s}
 
-      # Object WIM ATTACH {"wim_uuid":String, "vim_uuid":String}
+      # Object WIM ATTACH {"wim_uuid":String, "vim_uuid":String, "vim_address":String}
       wparams={}
       wparams[:wim_uuid] = params[:wim_id]
       wparams[:vim_uuid] = compute_uuid
+      wparams[:vim_address] = params[:networking_configuration][:vim_address]
       GtkApi.logger.debug(method) {"@url = " + @@url}
 
       # Creating link VIM -> WIM
@@ -230,4 +231,5 @@ class VimManagerService < ManagerService
     GtkApi.logger.debug(log_message) {"response=#{response}"}
     response
   end
+end
 end

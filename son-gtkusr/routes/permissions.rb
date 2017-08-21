@@ -46,16 +46,6 @@ class Keycloak < Sinatra::Application
 
   get '/resources/?' do
     logger.debug 'Adapter: entered GET /resources'
-    # Return if Authorization is invalid
-    #halt 400 unless request.env["HTTP_AUTHORIZATION"]
-    #user_token = request.env["HTTP_AUTHORIZATION"].split(' ').last
-    #unless user_token
-    #  json_error(400, 'Access token is not provided')
-    #end
-    #res = token_expired?(user_token)
-    #if res != 200
-    #  json_error(401, res)
-    #end
 
     params['offset'] ||= DEFAULT_OFFSET
     params['limit'] ||= DEFAULT_LIMIT
@@ -84,16 +74,6 @@ class Keycloak < Sinatra::Application
 
   post '/resources' do
     logger.debug 'Adapter: entered POST /resources'
-    # Return if Authorization is invalid
-    #halt 400 unless request.env["HTTP_AUTHORIZATION"]
-    #user_token = request.env["HTTP_AUTHORIZATION"].split(' ').last
-    #unless user_token
-    #  json_error(400, 'Access token is not provided')
-    #end
-    #res = token_expired?(user_token)
-    #if res != 200
-    #  json_error(401, res)
-    #end
 
     json_error(415, 'Only "Content-type: application/json" is supported') unless
         request.content_type == 'application/json'
@@ -102,11 +82,6 @@ class Keycloak < Sinatra::Application
     # Parses and validates JSON format
     new_resource, errors = parse_json(request.body.read)
     halt 400, {'Content-type' => 'application/json'}, errors.to_json if errors
-
-    # JSON form evaluation processes
-    #unless form.key?('enabled')
-    #  form = form.merge({'enabled'=> true})
-    #end
 
     # Validate Resource object
     json_error 400, 'ERROR: Resource Vendor not found' unless new_resource.has_key?('resource_owner_name')
@@ -146,16 +121,6 @@ class Keycloak < Sinatra::Application
 
   put '/resources/?' do
     logger.debug 'Adapter: entered PUT /resources'
-    # Return if Authorization is invalid
-    # halt 400 unless request.env["HTTP_AUTHORIZATION"]
-    # user_token = request.env["HTTP_AUTHORIZATION"].split(' ').last
-    # unless user_token
-    #   json_error(400, 'Access token is not provided')
-    # end
-    # res = token_expired?(user_token)
-    # if res != 200
-    #   json_error(401, res)
-    # end
 
     keyed_params = keyed_hash(params)
     headers = {'Accept' => 'application/json', 'Content-Type' => 'application/json'}
