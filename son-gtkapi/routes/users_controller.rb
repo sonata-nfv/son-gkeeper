@@ -78,10 +78,10 @@ class GtkApi < Sinatra::Base
       params = JSON.parse(request.body.read, symbolize_names: true)
       
       logger.info(log_message) {"entered with params=#{params}"}
-      #require_param(param: 'username', params: params, kpi_method: method(:count_user_profile_updates), error_message: "No user name provided: #{params}", log_message: log_message, began_at: began_at)
-      #require_param(param: 'password', params: params, kpi_method: method(:count_user_profile_updates), error_message: "No password provided: #{params}", log_message: log_message, began_at: began_at)
-      #require_param(param: 'email', params: params, kpi_method: method(:count_user_profile_updates), error_message: "No email provided: #{params}", log_message: log_message, began_at: began_at)
-      #require_param(param: 'user_type', params: params, kpi_method: method(:count_user_profile_updates), error_message: "No user type provided: #{params}", log_message: log_message, began_at: began_at)
+      require_param(param: :username, params: params, kpi_method: method(:count_user_profile_updates), error_message: "No user name provided: #{params}", log_message: log_message, began_at: began_at)
+      require_param(param: :password, params: params, kpi_method: method(:count_user_profile_updates), error_message: "No password provided: #{params}", log_message: log_message, began_at: began_at)
+      require_param(param: :email, params: params, kpi_method: method(:count_user_profile_updates), error_message: "No email provided: #{params}", log_message: log_message, began_at: began_at)
+      require_param(param: :user_type, params: params, kpi_method: method(:count_user_profile_updates), error_message: "No user type provided: #{params}", log_message: log_message, began_at: began_at)
       token = get_token( request.env, began_at, method(:count_user_profile_updates), log_message)
       user_name = get_username_by_token( token, began_at, method(:count_user_profile_updates), log_message)
       
@@ -90,7 +90,7 @@ class GtkApi < Sinatra::Base
       
       begin
         user = User.find_by_name(user_name)
-        updated_info=user.update(params)
+        updated_info=user.update(params, token)
         count_user_profile_updates(labels: {result: "ok", uuid: user.uuid, elapsed_time: (Time.now.utc-began_at).to_s})
         logger.info(log_message) {"leaving with user name #{user.username}"}
         headers 'Location'=> User.class_variable_get(:@@url)+"/api/v2/users/#{user.uuid}", 'Content-Type'=> 'application/json'
@@ -98,7 +98,7 @@ class GtkApi < Sinatra::Base
       rescue UserNameAlreadyInUseError
         count_user_profile_updates(labels: {result: "duplicate", uuid: '', elapsed_time: (Time.now.utc-began_at).to_s})
         json_error 409, "User name #{params[:username]} already in use", log_message
-      rescue UserNotCreatedError
+      rescue UserNotUpdatedError
         count_user_profile_updates(labels: {result: "bad request", uuid: '', elapsed_time: (Time.now.utc-began_at).to_s})
         json_error 400, "Error updating user #{params}", log_message
       end
