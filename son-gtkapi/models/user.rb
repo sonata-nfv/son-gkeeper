@@ -39,12 +39,13 @@ class UserNotLoggedOutError < StandardError; end
 class UserTokenNotActiveError < StandardError; end
 class UserTokenDoesNotMatchError < StandardError; end
 class UserPublicKeyNotUpdatedError < StandardError; end
+class UserNotUpdatedError < StandardError; end
 
 class User < ManagerService
 
   LOG_MESSAGE = 'GtkApi::' + self.name
   
-  attr_accessor :uuid, :username, :session, :secret, :created_at, :user_type, :email, :last_name, :first_name, :public_key, :certificate
+  attr_accessor :uuid, :username, :password, :secret, :created_at, :user_type, :email, :last_name, :first_name, :phone_number, :public_key, :certificate
   
   # {"username" => "sampleuser", "enabled" => true, "totp" => false, "emailVerified" => false, "firstName" => "User", "lastName" => "Sample", "email" => "user.sample@email.com.br", "credentials" => [ {"type" => "password", "value" => "1234"} ], "requiredActions" => [], "federatedIdentities" => [], "attributes" => {"developer" => ["true"], "customer" => ["false"], "admin" => ["false"]}, "realmRoles" => [], "clientRoles" => {}, "groups" => ["developers"]}
   
@@ -62,7 +63,6 @@ class User < ManagerService
     #raise ArgumentError.new('UserManagerService can not be instantiated without a password') unless (params.key?(:password) && !params[:password].empty?)
     @username = params[:username]
     @secret = Base64.strict_encode64(params[:username]+':'+params[:password]) if params[:password]
-    @session = nil
     @uuid = params[:uuid]
     @created_at = params[:created_at]
     @user_type = params[:user_type]
@@ -189,7 +189,7 @@ class User < ManagerService
     end
   end
   
-  def update(fields)
+  def update(fields, token)
     log_message = LOG_MESSAGE + "##{__method__}"
     raise ArgumentError.new __method__.to_s+' requires a hash with arguments' if fields.to_s.empty?
     GtkApi.logger.debug(log_message) {"entered with fields=#{fields}"}
@@ -198,7 +198,7 @@ class User < ManagerService
       setter = :"#{key}="
       GtkApi.logger.debug(log_message) {"setter is #{setter}"}
       if respond_to?(setter)
-        GtkApi.logger.debug(log_message) {"user respondes to #{setter}"}
+        GtkApi.logger.debug(log_message) {"user responds to #{setter}"}
         public_send(setter, value)
         new_val = instance_variable_get("@#{key}")
         GtkApi.logger.debug(log_message) {"variable @#{key} set to #{new_val}"}
@@ -206,19 +206,34 @@ class User < ManagerService
         GtkApi.logger.debug(log_message) {"user does not respond to #{setter}"}
       end
     end
-    
-    # TODO
-    # what about actualy updating in the USer Managemen??
+    save(token: token)
   end
-  
-=begin
-      The UM is expecting a PUT /api/v1/signatures/:username with a body like {"public_key":"..."}.
-      HTTP method: PUT
-      Authentication header includes the user's Access Token
-      Parameter: username
-      Body: JSON object that includes public_key field (required) and certificate field (optional). Sample:
-      {"public_key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEArVFiBHBiLPFRGrMobAxcK98SJRKKXJOkA66NL0UEgR7g8hOjVySchYUvtGAU5wi2ZCjmPGDT0hrJd1WEBplv0kT7YrIgdRGXGH73OJFjH8c7iX+XBwk0sH1K+KMUbszSbWFCKAlyHhYa8vz95RyzmzoMJZW6TeadlhRLuVw52RECaK9eIJu311oFA8os3z8J65olLexT0vF+B9Oqtn1gVJUfC0w984PXwMoGzSOVCbb5jD0/blAXonMS8PU+JFSGF4trTwRcmjw349NDEifUQamdHE8pynuxSpAuMN2WAPAlJpjnw/fHUxQFgRNGki6vHmegnQ6qmcbuorVW3oXkMwIDAQAB", "certificate": "optional"}
-=end
+
+  def save(token:)
+    method = LOG_MESSAGE + "##{__method__}"
+    GtkApi.logger.debug(method) {"entered"}
+    body={public_key: @public_key, certificate: @certificate}
+    headers = {'Content-type'=>'application/json', 'Accept'=> 'application/json', 'Authorization'=>'Bearer '+token}
+    resp = User.putCurb(url: @@url+'/api/v1/users?username='+@username, body: export(), headers: headers)
+    case resp[:status]
+    when 204 # data was successfully saved
+      GtkApi.logger.debug(method) {"User data saved"}
+      self
+    when 400 # Provided username does not match with Access Token, No username specified or Developer public key not provided
+      GtkApi.logger.debug(method) {'Username '+@username+' does not match with token'}
+      raise UserTokenDoesNotMatchError.new 'Username '+@username+' does not match with token'
+    when 401 # Token is not valid
+      GtkApi.logger.debug(method) {'Username '+@username+' provided a token that is not valid'}
+      raise UserTokenNotActiveError.new 'Username '+@username+' provided a token that is not valid'
+    when 404 # Username is not found
+      GtkApi.logger.debug(method) {'Username '+@username+' was not found'}
+      raise UserNotFoundError.new 'Username '+@username+' was not found'
+    else
+      GtkApi.logger.error(method) {"Status #{resp[:status]}"} 
+      raise UserNotUpdatedError.new 'User public-key not updated'
+    end
+  end
+   
   def save_public_key(params, token)
     method = LOG_MESSAGE + "##{__method__}"
     raise ArgumentError.new __method__.to_s+' requires the login token' if token.to_s.empty?
@@ -413,6 +428,27 @@ class User < ManagerService
     user[:first_name] = original_user[:firstName] if original_user[:firstName]
     user[:last_name] = original_user[:lastName] if original_user[:lastName]
     user[:phone_number] = original_user[:attributes][:phone_number].first if original_user[:attributes][:phone_number]
+    user
+  end
+
+  def export()
+    log_message=LOG_MESSAGE+"##{__method__}"
+    GtkApi.logger.debug(log_message) {'entered'}
+    user = {}
+      
+    user[:firstName] = first_name if first_name
+    user[:lastName] = last_name if last_name
+    
+    # Transform password
+    user[:credentials] = [{type: 'password', value: password}]
+    
+    # Transform user type
+    user[:attributes] = {}
+    user[:attributes][:userType] = [user_type]
+    user[:attributes][:phone_number] = [phone_number] if phone_number
+    user[:attributes][:certificate] = [certificate] if certificate
+    user[:attributes][:public_key] = [public_key] if public_key
+    GtkApi.logger.debug(log_message) {"user = #{user}"}
     user
   end
 end
