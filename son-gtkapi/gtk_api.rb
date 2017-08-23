@@ -84,6 +84,7 @@ class GtkApi < Sinatra::Base
   enable :cross_origin
   #enable :method_override
 
+  set :gatekeeper_api_client_id, SecureRandom.uuid 
   settings.services.each do |service, properties|
     # do not use properties['url']: they're depprecated, in favor of ANSIBLE configuration
     # set it from the ENV var instead
@@ -104,34 +105,29 @@ class GtkApi < Sinatra::Base
     c.continue_on_exists_proc = true
   end
   
-  if settings.services['rate_limiter']
-    set :gatekeeper_api_client_id, SecureRandom.uuid 
+  def create_rate_limits()
     limits = settings.services['rate_limiter']['limits']
-    params = {limit_id: limits['user_creation']['name'], limit: limits['user_creation']['limit'].to_i, period: limits['user_creation']['period'].to_i, description: limits['user_creation']['description']}
-    resp = Object.const_get(settings.services['rate_limiter']['model']).create(params: params)
-    if (resp && resp[:status] == 201)
-      set :user_creation_rate_limiter, limits['user_creation']['name']
-    else
-      settings.logger.error('GtkApi') {'Rate limiter is in place, but could not create a limit'}
+    limits.each do |limit|
+      params = {limit_id: limit['name'], limit: limit['limit'].to_i, period: limit['period'].to_i, description: limit['description']}
+      resp = Object.const_get(settings.services['rate_limiter']['model']).create(params: params)
+      settings.logger.error('GtkApi') {'Rate limiter is in place, but could not create a limit'} unless (resp || resp[:status] == 201)
     end
-    params = {limit_id: limits['others']['name'], limit: limits['others']['limit'].to_i, period: limits['others']['period'].to_i, description: limits['others']['description']}
-    resp = Object.const_get(settings.services['rate_limiter']['model']).create(params: params)
-    if (resp && resp[:status] == 201)
-      set :others_rate_limiter, limits['others']['name']
-    else
-      settings.logger.error('GtkApi') {'GtkApi: Rate limiter is in place, but could not create a limit'} 
-    end
+    enable :rate_limits_created
   end
-  
+
   def check_rate_limit(limit: , client:)
-    rl_params = {limit_id: limit, client_id: client}
-    begin
-      resp = Object.const_get(settings.services['rate_limiter']['model']).check(params: rl_params)
-      halt 429, {error: { code: 429, message:'GtkApi: Too many user creation requests were made'}}.to_json unless resp[:allowed]
-      resp[:remaining]
-    rescue RateLimitNotCheckedError => e
-      halt 400, {error: { code: 400, message:'There seems to have been a problem with user creation rate limit validation'}}.to_json
+    if settings.services['rate_limiter']
+      create_rate_limits() unless settings.rate_limits_created
+      rl_params = {limit_id: limit, client_id: client}
+      begin
+        resp = Object.const_get(settings.services['rate_limiter']['model']).check(params: rl_params)
+        halt 429, {error: { code: 429, message:'GtkApi: Too many user creation requests were made'}}.to_json unless resp[:allowed]
+        resp[:remaining]
+      rescue RateLimitNotCheckedError => e
+        halt 400, {error: { code: 400, message:'There seems to have been a problem with user creation rate limit validation'}}.to_json
+      end
     end
+    '0' # Allows this request to proceed
   end
       
   def query_string
