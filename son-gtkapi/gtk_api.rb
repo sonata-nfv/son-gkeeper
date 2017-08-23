@@ -36,6 +36,7 @@ require 'sinatra/reloader'
 require 'zip'
 require 'sinatra/logger'
 require 'sinatra/namespace'
+require 'securerandom'
 #require 'active_support/all'
 
 # Require the bundler gem and then call Bundler.require to load in all gems listed in Gemfile.
@@ -103,15 +104,45 @@ class GtkApi < Sinatra::Base
     c.continue_on_exists_proc = true
   end
   
+  if settings.services['rate_limiter']
+    set :gatekeeper_api_client_id, SecureRandom.uuid 
+    limits = settings.services['rate_limiter']['limits']
+    params = {limit_id: limits['user_creation']['name'], limit: limits['user_creation']['limit'].to_i, period: limits['user_creation']['period'].to_i, description: limits['user_creation']['description']}
+    resp = Object.const_get(settings.services['rate_limiter']['model']).create(params: params)
+    if (resp && resp[:status] == 201)
+      set :user_creation_rate_limiter, limits['user_creation']['name']
+    else
+      settings.logger.error('GtkApi') {'Rate limiter is in place, but could not create a limit'}
+    end
+    params = {limit_id: limits['others']['name'], limit: limits['others']['limit'].to_i, period: limits['others']['period'].to_i, description: limits['others']['description']}
+    resp = Object.const_get(settings.services['rate_limiter']['model']).create(params: params)
+    if (resp && resp[:status] == 201)
+      set :others_rate_limiter, limits['others']['name']
+    else
+      settings.logger.error('GtkApi') {'GtkApi: Rate limiter is in place, but could not create a limit'} 
+    end
+  end
+  
+  def check_rate_limit(limit: , client:)
+    rl_params = {limit_id: limit, client_id: client}
+    begin
+      resp = Object.const_get(settings.services['rate_limiter']['model']).check(params: rl_params)
+      halt 429, {error: { code: 500, message:'GtkApi: Too many user creation requests were made'}}.to_json unless resp[:allowed]
+      resp[:remaning]
+    rescue RateLimitNotCheckedError => e
+      halt 400, {error: { code: 500, message:'There seems to have been a problem with user creation rate limit validation'}}.to_json
+    end
+  end
+      
   def query_string
     log_message = 'GtkApi::query_string'
-    settings.logger.debug(log_message) {"query_string=#{request.env['QUERY_STRING']}"}
+    settings.logger.debug('GtkApi') {"query_string=#{request.env['QUERY_STRING']}"}
     request.env['QUERY_STRING'].empty? ? '' : '?' + request.env['QUERY_STRING'].to_s
   end
 
   def request_url
     log_message = 'GtkApi::request_url'
-    settings.logger.debug(log_message) {"Schema=#{request.env['rack.url_scheme']}, host=#{request.env['HTTP_HOST']}, path=#{request.env['REQUEST_PATH']}"}
+    settings.logger.debug('GtkApi') {"Schema=#{request.env['rack.url_scheme']}, host=#{request.env['HTTP_HOST']}, path=#{request.env['REQUEST_PATH']}"}
     "#{request.env['rack.url_scheme']}://#{request.env['HTTP_HOST']}#{request.env['REQUEST_PATH']}"
   end
 end

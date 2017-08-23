@@ -28,89 +28,62 @@
 require './models/manager_service.rb'
 require 'active_support'
 
+class RateLimitNotCreatedError < StandardError; end
+class RateLimitNotCheckedError < StandardError; end
+
 class RateLimiter < ManagerService
 
   LOG_MESSAGE = 'GtkApi::' + self.name
   
-  class ThrottleNotCreatedError < StandardError; end
-  class ThrottleNotSavedError < StandardError; end
-  
-  attr_accessor :available, :until
-  
   def self.config(url:)
     method = LOG_MESSAGE + __method__.to_s
-    raise ArgumentError.new('Throttle model can not be configured with nil or empty url') if (url.nil? || url.empty?)
-    @@url = url
+    raise ArgumentError.new('RateLimit model can not be configured with nil or empty url') if (url.nil? || url.empty?)
     GtkApi.logger.debug(method) {'entered with url='+url}
+    @@url = url
   end
   
   # TODO: adapt all this to the true Rate Limiter
-  def self.open?(params)
-    method = LOG_MESSAGE + __method__.to_s
-    GtkApi.logger.debug(method) {"entered with params=#{params}"}
-    throttle = self.find_by_user_uuid(params[:user_uuid])
-    if throttle
-      GtkApi.logger.debug(method) {"found throttle #{throttle}"}
-      throttle.apply_policy(params)
-    else
-      up_until = GtkApi.defaults['throttle']['value'].to_i.send(GtkApi.defaults['throttle']['unit']).send('from_now')
-      GtkApi.logger.debug(method) {"up_until: #{up_until}"}
-      throttle = self.new(params.merge({avaiable: GtkApi.defaults['throttle']['max_value'].to_i, up_until: up_until}))
-      if throttle
-        GtkApi.logger.debug(method) {"created throttle #{throttle}"}
-      else
-        raise ThrottleNotCreatedError.new "Could not create throttle #{throttle}."
-      end
-    end
-    if throttle.save
-      true
-    else
-      raise ThrottleNotSavedError.new "Could not save throttle #{throttle}."
-    end
-    false # needed?
-  end
   
-  def self.find_by_user_uuid(user_uuid)
-    method = LOG_MESSAGE + __method__.to_s
-    GtkApi.logger.debug(method) {"entered with useruuid=#{user_uuid}"}
-    
-    # TODO: fetch from micro-service/db
-    # self.new(params.merge({avaiable: GtkApi.defaults['throttle']['max_value'].to_i, up_until: up_until}))
-  end
-  
-  def initialize(available:, up_until:)
+  def initialize()
     method = LOG_MESSAGE + __method__.to_s
     GtkApi.logger.debug(method) {"entered"}
-    @available = available
-    @until = up_until
   end
+  
+  def self.create(params:) # period:, limit:, description:
+    message = LOG_MESSAGE+"##{__method__}"
+    GtkApi.logger.debug(message) {"entered with #{params}"}
+    raise ArgumentError.new('RateLimit can not be created with nil or empty limit_id') if (params[:limit_id].to_s.empty?)
+    raise ArgumentError.new('RateLimit can not be created with nil or empty period') if (params[:period].to_s.empty?)
+    raise ArgumentError.new('RateLimit can not be created with nil or empty limit') if (params[:limit].to_s.empty?)
+    
+    limit_id = params.delete(:limit_id)
+    begin
+      resp = self.putCurb(url: @@url+'/limits/'+limit_id, body: params)
+      GtkApi.logger.debug(message) {"resp=#{resp}"}
+      raise RateLimitNotCreatedError.new('RateLimit creation failled') unless resp[:status] == 201
+      resp[:items]
+    rescue => e
+      GtkApi.logger.error(message) {"Error during processing: #{$!}"}
+      GtkApi.logger.error(message) {"Backtrace:\n\t#{e.backtrace.join("\n\t")}"}
+      nil 
+    end      
+  end
+  
+  def self.check(params:) # limit_id:, client_id:
+    message = LOG_MESSAGE+"##{__method__}"
+    GtkApi.logger.debug(message) {"entered with #{params}"}
+    raise ArgumentError.new('RateLimit check can not be used with nil or empty limit_id') if (params[:limit_id].to_s.empty?)
+    raise ArgumentError.new('RateLimit check can not be used with nil or empty client_id') if (params[:client_id].to_s.empty?)
 
-  def save
-    method = LOG_MESSAGE + __method__.to_s
-    GtkApi.logger.debug(method) {"entered"}
-    self
-  end
-  
-  private
-  
-  # TODO: turn this into a Strategy Design Pattern, with this being UserBasedPolicy (e.g.)
-  def apply_policy(params)
-    method = LOG_MESSAGE + __method__.to_s
-    GtkApi.logger.debug(method) {"entered"}
-    
-    # if still on the current cycle...
-    if Time.now < @until
-      # ...number matters
-      if @available > 0
-        @available -= 1
-        true
-      else
-        false
-      end
-    else # ...otherwise, reset
-      @available = GtkApi.defaults['throttle']['max_value'].to_i
-      @until = GtkApi.defaults['throttle']['value'].to_i.send(GtkApi.defaults['throttle']['unit']).send('from_now')
-      true
-    end
+    begin
+      resp = self.postCurb(url: @@url+'/check', body: params)
+      GtkApi.logger.debug(message) {"resp=#{resp}"}
+      raise RateLimitNotCheckedError.new('RateLimit check failled') unless resp[:status] == 200
+      resp[:items]
+    rescue => e
+      GtkApi.logger.error(message) {"Error during processing: #{$!}"}
+      GtkApi.logger.error(message) {"Backtrace:\n\t#{e.backtrace.join("\n\t")}"}
+      nil 
+    end      
   end
 end
