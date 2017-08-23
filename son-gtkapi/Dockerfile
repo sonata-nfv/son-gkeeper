@@ -21,4 +21,5 @@ ENV KPI_MANAGEMENT_URL http://son-gtkkpi:5400
 ENV METRICS_URL http://son-monitor:8000/api/v1
 ENV USER_MANAGEMENT_URL http://son-gtkusr:5600
 ENV VALIDATOR_URL http://son-validate:5050
+ENV RATE_LIMITER_URL http://son-gtkrlt:5150
 CMD ["foreman", "start"]
