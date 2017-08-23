@@ -75,15 +75,15 @@ class RateLimiter < ManagerService
     raise ArgumentError.new('RateLimit check can not be used with nil or empty limit_id') if (params[:limit_id].to_s.empty?)
     raise ArgumentError.new('RateLimit check can not be used with nil or empty client_id') if (params[:client_id].to_s.empty?)
 
-    begin
+    #begin
       resp = self.postCurb(url: @@url+'/check', body: params)
       GtkApi.logger.debug(message) {"resp=#{resp}"}
       raise RateLimitNotCheckedError.new('RateLimit check failled') unless resp[:status] == 200
       resp[:items]
-    rescue => e
-      GtkApi.logger.error(message) {"Error during processing: #{$!}"}
-      GtkApi.logger.error(message) {"Backtrace:\n\t#{e.backtrace.join("\n\t")}"}
-      nil 
-    end      
+      #rescue => e
+    #  GtkApi.logger.error(message) {"Error during processing: #{$!}"}
+    #  GtkApi.logger.error(message) {"Backtrace:\n\t#{e.backtrace.join("\n\t")}"}
+    #  nil 
+    #end      
   end
 end

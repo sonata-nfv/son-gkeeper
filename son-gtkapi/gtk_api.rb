@@ -127,10 +127,10 @@ class GtkApi < Sinatra::Base
     rl_params = {limit_id: limit, client_id: client}
     begin
       resp = Object.const_get(settings.services['rate_limiter']['model']).check(params: rl_params)
-      halt 429, {error: { code: 500, message:'GtkApi: Too many user creation requests were made'}}.to_json unless resp[:allowed]
-      resp[:remaning]
+      halt 429, {error: { code: 429, message:'GtkApi: Too many user creation requests were made'}}.to_json unless resp[:allowed]
+      resp[:remaining]
     rescue RateLimitNotCheckedError => e
-      halt 400, {error: { code: 500, message:'There seems to have been a problem with user creation rate limit validation'}}.to_json
+      halt 400, {error: { code: 400, message:'There seems to have been a problem with user creation rate limit validation'}}.to_json
     end
   end
       

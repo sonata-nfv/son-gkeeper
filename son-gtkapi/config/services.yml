@@ -73,8 +73,8 @@ development: &common_settings
         user_creation:
           name: user_creation
           description: Limit imposed to the user creation process (once per minute)
-          period: 6 #in seconds
-          limit: 1
+          period: 60 #in seconds
+          limit: 10
         others:
           name: other_operations
           description: Limit imposed to the remaining operations (once per second)
