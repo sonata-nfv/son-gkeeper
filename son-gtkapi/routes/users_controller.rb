@@ -48,19 +48,22 @@ class GtkApi < Sinatra::Base
       began_at = Time.now.utc
       log_message = 'GtkApi::POST /api/v2/users/?'
       params = JSON.parse(request.body.read, symbolize_names: true)
-      
       logger.info(log_message) {"entered with params=#{params}"}
-            
+      
+      content_type :json
+      
       require_param(param: :username, params: params, kpi_method: method(:count_user_registrations), error_message: "User name", log_message: log_message, began_at: began_at)
       require_param(param: :password, params: params, kpi_method: method(:count_user_registrations), error_message: "Password", log_message: log_message, began_at: began_at)
       require_param(param: :email, params: params, kpi_method: method(:count_user_registrations), error_message: "Email", log_message: log_message, began_at: began_at)
       require_param(param: :user_type, params: params, kpi_method: method(:count_user_registrations), error_message: "User type", log_message: log_message, began_at: began_at)
     
+      remaining = check_rate_limit(limit: settings.user_creation_rate_limiter, client: settings.gatekeeper_api_client_id) if settings.services['rate_limiter']
+      
       begin
         user = User.create(params)
         count_user_registrations(labels: {result: "ok", uuid: user.uuid, elapsed_time: (Time.now.utc-began_at).to_s})
         logger.info(log_message) {"leaving with user name #{user.username}"}
-        headers 'Location'=> User.class_variable_get(:@@url)+"/api/v2/users/#{user.uuid}", 'Content-Type'=> 'application/json'
+        headers 'Location'=> User.class_variable_get(:@@url)+"/api/v2/users/#{user.uuid}", 'Remaining-Requests'=> remaining
         halt 201, user.to_h.to_json
       rescue UserNameAlreadyInUseError
         count_user_registrations(labels: {result: "duplicate", uuid: '', elapsed_time: (Time.now.utc-began_at).to_s})
