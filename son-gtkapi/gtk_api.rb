@@ -109,12 +109,18 @@ class GtkApi < Sinatra::Base
     limits = settings.services['rate_limiter']['limits']
     params = {limit_id: limits['user_creation']['name'], limit: limits['user_creation']['limit'].to_i, period: limits['user_creation']['period'].to_i, description: limits['user_creation']['description']}
     resp = Object.const_get(settings.services['rate_limiter']['model']).create(params: params)
-    halt 500, {error: { code: 500, message:'GtkApi: Rate limiter is in place, but could not create a limit'}}.to_json unless (resp && resp[:status] == 201)
-    set :user_creation_rate_limiter, limits['user_creation']['name']
+    if (resp && resp[:status] == 201)
+      set :user_creation_rate_limiter, limits['user_creation']['name']
+    else
+      settings.logger.error('GtkApi') {'Rate limiter is in place, but could not create a limit'}
+    end
     params = {limit_id: limits['others']['name'], limit: limits['others']['limit'].to_i, period: limits['others']['period'].to_i, description: limits['others']['description']}
     resp = Object.const_get(settings.services['rate_limiter']['model']).create(params: params)
-    halt 500, {error: { code: 500, message:'GtkApi: Rate limiter is in place, but could not create a limit'}}.to_json unless (resp && resp[:status] == 201)
-    set :others_rate_limiter, limits['others']['name']
+    if (resp && resp[:status] == 201)
+      set :others_rate_limiter, limits['others']['name']
+    else
+      settings.logger.error('GtkApi') {'GtkApi: Rate limiter is in place, but could not create a limit'} 
+    end
   end
   
   def check_rate_limit(limit: , client:)
