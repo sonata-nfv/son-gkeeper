@@ -246,9 +246,9 @@ class ManagerService
     
     # Adds time and metric type
     params[:base_labels][:time_stamp] = Time.now.utc
-    params[:base_labels][:metric_type] = "counter"
+    #params[:base_labels][:metric_type] = "counter"
     
-    KpiManagerService.update_metric(BASE_KPI_PARAMS.merge(params))
+    KpiManagerService.update_metric(BASE_KPI_PARAMS.merge({metric_type: "counter"}).merge(params))
   end
   
   # curl -H "Content-Type: application/json" -X PUT -d '{"job":"job-name","instance":"instance-name","name":"gauge_name", "metric_type": "gauge", "operation": "inc" (optional; default "inc"), "docstring":"metric gauge description", "metric_value (optional; default 1)", "base_labels": {"label1":"value1","label2":"value2"}}' http://<GATEKEEPER_HOST>:<KPI_MODULE_PORT>/kpis
