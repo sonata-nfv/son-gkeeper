@@ -16,6 +16,12 @@ services:
      - KPI_MANAGEMENT_URL=http://son-gtkkpi:5400 # OK
      - LICENCE_MANAGEMENT_URL=http://son-gtklic:5900 # 6000?
      - USER_MANAGEMENT_URL http://son-gtkusr:5600 # OK
+     - VALIDATOR_URL=http://son-validate:5050
+     - RATE_LIMITER_URL http://son-gtkrlt:5150 # OK
+     - REPOSITORIES_URL=http://sp.int3.sonata-nfv.eu:4002/records
+     - CATALOGUES_URL=http://sp.int.sonata-nfv.eu:4002/catalogues/api/v2
+     - REDIS_URL=redis://son-redis:6379
+     - METRICS_URL=http://son-monitor:8000/api/v1
     ports:
       - "32001:5000"
     restart: always
@@ -108,6 +114,31 @@ services:
       options:
         gelf-address: "udp://logs.sonata-nfv.eu:12900"
 
+  son-gtkrlt:
+    image: registry.sonata-nfv.eu:5000/son-gtkrlt
+    links:
+      - son-redis
+    environment:
+     - RACK_ENV=integration
+     - REDIS_URL=redis://son-redis:6379
+    ports:
+      - "5150"
+    restart: always
+    logging:
+      driver: gelf
+      options:
+        gelf-address: "udp://logs.sonata-nfv.eu:12900"
+
+  son-redis:
+    image: redis
+    ports:
+      - "6379"
+    restart: always
+    logging:
+      driver: gelf
+      options:
+        gelf-address: "udp://logs.sonata-nfv.eu:12900"
+  
   son-gtklic:
     image: registry.sonata-nfv.eu:5000/son-gtklic
     links:

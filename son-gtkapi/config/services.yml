@@ -71,12 +71,10 @@ development: &common_settings
       env_var_url: RATE_LIMITER_URL
       limits:
         user_creation:
-          name: user_creation
-          description: Limit imposed to the user creation process (once per minute)
-          period: 6 #in seconds
-          limit: 1
-        others:
-          name: other_operations
+          description: Limit imposed to the user creation process (ten times per minute)
+          period: 60 #in seconds
+          limit: 10
+        other_operations:
           description: Limit imposed to the remaining operations (once per second)
           period: 1 #in seconds
           limit: 1

@@ -49,16 +49,15 @@ class RateLimiter < ManagerService
     GtkApi.logger.debug(method) {"entered"}
   end
   
-  def self.create(params:) # period:, limit:, description:
+  def self.create(name:, params:) # period:, limit:, description:
     message = LOG_MESSAGE+"##{__method__}"
     GtkApi.logger.debug(message) {"entered with #{params}"}
-    raise ArgumentError.new('RateLimit can not be created with nil or empty limit_id') if (params[:limit_id].to_s.empty?)
+    raise ArgumentError.new('RateLimit can not be created with nil or empty name') if (name.to_s.empty?)
     raise ArgumentError.new('RateLimit can not be created with nil or empty period') if (params[:period].to_s.empty?)
     raise ArgumentError.new('RateLimit can not be created with nil or empty limit') if (params[:limit].to_s.empty?)
     
-    limit_id = params.delete(:limit_id)
     begin
-      resp = self.putCurb(url: @@url+'/limits/'+limit_id, body: params)
+      resp = self.putCurb(url: @@url+'/limits/'+name, body: params)
       GtkApi.logger.debug(message) {"resp=#{resp}"}
       raise RateLimitNotCreatedError.new('RateLimit creation failled') unless resp[:status] == 201
       resp[:items]
@@ -75,15 +74,15 @@ class RateLimiter < ManagerService
     raise ArgumentError.new('RateLimit check can not be used with nil or empty limit_id') if (params[:limit_id].to_s.empty?)
     raise ArgumentError.new('RateLimit check can not be used with nil or empty client_id') if (params[:client_id].to_s.empty?)
 
-    begin
+    #begin
       resp = self.postCurb(url: @@url+'/check', body: params)
       GtkApi.logger.debug(message) {"resp=#{resp}"}
       raise RateLimitNotCheckedError.new('RateLimit check failled') unless resp[:status] == 200
       resp[:items]
-    rescue => e
-      GtkApi.logger.error(message) {"Error during processing: #{$!}"}
-      GtkApi.logger.error(message) {"Backtrace:\n\t#{e.backtrace.join("\n\t")}"}
-      nil 
-    end      
+      #rescue => e
+    #  GtkApi.logger.error(message) {"Error during processing: #{$!}"}
+    #  GtkApi.logger.error(message) {"Backtrace:\n\t#{e.backtrace.join("\n\t")}"}
+    #  nil 
+    #end      
   end
 end

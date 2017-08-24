@@ -57,7 +57,7 @@ class GtkApi < Sinatra::Base
       require_param(param: :email, params: params, kpi_method: method(:count_user_registrations), error_message: "Email", log_message: log_message, began_at: began_at)
       require_param(param: :user_type, params: params, kpi_method: method(:count_user_registrations), error_message: "User type", log_message: log_message, began_at: began_at)
     
-      remaining = check_rate_limit(limit: settings.user_creation_rate_limiter, client: settings.gatekeeper_api_client_id) if settings.services['rate_limiter']
+      remaining = check_rate_limit(limit: 'user_creation', client: settings.gatekeeper_api_client_id) if settings.services['rate_limiter']
       
       begin
         user = User.create(params)
