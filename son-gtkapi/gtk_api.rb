@@ -83,9 +83,17 @@ class GtkApi < Sinatra::Base
   
   enable :cross_origin
   #enable :method_override
-
-  set :gatekeeper_api_client_id, SecureRandom.uuid 
-  disable :rate_limits_created
+  
+  # TODO: generalize this (not only for RATE LIMIT)
+  enable :use_rate_limit
+  if ENV['USE_RATE_LIMIT']
+    set :use_rate_limit, ENV['USE_RATE_LIMIT'].downcase == 'yes'
+  end
+  
+  if settings.use_rate_limit
+    set :gatekeeper_api_client_id, SecureRandom.uuid 
+    disable :rate_limits_created
+  end
   
   settings.services.each do |service, properties|
     # do not use properties['url']: they're depprecated, in favor of ANSIBLE configuration
@@ -116,9 +124,14 @@ class GtkApi < Sinatra::Base
       settings.logger.debug(log_message) {"limit is #{name}"}
       settings.logger.debug(log_message) {"values are #{values}"}
       params = {limit: values['limit'], period: values['period'], description: values['description']}
-      resp = Object.const_get(settings.services['rate_limiter']['model']).create(name: name, params: params)
-      settings.logger.debug(log_message) {"resp = #{resp}"}
-      settings.logger.error(log_message) {'Rate limiter is in place, but could not create a limit'} unless (resp || resp[:status] == 201)
+      begin
+        resp = Object.const_get(settings.services['rate_limiter']['model']).create(name: name, params: params)
+        settings.logger.debug(log_message) {"resp = #{resp}"}
+        settings.logger.error(log_message) {'Rate limiter is in place, but could not create a limit'} unless (resp || resp[:status] == 201)
+      rescue RateLimitNotCreatedError => e
+        settings.logger.error(log_message) {'Failled to create rate limit'}
+        halt 500, {error: { code: 500, message:'There seems to have been a problem with user creation rate limit creation'}}.to_json
+      end
     end
     settings.logger.debug(log_message) {'Setting rate_limits_created to true...'} 
     settings.rate_limits_created=true
@@ -139,9 +152,9 @@ class GtkApi < Sinatra::Base
         resp[:remaining]
       rescue RateLimitNotCheckedError => e
         halt 400, {error: { code: 400, message:'There seems to have been a problem with user creation rate limit validation'}}.to_json
+        '0' # Allows this request to proceed
       end
     end
-    '0' # Allows this request to proceed
   end
       
   def query_string
