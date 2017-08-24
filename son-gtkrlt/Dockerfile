@@ -9,7 +9,7 @@ RUN bundle install
 COPY . /app
 EXPOSE 5150
 WORKDIR /app
-ENV PORT 5000
+ENV PORT 5150
 ENV REDIS_URL redis://127.0.0.1:6379
 RUN mkdir -p /app/log
 CMD ["foreman", "start"]
