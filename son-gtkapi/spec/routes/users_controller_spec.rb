@@ -83,16 +83,16 @@ RSpec.describe GtkApi, type: :controller do
     end
     context 'with user name, password and user type given' do
       let(:limits) {GtkApi::settings.services['rate_limiter']['limits']}
-      let(:user_args) {{limit: limits['user_creation']['limit'], period: limits['user_creation']['period'], description: limits['user_creation']['description']}}
+      let(:anonymous_args) {{limit: limits['anonymous_operations']['limit'], period: limits['anonymous_operations']['period'], description: limits['anonymous_operations']['description']}}
       let(:other_args) {{limit: limits['other_operations']['limit'], period: limits['other_operations']['period'], description: limits['other_operations']['description']}}
       before(:each) do
         user = double('User')
         allow(user).to receive(:to_h).and_return(created_user)
         allow(user).to receive(:uuid).and_return(created_user[:uuid])
         allow(user).to receive(:username).and_return(created_user[:username])
-        allow(RateLimiter).to receive(:create).with(name: 'user_creation', params:user_args).and_return({status: 201})
+        allow(RateLimiter).to receive(:create).with(name: 'anonymous_operations', params:anonymous_args).and_return({status: 201})
         allow(RateLimiter).to receive(:create).with(name: 'other_operations', params:other_args).and_return({status: 201})
-        allow(RateLimiter).to receive(:check).with(params: {limit_id: 'user_creation', client_id: GtkApi::settings.gatekeeper_api_client_id}).and_return({:allowed=>true, :remaining=>0})
+        allow(RateLimiter).to receive(:check).with(params: {limit_id: 'anonymous_operations', client_id: GtkApi::settings.gatekeeper_api_client_id}).and_return({:allowed=>true, :remaining=>0})
         allow(User).to receive(:create).with(user_info).and_return(user)
         post '/api/v2/users/', user_info.to_json
       end
