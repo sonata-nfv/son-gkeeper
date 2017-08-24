@@ -117,7 +117,7 @@ services:
   son-gtkrtl:
     image: registry.sonata-nfv.eu:5000/son-gtkrtl
     links:
-      - redis
+      - son-redis
     environment:
      - RACK_ENV=integration
      - REDIS_URL=redis://son-redis:6379
