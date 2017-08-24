@@ -19,7 +19,7 @@ services:
      - VALIDATOR_URL=http://son-validate:5050
      - RATE_LIMITER_URL http://son-gtkrlt:5150 # OK
      - REPOSITORIES_URL=http://sp.int3.sonata-nfv.eu:4002/records
-     - CATALOGUES_URL=http://catalogues:4002/catalogues/api/v2
+     - CATALOGUES_URL=http://sp.int.sonata-nfv.eu:4002/catalogues/api/v2
      - REDIS_URL=redis://son-redis:6379
      - METRICS_URL=http://son-monitor:8000/api/v1
     ports:
@@ -34,7 +34,7 @@ services:
     image: registry.sonata-nfv.eu:5000/son-gtkpkg
     environment:
      - RACK_ENV=integration
-     - CATALOGUES_URL=http://catalogues:4002/catalogues/api/v2
+     - CATALOGUES_URL=http://sp.int.sonata-nfv.eu:4002/catalogues/api/v2
     ports:
       - "5100"
     restart: always
@@ -50,7 +50,7 @@ services:
     restart: always
     environment:
      - RACK_ENV=integration
-     - CATALOGUES_URL=http://catalogues:4002/catalogues/api/v2
+     - CATALOGUES_URL=http://sp.int.sonata-nfv.eu:4002/catalogues/api/v2
     logging:
       driver: gelf
       options:
@@ -71,7 +71,7 @@ services:
      - DATABASE_HOST=postgres
      - DATABASE_PORT=5432
      - MQSERVER=amqp://guest:guest@broker:5672
-     - CATALOGUES_URL=http://catalogues:4002/catalogues/api/v2
+     - CATALOGUES_URL=http://sp.int.sonata-nfv.eu:4002/catalogues/api/v2
     depends_on:
      - postgres
     logging:
@@ -108,12 +108,37 @@ services:
     restart: always
     environment:
      - RACK_ENV=integration
-     - REPOSITORIES_URL=http://catalogues:4002/records
+     - REPOSITORIES_URL=http://sp.int.sonata-nfv.eu:4002/records
     logging:
       driver: gelf
       options:
         gelf-address: "udp://logs.sonata-nfv.eu:12900"
 
+  son-gtkrtl:
+    image: registry.sonata-nfv.eu:5000/son-gtkrtl
+    links:
+      - redis
+    environment:
+     - RACK_ENV=integration
+     - REDIS_URL=redis://son-redis:6379
+    ports:
+      - "5150"
+    restart: always
+    logging:
+      driver: gelf
+      options:
+        gelf-address: "udp://logs.sonata-nfv.eu:12900"
+
+  son-redis:
+    image: redis
+    ports:
+      - "6379"
+    restart: always
+    logging:
+      driver: gelf
+      options:
+        gelf-address: "udp://logs.sonata-nfv.eu:12900"
+  
   son-gtklic:
     image: registry.sonata-nfv.eu:5000/son-gtklic
     links:
