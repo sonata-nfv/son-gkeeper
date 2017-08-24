@@ -56,16 +56,10 @@ class RateLimiter < ManagerService
     raise ArgumentError.new('RateLimit can not be created with nil or empty period') if (params[:period].to_s.empty?)
     raise ArgumentError.new('RateLimit can not be created with nil or empty limit') if (params[:limit].to_s.empty?)
     
-    begin
-      resp = self.putCurb(url: @@url+'/limits/'+name, body: params)
-      GtkApi.logger.debug(message) {"resp=#{resp}"}
-      raise RateLimitNotCreatedError.new('RateLimit creation failled') unless resp[:status] == 201
-      resp[:items]
-    rescue => e
-      GtkApi.logger.error(message) {"Error during processing: #{$!}"}
-      GtkApi.logger.error(message) {"Backtrace:\n\t#{e.backtrace.join("\n\t")}"}
-      nil 
-    end      
+    resp = self.putCurb(url: @@url+'/limits/'+name, body: params)
+    GtkApi.logger.debug(message) {"resp=#{resp}"}
+    raise RateLimitNotCreatedError.new('RateLimit creation failled') unless (resp && resp[:status] == 201)
+    resp[:items]
   end
   
   def self.check(params:) # limit_id:, client_id:
@@ -75,14 +69,9 @@ class RateLimiter < ManagerService
     raise ArgumentError.new('RateLimit check can not be used with nil or empty client_id') if (params[:client_id].to_s.empty?)
 
     #begin
-      resp = self.postCurb(url: @@url+'/check', body: params)
-      GtkApi.logger.debug(message) {"resp=#{resp}"}
-      raise RateLimitNotCheckedError.new('RateLimit check failled') unless resp[:status] == 200
-      resp[:items]
-      #rescue => e
-    #  GtkApi.logger.error(message) {"Error during processing: #{$!}"}
-    #  GtkApi.logger.error(message) {"Backtrace:\n\t#{e.backtrace.join("\n\t")}"}
-    #  nil 
-    #end      
+    resp = self.postCurb(url: @@url+'/check', body: params)
+    GtkApi.logger.debug(message) {"resp=#{resp}"}
+    raise RateLimitNotCheckedError.new('RateLimit check failled') unless (resp && resp[:status] == 200)
+    resp[:items]
   end
 end

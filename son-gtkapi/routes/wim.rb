@@ -43,6 +43,7 @@ class GtkApi < Sinatra::Base
     # POST a request
     post '/?' do
       MESSAGE = "GtkApi::POST /api/v2/wims"
+      remaining = check_rate_limit(limit: 'anonymous_operations', client: settings.gatekeeper_api_client_id) if check_rate_limit_usage()
       params = JSON.parse(request.body.read)
       unless params.nil?
         logger.debug(MESSAGE) {"entered with params=#{params}"}
@@ -66,6 +67,7 @@ class GtkApi < Sinatra::Base
       @limit ||= params['limit'] ||= DEFAULT_LIMIT
 
       logger.info(MESSAGE) {"entered"}
+      remaining = check_rate_limit(limit: 'anonymous_operations', client: settings.gatekeeper_api_client_id) if check_rate_limit_usage()
       wims = WimManagerService.find_wims(params)
       logger.debug(MESSAGE) { "wims= #{wims}"}
       if wims
@@ -79,6 +81,7 @@ class GtkApi < Sinatra::Base
   
     # GET one specific request
     get '/:uuid/?' do
+      remaining = check_rate_limit(limit: 'anonymous_operations', client: settings.gatekeeper_api_client_id) if check_rate_limit_usage()
       unless params[:uuid].nil?
         logger.debug "GtkApi: GET /api/v2/wims/#{params[:uuid]}"
         json_error 400, 'Invalid request UUID' unless valid? params[:uuid]
@@ -98,6 +101,7 @@ class GtkApi < Sinatra::Base
     get '/logs/?' do
       log_message = 'GtkApi::GET /api/v2/admin/wims/logs'
       logger.debug(log_message) {'entered'}
+      remaining = check_rate_limit(limit: 'anonymous_operations', client: settings.gatekeeper_api_client_id) if check_rate_limit_usage()
       url = WimManagerService.class_variable_get(:@@url)+'/admin/logs'
       log = WimManagerService.get_log(url: url, log_message:log_message)
       logger.debug(log_message) {'leaving with log='+log}

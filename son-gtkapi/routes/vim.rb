@@ -44,6 +44,7 @@ class GtkApi < Sinatra::Base
       # POST a request
       post '/?' do
         MESSAGE = "GtkApi::POST /api/v2/vims?"
+        remaining = check_rate_limit(limit: 'anonymous_operations', client: settings.gatekeeper_api_client_id) if check_rate_limit_usage()
         params = JSON.parse(request.body.read, symbolize_names: true)
 
         unless params.nil?
@@ -87,6 +88,7 @@ class GtkApi < Sinatra::Base
         @limit ||= params['limit'] ||= DEFAULT_LIMIT
 
         logger.info(MESSAGE) {"entered"}
+        remaining = check_rate_limit(limit: 'anonymous_operations', client: settings.gatekeeper_api_client_id) if check_rate_limit_usage()
         vims = VimManagerService.find_vims_comp_rs(params)
         logger.debug(MESSAGE) { "vims= #{vims}"}
         if vims
@@ -100,6 +102,7 @@ class GtkApi < Sinatra::Base
 
       # GET one specific request
       get '/:uuid/?' do
+        remaining = check_rate_limit(limit: 'anonymous_operations', client: settings.gatekeeper_api_client_id) if check_rate_limit_usage()
         unless params[:uuid].nil?
           logger.debug "GtkApi: GET /api/v2/vims/#{params[:uuid]}"
           json_error 400, 'Invalid request UUID' unless valid? params[:uuid]
@@ -251,6 +254,7 @@ class GtkApi < Sinatra::Base
     get '/logs/?' do
       log_message = 'GtkApi::GET /api/v2/admin/vims/logs'
       logger.debug(log_message) {'entered'}
+      remaining = check_rate_limit(limit: 'anonymous_operations', client: settings.gatekeeper_api_client_id) if check_rate_limit_usage()
       url = VimManagerService.class_variable_get(:@@url)+'/admin/logs'
       log = VimManagerService.get_log(url: url, log_message:log_message)
       logger.debug(log_message) {'leaving with log='+log}
@@ -262,12 +266,10 @@ class GtkApi < Sinatra::Base
   get '/api/v2/admin/users/logs/?' do
     log_message = 'GtkApi::GET /admin/users/logs'
     logger.debug(log_message) {'entered'}
+    remaining = check_rate_limit(limit: 'anonymous_operations', client: settings.gatekeeper_api_client_id) if check_rate_limit_usage()
     headers 'Content-Type' => 'text/plain; charset=utf8', 'Location' => '/'
     log = User.get_log(url:User.class_variable_get(:@@url)+'/admin/logs', log_message:log_message)
     logger.debug(log_message) {"leaving with log=#{log}"}
     halt 200, log
   end
-
-
-
 end

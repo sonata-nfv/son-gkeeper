@@ -64,6 +64,7 @@ class GtkApi < Sinatra::Base
       
       validate_user_authorization(token: token, action: 'post service instantiation request', uuid: params['service_uuid'], path: '/services', method:'POST', kpi_method: kpi_method, began_at: began_at, log_message: log_message)
       logger.debug(log_message) {"User authorized"}
+      remaining = check_rate_limit(limit: 'other_operations', client: user_name) if check_rate_limit_usage()
       
       new_request = ServiceManagerService.create_service_request(params)
       logger.debug(log_message) { "new_request =#{new_request}"}
@@ -89,6 +90,7 @@ class GtkApi < Sinatra::Base
 
       validate_user_authorization(token: token, action: 'get requests data', uuid: '', path: '/requests', method:'GET', kpi_method: method(:count_function_metadata_queries), began_at: began_at, log_message: MESSAGE)
       logger.debug(MESSAGE) {"User authorized"}
+      remaining = check_rate_limit(limit: 'other_operations', client: user_name) if check_rate_limit_usage()
       
       requests = ServiceManagerService.find_requests(params)
       logger.debug(MESSAGE) {"requests = #{requests}"}
@@ -112,6 +114,7 @@ class GtkApi < Sinatra::Base
 
       validate_user_authorization(token: token, action: 'get request '+params[:uuid]+' data', uuid: params[:uuid], path: '/requests', method:'GET', kpi_method: method(:count_service_instantiation_requests_queries), began_at: began_at, log_message: log_message)
       logger.debug(log_message) {"User authorized"}
+      remaining = check_rate_limit(limit: 'other_operations', client: user_name) if check_rate_limit_usage()
       
       request = ServiceManagerService.find_requests_by_uuid(params['uuid'])
       validate_element_existence(uuid: params[:uuid], element: request, name: 'Request', kpi_method: method(:count_service_instantiation_requests_queries), began_at: began_at, log_message: log_message)
@@ -135,6 +138,7 @@ class GtkApi < Sinatra::Base
 
       validate_user_authorization(token: token, action: 'patch request '+params[:service_instance_uuid]+' data', uuid: params[:service_instance_uuid], path: '/requests', method:'PATCH', kpi_method: method(:count_service_instance_termination_requests), began_at: began_at, log_message: log_message)
       logger.debug(log_message) {"User authorized"}
+      remaining = check_rate_limit(limit: 'other_operations', client: user_name) if check_rate_limit_usage()
       
       termination_request = ServiceManagerService.create_service_termination_request(service_instance_uuid: params[:service_instance_uuid])
       json_error 400, 'Service instance termination request failled', log_message unless termination_request

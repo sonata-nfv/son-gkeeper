@@ -41,11 +41,19 @@ RSpec.describe GtkApi, type: :controller do
     let(:auth_info) {{username: 'Unknown', password: 'None'}}
     let(:user_spied) {spy('user', username: 'Unknown', session_began_at: now, token: 'abc')}
     let(:user_info) {{uuid: SecuredRandom.uuid, username: user_spied.username}}
+    let(:limits) {GtkApi::settings.services['rate_limiter']['limits']}
+    let(:anonymous_args) {{limit: limits['anonymous_operations']['limit'], period: limits['anonymous_operations']['period'], description: limits['anonymous_operations']['description']}}
+    let(:other_args) {{limit: limits['other_operations']['limit'], period: limits['other_operations']['period'], description: limits['other_operations']['description']}}
+    
+    before do
+      allow(RateLimiter).to receive(:create).with(name: 'anonymous_operations', params:anonymous_args).and_return({status: 201})
+      allow(RateLimiter).to receive(:create).with(name: 'other_operations', params:other_args).and_return({status: 201})
+      allow(RateLimiter).to receive(:check).with(params: {limit_id: 'anonymous_operations', client_id: GtkApi::settings.gatekeeper_api_client_id}).and_return({:allowed=>true, :remaining=>0})
+    end
+    
     context 'with user name and password given,' do
       context 'and user is authenticated,' do
         before(:each) do
-          #allow(user_spied).to receive(:authenticated?).and_return(user_spied)
-          #allow(User).to receive(:find_by_name).with(auth_info[:username]).and_return(user_spied)
           allow(User).to receive(:authenticated?).with(username: auth_info[:username], password: auth_info[:password]).and_return(user_spied)
           post '/api/v2/sessions/', auth_info.to_json
         end
@@ -83,6 +91,15 @@ RSpec.describe GtkApi, type: :controller do
   end
   
   describe 'DELETE /api/v2/sessions/' do
+    let(:limits) {GtkApi::settings.services['rate_limiter']['limits']}
+    let(:anonymous_args) {{limit: limits['anonymous_operations']['limit'], period: limits['anonymous_operations']['period'], description: limits['anonymous_operations']['description']}}
+    let(:other_args) {{limit: limits['other_operations']['limit'], period: limits['other_operations']['period'], description: limits['other_operations']['description']}}
+    before do
+      allow(RateLimiter).to receive(:create).with(name: 'anonymous_operations', params:anonymous_args).and_return({status: 201})
+      allow(RateLimiter).to receive(:create).with(name: 'other_operations', params:other_args).and_return({status: 201})
+      allow(RateLimiter).to receive(:check).with(params: {limit_id: 'anonymous_operations', client_id: GtkApi::settings.gatekeeper_api_client_id}).and_return({:allowed=>true, :remaining=>0})
+    end
+
     context 'with token given' do
       let(:token) {'XYZ'}
       context 'and valid' do

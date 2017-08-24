@@ -46,6 +46,7 @@ class GtkApi < Sinatra::Base
     
       @offset ||= params['offset'] ||= DEFAULT_OFFSET 
       @limit ||= params['limit'] ||= DEFAULT_LIMIT
+      remaining = check_rate_limit(limit: 'anonymous_operations', client: settings.gatekeeper_api_client_id) if check_rate_limit_usage()
 
       licences = LicenceManagerService.find(params)
       json_error 404, "No licences with #{params} were found", log_message unless licences[:status] == 200
@@ -62,6 +63,7 @@ class GtkApi < Sinatra::Base
     get '/:uuid/?' do
       log_message = MODULE+' GET /api/v2/licences/:uuid'
       logger.debug(log_message) {"entered with #{params[:uuid]}"}
+      remaining = check_rate_limit(limit: 'anonymous_operations', client: settings.gatekeeper_api_client_id) if check_rate_limit_usage()
 
       json_error 404, "Licence #{params[:uuid]} not valid", log_message unless valid?(params[:uuid])
       licence = LicenceManagerService.find_by_uuid(params[:uuid])
@@ -87,6 +89,7 @@ class GtkApi < Sinatra::Base
       # 'startingDate', DateTime
       # 'expiringDate', DateTime * 
       # 'status', String
+      remaining = check_rate_limit(limit: 'anonymous_operations', client: settings.gatekeeper_api_client_id) if check_rate_limit_usage()
       
       params = JSON.parse(body, symbolize_names: true)
       logger.debug(log_message) {"entered with params=#{params}"}
@@ -112,6 +115,7 @@ class GtkApi < Sinatra::Base
     get '/logs/?' do
       log_message = 'GtkApi::GET /api/v2/admin/licences/logs'
       logger.debug(log_message) {'entered'}
+      remaining = check_rate_limit(limit: 'anonymous_operations', client: settings.gatekeeper_api_client_id) if check_rate_limit_usage()
       url = LicenceManagerService.class_variable_get(:@@url)+'/admin/logs'
       log = LicenceManagerService.get_log(url: url, log_message:log_message)
       logger.debug(log_message) {'leaving with log='+log}

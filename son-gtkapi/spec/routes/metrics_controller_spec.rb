@@ -53,8 +53,14 @@ RSpec.describe GtkApi, type: :controller do
     let(:since_param) {'since='+since_date}
     let(:until_param) {'until='+until_date}
     let(:step_param) {'step=10s'}
+    let(:limits) {GtkApi::settings.services['rate_limiter']['limits']}
+    let(:anonymous_args) {{limit: limits['anonymous_operations']['limit'], period: limits['anonymous_operations']['period'], description: limits['anonymous_operations']['description']}}
+    let(:other_args) {{limit: limits['other_operations']['limit'], period: limits['other_operations']['period'], description: limits['other_operations']['description']}}
 
     before do
+      allow(RateLimiter).to receive(:create).with(name: 'anonymous_operations', params:anonymous_args).and_return({status: 201})
+      allow(RateLimiter).to receive(:create).with(name: 'other_operations', params:other_args).and_return({status: 201})
+      allow(RateLimiter).to receive(:check).with(params: {limit_id: 'anonymous_operations', client_id: GtkApi::settings.gatekeeper_api_client_id}).and_return({:allowed=>true, :remaining=>0})
       allow(User).to receive(:authorized?).with(token: token, params: {path: '/functions/metrics', method: 'GET'}).and_return(true)
       allow(User).to receive(:find_username_by_token).with(token).and_return('sonata')
       allow(GtkApiHelper).to receive(:validate_function_ownership)

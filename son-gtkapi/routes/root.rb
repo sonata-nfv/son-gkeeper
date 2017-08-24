@@ -33,6 +33,7 @@ class GtkApi < Sinatra::Base
 
   # Root
   get '/api/?' do
+    remaining = check_rate_limit(limit: 'anonymous_operations', client: settings.gatekeeper_api_client_id) if check_rate_limit_usage()
     headers 'Content-Type' => 'text/plain; charset=utf8', 'Location' => '/'
     api = open('./config/api.yml')
     halt 200, api.read.to_s
@@ -40,6 +41,7 @@ class GtkApi < Sinatra::Base
   
   # API documentation
   get '/api/doc/?' do
+    remaining = check_rate_limit(limit: 'anonymous_operations', client: settings.gatekeeper_api_client_id) if check_rate_limit_usage()
     erb :api_doc
   end
   
@@ -47,6 +49,7 @@ class GtkApi < Sinatra::Base
     now = Time.now.utc
     log_message = 'GtkApi::GET /api/v2/available-services/?'
     logger.debug(log_message) {'entered'}
+    remaining = check_rate_limit(limit: 'anonymous_operations', client: settings.gatekeeper_api_client_id) if check_rate_limit_usage()
     
     content_type :json
     services = GtkApi.services.keys

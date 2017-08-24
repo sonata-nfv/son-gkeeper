@@ -29,6 +29,7 @@ class GtkApi < Sinatra::Base
 
   # Show API Logs
   get '/api/v2/admin/logs' do
+    remaining = check_rate_limit(limit: 'anonymous_operations', client: settings.gatekeeper_api_client_id) if check_rate_limit_usage()
     headers 'Content-Type' => 'text/plain; charset=utf8', 'Location' => '/'
     logger.debug("GtkApi GET /admin/logs") {'entered'}
     File.open('log/'+ENV['RACK_ENV']+'.log', 'r').read
