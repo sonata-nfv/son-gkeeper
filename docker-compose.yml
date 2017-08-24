@@ -114,8 +114,8 @@ services:
       options:
         gelf-address: "udp://logs.sonata-nfv.eu:12900"
 
-  son-gtkrtl:
-    image: registry.sonata-nfv.eu:5000/son-gtkrtl
+  son-gtkrlt:
+    image: registry.sonata-nfv.eu:5000/son-gtkrlt
     links:
       - son-redis
     environment:
