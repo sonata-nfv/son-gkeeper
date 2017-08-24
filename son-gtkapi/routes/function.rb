@@ -48,6 +48,8 @@ class GtkApi < Sinatra::Base
       token = get_token( request.env, began_at, method(:count_functions_metadata_queries), log_message)
       user_name = get_username_by_token( token, began_at, method(:count_functions_metadata_queries), log_message)
 
+      remaining = check_rate_limit(limit: 'other_operations', client: user_name) if check_rate_limit_usage()
+
       validate_user_authorization(token: token, action: 'get metadata for functions', uuid: '', path: '/functions', method:'GET', kpi_method: method(:count_functions_metadata_queries), began_at: began_at, log_message: log_message)
       logger.debug(log_message) {"User authorized"}
 
@@ -71,6 +73,7 @@ class GtkApi < Sinatra::Base
     
       token = get_token( request.env, began_at, method(:count_function_metadata_queries), log_message)
       user_name = get_username_by_token( token, began_at, method(:count_function_metadata_queries), log_message)
+      remaining = check_rate_limit(limit: 'other_operations', client: user_name) if check_rate_limit_usage()
 
       validate_uuid(uuid: params[:uuid], kpi_method: method(:count_function_metadata_queries), began_at: began_at, log_message: log_message)
       validate_user_authorization(token: token, action: 'get metadata for function '+params[:uuid], uuid: params[:uuid], path: '/functions', method:'GET', kpi_method: method(:count_function_metadata_queries), began_at: began_at, log_message: log_message)

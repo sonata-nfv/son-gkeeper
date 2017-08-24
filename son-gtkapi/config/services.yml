@@ -70,7 +70,7 @@ development: &common_settings
       model: RateLimiter
       env_var_url: RATE_LIMITER_URL
       limits:
-        user_creation:
+        anonymous_operations:
           description: Limit imposed to the user creation process (ten times per minute)
           period: 60 #in seconds
           limit: 10

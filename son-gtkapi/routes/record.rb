@@ -56,6 +56,7 @@ class GtkApi < Sinatra::Base
       
       validate_user_authorization(token: token, action: 'get records request', uuid: '', path: '/records', method:'GET', kpi_method: method(:count_records_requests), began_at: began_at, log_message: log_message)
       logger.debug(log_message) {"User authorized"}
+      remaining = check_rate_limit(limit: 'other_operations', client: user_name) if check_rate_limit_usage()
   
       @offset ||= params[:offset] ||= DEFAULT_OFFSET 
       @limit ||= params[:limit] ||= DEFAULT_LIMIT
@@ -84,6 +85,7 @@ class GtkApi < Sinatra::Base
 
       validate_user_authorization(token: token, action: 'get '+params[:kind]+' record '+params[:uuid]+' data', uuid: params[:uuid], path: '/records', method:'GET', kpi_method: method(:count_single_record_queries), began_at: began_at, log_message: log_message)
       logger.debug(log_message) {"User authorized"}
+      remaining = check_rate_limit(limit: 'other_operations', client: user_name) if check_rate_limit_usage()
 
       record = RecordManagerService.find_record_by_uuid(kind: params[:kind], uuid: params[:uuid])
       validate_element_existence(uuid: params[:uuid], element: record, name: 'Record', kpi_method: method(:count_single_record_queries), began_at: began_at, log_message: log_message)
@@ -110,6 +112,7 @@ class GtkApi < Sinatra::Base
 
       validate_user_authorization(token: token, action: 'put services record '+params[:uuid]+' data', uuid: params[:uuid], path: '/records', method:'GET', kpi_method: method(:count_single_record_queries), began_at: began_at, log_message: log_message)
       logger.debug(log_message) {"User authorized"}
+      remaining = check_rate_limit(limit: 'other_operations', client: user_name) if check_rate_limit_usage()
 
       # the body of the request is expected to contain the NSD UUID and the NSD's latest version      
       body_params = JSON.parse(request.body.read)

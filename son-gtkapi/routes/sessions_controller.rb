@@ -43,6 +43,7 @@ class GtkApi < Sinatra::Base
     # AKA login
     post '/?' do
       log_message = 'GtkApi::POST /sessions/?'
+      remaining = check_rate_limit(limit: 'anonymous_operations', client: settings.gatekeeper_api_client_id) if check_rate_limit_usage()
       body = request.body.read
       logger.debug(log_message) {"body=#{body}"}      
       
@@ -79,6 +80,7 @@ class GtkApi < Sinatra::Base
     delete '/?' do
       log_message = 'GtkApi::DELETE /sessions/?'
       began_at = Time.now.utc
+      remaining = check_rate_limit(limit: 'anonymous_operations', client: settings.gatekeeper_api_client_id) if check_rate_limit_usage()
 
       token = get_token( request.env, began_at, method(:count_user_logout_requests), log_message)
       begin

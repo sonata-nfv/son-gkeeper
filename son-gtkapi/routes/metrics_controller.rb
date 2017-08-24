@@ -43,6 +43,7 @@ class GtkApi < Sinatra::Base
       began_at = Time.now.utc
       log_message = 'GtkApi::GET /api/v2/functions/metrics/:instance_uuid/:vdu_id/:vc_uuid/asynch-mon-data/?'
       logger.debug(log_message) {"entered with params #{params}"}
+      remaining = check_rate_limit(limit: 'anonymous_operations', client: settings.gatekeeper_api_client_id) if check_rate_limit_usage()
       
       logger.debug(log_message) { 'query_string='+request.env['QUERY_STRING']}
       params.delete('splat')
@@ -115,6 +116,7 @@ class GtkApi < Sinatra::Base
       began_at = Time.now.utc
       log_message = 'GtkApi::GET /api/v2/functions/metrics/:instance_uuid/:vdu_id/:vc_uuid/synch-mon-data/?'
       logger.debug(log_message) {"entered with params #{params}"}
+      remaining = check_rate_limit(limit: 'anonymous_operations', client: settings.gatekeeper_api_client_id) if check_rate_limit_usage()
       
       logger.debug(log_message) { 'query_string='+request.env['QUERY_STRING']}
       params.delete('splat')

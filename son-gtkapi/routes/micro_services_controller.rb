@@ -52,6 +52,7 @@ class GtkApi < Sinatra::Base
       json_error 400, 'Micro-service client ID is missing' unless (params.key?(:clientId) && !params[:clientId].empty?)
       json_error 400, 'Micro-service secret is missing' unless (params.key?(:secret) && !params[:secret].empty?)
       json_error 400, 'Micro-service redirect URIs are missing' unless (params.key?(:redirectUris) && !params[:redirectUris].empty?)
+      remaining = check_rate_limit(limit: 'anonymous_operations', client: settings.gatekeeper_api_client_id) if check_rate_limit_usage()
     
       begin
         micro_service = MicroService.create(params)
@@ -68,6 +69,7 @@ class GtkApi < Sinatra::Base
     # GET .../api/v2/micro-services: To get the token (both login and refresh), providing Authorization header: 'basic <clientId:secret>
     get '/?' do
       log_message = 'GtkApi:: GET /api/v2/micro-services'
+      remaining = check_rate_limit(limit: 'anonymous_operations', client: settings.gatekeeper_api_client_id) if check_rate_limit_usage()
       if request.env['HTTP_AUTHORIZATION']
         logger.debug(log_message) {'authorization='+request.env['HTTP_AUTHORIZATION']}
         credentials = basic_authentication request.env['HTTP_AUTHORIZATION']
@@ -113,6 +115,7 @@ class GtkApi < Sinatra::Base
     get '/public-key/?' do
       log_message = 'GtkApi:: GET /api/v2/micro-services/public-key'
       logger.debug(log_message) {"entered with #{params}"}
+      remaining = check_rate_limit(limit: 'anonymous_operations', client: settings.gatekeeper_api_client_id) if check_rate_limit_usage()
     
       begin
         pk = MicroService.public_key

@@ -57,7 +57,7 @@ class GtkApi < Sinatra::Base
       require_param(param: :email, params: params, kpi_method: method(:count_user_registrations), error_message: "Email", log_message: log_message, began_at: began_at)
       require_param(param: :user_type, params: params, kpi_method: method(:count_user_registrations), error_message: "User type", log_message: log_message, began_at: began_at)
     
-      remaining = check_rate_limit(limit: 'user_creation', client: settings.gatekeeper_api_client_id) if check_user_creation_rate_limit()
+      remaining = check_rate_limit(limit: 'anonymous_operations', client: settings.gatekeeper_api_client_id) if check_rate_limit_usage()
       logger.info(log_message) {"remaining=#{remaining}"}
       
       begin
@@ -282,9 +282,5 @@ class GtkApi < Sinatra::Base
     name = __method__.to_s.split('_')[1..-1].join('_')
     desc = "how many user profile update requestes have been made"
     User.counter_kpi({name: name, docstring: desc, base_labels: labels.merge({method: 'GET', module: 'users'})})
-  end
-
-  def check_user_creation_rate_limit()
-    settings.use_rate_limit && !(settings.services['rate_limiter'].to_s.empty?)
   end
 end

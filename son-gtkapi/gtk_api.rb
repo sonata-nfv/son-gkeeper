@@ -156,6 +156,10 @@ class GtkApi < Sinatra::Base
       end
     end
   end
+  
+  def check_rate_limit_usage()
+    settings.use_rate_limit && !(settings.services['rate_limiter'].to_s.empty?)
+  end
       
   def query_string
     log_message = 'GtkApi::query_string'

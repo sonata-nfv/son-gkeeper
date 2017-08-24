@@ -47,6 +47,7 @@ class GtkApi < Sinatra::Base
       json_error(400, 'The KPI start date must be given', log_message) if (params[:start].nil? || params[:start].empty?)
       json_error(400, 'The KPI end date must be given', log_message) if (params[:end].nil? || params[:end].empty?)
       json_error(400, 'The KPI step must be given', log_message) if (params[:step].nil? || params[:step].empty?)
+      remaining = check_rate_limit(limit: 'anonymous_operations', client: settings.gatekeeper_api_client_id) if check_rate_limit_usage()
     
       body = {name: params[:name], start: params[:start], end: params[:end], step: params[:step], labels:[]}
       # 200 with metrics
@@ -68,6 +69,7 @@ class GtkApi < Sinatra::Base
     get '/?' do
       log_message = 'GtkApi::GET /api/v2/kpis/?'
       logger.debug(log_message) {"entered with params=#{params}"}
+      remaining = check_rate_limit(limit: 'anonymous_operations', client: settings.gatekeeper_api_client_id) if check_rate_limit_usage()
       
       begin
         resp = KpiManagerService.get_metric(params)
@@ -85,6 +87,7 @@ class GtkApi < Sinatra::Base
     put '/?' do
       MESSAGE = "GtkApi::PUT /api/v2/kpis"
       params = JSON.parse(request.body.read)
+      remaining = check_rate_limit(limit: 'anonymous_operations', client: settings.gatekeeper_api_client_id) if check_rate_limit_usage()
       unless params.nil?
         logger.debug(MESSAGE) {"entered with params=#{params}"}
         resp = KpiManagerService.update_metric(params)

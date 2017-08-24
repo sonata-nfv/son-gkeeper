@@ -52,6 +52,8 @@ class GtkApi < Sinatra::Base
       
       token = get_token( request.env, began_at, method(:count_package_on_boardings), log_message)
       signature = get_signature( request.env, log_message)
+      user_name = get_username_by_token( token, began_at, method(:count_package_on_boardings), log_message)
+      remaining = check_rate_limit(limit: 'other_operations', client: user_name) if check_rate_limit_usage()
       
       begin
         # Validate validator's existence first here
@@ -118,6 +120,7 @@ class GtkApi < Sinatra::Base
       token = get_token( request.env, began_at, method(:count_single_package_queries), log_message)
       user_name = get_username_by_token( token, began_at, method(:count_single_package_queries), log_message)
       validate_user_authorization(token: token, action: "get metadata for package #{params[:uuid]}", uuid: params[:uuid], path: '/packages', method:'GET', kpi_method: method(:count_single_package_queries), began_at: began_at, log_message: log_message)
+      remaining = check_rate_limit(limit: 'other_operations', client: user_name) if check_rate_limit_usage()
       
       package = Package.find_by_uuid(params[:uuid])
       validate_element_existence(uuid: params[:uuid], element: package, name: 'Package', kpi_method: method(:count_single_package_queries), began_at: began_at, log_message: log_message)
@@ -139,6 +142,7 @@ class GtkApi < Sinatra::Base
       token = get_token( request.env, began_at, method(:count_package_downloads), log_message)
       user_name = get_username_by_token( token, began_at, method(:count_package_downloads), log_message)
       validate_user_authorization(token: token, action: "download package #{params[:uuid]}", uuid: params['uuid'], path: '/packages/download', method:'GET', kpi_method: method(:count_single_package_queries), began_at: began_at, log_message: log_message)
+      remaining = check_rate_limit(limit: 'other_operations', client: user_name) if check_rate_limit_usage()
         
       package = Package.find_by_uuid(params[:uuid])
       logger.debug(log_message) {"package=#{package}"}
@@ -164,6 +168,7 @@ class GtkApi < Sinatra::Base
       user_name = get_username_by_token( token, began_at, method(:count_packages_queries), log_message)
       validate_user_authorization(token: token, action: 'get metadata for packages', uuid: '', path: '/packages', method:'GET', kpi_method: method(:count_packages_queries), began_at: began_at, log_message: log_message)
       logger.debug(log_message) {"User authorized"}
+      remaining = check_rate_limit(limit: 'other_operations', client: user_name) if check_rate_limit_usage()
 
       packages = Package.find(params)
       validate_collection_existence(collection: packages, name: 'packages', kpi_method: method(:count_packages_queries), began_at: began_at, log_message: log_message)
