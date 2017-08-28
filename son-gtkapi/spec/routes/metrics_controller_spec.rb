@@ -70,8 +70,8 @@ RSpec.describe GtkApi, type: :controller do
     context 'should return Ok (200)' do
       let(:url) {base_url+instance_uuid+'/'+vdu_id+'/'+known_vnfc_uuid+'/asynch-mon-data?metrics='+single_metric_name+'&'+since_param+'&'+until_param+'&'+step_param}
       it 'when all that is needed is given' do
-        allow(RecordManagerService).to receive(:find_record_by_uuid).with({kind: 'functions', uuid: instance_uuid}).and_return(spied_record)
-        allow(FunctionManagerService).to receive(:find_by_uuid).with(spied_record[:descriptor_reference]).and_return({uuid: function_uuid, username: 'sonata'})
+        allow(RecordManagerService).to receive(:find_record_by_uuid).with({kind: 'functions', uuid: instance_uuid}).and_return({status: 200, count: 1, items: spied_record, message: "OK"})
+        allow(FunctionManagerService).to receive(:find_by_uuid).with(spied_record[:descriptor_reference]).and_return({status: 200, count: 1, items: {uuid: function_uuid, username: 'sonata'}, message: "OK"})
         allow(Metric).to receive(:validate_and_create).with(single_metric_list).and_return(spied_metric)
         allow(Metric).to receive(:find_by_name).with(single_metric_list.first).and_return(spied_metric)
         get url, {}, {'HTTP_AUTHORIZATION' => 'Bearer '+token}
