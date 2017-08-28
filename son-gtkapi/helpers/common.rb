@@ -132,6 +132,8 @@ module GtkApiHelper
   end
   
   def validate_element_existence(uuid:, element:, name:, kpi_method:, began_at:, log_message:)
+    log_message = "GtkApiHelper##{__method__}"
+    logger.debug(log_message) {"Entered with uuid=#{uuid}, element=#{element}, name=#{name}"}
     if element[:count]==0 || !element[:items].any?
       kpi_method.call(labels: {result: "not found", uuid: uuid, elapsed_time: (Time.now.utc-began_at).to_s}) if kpi_method
       json_error 404, name+" "+uuid+" not found", log_message
@@ -162,6 +164,7 @@ module GtkApiHelper
   end  
   
   def validate_function_ownership(token:, instance_uuid:, kpi_method:, began_at:, log_message:)
+    log_message = "GtkApiHelper##{__method__}"
     user_name = User.find_username_by_token(token)
     record = RecordManagerService.find_record_by_uuid(kind: 'functions', uuid: instance_uuid)
     logger.debug(log_message) {"record=#{record}"}
