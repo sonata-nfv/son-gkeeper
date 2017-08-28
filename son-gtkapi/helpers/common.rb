@@ -165,7 +165,7 @@ module GtkApiHelper
     user_name = User.find_username_by_token(token)
     record = RecordManagerService.find_record_by_uuid(kind: 'functions', uuid: instance_uuid)
     logger.debug(log_message) {"record=#{record}"}
-    descriptor = FunctionManagerService.find_by_uuid(record[:descriptor_reference])
+    descriptor = FunctionManagerService.find_by_uuid(record[:items][:descriptor_reference])
     logger.debug(log_message) {"descriptor=#{descriptor}"}
     validate_ownership_and_licence(element: descriptor, user_name: user_name, kpi_method: kpi_method, began_at: began_at, log_message: log_message)
   end
