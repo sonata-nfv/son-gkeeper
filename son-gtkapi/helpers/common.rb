@@ -167,7 +167,7 @@ module GtkApiHelper
     logger.debug(log_message) {"record=#{record}"}
     descriptor = FunctionManagerService.find_by_uuid(record[:items][:descriptor_reference])
     logger.debug(log_message) {"descriptor=#{descriptor}"}
-    validate_ownership_and_licence(element: descriptor, user_name: user_name, kpi_method: kpi_method, began_at: began_at, log_message: log_message)
+    validate_ownership_and_licence(element: descriptor[:items], user_name: user_name, kpi_method: kpi_method, began_at: began_at, log_message: log_message)
   end
 
   def enhance_collection(collection:, user:, keys_to_delete: [])
