@@ -183,19 +183,23 @@ class GtkApi < Sinatra::Base
   
     # DELETE
     delete '/:uuid/?' do
+      began_at = Time.now.utc
       log_message = 'GtkApi::DELETE /api/v2/packages/:uuid/?'
-      unless params[:uuid].nil?
-        logger.info(log_message) { "entered with package id #{params[:uuid]}"}
-        packages = Package.delete(params[:uuid])
-        if packages
-          logger.debug(log_message) { "deleted package with uuid=#{params[:uuid]}"}
-          [200, {}, '']
-        else
-          json_error 404, 'No package found with uuid='+params[:uuid], log_message
-        end
-      else
-        json_error 404, 'Package uuid needed', log_message
-      end
+      json_error 404, 'Package uuid needed', log_message if params[:uuid].nil?
+      
+      logger.info(log_message) { "entered with package id #{params[:uuid]}"}
+      token = get_token( request.env, began_at, method(:count_packages_deletions), log_message)
+      user_name = get_username_by_token( token, began_at, method(:count_packages_deletions), log_message)
+      
+      # is any user allowed to delete any one's package? Or just public and his/her own?
+      validate_user_authorization(token: token, action: 'get metadata for packages', uuid: '', path: '/packages', method:'DELETE', kpi_method: method(:count_packages_deletions), began_at: began_at, log_message: log_message)
+      logger.debug(log_message) {"User authorized"}
+      remaining = check_rate_limit(limit: 'other_operations', client: user_name) if check_rate_limit_usage()
+      package = Package.delete(params[:uuid])
+      json_error 404, 'No package found with uuid='+params[:uuid], log_message unless package
+
+      logger.debug(log_message) { "deleted package with uuid=#{params[:uuid]}"}
+      [204, {}, '']
     end
   end
   
@@ -233,5 +237,11 @@ class GtkApi < Sinatra::Base
     name = __method__.to_s.split('_')[1..-1].join('_')
     desc = "how many packages have been requested"
     Package.counter_kpi({name: name, docstring: desc, base_labels: labels.merge({method: 'GET', module: 'packages'})})
+  end
+  
+  def count_packages_deletions(labels:)
+    name = __method__.to_s.split('_')[1..-1].join('_')
+    desc = "how many packages have been requested"
+    Package.counter_kpi({name: name, docstring: desc, base_labels: labels.merge({method: 'DELETE', module: 'packages'})})
   end
 end
