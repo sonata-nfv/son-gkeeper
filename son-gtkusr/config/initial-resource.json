@@ -14,7 +14,7 @@
         {
           "name": "read",
           "description": "Read a catalogue service resource",
-          "apply_policy": ["developer", "slm"],
+          "apply_policy": ["developer", "son-slm"],
           "action": "GET"
         },
         {
@@ -47,7 +47,7 @@
         {
           "name": "read",
           "description": "Read a catalogue function resource",
-          "apply_policy": ["developer", "slm"],
+          "apply_policy": ["developer", "son-slm"],
           "action": "GET"
         },
         {
@@ -80,7 +80,7 @@
         {
           "name": "read",
           "description": "Read or download a catalogue package resource",
-          "apply_policy": ["developer", "slm"],
+          "apply_policy": ["developer", "son-slm"],
           "action": "GET"
         },
         {
@@ -113,7 +113,7 @@
         {
           "name": "read",
           "description": "Read a repositories request resource",
-          "apply_policy": ["customer", "slm"],
+          "apply_policy": ["customer", "son-slm"],
           "action": "GET"
         },
         {
@@ -146,7 +146,7 @@
         {
           "name": "read",
           "description": "Read a repositories record resource",
-          "apply_policy": ["customer", "slm"],
+          "apply_policy": ["customer", "son-slm"],
           "action": "GET"
         },
         {
@@ -346,7 +346,7 @@
       "scopes": null
     },
     {
-      "name": "slm",
+      "name": "son-slm",
       "description": "SONATA Realm role authorized to request the resource",
       "type": "role",
       "logic": "positive",

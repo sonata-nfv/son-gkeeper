@@ -363,11 +363,11 @@ class Keycloak < Sinatra::Application
 
   put '/users' do
     # This endpoint allows queries for the next fields:
-    # search, lastName, firstName, email, username, first, max
+    # id username
     logger.debug 'Adapter: entered PUT /users'
     logger.debug "Adapter: query parameters #{params}"
     queriables = %w(id username)
-    not_updatables = %w(id username email)
+    not_updatables = %w(id username) # removed email
     logger.debug "Adapter: Optional query #{queriables}"
     json_error(400, 'Bad query') if params.empty?
     if params.length > 1
