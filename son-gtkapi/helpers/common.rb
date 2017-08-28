@@ -168,6 +168,7 @@ module GtkApiHelper
     validate_element_existence(uuid: instance_uuid, element: record, name: 'Record', kpi_method: kpi_method, began_at: began_at, log_message: log_message)
     descriptor = FunctionManagerService.find_by_uuid(record[:items][:descriptor_reference])
     logger.debug(log_message) {"descriptor=#{descriptor}"}
+    validate_element_existence(uuid: instance_uuid, element: descriptor, name: 'Function', kpi_method: kpi_method, began_at: began_at, log_message: log_message)
     validate_ownership_and_licence(element: descriptor[:items], user_name: user_name, kpi_method: kpi_method, began_at: began_at, log_message: log_message)
   end
 
