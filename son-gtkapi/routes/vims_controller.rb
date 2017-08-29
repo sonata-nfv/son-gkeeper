@@ -71,7 +71,7 @@ class GtkApi < Sinatra::Base
           new_request = VimManagerService.create_vim_rs(params)
           if new_request
             logger.debug(MESSAGE) {"new_request =#{new_request}"}
-            halt 201, new_request[:item].to_json
+            halt 201, new_request[:items].to_json
           else
             logger.debug(MESSAGE) { "leaving with 'No vim creation request was created'"}
             json_error 400, 'No vim create_request was created'
