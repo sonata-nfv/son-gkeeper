@@ -180,7 +180,7 @@ class Keycloak < Sinatra::Application
 
     logger.debug "Database: New user #{form['username']} with ID #{user_id} has been added"
     logger.info "New user #{form['username']} has been registered"
-    response = {'username' => form['username'], 'userId' => user_id.to_s}
+    response = {'username' => form['username'], 'userId' => user_id.to_s, 'created_at' => user['created_at']}
     halt 201, {'Content-type' => 'application/json'}, response.to_json
   end
 
