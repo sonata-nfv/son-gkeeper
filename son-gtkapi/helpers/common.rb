@@ -183,6 +183,8 @@ module GtkApiHelper
     collection.each do |element|
       logger.debug(log_message) {'element='+element.inspect}
       
+      next unless element.key?(:nsd)
+      
       licences=element[:nsd][:licences]
       # No licence implies 'public' licence
       if licences.to_s.empty? || licences[0][:type] == 'public'
