@@ -207,14 +207,17 @@ module GtkApiHelper
       if licenced_collection[:items].to_s.empty?
         # when the user needs to buy, we do not pass the juice to him
         keys_to_delete.each { |key| element.delete(key) }
+        logger.debug(log_message) {'user licence set to "to buy"'}
         element[:user_licence] = 'to buy'
-      else
-        licenced_collection[:items].each do |licenced_element|
-          logger.debug(log_message) {"licenced_element=#{licenced_element}"}
-          element[:user_licence] = 'licensed' if licenced_element[:uuid] == element[:uuid]
-        end
+        next
+      end
+      licenced_collection[:items].each do |licenced_element|
+        logger.debug(log_message) {"licenced_element=#{licenced_element}"}
+        element[:user_licence] = 'licensed' if licenced_element[:uuid] == element[:uuid]
+        logger.debug(log_message) {"user licence set to \"#{element[:user_licence]}\""}
       end
     end
+    logger.debug(log_message) {"returning collection=#{collection}"}
     collection
   end
 end
