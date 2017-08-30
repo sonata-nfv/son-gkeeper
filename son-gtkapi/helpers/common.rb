@@ -204,7 +204,7 @@ module GtkApiHelper
       logger.debug(log_message) {"licenced_collection=#{licenced_collection}"}
       
       
-      if licenced_collection[:items].to_s.empty?
+      if licenced_collection[:items].empty?
         # when the user needs to buy, we do not pass the juice to him
         keys_to_delete.each { |key| element.delete(key) }
         logger.debug(log_message) {'user licence set to "to buy"'}
