@@ -203,14 +203,15 @@ module GtkApiHelper
       licenced_collection = LicenceManagerService.find({service_uuid: element[:uuid], user_uuid: user})
       logger.debug(log_message) {"licenced_collection=#{licenced_collection}"}
       
-      if licenced_collection.to_s.empty?
+      
+      if licenced_collection[:items].to_s.empty?
         # when the user needs to buy, we do not pass the juice to him
         keys_to_delete.each { |key| element.delete(key) }
         element[:user_licence] = 'to buy'
       else
-        licenced_collection.each do |licenced_element|
+        licenced_collection[:items].each do |licenced_element|
           logger.debug(log_message) {"licenced_element=#{licenced_element}"}
-          element[:user_licence] = 'licensed' if licensed_element[:uuid] == element[:uuid]
+          element[:user_licence] = 'licensed' if licenced_element[:uuid] == element[:uuid]
         end
       end
     end
