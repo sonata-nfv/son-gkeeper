@@ -56,7 +56,8 @@ class GtkApi < Sinatra::Base
       functions = FunctionManagerService.find(params)
       validate_collection_existence(collection: functions, name: 'functions', kpi_method: method(:count_functions_metadata_queries), began_at: began_at, log_message: log_message)
       logger.debug(log_message) {"Found functions #{functions}"}
-      filtered_functions = enhance_collection( collection: functions[:items], user: user_name, keys_to_delete: [:vnfd])
+      keys_to_delete = {main_key: :vnfd, sub_keys: [:connection_points, :monitoring_rules, :virtual_deployment_units, :virtual_links]}
+      filtered_functions = enhance_collection( collection: functions[:items], user: user_name, keys_to_delete: keys_to_delete)
       logger.debug(log_message) {"links: request_url=#{request_url}, limit=#{@limit}, offset=#{@offset}, total=#{functions[:count]}"}
       links = build_pagination_headers(url: request_url, limit: @limit.to_i, offset: @offset.to_i, total: functions[:count].to_i)
       logger.debug(log_message) {"links: #{links}"}

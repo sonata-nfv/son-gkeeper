@@ -64,7 +64,8 @@ class GtkApi < Sinatra::Base
       services = ServiceManagerService.find_services(params)
       validate_collection_existence(collection: services, name: 'services', kpi_method: method(:count_services_metadata_queries), began_at: began_at, log_message: log_message)
       logger.debug(log_message) {"Found services #{services}"}
-      filtered_services = enhance_collection( collection: services[:items], user: user_name, keys_to_delete: [:nsd])
+      keys_to_delete = {main_key: :nsd, sub_keys: [:connection_points, :forwarding_graphs, :virtual_links, :service_specific_managers, :network_functions]}
+      filtered_services = enhance_collection( collection: services[:items], user: user_name, keys_to_delete: keys_to_delete)
       logger.debug(log_message) {"links: request_url=#{request_url}, limit=#{@limit}, offset=#{@offset}, total=#{filtered_services.count}"}
       links = build_pagination_headers(url: request_url, limit: @limit.to_i, offset: @offset.to_i, total: filtered_services.count)
       logger.debug(log_message) {"links: #{links}"}
