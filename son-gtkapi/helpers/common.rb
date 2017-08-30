@@ -175,7 +175,7 @@ module GtkApiHelper
     validate_ownership_and_licence(element: descriptor[:items], user_name: user_name, kpi_method: kpi_method, began_at: began_at, log_message: log_message)
   end
 
-  def enhance_collection(collection:, user:, keys_to_delete: [])
+  def enhance_collection(collection:, user:, keys_to_delete:)
     log_message = "GtkApiHelper##{__method__}"
     logger.debug(log_message) {'collection='+collection.inspect}
     return collection if (collection.empty? || collection.first.empty?)
@@ -206,7 +206,8 @@ module GtkApiHelper
       
       if licenced_collection[:items].empty?
         # when the user needs to buy, we do not pass the juice to him
-        keys_to_delete.each { |key| element.delete(key) }
+        keys_to_delete[:sub_keys].each { |key| element[keys_to_delete[:main_key]].delete(key)}
+    
         logger.debug(log_message) {'user licence set to "to buy"'}
         element[:user_licence] = 'to buy'
         next
