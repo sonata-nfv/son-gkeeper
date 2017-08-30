@@ -175,7 +175,7 @@ module GtkApiHelper
     validate_ownership_and_licence(element: descriptor[:items], user_name: user_name, kpi_method: kpi_method, began_at: began_at, log_message: log_message)
   end
 
-  def enhance_collection(collection:, user:, keys_to_delete: [])
+  def enhance_collection(collection:, user:, keys_to_delete:)
     log_message = "GtkApiHelper##{__method__}"
     logger.debug(log_message) {'collection='+collection.inspect}
     return collection if (collection.empty? || collection.first.empty?)
@@ -183,31 +183,42 @@ module GtkApiHelper
     collection.each do |element|
       logger.debug(log_message) {'element='+element.inspect}
       
+      next unless element.key?(:nsd)
+      
+      licences=element[:nsd][:licences]
       # No licence implies 'public' licence
-      if element[:licences].to_s.empty? || element[:licences][0][:type] == 'public'
+      if licences.to_s.empty? || licences[0][:type] == 'public'
+        logger.debug(log_message) {'user licence set to "public"'}
         element[:user_licence] = 'public'
-      else
-        # it's private
-        if element[:username] == user
-          element[:user_licence] = 'owned'
-        else
-          licenced_collection = LicenceManagerService.find({service_uuid: element[:uuid], user_uuid: user})
-          logger.debug(log_message) {'licenced_collection='+licenced_collection.inspect}
-          
-          if licenced_collection.to_s.empty?
-            # when the user needs to buy, we do not pass the juice to him
-            keys_to_delete.each { |key| element.delete(key) }
-            element[:user_licence] = 'to buy'
-          else
-            licenced_collection.each do |licenced_element|
-              if licensed_element[:uuid] == element[:uuid]
-                element[:user_licence] = 'licensed'
-              end
-            end
-          end
-        end
+        next
+      end
+
+      # it's private
+      if element[:username] == user
+        logger.debug(log_message) {'user licence set to "owned"'}
+        element[:user_licence] = 'owned'
+        next
+      end
+      
+      licenced_collection = LicenceManagerService.find({service_uuid: element[:uuid], user_uuid: user})
+      logger.debug(log_message) {"licenced_collection=#{licenced_collection}"}
+      
+      
+      if licenced_collection[:items].empty?
+        # when the user needs to buy, we do not pass the juice to him
+        keys_to_delete[:sub_keys].each { |key| element[keys_to_delete[:main_key]].delete(key)}
+    
+        logger.debug(log_message) {'user licence set to "to buy"'}
+        element[:user_licence] = 'to buy'
+        next
+      end
+      licenced_collection[:items].each do |licenced_element|
+        logger.debug(log_message) {"licenced_element=#{licenced_element}"}
+        element[:user_licence] = 'licensed' if licenced_element[:uuid] == element[:uuid]
+        logger.debug(log_message) {"user licence set to \"#{element[:user_licence]}\""}
       end
     end
+    logger.debug(log_message) {"returning collection=#{collection}"}
     collection
   end
 end
