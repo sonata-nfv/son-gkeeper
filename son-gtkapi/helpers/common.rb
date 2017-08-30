@@ -183,8 +183,9 @@ module GtkApiHelper
     collection.each do |element|
       logger.debug(log_message) {'element='+element.inspect}
       
+      licences=element[:nsd][:licences]
       # No licence implies 'public' licence
-      if element[:licences].to_s.empty? || element[:licences][0][:type] == 'public'
+      if licences.to_s.empty? || licences[0][:type] == 'public'
         logger.debug(log_message) {'user licence set to "public"'}
         element[:user_licence] = 'public'
         next
@@ -198,7 +199,7 @@ module GtkApiHelper
       end
       
       licenced_collection = LicenceManagerService.find({service_uuid: element[:uuid], user_uuid: user})
-      logger.debug(log_message) {'licenced_collection='+licenced_collection.inspect}
+      logger.debug(log_message) {"licenced_collection=#{licenced_collection}"}
       
       if licenced_collection.to_s.empty?
         # when the user needs to buy, we do not pass the juice to him
@@ -206,9 +207,8 @@ module GtkApiHelper
         element[:user_licence] = 'to buy'
       else
         licenced_collection.each do |licenced_element|
-          if licensed_element[:uuid] == element[:uuid]
-            element[:user_licence] = 'licensed'
-          end
+          logger.debug(log_message) {"licenced_element=#{licenced_element}"}
+          element[:user_licence] = 'licensed' if licensed_element[:uuid] == element[:uuid]
         end
       end
     end
