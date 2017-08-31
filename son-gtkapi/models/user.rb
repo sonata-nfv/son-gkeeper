@@ -441,6 +441,7 @@ class User < ManagerService
       
     user[:firstName] = first_name if first_name
     user[:lastName] = last_name if last_name
+    user[:email] = email if email
     
     # Transform password
     user[:credentials] = [{type: 'password', value: password}]
