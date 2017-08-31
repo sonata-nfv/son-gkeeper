@@ -100,7 +100,10 @@ class User < ManagerService
         user = resp[:items]
         raise UserNotCreatedError.new "User not created with params #{params}" unless user.key? :userId
         GtkApi.logger.debug(method) {"user=#{user}"}
-        saved_params[:uuid] = user[:userId] unless user.empty?
+        unless user.empty?
+          saved_params[:uuid] = user[:userId]
+          saved_params[:created_at] = user[:created_at]
+        end
         User.new(saved_params)
       when 409
         GtkApi.logger.debug(method) {"Status 409"} 
