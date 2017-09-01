@@ -7,7 +7,6 @@ This is the folder of the **License Management** micro-service. This micro-servi
 Main ideas around this module are the following:
 
 1. **Keep it simple:** software licencing is a theme by it self, we don't want to make it the focus of the project. But the fact is licencing, or the way you may make money out of APIs and services, is quickly become a relevant issue;
-2. ...
 
 # How to use this
 This section describes how **Licencing** is expected to be used in [SONATA](http://sonata-nfv.eu).
