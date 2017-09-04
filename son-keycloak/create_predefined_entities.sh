@@ -132,6 +132,18 @@ function get_client_secret() {
 	return $ret
 }
 
+# Params: $1 = realm
+function get_current_clients() {
+# List existing clients
+
+        clients=$($KCADMIN_SCRIPT get clients -r $1 --fields id,clientId 2>/dev/null)
+        ret=$?
+        if [ $ret -eq 0 ]; then
+        	echo "$clients"
+        fi
+	return $ret
+}
+
 echo
 echo "------------------------------------------------------------------------"
 echo "*** Verifying if Keycloak server is up and listening on $KEYCLOAK_URL"
@@ -166,8 +178,32 @@ $KCADMIN_SCRIPT update realms/$SONATA_REALM -s accessTokenLifespan=1200
 # Creating the Service Platform adapter client:
 create_client_out=$(create_client $SONATA_REALM $ADAPTER_CLIENT "http://son-gtkusr:5600/")
 echo $create_client_out
-adapter_cid=$(echo $create_client_out | awk -F id= '{print $2}')
-#echo "adapter_cid=$adapter_cid"
+
+# Listing clients
+client_list=$(get_current_clients $SONATA_REALM)
+echo "client_list=$client_list"
+
+client_list0=$(echo $client_list | awk '{print $0}' | python -mjson.tool | awk '/"id"/' | awk -F ':[ \t]*' '{print $2}' | sed 's/,//g' | sed 's/"//g' )
+client_list1=$(echo $client_list | awk '{print $0}' | python -mjson.tool | awk '/"clientId"/' | awk -F ':[ \t]*' '{print $2}' | sed 's/,//g' | sed 's/"//g' )
+
+echo $client_list0
+echo $client_list1
+
+count=1
+LINES=`echo $client_list1`
+for LINE in $LINES ; do
+    if [ "$LINE" == "$ADAPTER_CLIENT" ]; then
+        echo "$count"
+        echo $LINE
+        adapter_cid=$(echo $client_list0 |  awk -v var=$count '{ print $var }') #awk '{print $1}')
+        # awk -v var="$count" -F' ' '{ print var }'
+        echo $adapter_cid
+    fi
+    (( count++ ))
+done
+
+# adapter_cid=$(echo $create_client_out | awk -F id= '{print $2}')
+echo "adapter_cid=$adapter_cid"
 
 # Creating predefined realm roles:
 create_realm_role $SONATA_REALM son-gkeeper "\${role_access-catalogue},\${role_access-repositories}"
