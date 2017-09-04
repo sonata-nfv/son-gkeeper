@@ -110,7 +110,7 @@ everytime a *pull request* is done.
 Please see the [several levels of tests](test_levels.md) that may be considered.
 
 ## Usage
-Please refer to the [Usage documentation wiki pages](https://github.com/sonata-nfv/son-gkeeper/wiki/Usage-documentation] for all the **usage** details.
+Please refer to the [Usage documentation wiki pages](https://github.com/sonata-nfv/son-gkeeper/wiki/Usage-documentation) for all the **usage** details.
 
 ## License
 The license of the SONATA Gatekeeper is Apache 2.0 (please see the [license](https://github.com/sonata-nfv/son-editorgkeeper/blob/master/LICENSE) file).
