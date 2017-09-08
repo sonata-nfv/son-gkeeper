@@ -78,7 +78,7 @@ class GtkApi < Sinatra::Base
       params = JSON.parse(request.body.read, symbolize_names: true)
       logger.info(log_message) {"entered with params=#{params}"}
     
-      require_param(param: 'service_uuid', params: params, kpi_method: method(:count_licences_creations), error_message: "No service uuid specified: #{params}", log_message: log_message, began_at: began_at)
+      require_param(param: :service_uuid, params: params, kpi_method: method(:count_licences_creations), error_message: "No service uuid specified: #{params}", log_message: log_message, began_at: began_at)
       
       token = get_token( request.env, began_at, method(:count_licences_creations), log_message)
       user_name = get_username_by_token( token, began_at, method(:count_licences_creations), log_message)
