@@ -73,14 +73,17 @@ class GtkApi < Sinatra::Base
     end
     
     post '/?' do
-      log_message = 'GtkApi::POST /licences/?'
-      body = request.body.read
+      began_at = Time.now.utc
+      log_message = 'GtkApi::POST /api/v2/licences/?'
+      params = JSON.parse(request.body.read, symbolize_names: true)
+      logger.info(log_message) {"entered with params=#{params}"}
+    
+      require_param(param: 'service_uuid', params: params, kpi_method: method(:count_licences_creations), error_message: "No service uuid specified: #{params}", log_message: log_message, began_at: began_at)
       
-      # Don't raise exception here, return HTTP error
-      #raise ArgumentError.new('Licences have to have parameters') if (body && body.empty?)
+      token = get_token( request.env, began_at, method(:count_licences_creations), log_message)
+      user_name = get_username_by_token( token, began_at, method(:count_licences_creations), log_message)
+      remaining = check_rate_limit(limit: 'other_operations', client: user_name) if check_rate_limit_usage()
       
-      
-      logger.debug(log_message) {"body=#{body}"}
       # 'type_uuid', String *
       # 'service_uuid', String *
       # 'user_uuid', String *
@@ -89,10 +92,6 @@ class GtkApi < Sinatra::Base
       # 'startingDate', DateTime
       # 'expiringDate', DateTime * 
       # 'status', String
-      remaining = check_rate_limit(limit: 'anonymous_operations', client: settings.gatekeeper_api_client_id) if check_rate_limit_usage()
-      
-      params = JSON.parse(body, symbolize_names: true)
-      logger.debug(log_message) {"entered with params=#{params}"}
 
       licence = LicenceManagerService.create(params)
       logger.debug(log_message) {"licence=#{licence.inspect}"}
@@ -122,5 +121,11 @@ class GtkApi < Sinatra::Base
       headers 'Content-Type' => 'text/plain; charset=utf8', 'Location' => '/'
       halt 200, log
     end
+  end
+  
+  def count_licences_creations(labels:)
+    name = __method__.to_s.split('_')[1..-1].join('_')
+    desc = "how many licences have been created"
+    LicenceManagerService.counter_kpi({name: name, docstring: desc, base_labels: labels.merge({method: 'POST', module: 'licences'})})
   end
 end
