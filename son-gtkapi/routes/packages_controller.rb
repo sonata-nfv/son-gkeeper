@@ -241,7 +241,7 @@ class GtkApi < Sinatra::Base
   
   def count_packages_deletions(labels:)
     name = __method__.to_s.split('_')[1..-1].join('_')
-    desc = "how many packages have been requested"
+    desc = "how many package deletions have been requested"
     Package.counter_kpi({name: name, docstring: desc, base_labels: labels.merge({method: 'DELETE', module: 'packages'})})
   end
 end
