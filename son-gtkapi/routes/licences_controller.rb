@@ -93,7 +93,8 @@ class GtkApi < Sinatra::Base
       # 'expiringDate', DateTime * 
       # 'status', String
       
-      params[:user_uuid] = user_name # Yes, Tequilla, we're using user name, and not uuid...
+      user = User.find_by_name user_name
+      params[:user_uuid] = user.uuid
 
       licence = LicenceManagerService.create(params)
       logger.debug(log_message) {"licence=#{licence.inspect}"}
