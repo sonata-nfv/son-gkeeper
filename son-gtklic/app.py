@@ -35,7 +35,8 @@ manager.add_command("runserver", Server(port=app.config["PORT"]))
 def read_logs():
     try:
         with app.open_resource('log/production.log') as f:
-            return f.read()
+            file = f.read()
+            return Response(file ,mimetype='text/plain')
     except IOError:
         pass
     return "Unable to read file"
