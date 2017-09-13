@@ -1,9 +1,9 @@
-
-import sys
-import os
-import ast
+import traceback
+from time import strftime
+from uuid import UUID
 import requests
-from datetime import datetime, timedelta
+import logging
+import json
 from flask_restful import Resource
 from flask import request
 
@@ -22,12 +22,28 @@ class LicensesList(Resource):
 
     def post(self):
         try:
-            service_uuid=request.form['service_uuid']
-            user_uuid = request.form['user_uuid']
+            content=json.loads(request.data)
+            service_uuid = content['service_uuid']
+            user_uuid = content['user_uuid']
+            try:
+                UUID(service_uuid)
+            except:
+                self.log_bad_request()
+                return build_response(status_code=400, error="Invalid field", description="service_uuid is not valid")
+            try:
+                UUID(user_uuid)
+            except:
+                self.log_bad_request()
+                return build_response(status_code=400, error="Invalid field", description="user_uuid is not valid")
 
-            license = License.query.filter_by(  user_uuid=user_uuid,
-                                                service_uuid=service_uuid
-                                              ).first()
+            try:
+                license = License.query.filter_by(  user_uuid=user_uuid,
+                                                    service_uuid=service_uuid
+                                                  ).first()
+            except:
+                self.log_bad_request()
+                return build_response(status_code=500, error="Connection error", description="Could not connect to database")
+
             if license != None:
                 return build_response(status_code=400, error="Already exists", description="License for that user to that service already exists", data=license.serialize)
 
@@ -60,12 +76,24 @@ class LicensesList(Resource):
                                     license_type)
 
         except:
+            self.log_bad_request()
             return build_response(status_code=400, error="Missing fields", description="Missing service_uuid or user_uuid argument")
 
         db.session.add(new_license)
         db.session.commit()
         return build_response(status_code=200, data=new_license.serialize, description="License successfully created")
 
+    def log_bad_request(self):
+        logger = logging.getLogger('werkzeug')
+        ts = strftime('[%Y-%b-%d %H:%M]')
+        tb = traceback.format_exc()
+        logger.error('%s %s %s %s %s 400 BAD REQUEST\n%s',
+                    ts,
+                    request.remote_addr,
+                    request.method,
+                    request.scheme,
+                    request.full_path,
+                    tb)
 
 class Licenses(Resource):
 
