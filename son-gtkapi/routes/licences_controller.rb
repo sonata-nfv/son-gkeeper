@@ -61,7 +61,7 @@ class GtkApi < Sinatra::Base
 
     # GET a specific licence
     get '/:uuid/?' do
-      log_message = MODULE+' GET /api/v2/licences/:uuid'
+      log_message = 'GtkApi::GET /api/v2/licences/:uuid'
       logger.debug(log_message) {"entered with #{params[:uuid]}"}
       remaining = check_rate_limit(limit: 'anonymous_operations', client: settings.gatekeeper_api_client_id) if check_rate_limit_usage()
 
