@@ -1,8 +1,8 @@
 import os
 
 POSTGRES_PASSWORD = os.environ.get('POSTGRES_PASSWORD') or 'sonata'
-POSTGRES_USER = os.environ.get('POSTGRES_USER') or 'sonata'
-POSTGRES_DB = os.environ.get('POSTGRES_DB') or 'licensemanager'
+POSTGRES_USER = os.environ.get('POSTGRES_USER') or 'sonatatest'
+POSTGRES_DB = os.environ.get('POSTGRES_DB') or 'gatekeeper'
 DATABASE_HOST = os.environ.get('DATABASE_HOST') or 'localhost'
 DATABASE_PORT = os.environ.get('DATABASE_PORT') or '5432'
 PORT = os.environ.get('PORT') or '5000'
@@ -13,7 +13,7 @@ SQLALCHEMY_TRACK_MODIFICATIONS = True
 DEBUG = False
 
 # Default timeout for when validating licenses to external urls
-TIMEOUT = 5
+TIMEOUT = 10
 
 # Default log file names for developing and production
 if DEBUG:

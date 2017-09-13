@@ -11,9 +11,9 @@ from app import app, db
 
 app.config.from_pyfile('settings.py')
 if app.config['PORT'] == '5000':
-    validation_url = "http://localhost:5001"
-else:
     validation_url = "http://localhost:5000"
+else:
+    validation_url = "http://localhost:5001"
 
 class TestCase(unittest.TestCase):
 
@@ -30,17 +30,18 @@ class TestCase(unittest.TestCase):
 
     def test_add_private_license(self):
         # Test adding a license
-        service_uuid = uuid.uuid4()
-        user_uuid = uuid.uuid4()
+        service_uuid = str(uuid.uuid4())
+        user_uuid = str(uuid.uuid4())
 
         # Adding active License
-        response = self.app.post("/api/v1/licenses/", data=dict(
+        response = self.app.post("/api/v1/licenses/", data=json.dumps(dict(
                                                         service_uuid=service_uuid,
                                                         user_uuid=user_uuid,
                                                         description="Test",
                                                         license_type="private",
                                                         validation_url=validation_url,
-                                                        status="active"))
+                                                        status="active")),
+                                 content_type='application/json')
         self.assertEqual(response.status_code, 200)
         resp_json = json.loads(response.data)
 
@@ -56,43 +57,48 @@ class TestCase(unittest.TestCase):
     def test_add_same_license(self):
 
         # Test adding a license
-        service_uuid = uuid.uuid4()
-        user_uuid = uuid.uuid4()
+        service_uuid = str(uuid.uuid4())
+        user_uuid = str(uuid.uuid4())
 
         # Adding active License
-        response = self.app.post("/api/v1/licenses/", data=dict(
+        response = self.app.post("/api/v1/licenses/", data=json.dumps(dict(
                                                         service_uuid=service_uuid,
                                                         user_uuid=user_uuid,
                                                         description="Test",
                                                         license_type="private",
                                                         validation_url=validation_url,
-                                                        status="active"))
+                                                        status="active")),
+                                 content_type='application/json')
+
         self.assertEqual(response.status_code, 200)
 
         # Testing adding a license that the same user already has for a service of that type
-        response = self.app.post("/api/v1/licenses/", data=dict(
+        response = self.app.post("/api/v1/licenses/", data=json.dumps(dict(
                                                         service_uuid=service_uuid,
                                                         user_uuid=user_uuid,
                                                         description="Test",
                                                         license_type="private",
                                                         validation_url=validation_url,
-                                                        status="active"))
-        self.assertEqual(response.status_code, 400)
+                                                        status="active")),
+                                 content_type='application/json')
+
+        self.assertEqual(response.status_code, 409)
 
 
     def test_add_public_license(self):
 
         # Adding active public License
 
-        service_uuid = uuid.uuid4()
-        user_uuid = uuid.uuid4()
+        service_uuid = str(uuid.uuid4())
+        user_uuid = str(uuid.uuid4())
 
-        response = self.app.post("/api/v1/licenses/", data=dict(
+        response = self.app.post("/api/v1/licenses/", data=json.dumps(dict(
                                                         service_uuid=service_uuid,
                                                         user_uuid=user_uuid,
                                                         description="Test",
                                                         license_type="public",
-                                                        status="active"))
+                                                        status="active")),
+                                 content_type='application/json')
         self.assertEqual(response.status_code, 200)
         resp_json = json.loads(response.data)
 
@@ -105,23 +111,22 @@ class TestCase(unittest.TestCase):
     def test_get_license(self):
         # Test getting a license
 
-        service_uuid = uuid.uuid4()
-        user_uuid = uuid.uuid4()
+        service_uuid = str(uuid.uuid4())
+        user_uuid = str(uuid.uuid4())
         startingDate = datetime.now()
 
         # Adding active License
-        response = self.app.post("/api/v1/licenses/", data=dict(
-                                                        service_uuid=service_uuid,
-                                                        user_uuid=user_uuid,
-                                                        description="Test",
-                                                        license_type="private",
-                                                        validation_url=validation_url,
-                                                        status="active"))
+        response = self.app.post("/api/v1/licenses/", data=json.dumps(dict(
+                                                      service_uuid=service_uuid,
+                                                      user_uuid=user_uuid,
+                                                      description="Test",
+                                                      license_type="private",
+                                                      validation_url=validation_url,
+                                                      status="active")),
+                                 content_type='application/json')
         self.assertEqual(response.status_code, 200)
         resp_json = json.loads(response.data)
-
-        license_uuid = resp_json["data"]["license_uuid"]
-
+        license_uuid = str(resp_json["data"]["license_uuid"])
         # Test get all licenses
         response = self.app.get("/api/v1/licenses/")
         self.assertEqual(response.status_code, 200)
@@ -132,9 +137,8 @@ class TestCase(unittest.TestCase):
             license_list.append(i["license_uuid"])
 
         self.assertTrue(license_uuid in license_list)
-
         # Test get a specific license if is valid
-        response = self.app.get("/api/v1/licenses/%s/"%license_uuid)
+        response = self.app.get("/api/v1/licenses/%s/" %license_uuid)
         self.assertEqual(response.status_code, 200)
         resp_json = json.loads(response.data)
 
@@ -147,20 +151,20 @@ class TestCase(unittest.TestCase):
     def test_cancel_license(self):
         # Test canceling a license
 
-        service_uuid = uuid.uuid4()
-        user_uuid = uuid.uuid4()
+        service_uuid = str(uuid.uuid4())
+        user_uuid = str(uuid.uuid4())
 
         # Adding active License
-        response = self.app.post("/api/v1/licenses/", data=dict(
+        response = self.app.post("/api/v1/licenses/", data=json.dumps(dict(
                                                         service_uuid=service_uuid,
                                                         user_uuid=user_uuid,
                                                         description="Test",
                                                         license_type="private",
                                                         validation_url=validation_url,
-                                                        status="active"))
+                                                        status="active")),
+                                 content_type='application/json')
         self.assertEqual(response.status_code, 200)
         resp_json = json.loads(response.data)
-
         license_uuid = resp_json["data"]["license_uuid"]
 
         # Cancel a license
