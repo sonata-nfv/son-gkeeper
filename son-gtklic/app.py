@@ -54,6 +54,11 @@ def exceptions(e):
                   tb)
     return "Internal Server Error", 500
 
+@app.before_request
+def log_request_info():
+    logger.info('Headers: %s', request.headers)
+    logger.info('Body: %s', request.get_data())
+
 @manager.command
 def dropdb():
     if prompt_bool(
