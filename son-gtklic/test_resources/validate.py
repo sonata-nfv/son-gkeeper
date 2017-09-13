@@ -7,7 +7,7 @@ def hello():
 
 if __name__ == "__main__":
     app.config.from_pyfile('../settings.py')
-    if app.config['PORT'] == '5900':
+    if app.config['PORT'] == '5000':
         app.run(port=5001)
     else:
         app.run()
