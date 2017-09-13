@@ -2,7 +2,10 @@
 import sys
 import os
 import json
+import traceback
 import unittest
+from time import strftime
+
 import xmlrunner
 import logging
 
@@ -27,6 +30,28 @@ migrate = Migrate(app, db)
 manager = Manager(app)
 manager.add_command('db', MigrateCommand)
 manager.add_command("runserver", Server(port=app.config["PORT"]))
+
+@app.route('/admin/logs',methods=['GET'])
+def read_logs():
+    try:
+        with app.open_resource('log/production.log') as f:
+            return f.read()
+    except IOError:
+        pass
+    return "Unable to read file"
+
+@app.errorhandler(Exception)
+def exceptions(e):
+    ts = strftime('[%Y-%b-%d %H:%M]')
+    tb = traceback.format_exc()
+    logger.error('%s %s %s %s %s 5xx INTERNAL SERVER ERROR\n%s',
+                  ts,
+                  request.remote_addr,
+                  request.method,
+                  request.scheme,
+                  request.full_path,
+                  tb)
+    return "Internal Server Error", 500
 
 @manager.command
 def dropdb():
