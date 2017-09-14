@@ -24,7 +24,7 @@
 # acknowledge the contributions of their colleagues of the SONATA 
 # partner consortium (www.sonata-nfv.eu).
 # encoding: utf-8
-development: &common_settings
+common_settings: &common_settings
   adapter: postgresql
   encoding: unicode
   user: postgres
@@ -32,6 +32,9 @@ development: &common_settings
   port: 5432
   pool: 5
   database: sonata
+
+development:
+  <<: *common_settings
 
 test:
   <<: *common_settings
