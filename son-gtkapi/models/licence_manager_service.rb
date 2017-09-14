@@ -50,7 +50,7 @@ class LicenceManagerService < ManagerService
     
     method = LOG_MESSAGE + "##{__method__}"
     GtkApi.logger.debug(method) {"entered: params=#{params}"}
-    raise ArgumentError, 'User must be valid' unless User.valid? params[:user_uuid]
+    #raise ArgumentError, 'User must be valid' unless User.valid? params[:user_uuid]
     raise ArgumentError, 'Service must be valid' unless ServiceManagerService.valid? params[:service_uuid]
     GtkApi.logger.debug(method) {"Leaving with valid licence data service #{params[:service_uuid]} and user #{params[:user_uuid]}"}
     true

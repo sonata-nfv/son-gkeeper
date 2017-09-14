@@ -155,7 +155,8 @@ module GtkApiHelper
       return
     end
 
-    licenced_elements = LicenceManagerService.find({service_uuid: element[:uuid], user_uuid: user_name})
+    user_uuid = User.find_by_name(user_name)[:uuid]
+    licenced_elements = LicenceManagerService.find({service_uuid: element[:uuid], user_uuid: user_uuid})
     if licenced_elements[:items].empty?
       # there's no licence for this element for this username
       kpi_method.call(labels: {result: "forbidden", uuid: element[:uuid], elapsed_time: (Time.now.utc-began_at).to_s}) if kpi_method
@@ -200,7 +201,8 @@ module GtkApiHelper
         next
       end
       
-      licenced_collection = LicenceManagerService.find({service_uuid: element[:uuid], user_uuid: user})
+      user_uuid = User.find_by_name(user)[:uuid]
+      licenced_collection = LicenceManagerService.find({service_uuid: element[:uuid], user_uuid: user_uuid})
       logger.debug(log_message) {"licenced_collection=#{licenced_collection}"}
       
       
