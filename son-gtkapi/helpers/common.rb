@@ -155,7 +155,7 @@ module GtkApiHelper
       return
     end
 
-    user_uuid = User.find_by_name(user_name)[:uuid]
+    user_uuid = User.find_by_name(user_name).uuid
     licenced_elements = LicenceManagerService.find({service_uuid: element[:uuid], user_uuid: user_uuid})
     if licenced_elements[:items].empty?
       # there's no licence for this element for this username
@@ -201,7 +201,7 @@ module GtkApiHelper
         next
       end
       
-      user_uuid = User.find_by_name(user)[:uuid]
+      user_uuid = User.find_by_name(user).uuid
       licenced_collection = LicenceManagerService.find({service_uuid: element[:uuid], user_uuid: user_uuid})
       logger.debug(log_message) {"licenced_collection=#{licenced_collection}"}
       
