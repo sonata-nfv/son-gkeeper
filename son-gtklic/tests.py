@@ -1,31 +1,34 @@
 import os
-import sys
 import json
 import unittest
 import xmlrunner
 import uuid
 import subprocess
-from datetime import datetime, timedelta
-
+import time
+from datetime import datetime
 from app import app, db
 
 app.config.from_pyfile('settings.py')
 if app.config['PORT'] == '5000':
-    validation_url = "http://localhost:5000"
-else:
     validation_url = "http://localhost:5001"
+else:
+    validation_url = "http://localhost:5000"
 
 class TestCase(unittest.TestCase):
-
     def setUp(self):
         app.config['TESTING'] = True
         # Uncomment and change to use a different database for testing
         #app.config['SQLALCHEMY_DATABASE_URI'] = "postgresql://user:password@db_ip:5432/db_name"
         self.app = app.test_client()
         db.create_all()
+        FNULL = open(os.devnull, 'w')
+        self.p =  subprocess.Popen(['python','test_resources/validate.py'],stdout=FNULL, stderr=subprocess.STDOUT)
+        time.sleep(0.5)
 
     def tearDown(self):
         db.session.remove()
+        self.p.terminate()
+        self.p.wait()
         db.drop_all()
 
     def test_add_private_license(self):
@@ -153,7 +156,6 @@ class TestCase(unittest.TestCase):
 
         service_uuid = str(uuid.uuid4())
         user_uuid = str(uuid.uuid4())
-
         # Adding active License
         response = self.app.post("/api/v1/licenses/", data=json.dumps(dict(
                                                         service_uuid=service_uuid,
@@ -171,14 +173,12 @@ class TestCase(unittest.TestCase):
         response = self.app.delete("/api/v1/licenses/%s/"%license_uuid)
         self.assertEqual(response.status_code, 200)
         resp_json = json.loads(response.data)
-
         self.assertEqual(license_uuid, resp_json["data"]["license_uuid"])
         self.assertEqual(resp_json["data"]["status"], "INACTIVE")
 
-
 if __name__ == '__main__':
-    FNULL = open(os.devnull, 'w')
-    p = subprocess.Popen(['python','test_resources/validate.py'], stdout=FNULL, stderr=subprocess.STDOUT)
+#    FNULL = open(os.devnull, 'w')
+#    p = subprocess.Popen(['python','test_resources/validate.py'], stdout=FNULL, stderr=subprocess.STDOUT)
     unittest.main(testRunner=xmlrunner.XMLTestRunner(output='test-reports'))
-    p.terminate()
-    p.wait()
+#    p.terminate()
+#    p.wait()

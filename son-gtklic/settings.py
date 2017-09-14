@@ -13,7 +13,7 @@ SQLALCHEMY_TRACK_MODIFICATIONS = True
 DEBUG = False
 
 # Default timeout for when validating licenses to external urls
-TIMEOUT = 10
+TIMEOUT = 5
 
 # Default log file names for developing and production
 if DEBUG:
