@@ -54,23 +54,25 @@ class GtkApi < Sinatra::Base
     content_type :json
     services = GtkApi.services.keys
     available_services = []
-    available_services << {name: 'api', alive_since: settings.began_at, seconds: now-settings.began_at}
+    available_services << {name: 'api', url: request.url, alive_since: settings.began_at, seconds: now-settings.began_at}
     services.each do |service_name|
       properties = GtkApi.services[service_name]
       model = Object.const_get(properties['model'])
+      url = model.class_variable_get(:@@url) 
+      
       unless model.respond_to? :began_at
-        available_services << { name: service_name, alive_since: nil, seconds: nil} 
+        available_services << { name: service_name, url: url, alive_since: nil, seconds: nil} 
         next
       end
       
       resp = model.began_at
       logger.debug(log_message) {"resp = #{resp}"}
       unless resp[:status] == 200
-        available_services << { name: service_name, alive_since: nil, seconds: nil}
+        available_services << { name: service_name, url: url, alive_since: nil, seconds: nil}
         next
       end
       began_at = resp[:items][:began_at]
-      available_services << { name: service_name, alive_since: began_at, seconds: now-Time.parse(began_at)}
+      available_services << { name: service_name, url: url, alive_since: began_at, seconds: now-Time.parse(began_at)}
     end
     halt 200, available_services.to_json 
   end

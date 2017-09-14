@@ -81,7 +81,10 @@ class MQServer
             return
           end
           @logger.debug(logmsg) { "request['status'] #{request['status']} turned into "+status}
-          request['status']=status  
+          request['status']=status
+          
+          # url=http://sp.int3.sonata-nfv.eu:5400/kpis, body={"job":"sonata","instance":"gtkapi","metric_type":"counter","name":"services_metadata_queries","docstring":"how many service metadata queries have been made","base_labels":{"result":"ok","uuid":"","elapsed_time":"0.177341148","method":"GET","module":"services","time_stamp":"2017-09-14 10:06:36 UTC"}}
+
           
           # if this is a final answer, there'll be an NSR
           service_instance = parsed_payload['nsr']

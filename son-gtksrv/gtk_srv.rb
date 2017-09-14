@@ -48,6 +48,7 @@ end
 
 # Main class supporting the Gatekeeper's Service Management micro-service
 class GtkSrv < Sinatra::Base
+
   register Sinatra::ConfigFile
   register Sinatra::CrossOrigin
   register Sinatra::Reloader
@@ -84,7 +85,7 @@ class GtkSrv < Sinatra::Base
   logger.info(MODULE) {"Logger level at :#{settings.logger_level}"}
     
   enable :cross_origin
-
+  
   if settings.catalogues
     set :services_catalogue, Catalogue.new(settings.catalogues+'/network-services', logger)
     set :functions_catalogue, Catalogue.new(settings.catalogues+'/vnfs', logger)
