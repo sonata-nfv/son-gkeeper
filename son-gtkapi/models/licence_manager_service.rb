@@ -59,11 +59,12 @@ class LicenceManagerService < ManagerService
   def self.create(params)
     method = LOG_MESSAGE + "##{__method__}"
     GtkApi.logger.debug(method) {"entered: params=#{params}"}
-    headers = {'Content-Type'=>'application/x-www-form-urlencoded'}
+    #headers = {'Content-Type'=>'application/x-www-form-urlencoded'}
 
     begin
       self.valid?(params)
-      licence = postCurb(url: @@url+LICENCES_URL, body: params, headers: headers)
+      params[:description] = 'Default description]'
+      licence = postCurb(url: @@url+LICENCES_URL, body: params) #, headers: headers)
       GtkApi.logger.debug(method) {"licence=#{licence}"}
       
       case licence[:status]

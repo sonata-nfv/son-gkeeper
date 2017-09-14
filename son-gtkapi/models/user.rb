@@ -269,7 +269,7 @@ class User < ManagerService
   def self.valid?(params)
     method = LOG_MESSAGE + "##{__method__}"
     GtkApi.logger.debug(method) {"entered with params #{params}"}
-    true
+    User.find_by_uuid(params[:user_uuid])
   end
   
   def self.find_by_uuid(uuid)
