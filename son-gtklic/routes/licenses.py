@@ -14,7 +14,13 @@ class LicensesList(Resource):
 
     def get(self):
         if 'user_uuid' in request.args:
-            licenses = License.query.filter(user_uuid=request.args.get('user_uuid')).all()
+            try:
+                user_uuid = request.args.get('user_uuid')
+                UUID(user_uuid)
+            except:
+                self.log_bad_request()
+                return build_response(status_code=400, error="Invalid field", description="user_uuid is not valid")
+            licenses = License.query.filter_by(user_uuid=user_uuid).all()
         else:
             licenses = License.query.all()
 
