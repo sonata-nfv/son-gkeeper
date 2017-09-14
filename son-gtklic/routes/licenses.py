@@ -68,9 +68,14 @@ class LicensesList(Resource):
                 else:
                     return build_response(status_code=400, error="Invalid field", description="Status parameter was invalid")
 
+            if 'description' in content:
+                description = content['description']
+            else:
+                description = None
+
             new_license = License(  service_uuid,
                                     user_uuid,
-                                    content['description'],
+                                    description,
                                     validation_url,
                                     status,
                                     license_type)
