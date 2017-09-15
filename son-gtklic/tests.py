@@ -45,7 +45,7 @@ class TestCase(unittest.TestCase):
                                                         validation_url=validation_url,
                                                         status="active")),
                                  content_type='application/json')
-        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.status_code, 201)
         resp_json = json.loads(response.data)
 
         license_uuid = resp_json["data"]["license_uuid"]
@@ -73,7 +73,7 @@ class TestCase(unittest.TestCase):
                                                         status="active")),
                                  content_type='application/json')
 
-        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.status_code, 201)
 
         # Testing adding a license that the same user already has for a service of that type
         response = self.app.post("/api/v1/licenses/", data=json.dumps(dict(
@@ -102,7 +102,7 @@ class TestCase(unittest.TestCase):
                                                         license_type="public",
                                                         status="active")),
                                  content_type='application/json')
-        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.status_code, 201)
         resp_json = json.loads(response.data)
 
         status = resp_json["data"]["status"]
@@ -127,7 +127,7 @@ class TestCase(unittest.TestCase):
                                                       validation_url=validation_url,
                                                       status="active")),
                                  content_type='application/json')
-        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.status_code, 201)
         resp_json = json.loads(response.data)
         license_uuid = str(resp_json["data"]["license_uuid"])
         # Test get all licenses
@@ -165,7 +165,7 @@ class TestCase(unittest.TestCase):
                                                         validation_url=validation_url,
                                                         status="active")),
                                  content_type='application/json')
-        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.status_code, 201)
         resp_json = json.loads(response.data)
         license_uuid = resp_json["data"]["license_uuid"]
 
