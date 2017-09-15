@@ -92,7 +92,7 @@ class LicensesList(Resource):
 
         db.session.add(new_license)
         db.session.commit()
-        return build_response(status_code=200, data=new_license.serialize, description="License successfully created")
+        return build_response(status_code=201, data=new_license.serialize, description="License successfully created")
 
     def log_bad_request(self):
         logger = logging.getLogger('werkzeug')
