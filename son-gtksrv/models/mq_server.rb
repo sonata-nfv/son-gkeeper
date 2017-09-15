@@ -83,9 +83,6 @@ class MQServer
           @logger.debug(logmsg) { "request['status'] #{request['status']} turned into "+status}
           request['status']=status
           
-          # url=http://sp.int3.sonata-nfv.eu:5400/kpis, body={"job":"sonata","instance":"gtkapi","metric_type":"counter","name":"services_metadata_queries","docstring":"how many service metadata queries have been made","base_labels":{"result":"ok","uuid":"","elapsed_time":"0.177341148","method":"GET","module":"services","time_stamp":"2017-09-14 10:06:36 UTC"}}
-
-          
           # if this is a final answer, there'll be an NSR
           service_instance = parsed_payload['nsr']
           if service_instance && service_instance.key?('id')
@@ -96,6 +93,7 @@ class MQServer
           begin
             request.save
             @logger.debug(logmsg) { "request saved"}
+            register_kpi(request)
           rescue Exception => e
             @logger.error e.message
       	    @logger.error e.backtrace.inspect
@@ -196,5 +194,25 @@ class MQServer
         @logger.debug(logmsg) {" leaving..."}
       end
     end
+  end
+  
+  private
+  
+  def register_kpi(request)    
+    log_message='MQServer.'+__method__.to_s
+    @logger.debug(log_message) { "entered with request=#{request}"}
+    now = Time.now.utc
+
+    body = { uuid: request['uuid'], elapsed_time: now-Time.parse(request['began_at']), time_stamp: now}
+    begin
+      _response = RestClient.put(request['callback'], body.to_json, content_type: :json, accept: :json) 
+      @logger.debug(log_message) { "response=#{_response}"}
+      parsed_response = JSON.parse _response #.body
+      @logger.debug(log_message) { "parsed_response=#{parsed_response}"}
+      parsed_response
+    rescue => e
+      @logger.error(log_message) {"Error during processing: #{$!}"}
+      @logger.error(log_message) {"Backtrace:\n\t#{e.backtrace.join("\n\t")}"}
+    end    
   end
 end
