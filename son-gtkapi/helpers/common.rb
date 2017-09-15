@@ -134,7 +134,7 @@ module GtkApiHelper
   def validate_element_existence(uuid:, element:, name:, kpi_method:, began_at:, log_message:)
     log_message = "GtkApiHelper##{__method__}"
     logger.debug(log_message) {"Entered with uuid=#{uuid}, element=#{element}, name=#{name}"}
-    if element[:count]==0 || !element[:items].any?
+    if element[:count]==0 || element[:items].empty?
       kpi_method.call(labels: {result: "not found", uuid: uuid, elapsed_time: (Time.now.utc-began_at).to_s}) if kpi_method
       json_error 404, name+" "+uuid+" not found", log_message
     end
@@ -169,7 +169,7 @@ module GtkApiHelper
     user_name = User.find_username_by_token(token)
     record = RecordManagerService.find_record_by_uuid(kind: 'functions', uuid: instance_uuid)
     logger.debug(log_message) {"record=#{record}"}
-    validate_element_existence(uuid: instance_uuid, element: record, name: 'Record', kpi_method: kpi_method, began_at: began_at, log_message: log_message)
+    #validate_element_existence(uuid: instance_uuid, element: record[:items], name: 'Record', kpi_method: kpi_method, began_at: began_at, log_message: log_message)
     descriptor = FunctionManagerService.find_by_uuid(record[:items][:descriptor_reference])
     logger.debug(log_message) {"descriptor=#{descriptor}"}
     validate_element_existence(uuid: instance_uuid, element: descriptor, name: 'Function', kpi_method: kpi_method, began_at: began_at, log_message: log_message)

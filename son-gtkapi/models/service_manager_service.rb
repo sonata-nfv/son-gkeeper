@@ -62,7 +62,7 @@ class ServiceManagerService < ManagerService
   def self.find_requests_by_uuid(uuid)
     message = LOG_MESSAGE+"##{__method__}"
     GtkApi.logger.debug(message) {"entered with #{uuid}"}
-    find(url: @@url + '/requests/' + uuid, log_message: LOG_MESSAGE + "##{__method__}(#{uuid})")
+    find(url: @@url + '/requests/' + uuid, log_message: LOG_MESSAGE + "##{__method__}")
   end
   
   def self.find_requests_by_service_instance_uuid(uuid)
