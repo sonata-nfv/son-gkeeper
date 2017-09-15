@@ -96,14 +96,34 @@ class GtkApi < Sinatra::Base
         when 201            
           halt 201
         else
-          message = "Metric does not updated for update_metric #{params}"
-          logger.error(MESSAGE) {message}
-          json_error resp[:status], message
+          json_error resp[:status], "Metric was not updated for update_metric #{params}", MESSAGE
         end                
       end
-      logger.debug(MESSAGE) { "leaving with 'No request id specified'"}
-      json_error 400, 'No params specified for the create request'
+      json_error 400, 'No params specified for the create request', MESSAGE
     end
+    
+    # updates elapsed time
+    put '/service-instantiation-time/?' do
+      MESSAGE = "GtkApi::PUT /api/v2/kpis/service-instantiation-time"
+      logger.debug(MESSAGE) {"entered with params=#{params}"}
+      body_parsed = JSON.parse(request.body.read)
+      remaining = check_rate_limit(limit: 'anonymous_operations', client: settings.gatekeeper_api_client_id) if check_rate_limit_usage()
+      json_error 400, 'No params specified for storing service creation time', MESSAGE if body_parsed.nil?
+
+      kpi={
+        job:"sonata", instance:"gtksrv", metric_type:"counter", name: "service_instantiation_time", 
+        docstring:"how long does it take to instantiate a service", 
+        base_labels: { result:"ok", uuid: body_parsed[:uuid], elapsed_time: body_parsed[:elapsed_time], method: "PUT", module:"kpis", time_stamp: body_parsed[:time_stamp] }
+      }
+      resp = KpiManagerService.update_metric(kpi)
+      logger.debug(MESSAGE) {"resp=#{resp.inspect}"}
+      case resp[:status]
+      when 201            
+        halt 201
+      else
+        json_error resp[:status], "Metric was not updated for update_metric #{params}", MESSAGE
+      end                
+    end        
   end
   
   private 

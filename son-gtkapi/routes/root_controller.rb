@@ -53,8 +53,10 @@ class GtkApi < Sinatra::Base
     
     content_type :json
     services = GtkApi.services.keys
+    url = request.url
+    url.slice!('/available-services')
     available_services = []
-    available_services << {name: 'api', url: request.url, alive_since: settings.began_at, seconds: now-settings.began_at}
+    available_services << {name: 'api', url: url, alive_since: settings.began_at, seconds: now-settings.began_at}
     services.each do |service_name|
       properties = GtkApi.services[service_name]
       model = Object.const_get(properties['model'])
