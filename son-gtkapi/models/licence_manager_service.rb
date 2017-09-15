@@ -63,7 +63,7 @@ class LicenceManagerService < ManagerService
 
     begin
       self.valid?(params)
-      params[:description] = 'Default description]'
+      params[:description] = 'Default description'
       licence = postCurb(url: @@url+LICENCES_URL, body: params) #, headers: headers)
       GtkApi.logger.debug(method) {"licence=#{licence}"}
       

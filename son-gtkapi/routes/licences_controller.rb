@@ -105,6 +105,8 @@ class GtkApi < Sinatra::Base
         halt 201, licence.to_json
       when 400
         json_error 400, '{}', 'Bad request'
+      when 409
+        json_error 409, "Licence #{params} already exists", 'Conflict'
       when 422
         json_error 422, '{}', 'Unprocessable entity'
       else
