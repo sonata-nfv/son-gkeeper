@@ -64,6 +64,7 @@ RSpec.describe GtkApi, type: :controller do
       allow(User).to receive(:authorized?).with(token: token, params: {path: '/functions/metrics', method: 'GET'}).and_return(true)
       allow(User).to receive(:find_username_by_token).with(token).and_return('sonata')
       allow(GtkApiHelper).to receive(:validate_function_ownership)
+      allow(GtkApiHelper).to receive(:validate_element_existence)
       allow(Metric).to receive(:counter_kpi)
     end
 

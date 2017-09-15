@@ -71,6 +71,8 @@ class GtkApi < Sinatra::Base
         path: '/functions/metrics', method: 'GET', kpi_method: method(:count_synch_monitoring_data_requests),
         began_at: began_at, log_message: log_message
       )
+      
+      # only function owned by requesting user are allowed to be monitored
       validate_function_ownership( token: token, instance_uuid: params[:instance_uuid], kpi_method: method(:count_asynch_monitoring_data_requests),
         began_at: began_at, log_message: log_message)
       

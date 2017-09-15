@@ -169,7 +169,7 @@ module GtkApiHelper
     user_name = User.find_username_by_token(token)
     record = RecordManagerService.find_record_by_uuid(kind: 'functions', uuid: instance_uuid)
     logger.debug(log_message) {"record=#{record}"}
-    validate_element_existence(uuid: instance_uuid, element: record, name: 'Record', kpi_method: kpi_method, began_at: began_at, log_message: log_message)
+    #validate_element_existence(uuid: instance_uuid, element: record[:items], name: 'Record', kpi_method: kpi_method, began_at: began_at, log_message: log_message)
     descriptor = FunctionManagerService.find_by_uuid(record[:items][:descriptor_reference])
     logger.debug(log_message) {"descriptor=#{descriptor}"}
     validate_element_existence(uuid: instance_uuid, element: descriptor, name: 'Function', kpi_method: kpi_method, began_at: began_at, log_message: log_message)
