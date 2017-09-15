@@ -216,7 +216,7 @@ module GtkApiHelper
       end
       licenced_collection[:items].each do |licenced_element|
         logger.debug(log_message) {"licenced_element=#{licenced_element}"}
-        element[:user_licence] = 'licensed' if licenced_element[:uuid] == element[:uuid]
+        element[:user_licence] = 'licensed' if licenced_element[:service_uuid] == element[:uuid]
         logger.debug(log_message) {"user licence set to \"#{element[:user_licence]}\""}
       end
     end
