@@ -60,7 +60,7 @@ class ManagerService
       count = record_count_from_response_headers(res.header_str)
       status = status_from_response_headers(res.header_str)
       case status
-      when 200..202
+      when 200..299
         begin
           parsed_response = res.body.empty? ? {} : JSON.parse(res.body, symbolize_names: true)
           GtkApi.logger.debug(log_message) {"parsed_response=#{parsed_response}"}
