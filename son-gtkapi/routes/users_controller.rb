@@ -90,6 +90,7 @@ class GtkApi < Sinatra::Base
       user_name = get_username_by_token( token, began_at, method(:count_user_profile_updates), log_message)
       
       json_error 403, "Forbidden: user can only update his/her profile (#{user_name} is trying to update #{params[:username]}'s profile)", log_message
+      
       validate_user_authorization(token: token, action: 'get metadata for functions', uuid: '', path: '/functions', method:'GET', kpi_method: method(:count_user_profile_updates), began_at: began_at, log_message: log_message)
       logger.debug(log_message) {"User authorized"}
       
