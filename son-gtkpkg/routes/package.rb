@@ -148,11 +148,8 @@ class GtkPkg < Sinatra::Base
   delete '/packages/:uuid/?' do
     log_message = LOG_MESSAGE + ' DELETE /packages/:uuid'
     logger.info(log_message) {"uuid = #{params[:uuid]}"}
-    if settings.packages_catalogue.delete(params[:uuid])
-      [200, {}, '']
-    else
-      json_error 404, 'Could not delete package with uuid='+params[:uuid], message
-    end
+    json_error 404, 'Could not delete package with uuid='+params[:uuid], message unless settings.packages_catalogue.delete(params[:uuid])
+    [204, {}, '']
   end
   
   get '/admin/logs/?' do
