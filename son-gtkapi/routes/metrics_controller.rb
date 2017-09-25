@@ -35,12 +35,10 @@ class GtkApi < Sinatra::Base
       content_type :json
     end
     
-    get '/metrics/?' do
+    get '/metrics/list/?' do
       began_at = Time.now.utc
-      log_message = 'GtkApi::GET /api/v2/functions/metrics/?'
+      log_message = 'GtkApi::GET /api/v2/functions/metrics/list/?'
       logger.debug(log_message) {'entered with '+query_string}
-      remaining = check_rate_limit(limit: 'anonymous_operations', client: settings.gatekeeper_api_client_id) if check_rate_limit_usage()
-      token = get_token( request.env, began_at, method(:count_functions_metrics_queries), log_message)
 
       @offset ||= params[:offset] ||= DEFAULT_OFFSET 
       @limit ||= params[:limit] ||= DEFAULT_LIMIT
