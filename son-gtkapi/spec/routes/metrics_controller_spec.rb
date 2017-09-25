@@ -128,4 +128,37 @@ RSpec.describe GtkApi, type: :controller do
     context 'with unknown instance'
     context 'with missing list of metrics'
   end
+  
+  describe 'GET /api/v2/functions/metrics/?' do
+    #let(:service2) {{
+    #  name: "sonata-demo-1",
+    #  author: "Felipe Vicens, Atos IT Solutions and Services Iberia",
+    #  version:"0.2",
+    #  created_at: "2016-11-11T10:21:00.007+00:00",
+    #  updated_at:"2016-11-11T10:21:00.007+00:00",
+    #  username: 'sonata',
+    #  uuid: SecureRandom.uuid
+    #}}
+    #let(:all_services) { [ service1, service2 ]}
+    #let(:returned_all_services) {{status: 200, count: 2, items: all_services, message: "OK"}}
+    #let(:default_params) {{'offset'=>GtkApi::DEFAULT_OFFSET, 'limit'=>GtkApi::DEFAULT_LIMIT}}
+    #let(:tokenized_default_params) {default_params.merge({'token'=>token})}
+    #before(:each) do        
+    #  allow(ServiceManagerService).to receive(:find_services).with(default_params).and_return(returned_all_services)
+    #  allow(LicenceManagerService).to receive(:find).with({service_uuid: service1[:uuid], user_uuid: service1[:username]}).and_return([])
+    #  allow(LicenceManagerService).to receive(:find).with({service_uuid: service2[:uuid], user_uuid: service2[:username]}).and_return([])
+    #  get '/api/v2/services', {}, {'HTTP_AUTHORIZATION' => 'Bearer '+token}
+    #end
+    
+    #it 'calls ServiceManagerService' do
+    #  expect(ServiceManagerService).to have_received(:find_services)
+    #end
+  
+    #it 'returns Ok (200)' do
+    #  expect(last_response.status).to eq(200)
+    #end
+    #it 'returns a list of two services' do
+    #  expect(last_response.body).to eq(returned_all_services[:items].to_json)
+    #end
+  end
 end
