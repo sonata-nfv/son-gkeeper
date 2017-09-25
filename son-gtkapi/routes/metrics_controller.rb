@@ -55,7 +55,7 @@ class GtkApi < Sinatra::Base
       metrics = Metric.find(params)
       #validate_collection_existence(collection: metrics, name: 'metrics', kpi_method: method(:count_functions_metrics_queries), began_at: began_at, log_message: log_message)
       logger.debug(log_message) {"Found metrics #{metrics}"}
-      logger.debug(log_message) {"links: request_url=#{request_url}, limit=#{@limit}, offset=#{@offset}, total=#{functions[:count]}"}
+      logger.debug(log_message) {"links: request_url=#{request_url}, limit=#{@limit}, offset=#{@offset}, total=#{metrics[:count]}"}
       links = build_pagination_headers(url: request_url, limit: @limit.to_i, offset: @offset.to_i, total: metrics[:count].to_i)
       logger.debug(log_message) {"links: #{links}"}
       headers 'Link'=> links, 'Record-Count'=> metrics[:count].to_s
