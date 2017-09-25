@@ -35,6 +35,36 @@ class GtkApi < Sinatra::Base
       content_type :json
     end
     
+    get '/metrics/?' do
+      began_at = Time.now.utc
+      log_message = 'GtkApi::GET /api/v2/functions/metrics/?'
+      logger.debug(log_message) {'entered with '+query_string}
+      remaining = check_rate_limit(limit: 'anonymous_operations', client: settings.gatekeeper_api_client_id) if check_rate_limit_usage()
+      token = get_token( request.env, began_at, method(:count_functions_metrics_queries), log_message)
+
+      @offset ||= params[:offset] ||= DEFAULT_OFFSET 
+      @limit ||= params[:limit] ||= DEFAULT_LIMIT
+      logger.debug(log_message) {"params=#{params}"}
+     
+      token = get_token( request.env, began_at, method(:count_functions_metrics_queries), log_message)
+      user_name = get_username_by_token( token, began_at, method(:count_functions_metrics_queries), log_message)
+
+      remaining = check_rate_limit(limit: 'other_operations', client: user_name) if check_rate_limit_usage()
+
+      validate_user_authorization(token: token, action: "get functions's metrics", uuid: '', path: '/functions/metrics', method:'GET', kpi_method: method(:count_functions_metrics_queries), began_at: began_at, log_message: log_message)
+      logger.debug(log_message) {"User authorized"}
+
+      metrics = Metric.find(params)
+      validate_collection_existence(collection: metrics, name: 'metrics', kpi_method: method(:count_functions_metrics_queries), began_at: began_at, log_message: log_message)
+      logger.debug(log_message) {"Found metrics #{metrics}"}
+      logger.debug(log_message) {"links: request_url=#{request_url}, limit=#{@limit}, offset=#{@offset}, total=#{functions[:count]}"}
+      links = build_pagination_headers(url: request_url, limit: @limit.to_i, offset: @offset.to_i, total: metrics[:count].to_i)
+      logger.debug(log_message) {"links: #{links}"}
+      headers 'Link'=> links, 'Record-Count'=> metrics[:count].to_s
+      count_functions_metrics_queries(labels: {result: "ok", uuid: '', elapsed_time: (Time.now.utc-began_at).to_s})
+      halt 200, metrics.to_json
+    end
+    
     # TODO: how to address multiple metrics like in
     # .../metric=cpu_util,disk_usage,packets_sent&...
     
@@ -204,9 +234,16 @@ class GtkApi < Sinatra::Base
     desc = "how many asynchronous monitoring data requests have been made"
     Metric.counter_kpi({name: name, docstring: desc, base_labels: labels.merge({method: 'GET', module: 'metrics'})})
   end
+  
   def count_synch_monitoring_data_requests(labels:)
     name = __method__.to_s.split('_')[1..-1].join('_')
     desc = "how many synchronous monitoring data requests have been made"
+    Metric.counter_kpi({name: name, docstring: desc, base_labels: labels.merge({method: 'GET', module: 'metrics'})})
+  end
+  
+  def count_functions_metrics_queries(labels:)
+    name = __method__.to_s.split('_')[1..-1].join('_')
+    desc = "how many function metrics queries have been made"
     Metric.counter_kpi({name: name, docstring: desc, base_labels: labels.merge({method: 'GET', module: 'metrics'})})
   end
 end
