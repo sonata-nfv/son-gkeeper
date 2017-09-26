@@ -67,9 +67,11 @@ class LicenceManagerService < ManagerService
       licence = postCurb(url: @@url+LICENCES_URL, body: params) #, headers: headers)
       GtkApi.logger.debug(method) {"licence=#{licence}"}
       
+      #D, [2017-09-26T08:44:27.147075 #9] DEBUG -- GtkApi::LicenceManagerService#create: licence={:status=>201, :count=>1, :items=>{:status_code=>201, :data=>{:status=>"ACTIVE", :validation_url=>"http://example.com", :description=>"Default description", :license_uuid=>"2a3d5ed4-dd0b-4cee-99d8-ed0c3115c45e", :service_uuid=>"2044a18c-2a85-4420-b68d-e748e9782d48", :license_type=>"PRIVATE", :user_uuid=>"f3806ea0-32b6-43b9-b4b5-8d2237adb7b5"}, :description=>"License successfully created", :error=>""}, :message=>"OK"}
+      
       case licence[:status]
       when 200, 201
-        {status: 201, count: 1, items: licence[:data], message: 'Created'}
+        {status: 201, count: 1, items: licence[:items][:data], message: 'Created'}
       else
         {status: licence[:status], count: 0, items: [], message: licence[:error]}
       end
