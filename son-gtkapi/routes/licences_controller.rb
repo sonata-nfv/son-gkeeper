@@ -30,6 +30,10 @@ class GtkApi < Sinatra::Base
   
   register Sinatra::Namespace
   namespace '/api/v2/licences' do
+    before do
+      content_type :json
+    end
+    
     options '/?' do
       response.headers['Access-Control-Allow-Origin'] = '*'
       response.headers['Access-Control-Allow-Methods'] = 'POST,PUT'      
@@ -101,8 +105,8 @@ class GtkApi < Sinatra::Base
       case licence[:status]
       when 201
         logger.info(log_message) {"leaving with licence: #{licence[:items]}"}
-        headers 'Location'=> LicenceManagerService.class_variable_get(:@@url)+"/licences/#{licence[:uuid]}", 'Content-Type'=> 'application/json'
-        halt 201, licence.to_json
+        headers 'Location'=> LicenceManagerService.class_variable_get(:@@url)+"/licences/#{licence[:uuid]}"
+        halt 201, licence[:items].to_json
       when 400
         json_error 400, '{}', 'Bad request'
       when 409
