@@ -35,7 +35,7 @@ class GtkApi < Sinatra::Base
       content_type :json
     end
     
-    get '/metrics/list/?' do
+    get '/metrics-names/?' do
       began_at = Time.now.utc
       log_message = 'GtkApi::GET /api/v2/functions/metrics/list/?'
       logger.debug(log_message) {'entered with '+query_string}
@@ -65,7 +65,7 @@ class GtkApi < Sinatra::Base
       metric_names = []
       metrics.each { |metric| metric_names << metric.name}
       count_functions_metrics_queries(labels: {result: "ok", uuid: '', elapsed_time: (Time.now.utc-began_at).to_s})
-      halt 200, metric_names.to_json
+      halt 200, { metric_names: metric_names}.to_json
     end
     
     # TODO: how to address multiple metrics like in
