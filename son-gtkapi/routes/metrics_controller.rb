@@ -55,15 +55,17 @@ class GtkApi < Sinatra::Base
       metrics = Metric.find(params)
       #validate_collection_existence(collection: metrics, name: 'metrics', kpi_method: method(:count_functions_metrics_queries), began_at: began_at, log_message: log_message)
       logger.debug(log_message) {"Found metrics #{metrics}"}
-      json_error metrics[:status], "Error in fetching metrics list", log_message unless metrics[:status] == 200
+      #json_error metrics[:status], "Error in fetching metrics list", log_message unless metrics[:status] == 200
       
       #metrics_count = metrics[:count].empty? ? 0 : metrics[:count].to_i
       #logger.debug(log_message) {"links: request_url=#{request_url}, limit=#{@limit}, offset=#{@offset}, total=#{metrics_count}"}
       #links = build_pagination_headers(url: request_url, limit: @limit.to_i, offset: @offset.to_i, total: metrics_count)
       #logger.debug(log_message) {"links: #{links}"}
       #headers 'Link'=> links, 'Record-Count'=> metrics_count.to_s
+      metric_names = []
+      metrics.each { |metric| metric_names << metric.name}
       count_functions_metrics_queries(labels: {result: "ok", uuid: '', elapsed_time: (Time.now.utc-began_at).to_s})
-      halt 200, metrics[:items].to_json
+      halt 200, metric_names.to_json
     end
     
     # TODO: how to address multiple metrics like in
