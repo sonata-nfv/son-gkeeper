@@ -39,7 +39,7 @@ class GtkApi < Sinatra::Base
     end
   
     # GET collected kpis
-    get '/collected?' do
+    get '/collected/?' do
       log_message = 'GtkApi::GET /api/v2/kpis/?'
       logger.debug(log_message) {"entered with params=#{params}"}
       
