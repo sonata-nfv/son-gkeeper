@@ -65,7 +65,7 @@ class GtkApi < Sinatra::Base
       metric_names = []
       metrics.each { |metric| metric_names << metric.name}
       count_functions_metrics_queries(labels: {result: "ok", uuid: '', elapsed_time: (Time.now.utc-began_at).to_s})
-      halt 200, metric_names.to_json
+      halt 200, { metric_names: metric_names}.to_json
     end
     
     # TODO: how to address multiple metrics like in
