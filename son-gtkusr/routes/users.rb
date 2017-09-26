@@ -28,6 +28,7 @@
 require 'json'
 require 'sinatra'
 require 'net/http'
+require 'openssl'
 require_relative '../helpers/init'
 
 # Adapter-Keycloak API class
@@ -119,6 +120,9 @@ class Keycloak < Sinatra::Application
           logger.debug 'Adapter: leaving POST /register/user with userType error'
           json_error(400, 'Registration failed! Only admin users can register a new admin')
         end
+
+      elsif form['attributes']['userType'].include?('customer')
+        # Randomly generate a instantiation-keypair to store in the database
       end
     end
 
