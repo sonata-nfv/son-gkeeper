@@ -40,7 +40,7 @@ class GtkApi < Sinatra::Base
   
     # GET collected kpis
     get '/collected/?' do
-      log_message = 'GtkApi::GET /api/v2/kpis/?'
+      log_message = 'GtkApi::GET /api/v2/kpis/collected/?'
       logger.debug(log_message) {"entered with params=#{params}"}
       
       json_error(400, 'The KPI name must be given', log_message) if (params[:name].nil? || params[:name].empty?)
@@ -49,7 +49,7 @@ class GtkApi < Sinatra::Base
       json_error(400, 'The KPI step must be given', log_message) if (params[:step].nil? || params[:step].empty?)
       remaining = check_rate_limit(limit: 'anonymous_operations', client: settings.gatekeeper_api_client_id) if check_rate_limit_usage()
     
-      body = {name: params[:name], start: params[:start], end: params[:end], step: params[:step], labels:[]}
+      body = {name: params[:name], start: params[:start], end: params[:end], step: params[:step], labels: params[:labels]}
       # 200 with metrics
       # 400 Bad request when json data have syntax error
       # 415 on missinh header
