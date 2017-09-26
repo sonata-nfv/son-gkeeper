@@ -89,7 +89,7 @@ class LicenceManagerService < ManagerService
     GtkApi.logger.debug(method) {"entered: uuid=#{uuid}"}
 
     licence = getCurb(url: @@url + LICENCES_URL + uuid + '/', params: {}, headers: JSON_HEADERS)
-    GtkApi.logger.debug(log_message) {"licence=#{licence}"}
+    GtkApi.logger.debug(method) {"licence=#{licence}"}
     case licence[:status]
     when 200
       {status: 200, count: 1, items: licence[:items][:data][:licenses], message: "OK"}
