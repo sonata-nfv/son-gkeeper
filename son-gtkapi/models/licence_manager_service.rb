@@ -92,7 +92,8 @@ class LicenceManagerService < ManagerService
     GtkApi.logger.debug(method) {"licence=#{licence}"}
     case licence[:status]
     when 200
-      {status: 200, count: 1, items: licence[:items][:data][:licenses], message: "OK"}
+      # D, [2017-09-26T14:20:43.950053 #6] DEBUG -- GtkApi::LicenceManagerService#find_by_uuid: licence={:status=>200, :count=>1, :items=>{:status_code=>200, :data=>{:status=>"ACTIVE", :validation_url=>"http://example.com", :description=>"Default description", :license_uuid=>"bf799b2b-91a6-4824-9f2c-570baec38cda", :service_uuid=>"b21cf770-e99d-4f61-8dde-96ad381dc08e", :license_type=>"PRIVATE", :user_uuid=>"8d6fcbcb-3fa7-4607-b7f7-d687bde35dab"}, :description=>"License is valid", :error=>""}, :message=>"OK"}
+      {status: 200, count: 1, items: licence[:items][:data], message: "OK"}
     when 400
     when 404
       {status: licence[:status], count: 0, items: [], message: "Not Found"}
