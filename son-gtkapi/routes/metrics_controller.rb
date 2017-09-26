@@ -35,7 +35,7 @@ class GtkApi < Sinatra::Base
       content_type :json
     end
     
-    get '/metrics/list/?' do
+    get '/metrics-names/?' do
       began_at = Time.now.utc
       log_message = 'GtkApi::GET /api/v2/functions/metrics/list/?'
       logger.debug(log_message) {'entered with '+query_string}
