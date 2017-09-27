@@ -79,6 +79,9 @@ class Keycloak < Sinatra::Application
       halt json_error(400, 'Bad registration form')
     end
 
+    instances_private_key = nil
+    instances_public_key = nil
+
     if form['attributes']['userType'].is_a?(Array)
       if form['attributes']['userType'].include?('admin')
         # Return if Authorization is invalid
@@ -123,6 +126,9 @@ class Keycloak < Sinatra::Application
 
       elsif form['attributes']['userType'].include?('customer')
         # Randomly generate a instantiation-keypair to store in the database
+        key = OpenSSL::PKey::RSA.new 2048
+        instances_private_key = key.to_pem
+        instances_public_key = key.public_key.to_pem
       end
     end
 
@@ -176,6 +182,8 @@ class Keycloak < Sinatra::Application
       new_user['username'] = form['username']
       new_user['public_key'] = pkey
       new_user['certificate'] = cert
+      new_user['instances_private_key'] = instances_private_key
+      new_user['instances_public_key'] = instances_public_key
       user = Sp_user.create!(new_user)
     rescue Moped::Errors::OperationFailure => e
       delete_user(form['username'])
