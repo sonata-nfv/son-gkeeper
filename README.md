@@ -32,6 +32,7 @@ Micro-services currently implemented are the following:
 1. [`son-gtkkpi`](https://github.com/sonata-nfv/son-gkeeper/tree/master/son-gtkkpi): where all KPIs' features are implemented;
 1. [`son-sec-gw`](https://github.com/sonata-nfv/son-gkeeper/tree/master/son-sec-gw): the front-end implementing external secured (`HTTPS`) access;
 1. [`son-keycloak`](https://github.com/sonata-nfv/son-gkeeper/tree/master/son-keycloak): the back-end of the [User Management](https://github.com/sonata-nfv/son-gkeeper/tree/master/son-gtkusr) micro-service;
+1. [`son-gtkrlt`](https://github.com/sonata-nfv/son-gkeeper/tree/master/son-gtkrlt): the implemented simple **rate limiter**;
 
 Most of these micro-services have been implemented using [`ruby`](https://github.com/ruby/ruby/tree/ruby_2_2) programming language and the [`sinatra`](https://github.com/sinatra/sinatra) framework. The two exceptions are the [`son-gtklic`](https://github.com/sonata-nfv/son-gkeeper/tree/master/son-gtklic), which is implemented in [`python`](https://www.python.org/) and [`son-keycloak`](https://github.com/sonata-nfv/son-gkeeper/tree/master/son-keycloak), implemented in `java` ([`son-sec-gw`](https://github.com/sonata-nfv/son-gkeeper/tree/master/son-sec-gw) is just a `NGINx` fron-end, adequately configured). The only need is that the micro-service to be implemented provides a REST API, whatever the language it is implemented in.
 
@@ -109,7 +110,7 @@ everytime a *pull request* is done.
 Please see the [several levels of tests](test_levels.md) that may be considered.
 
 ## Usage
-Please refer to the [`son-gtkapi`](https://github.com/sonata-nfv/son-gkeeper/tree/master/son-gtkapi) repository and each one of the other folders in this repository for examples of usage of each one of the already developed micro-services.
+Please refer to the [Usage documentation wiki pages](https://github.com/sonata-nfv/son-gkeeper/wiki/Usage-documentation) for all the **usage** details.
 
 ## License
 The license of the SONATA Gatekeeper is Apache 2.0 (please see the [license](https://github.com/sonata-nfv/son-editorgkeeper/blob/master/LICENSE) file).

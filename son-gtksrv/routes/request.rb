@@ -90,7 +90,7 @@ class GtkSrv < Sinatra::Base
       logger.debug(log_msg) {"service=#{service}"}
 
       # we're not storing egresses or ingresses, so we're not passing them
-      si_request = Request.create(service_uuid: service['uuid'], service_instance_uuid: params['service_instance_uuid'], request_type: params['request_type'])
+      si_request = Request.create(service_uuid: service['uuid'], service_instance_uuid: params['service_instance_uuid'], request_type: params['request_type'], callback: params['callback'], began_at: Time.now.utc)
       json_error 400, 'Not possible to create '+params['request_type']+' request', log_msg unless si_request
       logger.debug(log_msg) {"with service_uuid=#{params['service_uuid']}, service_instance_uuid=#{params['service_instance_uuid']}: #{si_request.inspect}"}
       

@@ -11,7 +11,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20160902142657) do
+ActiveRecord::Schema.define(version: 20170915093413) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
@@ -24,6 +24,8 @@ ActiveRecord::Schema.define(version: 20160902142657) do
     t.string   "status",                default: "NEW"
     t.string   "request_type",          default: "CREATE"
     t.uuid     "service_instance_uuid"
+    t.datetime "began_at"
+    t.string   "callback"
   end
 
 end

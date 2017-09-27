@@ -89,6 +89,8 @@ class GtkApi < Sinatra::Base
       token = get_token( request.env, began_at, method(:count_user_profile_updates), log_message)
       user_name = get_username_by_token( token, began_at, method(:count_user_profile_updates), log_message)
       
+      json_error 403, "Forbidden: user can only update his/her profile (#{user_name} is trying to update #{params[:username]}'s profile)", log_message unless user_name == params[:username]
+      
       validate_user_authorization(token: token, action: 'get metadata for functions', uuid: '', path: '/functions', method:'GET', kpi_method: method(:count_user_profile_updates), began_at: began_at, log_message: log_message)
       logger.debug(log_message) {"User authorized"}
       
@@ -170,6 +172,7 @@ class GtkApi < Sinatra::Base
 
     # GET a specific user
     get '/:uuid/?' do
+      began_at = Time.now.utc
       log_message = 'GtkApi:: GET /api/v2/users/:uuid'
       logger.debug(log_message) {"entered with #{params}"}
     
@@ -190,6 +193,7 @@ class GtkApi < Sinatra::Base
   
     # PATCH
     patch '/:username/user-public-key/?' do
+      began_at = Time.now.utc
       log_message = 'GtkApi:: PATCH /api/v2/users/:username/user-public-key'
       content_type :json
       body = request.body.read
@@ -230,6 +234,7 @@ class GtkApi < Sinatra::Base
     
     # GET .../api/v2/micro-services/users/public-key: To get the UM's public-key:
     get '/public-key/?' do
+      began_at = Time.now.utc
       log_message = 'GtkApi:: GET /api/v2/users/public-key'
       logger.debug(log_message) {"entered with #{params}"}
     
@@ -244,6 +249,7 @@ class GtkApi < Sinatra::Base
   end
 
   get '/api/v2/admin/users/logs/?' do
+    began_at = Time.now.utc
     log_message = 'GtkApi::GET /admin/users/logs'
     logger.debug(log_message) {'entered'}
     headers 'Content-Type' => 'text/plain; charset=utf8', 'Location' => '/'

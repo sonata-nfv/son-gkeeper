@@ -66,6 +66,7 @@ class GtkApi < Sinatra::Base
       logger.debug(log_message) {"User authorized"}
       remaining = check_rate_limit(limit: 'other_operations', client: user_name) if check_rate_limit_usage()
       
+      params['callback'] = kpis_url+'/service-instantiation-time'
       new_request = ServiceManagerService.create_service_request(params)
       logger.debug(log_message) { "new_request =#{new_request}"}
       if new_request[:status] != 201
@@ -117,6 +118,7 @@ class GtkApi < Sinatra::Base
       remaining = check_rate_limit(limit: 'other_operations', client: user_name) if check_rate_limit_usage()
       
       request = ServiceManagerService.find_requests_by_uuid(params['uuid'])
+      logger.debug(log_message) {"request=#{request}"}
       validate_element_existence(uuid: params[:uuid], element: request, name: 'Request', kpi_method: method(:count_service_instantiation_requests_queries), began_at: began_at, log_message: log_message)
       validate_ownership_and_licence(element: request[:items], user_name: user_name, kpi_method: method(:count_service_instantiation_requests_queries), began_at: began_at, log_message: log_message)
       
@@ -167,6 +169,10 @@ class GtkApi < Sinatra::Base
   end
   
   private
+  
+  def kpis_url
+    ENV[GtkApi.services['kpis']['env_var_url']]
+  end
   
   def count_service_instantiation_requests(labels:)
     name = __method__.to_s.split('_')[1..-1].join('_')

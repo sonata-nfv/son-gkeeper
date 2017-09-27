@@ -68,15 +68,12 @@ class Metric < ManagerService
     GtkApi.logger.debug(log_message) {"response=#{response}"}
     case response[:status]
     when 200
-      if response[:items].is_a? Array
-        results = []
-        response[:items].each do |res|
-          results << Metric.new(res)
-        end
-        results
-      else # Must be an Hash
-        Metric.new(response[:items])
+      metrics = response[:items][:metrics]
+      result = []
+      metrics.each do |metric_name|
+        result << Metric.new({name: metric_name, instances: nil})
       end
+      result
     else
       []
     end
