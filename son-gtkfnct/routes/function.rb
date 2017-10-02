@@ -73,7 +73,7 @@ class GtkFnct < Sinatra::Base
         json_error 404, "No function with UUID=#{params[:uuid]} was found"
       end
     end
-    logger.error(log_message) { "eaving with \"No function UUID specified\""}
+    logger.error(log_message) { "leaving with \"No function UUID specified\""}
     json_error 400, 'No function UUID specified'
   end
   
