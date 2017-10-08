@@ -59,8 +59,8 @@ class GtkApi < Sinatra::Base
         require_param(param: 'service_instance_uuid', params: params, kpi_method: kpi_method, error_message: 'Service UUID', log_message: log_message, began_at: began_at)
       end
       
-      token = get_token( request.env, began_at, :kpi_method, log_message)
-      user_name = get_username_by_token( token, began_at, :kpi_method, log_message)
+      token = get_token( request.env, began_at, kpi_method, log_message)
+      user_name = get_username_by_token( token, began_at, kpi_method, log_message)
       
       validate_user_authorization(token: token, action: 'post service instantiation request', uuid: params['service_uuid'], path: '/services', method:'POST', kpi_method: kpi_method, began_at: began_at, log_message: log_message)
       logger.debug(log_message) {"User authorized"}
