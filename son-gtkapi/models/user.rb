@@ -60,13 +60,14 @@ class User < ManagerService
     method = LOG_MESSAGE + "##{__method__}"
     GtkApi.logger.debug(method) {"entered with params #{params}"}
     raise ArgumentError.new('UserManagerService can not be instantiated without a user name') unless (params.key?(:username) && !params[:username].empty?)
-    #raise ArgumentError.new('UserManagerService can not be instantiated without a password') unless (params.key?(:password) && !params[:password].empty?)
+
     @username = params[:username]
     @secret = Base64.strict_encode64(params[:username]+':'+params[:password]) if params[:password]
     @uuid = params[:uuid]
     @created_at = params[:created_at]
     @user_type = params[:user_type]
     @email = params[:email]
+    @phone_number = params[:phone_number] if params[:phone_number]
     @last_name = params[:last_name] if params[:last_name]
     @first_name = params[:first_name] if params[:first_name]
     @public_key = params[:public_key] if params[:public_key]
@@ -331,32 +332,23 @@ class User < ManagerService
   end
   
   def self.find_username_by_token(token)
-    # [23/05/2017, 09:33:28] Daniel Guija: url = URI("http://<address>:<port>/api/v1/userinfo")
-    #  request["authorization"] = 'Bearer eyJhbGciOiJSkxX0NpUUhmTm9nIn0...'
-    # [23/05/2017, 09:33:46] Daniel Guija: the response is:
-    #  {"sub":"8031545e-d4da-4086-8cb2-a417f3460de2","name":"myName myLastName","preferred_username":"tester01","given_name":"myName","family_name":"myLastName","email":"myname.company@email.com"}
-    # [23/05/2017, 09:34:08] Daniel Guija: just parse response['preferred_username'] to get the username
-
     method = LOG_MESSAGE + "##{__method__}"
     raise ArgumentError.new __method__.to_s+' requires the login token' if (token.to_s.empty?)
     GtkApi.logger.debug(method) {"entered with token #{token}"}
-    headers = {'Content-type'=>'application/json', 'Accept'=> 'application/json', 'Authorization'=>'Bearer '+token}
 
-    resp = postCurb(url: @@url+'/api/v1/userinfo', body: {}, headers: headers)
-    GtkApi.logger.debug(method) {"response= #{resp}"}
-    case resp[:status]
-    when 200
-      GtkApi.logger.debug(method) {"resp[:items]=#{resp[:items]}"}
-      resp[:items][:preferred_username]
-    when 401
-      GtkApi.logger.error(method) {"Status 401: token not active"} 
-      raise UserTokenNotActiveError.new "User token was not active"
-    else
-      GtkApi.logger.error(method) {"Status #{resp[:status]}"} 
-      raise UserNotFoundError.new "User not found with the given token"
-    end  
+    translated_token = self.translate_token token    
+    translated_token[:preferred_username]
   end
   
+  def self.find_email_by_token(token)
+    method = LOG_MESSAGE + "##{__method__}"
+    raise ArgumentError.new __method__.to_s+' requires the login token' if (token.to_s.empty?)
+    GtkApi.logger.debug(method) {"entered with token #{token}"}
+    
+    translated_token = self.translate_token token
+    translated_token[:email]
+  end
+
   def self.find_user_type_by_username(username)
     # GET url = URI("http://<address>:<port>/api/v1/users?username=user01")
     # from the response, you can obtain it:
@@ -454,5 +446,30 @@ class User < ManagerService
     user[:attributes][:public_key] = [public_key] if public_key
     GtkApi.logger.debug(log_message) {"user = #{user}"}
     user
+  end
+  
+  def self.translate_token(token)
+    # [23/05/2017, 09:33:28] Daniel Guija: url = URI("http://<address>:<port>/api/v1/userinfo")
+    #  request["authorization"] = 'Bearer eyJhbGciOiJSkxX0NpUUhmTm9nIn0...'
+    # [23/05/2017, 09:33:46] Daniel Guija: the response is:
+    #  {"sub":"8031545e-d4da-4086-8cb2-a417f3460de2","name":"myName myLastName","preferred_username":"tester01","given_name":"myName","family_name":"myLastName","email":"myname.company@email.com"}
+
+    method = LOG_MESSAGE + "##{__method__}"
+    GtkApi.logger.debug(method) {"entered with token #{token}"}
+    headers = {'Content-type'=>'application/json', 'Accept'=> 'application/json', 'Authorization'=>'Bearer '+token}
+
+    resp = postCurb(url: @@url+'/api/v1/userinfo', body: {}, headers: headers)
+    GtkApi.logger.debug(method) {"response= #{resp}"}
+    case resp[:status]
+    when 200
+      GtkApi.logger.debug(method) {"resp[:items]=#{resp[:items]}"}
+      resp[:items]
+    when 401
+      GtkApi.logger.error(method) {"Status 401: token not active"} 
+      raise UserTokenNotActiveError.new "User token was not active"
+    else
+      GtkApi.logger.error(method) {"Status #{resp[:status]}"} 
+      raise UserNotFoundError.new "User not found with the given token"
+    end  
   end
 end
