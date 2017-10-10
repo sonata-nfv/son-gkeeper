@@ -67,6 +67,7 @@ class GtkApi < Sinatra::Base
       remaining = check_rate_limit(limit: 'other_operations', client: user_name) if check_rate_limit_usage()
       
       params['callback'] = kpis_url+'/service-instantiation-time'
+      params['user_data'] = build_user_data(user_name)
       new_request = ServiceManagerService.create_service_request(params)
       logger.debug(log_message) { "new_request =#{new_request}"}
       if new_request[:status] != 201
@@ -169,6 +170,16 @@ class GtkApi < Sinatra::Base
   end
   
   private
+  
+  def build_user_data(user_name)
+    user_data = {}
+    user = User.find_by_name(user_name)
+    user_data['customer'] = { email: user.email, phone: user.phone_number}
+    
+    # We're not considering the developer for now
+    user_data['developer'] = { email: '', phone: ''}
+    user_data
+  end
   
   def kpis_url
     ENV[GtkApi.services['kpis']['env_var_url']]

@@ -115,6 +115,7 @@ class GtkApi < Sinatra::Base
     get '/?' do
       began_at = Time.now.utc
       log_message = 'GtkApi:: GET /api/v2/users'
+      content_type :json
     
       logger.debug(log_message) {'entered with '+query_string}
     
@@ -124,7 +125,19 @@ class GtkApi < Sinatra::Base
       logger.debug(log_message) {"params=#{params}"}
 
       token = get_token( request.env, began_at, method(:count_user_profile_requests), log_message)
-      if User.is_admin?(token)
+      begin
+        unless User.is_admin?(token)
+          begin
+            username = get_username_by_token( token, began_at, method(:count_user_profile_requests), log_message)
+            user = User.find_by_name(username)
+            logger.debug(log_message) {"Found user #{user}"}
+            halt 200, user.to_h.to_json
+          rescue UsersNotFoundError
+            json_error 404, "User for token #{token} not found", log_message
+          end
+        end
+        
+        # User is admin
         begin
           users = User.find(params)
           logger.debug(log_message) {"Found users #{users}"}
@@ -139,18 +152,10 @@ class GtkApi < Sinatra::Base
           halt 200, returned_users.to_json
         rescue UsersNotFoundError
           logger.debug(log_message) {"Users not found"}
-          content_type :json
           halt 200, '[]'
         end
-      else
-        begin
-          username = get_username_by_token( token, began_at, method(:count_user_profile_requests), log_message)
-          user = User.find_by_name(username)
-          logger.debug(log_message) {"Found user #{user}"}
-          halt 200, user.to_h.to_json
-        rescue UsersNotFoundError
-          json_error 404, "User for token #{token} not found", log_message
-        end
+      rescue UserTokenNotActiveError
+        json_error 401, "User provided token was not valid", log_message
       end
     end
   
