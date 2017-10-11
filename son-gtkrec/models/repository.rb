@@ -56,7 +56,7 @@ class Repository
         {status: response.code.to_i, count: 0, items: [], message: "Unknown error"}
       end
     rescue RestClient::ExceptionWithResponse => e
-      @logger.error(method) {"response=#{e.response}"}  
+      @logger.error(method) {"response=#{e.response}"}
       {status: e.http_code, count: 0, items: [], message: "Not found"}
     else
       @logger.error(method) {e.backtrace.each {|l| puts l}} #format_error(e.backtrace)
