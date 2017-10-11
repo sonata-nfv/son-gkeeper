@@ -52,7 +52,7 @@ class Repository
       when 400
       when 404
         {status: response.code.to_i, count: 0, items: [], message: "Not found"}
-      else
+      else 
         {status: response.code.to_i, count: 0, items: [], message: "Unknown error"}
       end
     rescue RestClient::ExceptionWithResponse => e
