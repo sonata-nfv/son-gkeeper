@@ -48,12 +48,12 @@ class Repository
       service_or_function = JSON.parse(response.body)
       case response.code.to_i
       when 200
-        service_or_function
+        {status: response.code.to_i, count: 1, items: service_or_function, message: "Ok"}
       when 400
       when 404
-        nil
+        {status: response.code.to_i, count: 0, items: [], message: "Not found"}
       else
-        nil
+        {status: response.code.to_i, count: 0, items: [], message: "Unknown error"}
       end
     rescue => e
       @logger.error(method) {"response=#{response}"}  
