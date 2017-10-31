@@ -180,8 +180,8 @@ module GtkApiHelper
     log_message = "GtkApiHelper##{__method__}"
     logger.debug(log_message) {'collection='+collection.inspect}
     return collection if (collection.empty? || collection.first.empty?)
-
-    collection.each do |element|
+    always_an_array = collection.is_a? Hash ? [collection] : collection
+    always_an_array.each do |element|
       logger.debug(log_message) {'element='+element.inspect}
       
       next unless element.key?(:nsd)
@@ -220,7 +220,7 @@ module GtkApiHelper
         logger.debug(log_message) {"user licence set to \"#{element[:user_licence]}\""}
       end
     end
-    logger.debug(log_message) {"returning collection=#{collection}"}
-    collection
+    logger.debug(log_message) {"returning collection=#{always_an_array}"}
+    collection.is_a? Hash ? always_an_array[0] : always_an_array
   end
 end
