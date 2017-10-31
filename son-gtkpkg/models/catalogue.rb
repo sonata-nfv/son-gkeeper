@@ -135,13 +135,13 @@ class Catalogue
 
       if json_unrestricted.empty?
         GtkPkg.logger.debug(log_message) {"unrestricted has no records"}
-        result = {count: 0, items: {}}
-      elsif json_unrestricted.count == 1
+        result = {count: 0, items: []}
+        #elsif json_unrestricted.count == 1
         # If there's only one, that's it
-        GtkPkg.logger.debug(log_message) {"unrestricted has only one record"}
-        result = {count: 1, items: json_unrestricted[0]}
-      else # Should have more than one record
-        GtkPkg.logger.debug(log_message) {"unrestricted has more than one record"}
+        #GtkPkg.logger.debug(log_message) {"unrestricted has only one record"}
+        #result = {count: 1, items: json_unrestricted[0]}
+      else
+        GtkPkg.logger.debug(log_message) {"unrestricted has at least one record"}
         result[:count] = json_unrestricted.count
         
         # Now fetch the real result
