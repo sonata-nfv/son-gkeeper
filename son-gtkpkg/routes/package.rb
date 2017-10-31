@@ -132,17 +132,25 @@ class GtkPkg < Sinatra::Base
   end
 
   get '/packages/?' do
-    message = LOG_MESSAGE + ' GET "/packages/'+query_string+'"'
-    logger.debug(message) {"entered"}
+    log_message="GtkPkg::GET /packages/?"
+    logger.debug(log_message) {"entered with params #{params}"}
 
+    # Remove list of wanted fields from the query parameter list
+    field_list = params.delete('fields')
+
+    logger.debug(log_message) { 'query_string='+query_string}    
     packages = settings.packages_catalogue.find(params)
-    logger.debug(message) {"packages: #{packages}"}
-    if packages && packages.is_a?(Array)
-      logger.debug(message) {"leaving with #{packages.size} package(s) found"}
-      [200, {}, packages.to_json]
+    logger.debug(log_message) { "packages fetched: #{packages}"}
+    if field_list
+      fields = field_list.split(',')
+      logger.debug(log_message) { "fields=#{fields}"}
+      records = packages[:items].to_json(:only => fields)
     else
-      json_error 404, "No package with params #{params} was found", message
+      records = packages[:items].to_json
     end
+    logger.debug(log_message) { "leaving with #{packages[:count]}: #{records}"}
+    headers 'Record-Count' => packages[:count].to_s
+    halt 200, records
   end
   
   delete '/packages/:uuid/?' do

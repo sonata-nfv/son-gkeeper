@@ -33,6 +33,8 @@ require 'uri'
 require 'net/http'
 require 'rest-client'
 
+class CatalogueRecordsNotFoundError < StandardError; end
+
 class Catalogue
   
   attr_accessor :url
@@ -117,17 +119,42 @@ class Catalogue
   end
   
   def find(params)
-    method = 'Catalogue.find'
+    log_message='Catalogue.'+__method__.to_s
     headers = JSON_HEADERS
     headers[:params] = params unless params.empty?
-    GtkPkg.logger.debug(method) {"params=#{params}, headers=#{headers}"}
+    GtkPkg.logger.debug(log_message) {"params=#{params}, headers=#{headers}"}
+    result={}
     begin
-      response = RestClient.get(@url, headers)
-      GtkPkg.logger.debug(method) {"response was #{response}"}     
-      JSON.parse response.body
+      # First fetch all records without any restriction
+      GtkPkg.logger.debug(log_message) {"calling url "+@url+" whith headers #{JSON_HEADERS}"}
+      unrestricted = RestClient.get(@url, JSON_HEADERS)
+      GtkPkg.logger.debug(log_message) {"unrestricted #{unrestricted}"}
+      
+      json_unrestricted = JSON.parse unrestricted.body
+      GtkPkg.logger.debug(log_message) {"json_unrestricted #{json_unrestricted}"}
+
+      if json_unrestricted.empty?
+        GtkPkg.logger.debug(log_message) {"unrestricted has no records"}
+        result = {count: 0, items: {}}
+      elsif json_unrestricted.count == 1
+        # If there's only one, that's it
+        GtkPkg.logger.debug(log_message) {"unrestricted has only one record"}
+        result = {count: 1, items: json_unrestricted[0]}
+      else # Should have more than one record
+        GtkPkg.logger.debug(log_message) {"unrestricted has more than one record"}
+        result[:count] = json_unrestricted.count
+        
+        # Now fetch the real result
+        GtkPkg.logger.debug(log_message) {"calling url "+@url+" whith headers #{headers}"}
+        records = RestClient.get(@url, headers)
+        GtkPkg.logger.debug(log_message) {"records #{records}"}
+        result[:items] = JSON.parse records.body
+      end
+      result
     rescue => e
-      GtkPkg.logger.error format_error(e.backtrace)
-      e.to_json
+      GtkPkg.logger.error(log_message) {"Error during processing: #{$!}"}
+      GtkPkg.logger.error(log_message) {"Backtrace:\n\t#{e.backtrace.join("\n\t")}"}
+      raise CatalogueRecordsNotFoundError.new "Records with params #{params} were not found"
     end
   end
   
