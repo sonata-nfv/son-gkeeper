@@ -176,7 +176,7 @@ module GtkApiHelper
     validate_ownership_and_licence(element: descriptor[:items], user_name: user_name, kpi_method: kpi_method, began_at: began_at, log_message: log_message)
   end
 
-  def enhance_collection(collection:, user:, keys_to_delete:)
+  def enhance_service_collection(collection:, user:, keys_to_delete:)
     log_message = "GtkApiHelper##{__method__}"
     logger.debug(log_message) {'collection='+collection.inspect}
     return collection if (collection.empty? || collection.first.empty?)

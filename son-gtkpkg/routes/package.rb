@@ -139,8 +139,9 @@ class GtkPkg < Sinatra::Base
     field_list = params.delete('fields')
 
     logger.debug(log_message) { 'query_string='+query_string}    
+    packages_without_restrictions = settings.packages_catalogue.find({})
     packages = settings.packages_catalogue.find(params)
-    logger.debug(log_message) { "packages fetched: #{packages}"}
+    logger.debug(log_message) { "packages fetched: #{packages} (from #{packages_without_restrictions[:count]} total)"}
     if field_list
       fields = field_list.split(',')
       logger.debug(log_message) { "fields=#{fields}"}
@@ -148,8 +149,8 @@ class GtkPkg < Sinatra::Base
     else
       records = packages[:items].to_json
     end
-    logger.debug(log_message) { "leaving with #{packages[:count]}: #{records}"}
-    headers 'Record-Count' => packages[:count].to_s
+    logger.debug(log_message) { "leaving with #{packages[:count]}of#{packages_without_restrictions[:count]} #{records}"}
+    headers 'Record-Count' => packages_without_restrictions[:count].to_s
     halt 200, records
   end
   
