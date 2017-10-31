@@ -112,7 +112,7 @@ class Catalogue
         @logger.debug(log_message) {"records #{records}"}
         result[:items] = JSON.parse records.body
         result[:count] = result[:items].count
-      end
+        #end
       result
     rescue => e
       @logger.error(log_message) {"Error during processing: #{$!}"}
