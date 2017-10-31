@@ -121,7 +121,7 @@ class Package
     GtkPkg.logger.debug(log_message) {" before calling duplicated_package?, @@catalogue=#{@@catalogue.inspect}"}
     
     duplicated_package = duplicated_package?()
-    unless duplicated_package.empty? # duplicated_package[:items].empty?
+    unless duplicated_package[:items].empty?
       dup = {}
       dup['vendor'] = @descriptor['vendor']
       dup['version'] = @descriptor['version']
