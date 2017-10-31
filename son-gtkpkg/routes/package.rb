@@ -140,7 +140,7 @@ class GtkPkg < Sinatra::Base
 
     logger.debug(log_message) { 'query_string='+query_string}    
     packages = settings.packages_catalogue.find(params)
-    logger.debug(log_message) { "packages fetched: #{services}"}
+    logger.debug(log_message) { "packages fetched: #{packages}"}
     if field_list
       fields = field_list.split(',')
       logger.debug(log_message) { "fields=#{fields}"}
