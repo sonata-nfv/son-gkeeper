@@ -57,13 +57,13 @@ class GtkApi < Sinatra::Base
       validate_collection_existence(collection: functions, name: 'functions', kpi_method: method(:count_functions_metadata_queries), began_at: began_at, log_message: log_message)
       logger.debug(log_message) {"Found functions #{functions}"}
       keys_to_delete = {main_key: :vnfd, sub_keys: [:connection_points, :monitoring_rules, :virtual_deployment_units, :virtual_links]}
-      filtered_functions = enhance_collection( collection: functions[:items], user: user_name, keys_to_delete: keys_to_delete)
+      #filtered_functions = enhance_collection( collection: functions[:items], user: user_name, keys_to_delete: keys_to_delete)
       logger.debug(log_message) {"links: request_url=#{request_url}, limit=#{@limit}, offset=#{@offset}, total=#{functions[:count]}"}
       links = build_pagination_headers(url: request_url, limit: @limit.to_i, offset: @offset.to_i, total: functions[:count].to_i)
       logger.debug(log_message) {"links: #{links}"}
       headers 'Link'=> links, 'Record-Count'=> functions[:count].to_s
       count_functions_metadata_queries(labels: {result: "ok", uuid: '', elapsed_time: (Time.now.utc-began_at).to_s})
-      halt 200, filtered_functions.to_json
+      halt 200, functions[:items].to_json
     end
   
     # GET function by uuid

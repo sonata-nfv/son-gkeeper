@@ -176,12 +176,12 @@ module GtkApiHelper
     validate_ownership_and_licence(element: descriptor[:items], user_name: user_name, kpi_method: kpi_method, began_at: began_at, log_message: log_message)
   end
 
-  def enhance_collection(collection:, user:, keys_to_delete:)
+  def enhance_service_collection(collection:, user:, keys_to_delete:)
     log_message = "GtkApiHelper##{__method__}"
     logger.debug(log_message) {'collection='+collection.inspect}
     return collection if (collection.empty? || collection.first.empty?)
-    always_an_array = collection.is_a? Hash ? [collection] : collection
-    always_an_array.each do |element|
+
+    collection.each do |element|
       logger.debug(log_message) {'element='+element.inspect}
       
       next unless element.key?(:nsd)
@@ -220,7 +220,7 @@ module GtkApiHelper
         logger.debug(log_message) {"user licence set to \"#{element[:user_licence]}\""}
       end
     end
-    logger.debug(log_message) {"returning collection=#{always_an_array}"}
-    collection.is_a? Hash ? always_an_array[0] : always_an_array
+    logger.debug(log_message) {"returning collection=#{collection}"}
+    collection
   end
 end

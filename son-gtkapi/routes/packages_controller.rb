@@ -173,12 +173,12 @@ class GtkApi < Sinatra::Base
       packages = Package.find(params)
       validate_collection_existence(collection: packages, name: 'packages', kpi_method: method(:count_packages_queries), began_at: began_at, log_message: log_message)
       keys_to_delete = {main_key: :vnfd, sub_keys: [:entry_service_template, :package_content]}
-      enhanced_packages = enhance_collection( collection: packages[:items], user: user_name, keys_to_delete: keys_to_delete)
-      logger.debug(log_message) { "leaving with #{enhanced_packages}"}
-      # TODO: total must be returned from the PackageManagement service
-      links = build_pagination_headers(url: request_url, limit: @limit.to_i, offset: @offset.to_i, total: enhanced_packages.size)
-      headers 'Link'=> links
-      halt 200, enhanced_packages.to_json
+      #enhanced_packages = enhance_collection( collection: packages[:items], user: user_name, keys_to_delete: keys_to_delete)
+      logger.debug(log_message) { "leaving with #{packages[:items]}"}
+
+      links = build_pagination_headers(url: request_url, limit: @limit.to_i, offset: @offset.to_i, total: packages[:count])
+      headers 'Link'=> links, 'Record-Count'=> packages[:count].to_s
+      halt 200, packages[:items].to_json
     end
   
     # DELETE
