@@ -85,6 +85,7 @@ class Catalogue
     result={}
     begin
       # First fetch all records without any restriction
+=begin
       @logger.debug(log_message) {"calling url "+@url+" whith headers #{JSON_HEADERS}"}
       unrestricted = RestClient.get(@url, JSON_HEADERS)
       @logger.debug(log_message) {"unrestricted #{unrestricted}"}
@@ -104,11 +105,13 @@ class Catalogue
         result[:count] = json_unrestricted.count
         
         # Now fetch the real result
+=end
         headers[:params] = params unless params.empty?
         @logger.debug(log_message) {"calling url "+@url+" whith headers #{headers}"}
         records = RestClient.get(@url, headers)
         @logger.debug(log_message) {"records #{records}"}
         result[:items] = JSON.parse records.body
+        result[:count] = result[:items].count
       end
       result
     rescue => e
