@@ -81,21 +81,21 @@ class Catalogue
   def find(params)
     log_message='Catalogue.'+__method__.to_s
     headers = JSON_HEADERS
-    headers[:params] = params unless params.empty?
-    @logger.debug(log_message) {"entered, with params #{params} and headers #{headers}"}
+    @logger.debug(log_message) {"entered, with params #{params}"}
     result={}
     begin
       # First fetch all records without any restriction
+=begin
       @logger.debug(log_message) {"calling url "+@url+" whith headers #{JSON_HEADERS}"}
       unrestricted = RestClient.get(@url, JSON_HEADERS)
       @logger.debug(log_message) {"unrestricted #{unrestricted}"}
       
       json_unrestricted = JSON.parse unrestricted.body
-      @logger.debug(log_message) {"json_unrestricted #{json_unrestricted}"}
+      @logger.debug(log_message) {"json_unrestricted #{json_runestricted}"}
 
       if json_unrestricted.empty?
         @logger.debug(log_message) {"unrestricted has no records"}
-        result = {count: 0, items: {}}
+        result = {count: 0, items: []}
       elsif json_unrestricted.count == 1
         # If there's only one, that's it
         @logger.debug(log_message) {"unrestricted has only one record"}
@@ -105,11 +105,14 @@ class Catalogue
         result[:count] = json_unrestricted.count
         
         # Now fetch the real result
+=end
+        headers[:params] = params unless params.empty?
         @logger.debug(log_message) {"calling url "+@url+" whith headers #{headers}"}
         records = RestClient.get(@url, headers)
         @logger.debug(log_message) {"records #{records}"}
         result[:items] = JSON.parse records.body
-      end
+        result[:count] = result[:items].count
+        #end
       result
     rescue => e
       @logger.error(log_message) {"Error during processing: #{$!}"}
