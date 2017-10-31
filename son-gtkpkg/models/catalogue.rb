@@ -139,7 +139,7 @@ class Catalogue
       elsif json_unrestricted.count == 1
         # If there's only one, that's it
         GtkPkg.logger.debug(log_message) {"unrestricted has only one record"}
-        result = {count: 1, items: json_unrestricted} # NOTE: an array is returned
+        result = {count: 1, items: json_unrestricted[0]} # NOTE: an array is returned
       else
         GtkPkg.logger.debug(log_message) {"unrestricted has more than one record"}
         result[:count] = json_unrestricted.count
