@@ -131,9 +131,6 @@ class Catalogue
     end
   end
   
-  def update
-  end
-  
   def delete(uuid)
     method = CLASS + __method__.to_s
     GtkPkg.logger.debug(method) {'entered with uuid='+uuid}
