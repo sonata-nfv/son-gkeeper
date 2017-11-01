@@ -59,7 +59,7 @@ class NService
   
   def store()
     GtkPkg.logger.debug "NService.store(#{@descriptor})"
-    #service = duplicated_service?()
+    service = duplicated_service?()
     service = @catalogue.create(@descriptor, @username) unless service.any?
     GtkPkg.logger.debug "NService.store service #{service}"
     service
