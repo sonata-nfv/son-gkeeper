@@ -132,26 +132,17 @@ class GtkPkg < Sinatra::Base
   end
 
   get '/packages/?' do
-    log_message="GtkPkg::GET /packages/?"
-    logger.debug(log_message) {"entered with params #{params}"}
+    message = LOG_MESSAGE + ' GET "/packages/'+query_string+'"'
+    logger.debug(message) {"entered"}
 
-    # Remove list of wanted fields from the query parameter list
-    field_list = params.delete('fields')
-
-    logger.debug(log_message) { 'query_string='+query_string}    
-    packages_without_restrictions = settings.packages_catalogue.find({})
     packages = settings.packages_catalogue.find(params)
-    logger.debug(log_message) { "packages fetched: #{packages} (from #{packages_without_restrictions[:count]} total)"}
-    if field_list
-      fields = field_list.split(',')
-      logger.debug(log_message) { "fields=#{fields}"}
-      records = packages[:items].to_json(:only => fields)
+    logger.debug(message) {"packages: #{packages}"}
+    if packages && packages.is_a?(Array)
+      logger.debug(message) {"leaving with #{packages.size} package(s) found"}
+      [200, {}, packages.to_json]
     else
-      records = packages[:items].to_json
+      json_error 404, "No package with params #{params} was found", message
     end
-    logger.debug(log_message) { "leaving with #{packages[:count]}of#{packages_without_restrictions[:count]} #{records}"}
-    headers 'Record-Count' => packages_without_restrictions[:count].to_s
-    halt 200, records
   end
   
   delete '/packages/:uuid/?' do
