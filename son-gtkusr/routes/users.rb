@@ -28,6 +28,7 @@
 require 'json'
 require 'sinatra'
 require 'net/http'
+require 'net/ssh'
 require 'openssl'
 require_relative '../helpers/init'
 
@@ -128,7 +129,11 @@ class Keycloak < Sinatra::Application
         # Randomly generate a instantiation-keypair to store in the database
         key = OpenSSL::PKey::RSA.new 2048
         instances_private_key = key.to_pem
-        instances_public_key = key.public_key.to_pem
+        # instances_public_key = key.public_key.to_pem
+        type = key.ssh_type
+        data = [ key.to_blob ].pack('m0')
+
+        instances_public_key = "#{type} #{data}"  # openssh_format
       end
     end
 
