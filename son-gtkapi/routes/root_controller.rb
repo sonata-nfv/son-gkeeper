@@ -27,8 +27,8 @@
 ## partner consortium (www.sonata-nfv.eu).
 class GtkApi < Sinatra::Base
   
-  DEFAULT_OFFSET = "0"
-  DEFAULT_LIMIT = "10"
+  DEFAULT_OFFSET = ENV['PAGE_NUMBER'] || "0"
+  DEFAULT_LIMIT = ENV['PAGE_SIZE'] || "10"
   DEFAULT_MAX_LIMIT = "100"
 
   # Root

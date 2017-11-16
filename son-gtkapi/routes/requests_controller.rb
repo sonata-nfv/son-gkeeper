@@ -59,14 +59,15 @@ class GtkApi < Sinatra::Base
         require_param(param: 'service_instance_uuid', params: params, kpi_method: kpi_method, error_message: 'Service UUID', log_message: log_message, began_at: began_at)
       end
       
-      token = get_token( request.env, began_at, :kpi_method, log_message)
-      user_name = get_username_by_token( token, began_at, :kpi_method, log_message)
+      token = get_token( request.env, began_at, kpi_method, log_message)
+      user_name = get_username_by_token( token, began_at, kpi_method, log_message)
       
       validate_user_authorization(token: token, action: 'post service instantiation request', uuid: params['service_uuid'], path: '/services', method:'POST', kpi_method: kpi_method, began_at: began_at, log_message: log_message)
       logger.debug(log_message) {"User authorized"}
       remaining = check_rate_limit(limit: 'other_operations', client: user_name) if check_rate_limit_usage()
       
       params['callback'] = kpis_url+'/service-instantiation-time'
+      params['user_data'] = build_user_data(user_name)
       new_request = ServiceManagerService.create_service_request(params)
       logger.debug(log_message) { "new_request =#{new_request}"}
       if new_request[:status] != 201
@@ -169,6 +170,16 @@ class GtkApi < Sinatra::Base
   end
   
   private
+  
+  def build_user_data(user_name)
+    user_data = {}
+    user = User.find_by_name(user_name)
+    user_data['customer'] = { email: user.email, phone: user.phone_number}
+    
+    # We're not considering the developer for now
+    user_data['developer'] = { email: '', phone: ''}
+    user_data
+  end
   
   def kpis_url
     ENV[GtkApi.services['kpis']['env_var_url']]

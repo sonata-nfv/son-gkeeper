@@ -80,9 +80,8 @@ development: &common_settings
           limit: 10
   level: debug
   defaults:
-    page:
-      size: 10
-      number: 0
+    page_size: PAGE_SIZE
+    page_number: PAGE_NUMBER
 
 test:
   <<: *common_settings

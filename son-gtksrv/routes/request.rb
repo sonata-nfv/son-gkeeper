@@ -79,6 +79,7 @@ class GtkSrv < Sinatra::Base
     # we're not storing egresses or ingresses
     egresses = params.delete 'egresses' if params['egresses']
     ingresses = params.delete 'ingresses' if params['ingresses']
+    user_data = params.delete 'user_data' if params['user_data']
     
     begin
       start_request={}
@@ -110,6 +111,7 @@ class GtkSrv < Sinatra::Base
       end
       start_request['egresses'] = egresses
       start_request['ingresses'] = ingresses
+      start_request['user_data'] = user_data
       
       start_request_yml = YAML.dump(start_request.deep_stringify_keys)
       logger.debug(log_msg) {"#{params}:\n"+start_request_yml}

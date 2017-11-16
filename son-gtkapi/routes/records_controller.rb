@@ -97,6 +97,7 @@ class GtkApi < Sinatra::Base
       end
       count_single_record_queries(labels: {result: "ok", uuid: params[:uuid], elapsed_time: (Time.now.utc-began_at).to_s})
       logger.debug(log_message) {"leaving with #{record}"}
+      headers 'Record-Count'=> '1'
       halt 200, record[:items].to_json
     end
   

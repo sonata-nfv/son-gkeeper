@@ -48,17 +48,19 @@ class Repository
       service_or_function = JSON.parse(response.body)
       case response.code.to_i
       when 200
-        service_or_function
+        {status: response.code.to_i, count: 1, items: service_or_function, message: "Ok"}
       when 400
       when 404
-        nil
-      else
-        nil
+        {status: response.code.to_i, count: 0, items: [], message: "Not found"}
+      else 
+        {status: response.code.to_i, count: 0, items: [], message: "Unknown error"}
       end
-    rescue => e
-      @logger.error(method) {"response=#{response}"}  
+    rescue RestClient::ExceptionWithResponse => e
+      @logger.error(method) {"response=#{e.response}"}
+      {status: e.http_code, count: 0, items: [], message: "Not found"}
+    else
       @logger.error(method) {e.backtrace.each {|l| puts l}} #format_error(e.backtrace)
-      {status: 500, count: 0, items: [], message: "#{e.backtrace.join("\n\t")}"}
+      {status: 500, count: 0, items: [], message: "Internal error"}
     end
   end
   
