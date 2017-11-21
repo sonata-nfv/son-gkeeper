@@ -46,6 +46,7 @@ class User < ManagerService
   LOG_MESSAGE = 'GtkApi::' + self.name
   
   attr_accessor :uuid, :username, :password, :secret, :created_at, :user_type, :email, :last_name, :first_name, :phone_number, :public_key, :certificate
+  attr_accessor :instances_public_key, :instances_private_key
   
   # {"username" => "sampleuser", "enabled" => true, "totp" => false, "emailVerified" => false, "firstName" => "User", "lastName" => "Sample", "email" => "user.sample@email.com.br", "credentials" => [ {"type" => "password", "value" => "1234"} ], "requiredActions" => [], "federatedIdentities" => [], "attributes" => {"developer" => ["true"], "customer" => ["false"], "admin" => ["false"]}, "realmRoles" => [], "clientRoles" => {}, "groups" => ["developers"]}
   
@@ -72,6 +73,8 @@ class User < ManagerService
     @first_name = params[:first_name] if params[:first_name]
     @public_key = params[:public_key] if params[:public_key]
     @certificate = params[:certificate] if params[:certificate]
+    @instances_public_key = params[:instances_public_key] if params[:instances_public_key]
+    @instances_private_key = params[:instances_private_key] if params[:instances_private_key]
   end
 
   def self.create(params)
@@ -423,6 +426,8 @@ class User < ManagerService
     user[:first_name] = original_user[:firstName] if original_user[:firstName]
     user[:last_name] = original_user[:lastName] if original_user[:lastName]
     user[:phone_number] = original_user[:attributes][:phone_number].first if original_user[:attributes][:phone_number]
+    user[:instances_private_key] = original_user[:attributes][:instances_private_key]
+    user[:instances_public_key] = original_user[:attributes][:instances_public_key]
     user
   end
 
