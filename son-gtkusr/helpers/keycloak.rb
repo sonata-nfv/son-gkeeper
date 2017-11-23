@@ -276,6 +276,18 @@ class Keycloak < Sinatra::Application
     response = http.request(request)
     user_id = parse_json(response.body).first[0]["id"]
 
+    # Call set-password method
+    user_id, r_code, r_message = set_password(user_id, user_form)
+
+    unless user_id.nil?
+      # Call clear requiredAction method
+      user_id, r_code, r_message = clear_actions(user_id)
+    end
+
+    return user_id, r_code, r_message
+  end
+
+  def set_password(user_id, user_form)
     # Use the endpoint to setup temporary password of user (It will
     # automatically add requiredAction for UPDATE_PASSWORD
     url = URI("http://#{@@address.to_s}:#{@@port.to_s}/#{@@uri.to_s}/admin/realms/#{@@realm_name}/users/#{user_id}/reset-password")
@@ -291,8 +303,12 @@ class Keycloak < Sinatra::Application
     response = http.request(request)
     if response.code.to_i != 204
       return nil, response.code.to_i, response.body.to_s
+    else
+      return user_id, nil, nil
     end
+  end
 
+  def clear_actions(user_id)
     # Then use the endpoint for update user and send the empty array of
     # requiredActions in it. This will ensure that UPDATE_PASSWORD required
     # action will be deleted and user won't need to update password again.
@@ -308,9 +324,9 @@ class Keycloak < Sinatra::Application
     response = http.request(request)
     if response.code.to_i != 204
       return nil, response.code.to_i, response.body.to_s
+    else
+      return user_id, nil, nil
     end
-
-    return user_id, nil, nil
   end
 
   # "registration_endpoint":"http://localhost:8081/auth/realms/master/clients-registrations/openid-connect"
