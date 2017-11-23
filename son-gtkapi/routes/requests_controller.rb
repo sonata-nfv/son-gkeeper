@@ -175,9 +175,10 @@ class GtkApi < Sinatra::Base
     user_data = {}
     user = User.find_by_name(user_name)
     user_data['customer'] = { email: user.email, phone: user.phone_number}
-    
+    user_data['customer']['keys'] = { public: user.instances_public_key, private: user.instances_private_key}
+
     # We're not considering the developer for now
-    user_data['developer'] = { email: '', phone: ''}
+    user_data['developer'] = { email: nil, phone: nil}
     user_data
   end
   
