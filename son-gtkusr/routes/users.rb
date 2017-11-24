@@ -398,8 +398,12 @@ class Keycloak < Sinatra::Application
     end
     form, errors = parse_json(request.body.read)
 
+    logger.debug "Adapter: Received User-data: #{form}"
+
     pkey = nil
     cert = nil
+    new_creds = {}
+
     # Check form keys
     form.each { |att, val|
       if not_updatables.include? att
@@ -420,13 +424,21 @@ class Keycloak < Sinatra::Application
           rescue
             # cert = nil
           end
+        when 'credentials'
+          begin
+            new_creds['credentials'] = form['credentials']
+            form.delete('credentials')
+          rescue
+            logger.debug 'Adapter: leaving PUT /users'
+            json_error(400, 'Password update failed')
+          end
         else
       end
     }
 
     case k
       when 'id'
-        code, @msg = update_user(nil, v, form)
+        code, @msg = update_user(nil, v, form) # @msg should have user_id
       when 'username'
         code, @msg = update_user(v, nil, form)
       else
@@ -434,9 +446,26 @@ class Keycloak < Sinatra::Application
         json_error(400, 'Bad query')
     end
 
+    if new_creds['credentials']
+      logger.debug 'Adapter: Updating user credentials'
+      # handle password updates
+      # use PUT /auth/admin/realms/master/users/{id}/reset-password
+      # {id} is the user id in keycloak (not the login)
+
+      # sample body:
+      # { "type": "password", "temporary": false, "value": "my-new-password" }
+      user_id, code, msg = set_password(@msg, new_creds)
+      if code.nil? # update requiredActions to blank
+        user_id, code, msg = clear_actions(@msg)
+        logger.debug 'Adapter: User credentials successfully updated'
+      end
+    end
+
     if form['attributes']['userType'].is_a?(Array)
       if form['attributes']['userType'].include?('developer')
-        # proceed
+        u_type = 'developer'
+      elsif form['attributes']['userType'].include?('customer')
+        u_type = 'customer'
       else
         logger.debug 'Adapter: leaving PUT /users'
         halt 204
@@ -444,7 +473,9 @@ class Keycloak < Sinatra::Application
     elsif form['attributes']['userType']
       case form['attributes']['userType']
         when 'developer'
-          # proceed
+          u_type = 'developer'
+        when 'customer'
+          u_type = 'customer'
         else
           logger.debug 'Adapter: leaving PUT /users'
           halt 204
@@ -458,6 +489,8 @@ class Keycloak < Sinatra::Application
         if u_data['attributes']['userType'].is_a?(Array)
           if u_data['attributes']['userType'].include?('developer')
             # proceed
+          elsif form['attributes']['userType'].include?('customer')
+            u_type = 'customer'
           else
             logger.debug 'Adapter: leaving PUT /users'
             halt 204
@@ -465,7 +498,9 @@ class Keycloak < Sinatra::Application
         elsif u_data['attributes']['userType']
           case u_data['attributes']['userType']
             when 'developer'
-              # proceed
+              u_type = 'developer'
+            when 'customer'
+              u_type = 'customer'
             else
               logger.debug 'Adapter: leaving PUT /users'
               halt 204
@@ -474,12 +509,12 @@ class Keycloak < Sinatra::Application
       end
     end
 
-    if code.nil?
+    if u_type == 'developer'
       begin
         user_extra_data = Sp_user.find_by({ '_id' => @msg })
       rescue Mongoid::Errors::DocumentNotFound => e
         logger.debug 'Adapter: Error caused by DocumentNotFound in user database'
-        halt 204
+        halt 204, {'Content-type' => 'application/json'}, 'Updated with DocumentNotFound error'
       end
       case pkey
         when nil
@@ -500,9 +535,35 @@ class Keycloak < Sinatra::Application
           end
       end
       logger.debug 'Adapter: leaving PUT /users'
-      halt 204
+      halt 204, {'Content-type' => 'application/json'}, @msg
+
+    elsif u_type == 'customer'
+      begin
+        user_extra_data = Sp_user.find_by({ '_id' => @msg })
+      rescue Mongoid::Errors::DocumentNotFound => e
+        logger.debug 'Adapter: Error caused by DocumentNotFound in user database'
+        halt 204, {'Content-type' => 'application/json'}, 'Updated with DocumentNotFound error'
+      end
+
+      # Should handle usertype transitions such developer - customer/customer - developer ?
+      # Randomly generate a instantiation-keypair to store in the database
+      key = OpenSSL::PKey::RSA.new 2048
+      instances_private_key = key.to_pem
+      type = key.ssh_type
+      data = [ key.to_blob ].pack('m0')
+      instances_public_key = "#{type} #{data}"  # openssh_format
+
+      begin
+        user_extra_data.update_attributes(instances_private_key: instances_private_key)
+        user_extra_data.update_attributes(instances_public_key: instances_public_key)
+      rescue Moped::Errors::OperationFailure => e
+        json_error(400, e)
+      end
+
+      logger.debug 'Adapter: leaving PUT /users'
+      halt 204, {'Content-type' => 'application/json'}, @msg
     end
-    halt code, {'Content-type' => 'application/json'}, @msg
+    halt 204, {'Content-type' => 'application/json'}, @msg
   end
 
   delete '/users' do
