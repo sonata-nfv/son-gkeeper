@@ -152,7 +152,7 @@ class GtkApi < Sinatra::Base
       logger.debug(log_message) {"Looking for the package file name for package file #{package[:items][:son_package_uuid]}..."}
       file_name = Package.download(package[:items][:son_package_uuid])
       count_package_downloads(labels: {result: "ok", uuid: params['uuid'], elapsed_time: (Time.now.utc-began_at).to_s})
-      send_file file_name
+      send_file file_name, type: 'application/zip', filename: :son_package_uuid.to_s
     end
 
     # GET potentially many packages
