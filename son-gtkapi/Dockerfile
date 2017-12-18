@@ -1,10 +1,11 @@
 FROM ruby:2.4.3-slim-stretch
 RUN apt-get update && \
-  apt-get install -y --no-install-recommends build-essential libcurl3 libcurl3-gnutls libcurl4-openssl-dev && \
-	rm -rf /var/lib/apt/lists/*
-RUN mkdir -p /app
+    apt-get install -y --no-install-recommends build-essential libcurl3 libcurl3-gnutls libcurl4-openssl-dev git && \
+	  rm -rf /var/lib/apt/lists/*
+RUN mkdir -p /app/lib/local-gems
 WORKDIR /app
 COPY Gemfile /app
+ADD ./lib/local-gems /app/lib/local-gems
 RUN bundle install
 COPY . /app
 EXPOSE 5000
