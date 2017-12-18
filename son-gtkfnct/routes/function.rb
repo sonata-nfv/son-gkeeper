@@ -82,7 +82,7 @@ class GtkFnct < Sinatra::Base
     File.open('log/'+ENV['RACK_ENV']+'.log', 'r').read
   end
   
-  get '/began_at/?' do
+  get '/functions/began_at/?' do
     log_message = 'GtkFnct GET /began_at'
     logger.debug(log_message) {'entered'}
     logger.debug(log_message) {"began at #{settings.began_at}"}

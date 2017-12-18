@@ -26,46 +26,43 @@
 ## partner consortium (www.sonata-nfv.eu).
 # encoding: utf-8
 require './models/manager_service.rb'
+require 'SONATA'
 
 class FunctionNotFoundError < StandardError; end
 
-class FunctionManagerService < ManagerService
-    
-  #JSON_HEADERS = { 'Accept'=> 'application/json', 'Content-Type'=>'application/json'}
-  LOG_MESSAGE = 'GtkApi::' + self.name
-  
+class FunctionManagerService < SONATA::CurbAdapter  
   attr_accessor :uuid, :instances
   
-  def self.config(url:)
-    log_message = LOG_MESSAGE + "##{__method__}"
-    raise ArgumentError.new('FunctionManagerService can not be configured with nil url') if url.nil?
-    raise ArgumentError.new('FunctionManagerService can not be configured with empty url') if url.empty?
-    @@url = url
-    GtkApi.logger.debug(log_message) {'entered with url='+url}
+  def self.config(url:, logger:)
+    log_message = "GtkApi::FunctionManagerService##{__method__}"
+    raise ArgumentError.new('FunctionManagerService can not be configured with nil url') if url.to_s.empty?
+    @@url = url + '/functions/'
+    @@logger = logger
+    @@logger.debug(log_message) {'entered with url='+url}
   end
 
   def initialize(uuid:)
-    log_message = LOG_MESSAGE + "##{__method__}"
-    GtkApi.logger.debug(log_message) {"entered with uuid #{uuid}"}
+    log_message = "GtkApi::FunctionManagerService##{__method__}"
+    @@logger.debug(log_message) {"entered with uuid #{uuid}"}
     raise ArgumentError.new('FunctionManagerService can not be instantiated without a function uuid') if (:uuid.nil? || :uuid.empty?)
     @uuid = uuid
     @instances = []
   end
   
   def self.find_by_uuid(uuid)
-    log_message = LOG_MESSAGE + "##{__method__}"
-    GtkApi.logger.debug(log_message) {"entered with uuid #{uuid}"}
-    response = getCurb(url: @@url + '/functions/'+uuid)
-    GtkApi.logger.debug(log_message) {"response=#{response}"}
+    log_message = "GtkApi::FunctionManagerService##{__method__}"
+    @@logger.debug(log_message) {"entered with uuid #{uuid}"}
+    response = getCurb(url: @@url + uuid)
+    @@logger.debug(log_message) {"response=#{response}"}
     response
   end
   
   # This version (note the '!') works with exceptions
   def self.find_by_uuid!(uuid)
-    log_message = LOG_MESSAGE + "##{__method__}"
-    GtkApi.logger.debug(log_message) {'entered with uuid='+uuid}
-    response = getCurb(url: @@url + '/functions/' + uuid, headers: JSON_HEADERS)
-    GtkApi.logger.debug(log_message) {"response=#{response}"}
+    log_message = "GtkApi::FunctionManagerService##{__method__}"
+    @@logger.debug(log_message) {'entered with uuid='+uuid}
+    response = getCurb(url: @@url + uuid, headers: JSON_HEADERS)
+    @@logger.debug(log_message) {"response=#{response}"}
     case response[:status]
     when 200
       function = response[:items]
@@ -75,24 +72,25 @@ class FunctionManagerService < ManagerService
     end
   end
 
-  def self.find(params)
+  # find is now inherited
+  #def self.find(params)
     #find(url: @@url + '/functions', params: params, log_message: LOG_MESSAGE + "##{__method__}(#{params})")
-    log_message = LOG_MESSAGE + "##{__method__}"
-    GtkApi.logger.debug(log_message) {"entered with params #{params}"}
-    response = getCurb(url: @@url + '/functions', params: params)
-    GtkApi.logger.debug(log_message) {"response=#{response}"}
-    vectorize_hash response
-  end
+  #  log_message = "GtkApi::FunctionManagerService##{__method__}"
+  #  @@logger.debug(log_message) {"entered with params #{params}"}
+  #  response = getCurb(url: @@url + '/functions', params: params)
+  #  @@logger.debug(log_message) {"response=#{response}"}
+  #  vectorize_hash response
+  #end
   
   def load_instances(uuid)
-    log_message = LOG_MESSAGE + "##{__method__}"
-    GtkApi.logger.debug(log_message) {'entered with uuid='+uuid}
+    log_message = "GtkApi::FunctionManagerService##{__method__}"
+    @@logger.debug(log_message) {'entered with uuid='+uuid}
     
     # TODO: this is not right... yet!
     instances = RecordManagerService.find_records_by_function_uuid(uuid)
     case instances[:status]
     when 200
-      GtkApi.logger.debug(log_message) {"instances=#{instances[:items]}"}
+      @@logger.debug(log_message) {"instances=#{instances[:items]}"}
       @instances = instances[:items]
     else
       @instances = nil
@@ -100,10 +98,10 @@ class FunctionManagerService < ManagerService
   end
   
   def self.began_at
-    log_message=LOG_MESSAGE+"##{__method__}"
-    GtkApi.logger.debug(log_message) {'entered'}    
-    response = getCurb(url: @@url + '/began_at')
-    GtkApi.logger.debug(log_message) {"response=#{response}"}
+    log_message = "GtkApi::FunctionManagerService##{__method__}"
+    @@logger.debug(log_message) {'entered'}    
+    response = getCurb(url: @@url + 'began_at/')
+    @@logger.debug(log_message) {"response=#{response}"}
     response
   end
 end

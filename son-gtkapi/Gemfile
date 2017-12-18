@@ -17,6 +17,7 @@ gem 'sinatra-logger', '0.1.1'
 gem 'curb', '0.9.3'
 gem 'factory_girl', '4.8.0'
 gem 'activesupport', '5.0.2', :require => "active_support"
+gem 'SONATA', '0.1.0', path: './lib/local-gems'
 
 group :test do
   gem 'webmock', '2.1.0'

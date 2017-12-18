@@ -1,4 +1,4 @@
-FROM ruby:2.2.3-slim
+FROM ruby:2.4.3-slim-stretch
 RUN apt-get update && \
   apt-get install -y --no-install-recommends build-essential libcurl3 libcurl3-gnutls libcurl4-openssl-dev && \
 	rm -rf /var/lib/apt/lists/*
@@ -8,7 +8,7 @@ COPY Gemfile /app
 RUN bundle install
 COPY . /app
 EXPOSE 5000
-WORKDIR /app
+#WORKDIR /app
 ENV PORT 5000
 ENV CATALOGUES_URL http://catalogues:4002/catalogues/api/v2
 ENV PACKAGE_MANAGEMENT_URL http://son-gtkpkg:5100

@@ -1,4 +1,4 @@
-FROM ruby:2.2.3-slim
+FROM ruby:2.4.3-slim-stretch
 RUN apt-get update && apt-get install -y --no-install-recommends \
                 build-essential \
 		libcurl3 \

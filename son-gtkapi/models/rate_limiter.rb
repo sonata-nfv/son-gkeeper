@@ -35,42 +35,43 @@ class RateLimiter < ManagerService
 
   LOG_MESSAGE = 'GtkApi::' + self.name
   
-  def self.config(url:)
+  def self.config(url:, logger:)
     method = LOG_MESSAGE + __method__.to_s
-    raise ArgumentError.new('RateLimit model can not be configured with nil or empty url') if (url.nil? || url.empty?)
-    GtkApi.logger.debug(method) {'entered with url='+url}
+    raise ArgumentError.new('RateLimit model can not be configured with nil or empty url') if url.to_s.empty?
     @@url = url
+    @@logger = logger
+    @@logger.debug(method) {'entered with url='+url}
   end
   
   # TODO: adapt all this to the true Rate Limiter
   
   def initialize()
     method = LOG_MESSAGE + __method__.to_s
-    GtkApi.logger.debug(method) {"entered"}
+    @@logger.debug(method) {"entered"}
   end
   
   def self.create(name:, params:) # period:, limit:, description:
     message = LOG_MESSAGE+"##{__method__}"
-    GtkApi.logger.debug(message) {"entered with #{params}"}
+    @@logger.debug(message) {"entered with #{params}"}
     raise ArgumentError.new('RateLimit can not be created with nil or empty name') if (name.to_s.empty?)
     raise ArgumentError.new('RateLimit can not be created with nil or empty period') if (params[:period].to_s.empty?)
     raise ArgumentError.new('RateLimit can not be created with nil or empty limit') if (params[:limit].to_s.empty?)
     
     resp = self.putCurb(url: @@url+'/limits/'+name, body: params)
-    GtkApi.logger.debug(message) {"resp=#{resp}"}
+    @@logger.debug(message) {"resp=#{resp}"}
     raise RateLimitNotCreatedError.new('RateLimit creation failled') unless (resp && resp[:status] == 201)
     resp[:items]
   end
   
   def self.check(params:) # limit_id:, client_id:
     message = LOG_MESSAGE+"##{__method__}"
-    GtkApi.logger.debug(message) {"entered with #{params}"}
+    @@logger.debug(message) {"entered with #{params}"}
     raise ArgumentError.new('RateLimit check can not be used with nil or empty limit_id') if (params[:limit_id].to_s.empty?)
     raise ArgumentError.new('RateLimit check can not be used with nil or empty client_id') if (params[:client_id].to_s.empty?)
 
     #begin
     resp = self.postCurb(url: @@url+'/check', body: params)
-    GtkApi.logger.debug(message) {"resp=#{resp}"}
+    @@logger.debug(message) {"resp=#{resp}"}
     raise RateLimitNotCheckedError.new('RateLimit check failled') unless (resp && resp[:status] == 200)
     resp[:items]
   end

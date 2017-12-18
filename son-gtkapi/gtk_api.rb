@@ -104,9 +104,13 @@ class GtkApi < Sinatra::Base
       settings.logger.info('GtkApi') {"Service #{service} not configured"}
       next
     end
-    # Check first if class exists with
-    # Object.const_defined?('Hash')
-    Object.const_get(properties['model']).config(url: url)
+
+    if Object.const_defined?(properties['model'])
+      Object.const_get(properties['model']).config(url: url, logger: settings.logger)
+    else
+      settings.logger.info('GtkApi') {"Model class #{properties['model']} for service #{service} does not exist"}
+      Process.kill('TERM', Process.pid)
+    end
   end  
 
   Zip.setup do |c|
