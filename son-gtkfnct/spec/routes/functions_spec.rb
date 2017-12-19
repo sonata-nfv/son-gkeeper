@@ -29,7 +29,7 @@ require 'json'
 
 RSpec.describe GtkFnct do
   
-  let(:uri) { 'http://sp.int3.sonata-nfv.eu:4002/catalogues/api/v2/vnfs'} #'http://0.0.0.0:5200/catalogues/vnfs' }
+  let(:uri) { GtkFnct.catalogues + +'/vnfs'} #'http://0.0.0.0:5200/catalogues/vnfs' } #'http://sp.int3.sonata-nfv.eu:4002/catalogues/api/v2/vnfs'}
   
   it 'answers to functions request' do
 	  stub = WebMock.stub_request(:get,uri).to_return(
