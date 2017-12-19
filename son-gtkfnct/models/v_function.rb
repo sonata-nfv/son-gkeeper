@@ -25,7 +25,7 @@
 ## acknowledge the contributions of their colleagues of the SONATA 
 ## partner consortium (www.sonata-nfv.eu).
 # encoding: utf-8
-require 'pp'
+require 'curb'
 
 class VFunction
   
@@ -41,37 +41,51 @@ class VFunction
   end
   
   def find(params)
-    headers = { 'Accept'=> 'application/json', 'Content-Type'=>'application/json'}
-    headers[:params] = params unless params.empty?
-    log_message= "GtkFnct::VFunction.find"
-    @logger.debug(log_message) {"entered with params=#{params} and headers=#{headers}"}
-
+    log_message = "VFunction.find"
+    @logger.debug(log_message) {"entered: params=#{params}"}
+    complete_url = params.empty? ? @url : @url + '?' + Curl::postalize(params)
+    @logger.debug(log_message) {"complete_url=#{complete_url}"}
     begin
-      response = RestClient.get(@url, headers)
-      @logger.debug(log_message) {"response=#{response}"}
-      functions = JSON.parse(response.body)
-      @logger.debug(log_message) {"functions= #{functions}"}
-      functions
-    rescue => e
-      @logger.error(log_message) {e.backtrace}
+      res=Curl.get(complete_url) do |req|
+        req.headers['Content-type'] = req.headers['Accept'] = 'application/json'
+      end
+      @logger.debug(log_message) {"header_str=#{res.header_str}"}
+      @logger.debug(log_message) {"response body=#{res.body}"}
+      count = record_count_from_response_headers(res.header_str)
+      JSON.parse(res.body)
+    rescue Curl::Err::ConnectionFailedError => e
+    rescue Curl::Err::CurlError => e
+    rescue Curl::Err::AccessDeniedError => e
+    rescue Curl::Err::TimeoutError => e
       nil
     end
   end
 
   def find_by_uuid(uuid)
-    headers = { 'Accept'=> 'application/json', 'Content-Type'=>'application/json'}
-    headers[:params] = uuid
-    log_message= "GtkFnct::VFunction.find_by_uuid"
-    @logger.debug(log_message) {"entered with uuid=#{uuid}"}
+    log_message = "VFunction.find"
+    @logger.debug(log_message) {"entered: uuid=#{uuid}"}
     begin
-      response = RestClient.get(@url + "/#{uuid}", headers) 
-      @logger.debug(log_message) {"response=#{response}"}
-      function = JSON.parse(response)
-      @logger.debug(log_message) {"function=#{function}"}
-      function      
-    rescue => e
-      @logger.error(log_message) {e.backtrace}
+      res=Curl.get(@url + "/#{uuid}") do |req|
+        req.headers['Content-type'] = req.headers['Accept'] = 'application/json'
+      end
+      @logger.debug(log_message) {"header_str=#{res.header_str}"}
+      @logger.debug(log_message) {"response body=#{res.body}"}
+      count = record_count_from_response_headers(res.header_str)
+      JSON.parse(res.body)
+    rescue Curl::Err::ConnectionFailedError => e
+    rescue Curl::Err::CurlError => e
+    rescue Curl::Err::AccessDeniedError => e
+    rescue Curl::Err::TimeoutError => e
       nil
     end
+  end
+  
+  private 
+  
+  def record_count_from_response_headers(header_str)
+    # From http://stackoverflow.com/questions/14345805/get-response-headers-from-curb
+    http_response, *http_headers = header_str.split(/[\r\n]+/).map(&:strip)
+    http_headers = Hash[http_headers.flat_map{ |s| s.scan(/^(\S+): (.+)/) }]
+    http_headers['Record-Count'].to_i
   end
 end
