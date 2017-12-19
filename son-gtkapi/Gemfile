@@ -32,4 +32,3 @@ end
 group :test, :development do
   gem 'capybara', '2.16.1'
 end
-
