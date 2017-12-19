@@ -36,5 +36,5 @@ end
 
 # rake ci:all
 desc 'Runs all test tasks'
-task 'ci:all' ['ci:setup:rspec', 'specs']
+task 'ci:all' => ['ci:setup:rspec', 'specs']
 
