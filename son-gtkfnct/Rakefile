@@ -1,6 +1,6 @@
 require 'rspec/core/rake_task'
 require 'ci/reporter/rake/rspec'
-require 'sinatra/activerecord/rake'
+#require 'sinatra/activerecord/rake'
 require './gtk_fnct'
 
 task default: ['ci:all']
@@ -16,7 +16,7 @@ namespace :ci do
   task all: ['ci:setup:rspec', 'specs']
 end
 
-desc 'Run the specs whenever a relevant file changes.'
-task :watch do
-  system 'watchr watch.rb'
-end
+#desc 'Run the specs whenever a relevant file changes.'
+#task :watch do
+#  system 'watchr watch.rb'
+#end
