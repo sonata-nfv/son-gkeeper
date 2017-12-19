@@ -35,7 +35,6 @@ RSpec::Core::RakeTask.new :specs do |task|
 end
 
 # rake ci:all
-#namespace :ci do
-  desc 'Runs all test tasks'
-  task "ci:all": ['ci:setup:rspec', 'specs']
-  #end
+desc 'Runs all test tasks'
+task 'ci:all' ['ci:setup:rspec', 'specs']
+

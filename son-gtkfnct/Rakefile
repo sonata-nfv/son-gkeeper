@@ -12,11 +12,5 @@ end
 
 # use like in
 #   rake ci:all
-namespace :ci do
-  task all: ['ci:setup:rspec', 'specs']
-end
-
-#desc 'Run the specs whenever a relevant file changes.'
-#task :watch do
-#  system 'watchr watch.rb'
-#end
+desc 'Runs all test tasks'
+task 'ci:all' ['ci:setup:rspec', 'specs']
