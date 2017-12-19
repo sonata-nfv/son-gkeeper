@@ -35,39 +35,56 @@ RSpec.describe FunctionManagerService, type: :model do
   let(:function_to_be_created_2) {{name:'name', version:'0.2', vendor:'vendor'}}
   let(:created_function_2) {function_to_be_created_2.merge({uuid: function_uuid})}
   let(:all_functions) { [ created_function_1, created_function_2 ]}
-  let(:functions_url) { FunctionManagerService.class_variable_get(:@@url)+'/functions' }
+  let(:functions_url) { FunctionManagerService.class_variable_get(:@@url) }
+  let(:functions_logger) { FunctionManagerService.class_variable_get(:@@logger) }
+  
   describe '#config'
   describe '#new'
   describe '#find' do
+    before do
+      SONATA::CurbAdapter.config(url: functions_url, logger: functions_logger)
+    end
     it 'with default parameters should return two functions' do
-      resp = OpenStruct.new(header_str: "HTTP/1.1 200 OK\nRecord-Count: 2", body: all_functions.to_json)      
-      allow(Curl).to receive(:get).with(functions_url+'?limit=10&offset=0').and_return(resp) 
-      functions = FunctionManagerService.find({limit: 10, offset: 0})
+      #resp = OpenStruct.new(header_str: "HTTP/1.1 200 OK\nRecord-Count: 2", body: all_functions.to_json)     
+      WebMock.stub_request(:get, functions_url+"?limit=10&offset=0").
+         with(headers: {'Accept'=>'application/json', 'Content-Type'=>'application/json'}).
+         to_return(status: 200, body: all_functions.to_json, headers: {})
+      resp = {status: 200, count: 2, items: all_functions, message: "OK"} 
+      allow(SONATA::CurbAdapter).to receive(:find).with(params: {limit: 10, offset: 0}).and_return(resp) 
+      functions = SONATA::CurbAdapter.find(params: {limit: 10, offset: 0})
       expect(functions).to eq({status: 200, count: 2, items: all_functions, message: "OK"})      
     end
     it 'with only default offset parameter (0) should return two functions' do
-      resp = OpenStruct.new(header_str: "HTTP/1.1 200 OK\nRecord-Count: 2", body: all_functions.to_json)      
-      allow(Curl).to receive(:get).with(functions_url+'?offset=0').and_return(resp) 
-      functions = FunctionManagerService.find({offset: 0})
+      #resp = OpenStruct.new(header_str: "HTTP/1.1 200 OK\nRecord-Count: 2", body: all_functions.to_json)      
+      WebMock.stub_request(:get, functions_url+"?offset=0").
+         with(headers: {'Accept'=>'application/json', 'Content-Type'=>'application/json'}).
+         to_return(status: 200, body: all_functions.to_json, headers: {})
+      resp = {status: 200, count: 2, items: all_functions, message: "OK"} 
+      allow(SONATA::CurbAdapter).to receive(:get).with(functions_url+'?offset=0').and_return(resp) 
+      functions = SONATA::CurbAdapter.find(params: {offset: 0})
       expect(functions).to eq({status: 200, count: 2, items: all_functions, message: "OK"})      
     end
     it 'with parameter limit 1 should return one function' do
-      resp = OpenStruct.new(header_str: "HTTP/1.1 200 OK\nRecord-Count: 2", body: created_function_1.to_json)      
-      allow(Curl).to receive(:get).with(functions_url+'?limit=1&offset=0').and_return(resp) 
-      functions = FunctionManagerService.find({limit: 1, offset: 0})
-      expect(functions).to eq({status: 200, count: 2, items: [created_function_1], message: "OK"})      
+      #resp = OpenStruct.new(header_str: "HTTP/1.1 200 OK\nRecord-Count: 2", body: created_function_1.to_json)      
+      WebMock.stub_request(:get, functions_url+"?limit=1&offset=0").
+         with(headers: {'Accept'=>'application/json', 'Content-Type'=>'application/json'}).
+         to_return(status: 200, body: created_function_1.to_json, headers: {})
+      resp = {status: 200, count: 2, items: created_function_1, :message=>"OK"} 
+      allow(SONATA::CurbAdapter).to receive(:get).with(functions_url+'?limit=1&offset=0').and_return(resp) 
+      functions = SONATA::CurbAdapter.find(params: {limit: 1, offset: 0})
+      expect(functions).to eq({status: 200, count: 1, items: [created_function_1], message: "OK"})      
     end
   end
   describe '#find_by_uuid' do
     it 'should find a function with a known UUID' do
       resp = OpenStruct.new(header_str: "HTTP/1.1 200 OK\nRecord-Count: 1", body: created_function_1.to_json)      
-      allow(Curl).to receive(:get).with(functions_url+'/'+function_uuid).and_return(resp) 
+      allow(Curl).to receive(:get).with(functions_url+function_uuid).and_return(resp) 
       function = FunctionManagerService.find_by_uuid(function_uuid)
       expect(function).to eq({status: 200, count: 1, items: created_function_1, message: "OK"})      
     end
     it 'should not find a function with an unknown UUID' do
       resp = OpenStruct.new(header_str: 'HTTP/1.1 404 Not Found', body: '{}')      
-      allow(Curl).to receive(:get).with(functions_url+'/'+unknown_function_uuid).and_return(resp) 
+      allow(Curl).to receive(:get).with(functions_url+unknown_function_uuid).and_return(resp) 
       function = FunctionManagerService.find_by_uuid(unknown_function_uuid)
       expect(function).to eq({status: 404, count: 0, items: [], message: "Not Found"})
     end

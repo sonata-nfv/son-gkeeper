@@ -30,7 +30,7 @@ require 'SONATA'
 
 class FunctionNotFoundError < StandardError; end
 
-class FunctionManagerService < SONATA::CurbAdapter  
+class FunctionManagerService < ManagerService 
   attr_accessor :uuid, :instances
   
   def self.config(url:, logger:)

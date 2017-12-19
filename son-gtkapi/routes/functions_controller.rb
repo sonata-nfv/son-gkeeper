@@ -53,7 +53,7 @@ class GtkApi < Sinatra::Base
       validate_user_authorization(token: token, action: 'get metadata for functions', uuid: '', path: '/functions', method:'GET', kpi_method: method(:count_functions_metadata_queries), began_at: began_at, log_message: log_message)
       logger.debug(log_message) {"User authorized"}
 
-      functions = FunctionManagerService.find(params)
+      functions = SONATA::CurbAdapter.find(params)
       validate_collection_existence(collection: functions, name: 'functions', kpi_method: method(:count_functions_metadata_queries), began_at: began_at, log_message: log_message)
       logger.debug(log_message) {"Found functions #{functions}"}
       keys_to_delete = {main_key: :vnfd, sub_keys: [:connection_points, :monitoring_rules, :virtual_deployment_units, :virtual_links]}

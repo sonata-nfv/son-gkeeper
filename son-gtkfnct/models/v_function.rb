@@ -52,12 +52,15 @@ class VFunction
       @logger.debug(log_message) {"header_str=#{res.header_str}"}
       @logger.debug(log_message) {"response body=#{res.body}"}
       count = record_count_from_response_headers(res.header_str)
-      JSON.parse(res.body)
+      { status: 200, count: count, data: JSON.parse(res.body), message: "Ok"}
     rescue Curl::Err::ConnectionFailedError => e
+      {status: 500, count: nil, data: nil, message: "Couldn't connect to server #{complete_url}"}
     rescue Curl::Err::CurlError => e
+      {status: 500, count: nil, data: nil, message: "Generic error while connecting to server #{complete_url}"}
     rescue Curl::Err::AccessDeniedError => e
+      {status: 500, count: nil, data: nil, message: "Access denied while connecting to server #{complete_url}"}
     rescue Curl::Err::TimeoutError => e
-      nil
+      {status: 500, count: nil, data: nil, message: "Time out while connecting to server #{complete_url}"}
     end
   end
 
@@ -70,13 +73,15 @@ class VFunction
       end
       @logger.debug(log_message) {"header_str=#{res.header_str}"}
       @logger.debug(log_message) {"response body=#{res.body}"}
-      count = record_count_from_response_headers(res.header_str)
-      JSON.parse(res.body)
+      { status: 200, count: 1, data: JSON.parse(res.body), message: "Ok"}
     rescue Curl::Err::ConnectionFailedError => e
+      {status: 500, count: nil, data: nil, message: 'Couldn\'t connect to server '+@url+'/'+uuid}
     rescue Curl::Err::CurlError => e
+      {status: 500, count: nil, data: nil, message: 'Generic error while connecting to server '+@url+'/'+uuid}
     rescue Curl::Err::AccessDeniedError => e
+      {status: 500, count: nil, data: nil, message: 'Access denied while connecting to server '+@url+'/'+uuid}
     rescue Curl::Err::TimeoutError => e
-      nil
+      {status: 500, count: nil, data: nil, message: 'Time out while connecting to server '+@url+'/'+uuid}
     end
   end
   
