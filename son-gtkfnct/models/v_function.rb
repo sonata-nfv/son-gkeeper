@@ -50,9 +50,10 @@ class VFunction
         req.headers['Content-type'] = req.headers['Accept'] = 'application/json'
       end
       @logger.debug(log_message) {"header_str=#{res.header_str}"}
-      @logger.debug(log_message) {"response body=#{res.body}"}
+      data = JSON.parse(res.body)
+      @logger.debug(log_message) {"response body=#{data}"}
       count = record_count_from_response_headers(res.header_str)
-      { status: 200, count: count, data: JSON.parse(res.body), message: "Ok"}
+      { status: 200, count: count, data: data, message: "Ok"}
     rescue Curl::Err::ConnectionFailedError => e
       {status: 500, count: nil, data: nil, message: "Couldn't connect to server #{complete_url}"}
     rescue Curl::Err::CurlError => e

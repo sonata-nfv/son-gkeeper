@@ -73,14 +73,14 @@ class FunctionManagerService < ManagerService
   end
 
   # find is now inherited
-  #def self.find(params)
+  def self.find(params)
     #find(url: @@url + '/functions', params: params, log_message: LOG_MESSAGE + "##{__method__}(#{params})")
-  #  log_message = "GtkApi::FunctionManagerService##{__method__}"
-  #  @@logger.debug(log_message) {"entered with params #{params}"}
-  #  response = getCurb(url: @@url + '/functions', params: params)
-  #  @@logger.debug(log_message) {"response=#{response}"}
-  #  vectorize_hash response
-  #end
+    log_message = "GtkApi::FunctionManagerService##{__method__}"
+    @@logger.debug(log_message) {"entered with params #{params}"}
+    response = getCurb(url: @@url, params: params)
+    @@logger.debug(log_message) {"response=#{response}"}
+    vectorize_hash response
+  end
   
   def load_instances(uuid)
     log_message = "GtkApi::FunctionManagerService##{__method__}"

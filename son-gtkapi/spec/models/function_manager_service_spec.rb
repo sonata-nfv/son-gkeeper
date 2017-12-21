@@ -51,7 +51,8 @@ RSpec.describe FunctionManagerService, type: :model do
          to_return(status: 200, body: all_functions.to_json, headers: {})
       resp = {status: 200, count: 2, items: all_functions, message: "OK"} 
       allow(SONATA::CurbAdapter).to receive(:find).with(params: {limit: 10, offset: 0}).and_return(resp) 
-      functions = SONATA::CurbAdapter.find(params: {limit: 10, offset: 0})
+      #functions = SONATA::CurbAdapter.find(params: {limit: 10, offset: 0})
+      functions = FunctionManagerService.find({limit: 10, offset: 0})
       expect(functions).to eq({status: 200, count: 2, items: all_functions, message: "OK"})      
     end
     it 'with only default offset parameter (0) should return two functions' do
@@ -61,7 +62,8 @@ RSpec.describe FunctionManagerService, type: :model do
          to_return(status: 200, body: all_functions.to_json, headers: {})
       resp = {status: 200, count: 2, items: all_functions, message: "OK"} 
       allow(SONATA::CurbAdapter).to receive(:get).with(functions_url+'?offset=0').and_return(resp) 
-      functions = SONATA::CurbAdapter.find(params: {offset: 0})
+      #functions = SONATA::CurbAdapter.find(params: {offset: 0})
+      functions = FunctionManagerService.find({offset: 0})
       expect(functions).to eq({status: 200, count: 2, items: all_functions, message: "OK"})      
     end
     it 'with parameter limit 1 should return one function' do
@@ -71,7 +73,8 @@ RSpec.describe FunctionManagerService, type: :model do
          to_return(status: 200, body: created_function_1.to_json, headers: {})
       resp = {status: 200, count: 2, items: created_function_1, :message=>"OK"} 
       allow(SONATA::CurbAdapter).to receive(:get).with(functions_url+'?limit=1&offset=0').and_return(resp) 
-      functions = SONATA::CurbAdapter.find(params: {limit: 1, offset: 0})
+      #functions = SONATA::CurbAdapter.find(params: {limit: 1, offset: 0})
+      functions = FunctionManagerService.find({limit: 1, offset: 0})
       expect(functions).to eq({status: 200, count: 1, items: [created_function_1], message: "OK"})      
     end
   end
