@@ -31,7 +31,10 @@ require 'pp'
 require 'addressable/uri'
 
 class GtkSrv < Sinatra::Base
-
+  before do
+    content_type :json
+  end
+  
   get '/services/?' do
     log_message="GtkSrv::GET /services/?"
     logger.debug(log_message) {"entered with params #{params}"}
@@ -148,6 +151,7 @@ class GtkSrv < Sinatra::Base
   end
 
   get '/admin/logs' do
+    content_type :text
     logger.debug "GtkSrv: entered GET /admin/logs"
     File.open('log/'+ENV['RACK_ENV']+'.log', 'r').read
   end  

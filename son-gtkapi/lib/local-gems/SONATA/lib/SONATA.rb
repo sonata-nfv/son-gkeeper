@@ -93,6 +93,8 @@ module SONATA
         {status: 500, count: nil, items: nil, message: "Access denied while connecting to server #{complete_url(params)}"}
       rescue Curl::Err::TimeoutError => e
         {status: 500, count: nil, items: nil, message: "Time out while connecting to server #{complete_url(params)}"}
+      rescue Curl::Err::HostResolutionError => e
+        {status: 500, count: nil, items: nil, message: "Couldn't resolve host name #{complete_url(params)}"}
       end
     end
   
