@@ -26,7 +26,6 @@
 ## partner consortium (www.sonata-nfv.eu).
 # encoding: utf-8
 require 'sinatra/namespace'
-require 'sonata'
 class GtkApi < Sinatra::Base
 
   register Sinatra::Namespace
