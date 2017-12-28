@@ -66,7 +66,6 @@ class GtkApi < Sinatra::Base
           json_error(400, 'VIM wim_id is missing', log_message) unless valid_param?(params: params, sym: :wim_id)
           json_error(400, 'VIM country is missing', log_message) unless valid_param?(params: params, sym: :country)
           json_error(400, 'VIM city is missing', log_message) unless valid_param?(params: params, sym: :city)
-          json_error(400, 'VIM domain is missing', log_message) unless valid_param?(params: params, sym: :domain)
           json_error(400, 'VIM name is missing', log_message) unless valid_param?(params: params, sym: :name)
 
           new_request = VimManagerService.create_vim_rs(params)
