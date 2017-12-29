@@ -56,8 +56,13 @@ class ServiceManagerService < ManagerService
   def self.find_requests(params)
     message = LOG_MESSAGE+"##{__method__}"
     @@logger.debug(message) {"entered with #{params}"}
-    requests=find(url: @@url + '/requests', params: params, log_message: LOG_MESSAGE + "##{__method__}(#{params})")
-    vectorize_hash requests
+    requests=getCurb(url: @@url + '/requests', params: params)
+    case requests[:status]
+    when 200
+      return vectorize_hash requests
+    else
+      requests
+    end
   end
   
   def self.find_requests_by_uuid(uuid)
