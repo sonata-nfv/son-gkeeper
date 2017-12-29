@@ -56,8 +56,8 @@ class GtkApi < Sinatra::Base
       # request.env['QUERY_STRING']
       params.delete('captures') if params.keys.include?('captures')
       #functions = SONATA::CurbAdapter.find(url: ENV[GtkApi.services['functions']['env_var_url']], params: params, logger: GtkApi.logger)
-      function = FunctionManagerService.find(params)
-      validate_collection_existence(collection: function, name: 'functions', kpi_method: method(:count_functions_metadata_queries), began_at: began_at, log_message: log_message)
+      functions = FunctionManagerService.find(params)
+      validate_collection_existence(collection: functions, name: 'functions', kpi_method: method(:count_functions_metadata_queries), began_at: began_at, log_message: log_message)
       logger.debug(log_message) {"Found functions #{functions}"}
       keys_to_delete = {main_key: :vnfd, sub_keys: [:connection_points, :monitoring_rules, :virtual_deployment_units, :virtual_links]}
       filtered_functions = enhance_collection( collection: functions[:items], user: user_name, keys_to_delete: keys_to_delete)
