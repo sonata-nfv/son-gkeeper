@@ -25,6 +25,8 @@
 ## acknowledge the contributions of their colleagues of the SONATA 
 ## partner consortium (www.sonata-nfv.eu).
 # encoding: utf-8
+require 'uri'
+
 class ManagerService
   
   JSON_HEADERS = { 'Accept'=> 'application/json', 'Content-Type'=>'application/json'}
@@ -42,7 +44,7 @@ class ManagerService
   def self.getCurb(url:, params: {}, headers: {})
     log_message=LOG_MESSAGE+"##{__method__}"
     GtkApi.logger.debug(log_message) {"entered with url=#{url}, params=#{params}, headers=#{headers}"}
-    complete_url = params.empty? ? url : url + '?' + Curl::postalize(params)
+    complete_url = params.empty? ? url : url + '?' + URI.encode_www_form(params)
     GtkApi.logger.debug(log_message) {"complete_url=#{complete_url}"} 
     begin
       res=Curl.get(complete_url) do |req|

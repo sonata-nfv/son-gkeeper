@@ -26,6 +26,7 @@
 ## partner consortium (www.sonata-nfv.eu).
 # encoding: utf-8
 require 'curb'
+require 'uri'
 
 class VFunction
   
@@ -43,7 +44,7 @@ class VFunction
   def find(params)
     log_message = "VFunction.find"
     @logger.debug(log_message) {"entered: params=#{params}"}
-    complete_url = params.empty? ? @url : @url + '?' + Curl::postalize(params)
+    complete_url = params.empty? ? @url : @url + '?' + URI.encode_www_form(params)
     @logger.debug(log_message) {"complete_url=#{complete_url}"}
     begin
       res=Curl.get(complete_url) do |req|

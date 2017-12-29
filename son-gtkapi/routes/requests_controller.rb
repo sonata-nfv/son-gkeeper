@@ -97,6 +97,7 @@ class GtkApi < Sinatra::Base
       logger.debug(MESSAGE) {"User authorized"}
       remaining = check_rate_limit(limit: 'other_operations', client: user_name) if check_rate_limit_usage()
       
+      params.delete('captures') if params.keys.include?('captures')
       requests = ServiceManagerService.find_requests(params)
       logger.debug(MESSAGE) {"requests = #{requests}"}
       validate_collection_existence(collection: requests, name: 'requests', kpi_method: method(:count_services_instantiation_requests_queries), began_at: began_at, log_message: MESSAGE)
