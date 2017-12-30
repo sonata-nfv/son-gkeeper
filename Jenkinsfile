@@ -4,11 +4,13 @@ node {
 			steps{
 				echo 'Building son-gtkapi '
 				docker.withDockerRegistry([credentialsId: 'dockerregistry', url: 'registry.sonata-nfv.eu:5000']) {
-				app = docker.build("registry.sonata-nfv.eu:5000/son-gtkapi", "-f son-gtkapi/Dockerfile")
+					app = docker.build("registry.sonata-nfv.eu:5000/son-gtkapi", "-f son-gtkapi/Dockerfile")
+				}
 			}
 		stage('Test'){
 			steps{
 				echo 'Testing son-gtkapi'
+				docker.withDockerRegistry([credentialsId: 'dockerregistry', url: 'registry.sonata-nfv.eu:5000']) {
 				docker.image('redis') { redis ->
 					docker.image('redis').inside("--link ${redis.id}:son-redis"){
 						sh ' while ! nc -z localhost 6379; do sleep 1; done'
