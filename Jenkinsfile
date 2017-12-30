@@ -1,14 +1,13 @@
-node {
-		stage('Build'){
-			steps{
+stage "Build"
+			node{
 				echo 'Building son-gtkapi '
 				docker.withDockerRegistry([credentialsId: 'dockerregistry', url: 'registry.sonata-nfv.eu:5000']) {
 					app = docker.build("registry.sonata-nfv.eu:5000/son-gtkapi", "-f son-gtkapi/Dockerfile")
 				}
 			}
-		}
-		stage('Test'){
-			steps{
+		
+stage "Tests"		
+			node{
 				echo 'Testing son-gtkapi'
 				docker.withDockerRegistry([credentialsId: 'dockerregistry', url: 'registry.sonata-nfv.eu:5000']) {
 					docker.image('redis') { redis ->
@@ -26,5 +25,3 @@ node {
 				sh "docker logs ${api.id}"
 				sh "docker logs ${redis.id}"	
 			}	
-        }
-	}
