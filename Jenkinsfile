@@ -1,6 +1,4 @@
-pipeline {
-	agent { node { label 'jenkins-slave-1' } }
-	stages{
+node {
 		stage('Build'){
 			steps{
 				echo 'Building son-gtkapi '
@@ -30,4 +28,3 @@ pipeline {
 			}	
         }
 	}
-}
