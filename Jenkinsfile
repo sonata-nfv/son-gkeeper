@@ -12,9 +12,10 @@ node {
 			steps{
 				echo 'Testing son-gtkapi'
 				docker.withDockerRegistry([credentialsId: 'dockerregistry', url: 'registry.sonata-nfv.eu:5000']) {
-				docker.image('redis') { redis ->
-					docker.image('redis').inside("--link ${redis.id}:son-redis"){
-						sh ' while ! nc -z localhost 6379; do sleep 1; done'
+					docker.image('redis') { redis ->
+						docker.image('redis').inside("--link ${redis.id}:son-redis"){
+							sh ' while ! nc -z localhost 6379; do sleep 1; done'
+						}
 					}
 				}
 				docker.image('registry.sonata-nfv.eu:5000/son-gtkrlt').withRun('-e RACK_ENV=integration --link ${redis.id}:son-redis') { rlt -> 
@@ -22,10 +23,10 @@ node {
 						sh 'bundle exec rake ci:all'
 					}
 				}
-			sh "docker logs ${rlt.id}"
-			sh "docker logs ${api.id}"
-			sh "docker logs ${redis.id}"
+				sh "docker logs ${rlt.id}"
+				sh "docker logs ${api.id}"
+				sh "docker logs ${redis.id}"	
 			}	
-		}
         }
+	}
 }
