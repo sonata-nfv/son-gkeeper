@@ -7,6 +7,7 @@ node {
 					app = docker.build("registry.sonata-nfv.eu:5000/son-gtkapi", "-f son-gtkapi/Dockerfile")
 				}
 			}
+		}
 		stage('Test'){
 			steps{
 				echo 'Testing son-gtkapi'
