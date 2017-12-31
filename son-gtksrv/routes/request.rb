@@ -53,7 +53,7 @@ class GtkSrv < Sinatra::Base
     keyed_params = keyed_hash(params)
     
     # get rid of :offset and :limit
-    [:offset, :limit].each { |k| keyed_params.delete(k)}
+    [:offset, :limit, :captures].each { |k| keyed_params.delete(k)}
     valid_fields = [:service_uuid, :status, :created_at, :updated_at]
     logger.info(MODULE) {" keyed_params.keys - valid_fields = #{keyed_params.keys - valid_fields}"}
     json_error 400, "GtkSrv: wrong parameters #{params}" unless keyed_params.keys - valid_fields == []

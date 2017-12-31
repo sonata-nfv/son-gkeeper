@@ -43,6 +43,8 @@ class GtkSrv < Sinatra::Base
     field_list = params.delete('fields')
 
     logger.debug(log_message) { 'query_string='+query_string}
+    params.delete('captures') if params.keys.include?('captures')
+    
     logger.debug(log_message) { "params=#{params}"}
     
     begin
