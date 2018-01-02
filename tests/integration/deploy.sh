@@ -136,8 +136,8 @@ sonatanfv/son-catalogue-repos:dev
 docker run -i \
 --rm=true \
 --net=son-sp  \
-bash -c 'echo "Testing if son-catalogue-repos is UP" & \
-timeout -t 60 bash -c "while ! nc -z son-catalogue-repos 4011; \
+bash -c 'echo "Testing if son-catalogue-repository is UP" & \
+timeout -t 60 bash -c "while ! nc -z son-catalogue-repository 4011; \
 do sleep 5 && \
 echo -n .; done;"'
 
