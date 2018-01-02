@@ -187,7 +187,7 @@ pipeline {
     }
     stage('Integration - Deployment') {
       environment {
-        ENV_INT_SERVER = 'sp.int.sonata-nfv,eu'
+        ENV_INT_SERVER = 'sp.int.sonata-nfv.eu'
       }
       steps {
         dir(path: 'tests/integration') {
