@@ -13,3 +13,5 @@ son-gtksrv/db/postgres
 son-gtkpkg/vendor
 **/.idea/*
 **/.project
+**/tests/checkstyle/reports
+**/tests/unit/reports

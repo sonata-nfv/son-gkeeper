@@ -217,7 +217,7 @@ class Package < ManagerService
       FileUtils.mkdir(tmp_dir) unless File.exists?(tmp_dir)
       package_file_name = uuid+'-'+'filename.son' #package_file_meta_data[:uuid]+'-'+package_file_meta_data[:grid_fs_name]
       package_file_path = File.join(tmp_dir, package_file_name)
-      File.open(package_file_path, 'w') { |file| file.write(data) }
+      File.open(package_file_path, 'wb') { |file| file.write(data) }
       # pass back the name
       package_file_path
     else
