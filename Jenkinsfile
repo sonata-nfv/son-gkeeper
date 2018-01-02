@@ -288,7 +288,6 @@ pipeline {
         recipientProviders: [[$class: 'DevelopersRecipientProvider']]
         )
       }
-    }
     failure {
       emailext (
           subject: "FAILED: Job '${env.JOB_NAME} [${env.BUILD_NUMBER}]'",
