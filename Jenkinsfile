@@ -5,128 +5,176 @@ pipeline {
       parallel {
         stage('son-gtkapi') {
           steps {
-            sh 'cd tests/integration/build & ./gtkapi.sh'
+            dir ('tests/integration/build'){
+              sh './gtkapi.sh'
+            }
           }
         }
         stage('son-gtkfnct') {
           steps {
-            sh 'cd tests/integration/build & ./gtkfnct.sh'
+            dir ('tests/integration/build'){
+              sh './gtkfnct.sh'
+            }
           }
         }
         stage('son-keycloak') {
           steps {
-            sh 'cd tests/integration/build & ./gtkkeycloak.sh'
+            dir ('tests/integration/build'){
+              sh './gtkkeycloak.sh'
+            }
           }
         }
         stage('son-gtkkpi') {
           steps {
-            sh 'cd tests/integration/build & ./gtkkpi.sh'
+            dir ('tests/integration/build'){            
+              sh './gtkkpi.sh'
+            }
           }
         }
         stage('son-gtklic') {
           steps {
-            sh 'cd tests/integration/build & ./gtklic.sh'
+            dir ('tests/integration/build'){
+              sh './gtklic.sh'
+            }
           }
         }
         stage('son-gtkpkg') {
           steps {
-            sh 'cd tests/integration/build & ./gtkpkg.sh'
+            dir ('tests/integration/build'){
+              sh './gtkpkg.sh'
+            }
           }
         }
         stage('son-gtkrec') {
           steps {
-            sh 'cd tests/integration/build & ./gtkrec.sh'
+            dir ('tests/integration/build'){
+              sh './gtkrec.sh'
+            }
           }
         }
         stage('son-gtkrlt') {
           steps {
-            sh 'cd tests/integration/build & ./gtkrlt.sh'
+            dir ('tests/integration/build'){
+              sh './gtkrlt.sh'
+            }
           }
         }
         stage(' son-gtksrv') {
           steps {
-            sh 'cd tests/integration/build & ./gtksrv.sh'
+            dir ('tests/integration/build'){
+              sh './gtksrv.sh'
+            }
           }
         }
         stage('son-gtkusr') {
           steps {
-            sh 'cd tests/integration/build & ./gtkusr.sh'
+            dir ('tests/integration/build'){            
+              sh './gtkusr.sh'
+            }
           }
         }
         stage('son-gtkvim') {
           steps {
-            sh 'cd tests/integration/build & ./gtkvim.sh'
+            dir ('tests/integration/build'){            
+              sh './gtkvim.sh'
+            }
           }
         }
         stage('son-sec-gw') {
           steps {
-            sh 'cd tests/integration/build & ./son-sec-gw.sh'
+            dir ('tests/integration/build'){            
+              sh './son-sec-gw.sh'
+            }
           }
         }
       }
     }
     stage('Checkstyle') {
       steps {
-        sh 'cd tests/checkstyle & ./gtkall.sh'
+        dir ('tests/checkstyle'){   
+          sh './gtkall.sh'
+        }
       }
     }
     stage('Unit Tests Dependencies') {
       steps {
-        sh 'cd tests/unit & ./test-dependencies.sh'
+        dir ('tests/checkstyle'){
+          sh './test-dependencies.sh'
+        }
       }
     }
     stage('Unit Test Run') {
       parallel {
         stage('Unit Test Run') {
           steps {
-            sh 'cd tests/unit & ./gtkapi.sh'
+            dir ('tests/unit'){
+              sh './gtkapi.sh'
+            }
           }
         }
         stage('son-gtkfnct') {
           steps {
-            sh 'cd tests/unit & ./gtkfnct.sh'
+            dir ('tests/unit'){
+              sh './gtkfnct.sh'
+            }
           }
         }
         stage('son-gtkkpi') {
           steps {
-            sh 'cd tests/unit & ./gtkkpi.sh'
+            dir ('tests/unit'){
+              sh './gtkkpi.sh'
+            }
           }
         }
         stage('son-gtklic') {
           steps {
-            sh 'cd tests/unit & ./gtklic.sh'
+            dir ('tests/unit'){
+              sh './gtklic.sh'
+            }
           }
         }
         stage('son-gtkpkg') {
           steps {
-            sh 'cd tests/unit & ./gtkpkg.sh'
+            dir ('tests/unit'){
+              sh './gtkpkg.sh'
+            }
           }
         }
         stage('son-gtkrlt') {
           steps {
-            sh 'cd tests/unit & ./gtkrlt'
+            dir ('tests/unit'){
+              sh './gtkrlt'
+            }
           }
         }
         stage('son-gtksrv') {
           steps {
-            sh 'cd tests/unit & ./gtksrv.sh'
+            dir ('tests/unit'){
+              sh './gtksrv.sh'
+            }
           }
         }
         stage('son-gtkvim') {
           steps {
-            sh 'cd tests/unit & ./gtkvim.sh'
+            dir ('tests/unit'){
+              sh './gtkvim.sh'
+            }
           }
         }
       }
     }
     stage('Integration - Deployment') {
       steps {
-        sh 'cd tests/integration & ./deploy.sh'
+        dir ('tests/integration'){
+          sh './deploy.sh'
+        }
       }
     }
     stage('Integration - Test') {
       steps {
-        sh 'cd tests/integration & ./funtionaltests.sh localhost'
+        dir ('tests/integration'){
+          sh './funtionaltests.sh localhost'
+        }
       }
     }
     stage('Containers Publication') {
