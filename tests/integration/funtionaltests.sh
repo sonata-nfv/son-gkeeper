@@ -9,15 +9,6 @@ else
     echo "localhost"
 fi
 
-if [ -z "$server" ]
-then
-    echo "Please provide a server in the options"
-    echo "example: ./funtionaltest.sh localhost"
-    exit 1
-else
-    echo Starting the tests...
-fi
-
 ### Check if User Manager is ready
 while [ true ]
 do

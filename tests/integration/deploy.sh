@@ -1,15 +1,16 @@
 #!/bin/bash
 ### Docker network create son-sp if doesn't exists
+### Setting integration server
+if ! [ -z $ENV_INT_SERVER ] 
+then
+    export DOCKER_HOST=tcp://$ENV_INT_SERVER:2375
+fi
+
 echo Checking networking
 if [[ "$(docker network ls -f name=son-sp -q)" == "" ]]; \
 then docker network create \
 --driver=bridge \
 "son-sp" ; \
-fi
-
-if ! [ -z $ENV_INT_SERVER ] 
-then
-    export DOCKER_HOST=tcp://$ENV_INT_SERVER:2375
 fi
 
 ### Pull last containers versions
