@@ -1,8 +1,7 @@
 #!/bin/bash
 docker run -i \
---name son-gtklic \
 --net=son-sp \
---network-alias=son-gtkrlt \
+--network-alias=son-gtklic \
 -e DATABASE_HOST=son-postgres \
 -e DATABASE_PORT=5432 \
 -e POSTGRES_PASSWORD=sonata \
