@@ -125,7 +125,6 @@ echo -n .; done;"'
 echo son-catalogue-repository
 if ! [[ "$(docker inspect -f {{.State.Running}} son-catalogue-repos 2> /dev/null)" == "" ]]; then docker rm -fv son-catalogue-repos ; fi
 docker run -d \
--p 4002:4011 \
 --name son-catalogue-repos \
 --net=son-sp \
 --network-alias=son-catalogue-repository \
