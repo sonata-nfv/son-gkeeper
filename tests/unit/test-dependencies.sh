@@ -17,7 +17,6 @@ docker pull sonatanfv/son-monitor-manager:dev
 echo postgres
 if ! [[ "$(docker inspect -f {{.State.Running}} son-postgres 2> /dev/null)" == "" ]]; then docker rm -fv son-postgres ; fi
 docker run -d \
--p 5432:5432 \
 --name son-postgres \
 --net=son-sp \
 --network-alias=son-postgres \
@@ -30,7 +29,6 @@ ntboes/postgres-uuid
 echo redis
 if ! [[ "$(docker inspect -f {{.State.Running}} son-redis 2> /dev/null)" == "" ]]; then docker rm -fv son-redis ; fi
 docker run -d \
--p 6379:6379 \
 --name son-redis \
 --net=son-sp \
 --network-alias=redis \
@@ -41,7 +39,6 @@ redis
 echo mongo
 if ! [[ "$(docker inspect -f {{.State.Running}} son-mongo 2> /dev/null)" == "" ]]; then docker rm -fv son-mongo ; fi
 docker run -d \
--p 27017:27017 \
 --name son-mongo \
 --net=son-sp \
 --network-alias=son-mongo \
@@ -52,7 +49,6 @@ mongo
 echo postgres
 if ! [[ "$(docker inspect -f {{.State.Running}} postgsql 2> /dev/null)" == "" ]]; then docker rm -fv postgsql ; fi
 docker run -d \
--p 5433:5432 \
 --name postgsql \
 --net=son-sp \
 --network-alias=postgsql \
@@ -68,14 +64,12 @@ docker run -d \
 --name influx \
 --net=son-sp \
 --network-alias=influx \
--p 8086:8086 \
 sonatanfv/son-monitor-influxdb:dev
 
 ### RABBITMQ CONTAINER
 echo rabbitmq
 if ! [[ "$(docker inspect -f {{.State.Running}} son-broker 2> /dev/null)" == "" ]]; then docker rm -fv son-broker ; fi
 docker run -d \
--p 5673:5672 \
 --name son-broker \
 --net=son-sp \
 --network-alias=son-broker \
@@ -87,7 +81,7 @@ docker run -i \
 --rm=true \
 --net=son-sp  \
 bash -c 'echo "Testing if son-broker is UP" & \
-timeout -t 60 bash -c "while ! nc -z son-broker 5672; \
+timeout -t 600 bash -c "while ! nc -z son-broker 5672; \
 do sleep 5 && \
 echo -n .; done;"'
 
@@ -96,7 +90,7 @@ docker run -i \
 --rm=true \
 --net=son-sp  \
 bash -c 'echo "Testing if son-postgres is UP" & \
-timeout -t 60 bash -c "while ! nc -z son-postgres 5432; \
+timeout -t 600 bash -c "while ! nc -z son-postgres 5432; \
 do sleep 5 && \
 echo -n .; done;"'
 
@@ -105,7 +99,7 @@ docker run -i \
 --rm=true \
 --net=son-sp  \
 bash -c 'echo "Testing if son-redis is UP" & \
-timeout -t 60 bash -c "while ! nc -z son-redis 6379; \
+timeout -t 600 bash -c "while ! nc -z son-redis 6379; \
 do sleep 5 && \
 echo -n .; done;"'
 
@@ -114,7 +108,7 @@ docker run -i \
 --rm=true \
 --net=son-sp  \
 bash -c 'echo "Testing if son-mongo is UP" & \
-timeout -t 60 bash -c "while ! nc -z son-mongo 27017; \
+timeout -t 600 bash -c "while ! nc -z son-mongo 27017; \
 do sleep 5 && \
 echo -n .; done;"'
 
@@ -122,7 +116,6 @@ echo -n .; done;"'
 echo son-catalogue-repository
 if ! [[ "$(docker inspect -f {{.State.Running}} son-catalogue-repos 2> /dev/null)" == "" ]]; then docker rm -fv son-catalogue-repos ; fi
 docker run -d \
--p 4002:4011 \
 --name son-catalogue-repos \
 --net=son-sp \
 --network-alias=son-catalogue-repository \
@@ -135,7 +128,7 @@ docker run -i \
 --rm=true \
 --net=son-sp  \
 bash -c 'echo "Testing if son-catalogue-repos is UP" & \
-timeout -t 60 bash -c "while ! nc -z son-catalogue-repos 4011; \
+timeout -t 600 bash -c "while ! nc -z son-catalogue-repos 4011; \
 do sleep 5 && \
 echo -n .; done;"'
 
@@ -146,7 +139,6 @@ docker run -d \
 --name pushgateway \
 --net=son-sp \
 --network-alias=pushgateway \
--p 9091:9091 \
 sonatanfv/son-monitor-pushgateway:dev
 
 # son-monitor-prometheus
@@ -156,9 +148,6 @@ docker run -d \
 --name prometheus \
 --net=son-sp \
 --network-alias=prometheus \
--p 9090:9090 \
--p 9089:9089 \
--p 8002:8001 \
 -e RABBIT_URL=son-broker:5672  \
 sonatanfv/son-monitor-prometheus:dev
 
@@ -169,6 +158,4 @@ docker run -d \
 --name son-monitoring-manager \
 --net=son-sp \
 --network-alias=son-monitoring-manager \
--p 8888:8888 \
--p 8000:8000 \
 sonatanfv/son-monitor-manager:dev
