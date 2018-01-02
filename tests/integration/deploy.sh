@@ -307,7 +307,6 @@ registry.sonata-nfv.eu:5000/son-gtkvim
 echo populate database son-gtklic
 docker run -i \
 --rm=true \
---name son-gtklic \
 --net=son-sp \
 --network-alias=son-gtklic \
 -e DATABASE_HOST=son-postgres \
