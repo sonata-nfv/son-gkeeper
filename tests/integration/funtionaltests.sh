@@ -1,9 +1,12 @@
 ### Functional tests
 ### Variables
-if [ -z $ENV_INT_SERVER ] then
+if ! [ -z "$ENV_INT_SERVER" ] 
+then
     server=$ENV_INT_SERVER
+    echo "setting $ENV_INT_SERVER"
 else
     server="localhost"
+    echo "localhost"
 fi
 
 if [ -z "$server" ]

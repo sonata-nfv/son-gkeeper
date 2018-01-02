@@ -7,7 +7,8 @@ then docker network create \
 "son-sp" ; \
 fi
 
-if [ -z $ENV_INT_SERVER ] then
+if ! [ -z $ENV_INT_SERVER ] 
+then
     export DOCKER_HOST=tcp://$ENV_INT_SERVER:2375
 fi
 
