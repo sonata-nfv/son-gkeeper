@@ -190,6 +190,7 @@ sonatanfv/son-validate:dev
 ### Gatekeeper Components
 ### son-gtkpkg
 echo keycloak
+if ! [[ "$(docker inspect -f {{.State.Running}} son-keycloak 2> /dev/null)" == "" ]]; then docker rm -fv son-keycloak ; fi
 docker run -d \
 --name son-keycloak \
 -p 5601:5601 \

@@ -67,4 +67,4 @@ To build a specific container, it can be done from build folder with the command
 
 Once all containers are built, it can be deployed using the deployment script. This script start all dependencies needed to run the son-gatekeeper like databases, catalogues and monitoring for kpis.
 
-To run the functional tests, is needed to have the Gatekeeper running. You can perform the integration tests running the script from integration folder. `bash functionaltest.sh localhost`.
+To run the functional tests, is needed to have the Gatekeeper running. You can perform the integration tests running the script from integration folder. `bash functionaltest.sh`.
