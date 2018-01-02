@@ -1,6 +1,7 @@
 # Sonata gatekeeper testing scripts
 
 This is the structure of the folder:
+```
  root
  └── tests
      ├── checkstyle
@@ -10,18 +11,21 @@ This is the structure of the folder:
      └── unit
          └── spec
              └── reports
+```
 
-* '''Checkstyle''' folder contains the scripts to verify the good style code with rubocop
-* '''Integration''' folder contains the scripts to build the containers and perform gatekeeper the integration tests with simple cURL
-* '''Unit''' folder containes the script to run the unit tests
+* ***Checkstyle*** folder contains the scripts to verify the good style code with rubocop
+* ***Integration*** folder contains the scripts to build the containers and perform gatekeeper the integration tests with simple cURL
+* ***Unit*** folder containes the script to run the unit tests
 
 ## Checkstyle
 
 This is the structure of the checkstyle folder:
+``` 
  checkstyle
  ├── gtkall.sh
  ├── <container_name>.sh
  └── reports
+```
 
 Inside checkstyle folder, exists a main script that triggers all checkstyle tests. It can be executed from checkstyle folder running the command: `bash gtkall.sh`.
 
@@ -33,31 +37,34 @@ Once the test are finished, the reports will be available in reports folder.
 
 This is the structure of the unit folder:
 unit
+```
 ├── <container_name>.sh
 ├── test-dependencies.sh
 ├── unittest.sh
 ├── spec
 │   └── reports
-
+```
 To run the unit test, is required to deploy external containers. The unit folder contains a set of scripts to perform the deployment of external containers and run the unit tests.
 
 Inside the unit folder, exits a script to deploy the test dependencies. It can be executed from unit folder with the command: `bash test-dependencies.sh`
 
 Once the dependencies are running, the unit test can be executed with the command: `bash unittests.sh`
 
-Is it possible to run individual unit test executing the command: `bash <container_name.sh> from unit folder.
+Is it possible to run individual unit test executing the command: `bash <container_name.sh>` from unit folder.
 
 All the reports will be generated inside spec/reports folder
 
 ## Integration tess
 
 This is the structure of the integration folder:
+```
  integration
  ├── build
  │   ├── build-all.sh
  │   ├── <container_name>.sh>
  ├── deploy.sh
  └── funtionaltests.sh
+```
 
 To run the integration test, is required to build and deploy the containers. The integration folder contains a set of scripts to perform these tasks.
 

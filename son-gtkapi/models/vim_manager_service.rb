@@ -51,7 +51,7 @@ class VimManagerService < ManagerService
 
     # Object compute-resources created from params
     #{"vim_type":String,"configuration":{"tenant_ext_router\":String, "tenant_ext_net":String, "tenant":String},
-    # "city":String,"country":String, "vim_address":String,"username":String,"pass":String}
+    # "city":String,"country":String, "vim_address":String,"username":String,"pass":String,"domain":String}
 
     cparams = {}
     cparams[:vim_type] = "Heat"
@@ -59,6 +59,7 @@ class VimManagerService < ManagerService
     cparams[:configuration][:tenant_ext_router] = params[:compute_configuration][:tenant_ext_router]
     cparams[:configuration][:tenant_ext_net] = params[:compute_configuration][:tenant_ext_net]
     cparams[:configuration][:tenant] = params[:compute_configuration][:tenant_id]
+    cparams[:domain] = params[:compute_configuration][:domain]
     cparams[:country] = params[:country]
     cparams[:city] = params[:city]
     cparams[:name] = params[:name]
