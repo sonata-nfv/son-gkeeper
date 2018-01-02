@@ -143,7 +143,7 @@ pipeline {
         stage('son-gtkrlt') {
           steps {
             dir ('tests/unit'){
-              sh './gtkrlt'
+              sh './gtkrlt.sh'
             }
           }
         }
