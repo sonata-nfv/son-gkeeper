@@ -5,176 +5,206 @@ pipeline {
       parallel {
         stage('son-gtkapi') {
           steps {
-            dir ('tests/integration/build'){
+            dir(path: 'tests/integration/build') {
               sh './gtkapi.sh'
             }
+            
           }
         }
         stage('son-gtkfnct') {
           steps {
-            dir ('tests/integration/build'){
+            dir(path: 'tests/integration/build') {
               sh './gtkfnct.sh'
             }
+            
           }
         }
         stage('son-keycloak') {
           steps {
-            dir ('tests/integration/build'){
+            dir(path: 'tests/integration/build') {
               sh './gtkkeycloak.sh'
             }
+            
           }
         }
         stage('son-gtkkpi') {
           steps {
-            dir ('tests/integration/build'){            
+            dir(path: 'tests/integration/build') {
               sh './gtkkpi.sh'
             }
+            
           }
         }
         stage('son-gtklic') {
           steps {
-            dir ('tests/integration/build'){
+            dir(path: 'tests/integration/build') {
               sh './gtklic.sh'
             }
+            
           }
         }
         stage('son-gtkpkg') {
           steps {
-            dir ('tests/integration/build'){
+            dir(path: 'tests/integration/build') {
               sh './gtkpkg.sh'
             }
+            
           }
         }
         stage('son-gtkrec') {
           steps {
-            dir ('tests/integration/build'){
+            dir(path: 'tests/integration/build') {
               sh './gtkrec.sh'
             }
+            
           }
         }
         stage('son-gtkrlt') {
           steps {
-            dir ('tests/integration/build'){
+            dir(path: 'tests/integration/build') {
               sh './gtkrlt.sh'
             }
+            
           }
         }
         stage(' son-gtksrv') {
           steps {
-            dir ('tests/integration/build'){
+            dir(path: 'tests/integration/build') {
               sh './gtksrv.sh'
             }
+            
           }
         }
         stage('son-gtkusr') {
           steps {
-            dir ('tests/integration/build'){            
+            dir(path: 'tests/integration/build') {
               sh './gtkusr.sh'
             }
+            
           }
         }
         stage('son-gtkvim') {
           steps {
-            dir ('tests/integration/build'){            
+            dir(path: 'tests/integration/build') {
               sh './gtkvim.sh'
             }
+            
           }
         }
         stage('son-sec-gw') {
           steps {
-            dir ('tests/integration/build'){            
+            dir(path: 'tests/integration/build') {
               sh './son-sec-gw.sh'
             }
+            
           }
         }
       }
     }
     stage('Checkstyle') {
       steps {
-        dir ('tests/checkstyle'){   
+        dir(path: 'tests/checkstyle') {
           sh './gtkall.sh'
         }
+        
       }
     }
     stage('Unit Tests Dependencies') {
       steps {
-        dir ('tests/unit'){
+        dir(path: 'tests/unit') {
           sh './test-dependencies.sh'
         }
+        
       }
     }
     stage('Unit Test Run') {
       parallel {
         stage('Unit Test Run') {
           steps {
-            dir ('tests/unit'){
+            dir(path: 'tests/unit') {
               sh './gtkapi.sh'
             }
+            
           }
         }
         stage('son-gtkfnct') {
           steps {
-            dir ('tests/unit'){
+            dir(path: 'tests/unit') {
               sh './gtkfnct.sh'
             }
+            
           }
         }
         stage('son-gtkkpi') {
           steps {
-            dir ('tests/unit'){
+            dir(path: 'tests/unit') {
               sh './gtkkpi.sh'
             }
+            
           }
         }
         stage('son-gtklic') {
           steps {
-            dir ('tests/unit'){
+            dir(path: 'tests/unit') {
               sh './gtklic.sh'
             }
+            
           }
         }
         stage('son-gtkpkg') {
           steps {
-            dir ('tests/unit'){
+            dir(path: 'tests/unit') {
               sh './gtkpkg.sh'
             }
+            
           }
         }
         stage('son-gtkrlt') {
           steps {
-            dir ('tests/unit'){
+            dir(path: 'tests/unit') {
               sh './gtkrlt.sh'
             }
+            
           }
         }
         stage('son-gtksrv') {
           steps {
-            dir ('tests/unit'){
+            dir(path: 'tests/unit') {
               sh './gtksrv.sh'
             }
+            
           }
         }
         stage('son-gtkvim') {
           steps {
-            dir ('tests/unit'){
+            dir(path: 'tests/unit') {
               sh './gtkvim.sh'
             }
+            
           }
         }
       }
     }
     stage('Integration - Deployment') {
+      environment {
+        ENV_INT_SERVER = 'sp.int.sonata-nfv,eu'
+      }
       steps {
-        dir ('tests/integration'){
+        dir(path: 'tests/integration') {
           sh './deploy.sh'
         }
+        
       }
     }
     stage('Integration - Test') {
+      environment {
+        ENV_INT_SERVER = 'sp.int.sonata-nfv.eu'
+      }
       steps {
-        dir ('tests/integration'){
+        dir(path: 'tests/integration') {
           sh './funtionaltests.sh localhost'
         }
+        
       }
     }
     stage('Containers Publication') {

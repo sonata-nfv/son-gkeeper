@@ -7,6 +7,10 @@ then docker network create \
 "son-sp" ; \
 fi
 
+if [ -z $ENV_INT_SERVER ] then
+    export DOCKER_HOST=tcp://$ENV_INT_SERVER:2375
+fi
+
 ### Pull last containers versions
 echo Pulling containers
 docker pull sonatanfv/son-monitor-influxdb:dev
@@ -20,7 +24,6 @@ docker pull sonatanfv/son-validate:dev
 echo postgres
 if ! [[ "$(docker inspect -f {{.State.Running}} son-postgres 2> /dev/null)" == "" ]]; then docker rm -fv son-postgres ; fi
 docker run -d \
--p 5432:5432 \
 --name son-postgres \
 --net=son-sp \
 --network-alias=son-postgres \
@@ -33,7 +36,6 @@ ntboes/postgres-uuid
 echo redis
 if ! [[ "$(docker inspect -f {{.State.Running}} son-redis 2> /dev/null)" == "" ]]; then docker rm -fv son-redis ; fi
 docker run -d \
--p 6379:6379 \
 --name son-redis \
 --net=son-sp \
 --network-alias=redis \
@@ -44,7 +46,6 @@ redis
 echo mongo
 if ! [[ "$(docker inspect -f {{.State.Running}} son-mongo 2> /dev/null)" == "" ]]; then docker rm -fv son-mongo ; fi
 docker run -d \
--p 27017:27017 \
 --name son-mongo \
 --net=son-sp \
 --network-alias=son-mongo \
@@ -55,7 +56,6 @@ mongo
 echo postgres
 if ! [[ "$(docker inspect -f {{.State.Running}} postgsql 2> /dev/null)" == "" ]]; then docker rm -fv postgsql ; fi
 docker run -d \
--p 5433:5432 \
 --name postgsql \
 --net=son-sp \
 --network-alias=postgsql \
@@ -71,14 +71,12 @@ docker run -d \
 --name influx \
 --net=son-sp \
 --network-alias=influx \
--p 8086:8086 \
 sonatanfv/son-monitor-influxdb:dev
 
 ### RABBITMQ CONTAINER
 echo rabbitmq
 if ! [[ "$(docker inspect -f {{.State.Running}} son-broker 2> /dev/null)" == "" ]]; then docker rm -fv son-broker ; fi
 docker run -d \
--p 5673:5672 \
 --name son-broker \
 --net=son-sp \
 --network-alias=son-broker \

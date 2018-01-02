@@ -1,6 +1,10 @@
 ### Functional tests
 ### Variables
-server=$1
+if [ -z $ENV_INT_SERVER ] then
+    server=$ENV_INT_SERVER
+else
+    server="localhost"
+fi
 
 if [ -z "$server" ]
 then
