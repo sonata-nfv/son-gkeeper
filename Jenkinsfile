@@ -98,7 +98,7 @@ pipeline {
     }
     stage('Unit Tests Dependencies') {
       steps {
-        dir ('tests/checkstyle'){
+        dir ('tests/unit'){
           sh './test-dependencies.sh'
         }
       }
