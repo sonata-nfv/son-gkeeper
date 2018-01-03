@@ -41,67 +41,69 @@ module SONATA
       self
     end
 
-    def self.find(params: {}, headers: {})
+    # This must be improved... it's silly to pass url: and logger: in every call!
+    def self.find(url:, params: {}, headers: {}, logger:)
       log_message = "SONATA::CurbAdapter#find"
-      @@logger.debug(log_message) {"entered: params=#{params}, headers=#{headers}"}
-      @@logger.debug(log_message) {"complete_url=#{complete_url(params)}"}
+      logger.debug(log_message) {"entered: url=#{url}, params=#{params}, headers=#{headers}"}
+      logger.debug(log_message) {"complete_url=#{complete_url(url, params)}"}
       begin
-        res=Curl.get(complete_url(params)) do |req|
+        res=Curl.get(complete_url(url, params)) do |req|
           if headers.empty?
             req.headers['Content-type'] = req.headers['Accept'] = 'application/json'
           else
             headers.each do |h|
-              @@logger.debug(log_message) {"header[#{h[0]}]: #{h[1]}"}
+              logger.debug(log_message) {"header[#{h[0]}]: #{h[1]}"}
               req.headers[h[0]] = h[1]
             end
           end
         end
-        @@logger.debug(log_message) {"header_str=#{res.header_str}"}
-        @@logger.debug(log_message) {"response body=#{res.body}"}
-        count = record_count_from_response_headers(res.header_str)
+        logger.debug(log_message) {"header_str=#{res.header_str}"}
+        body = res.body
+        logger.debug(log_message) {"response body=#{body}"}
         status = res.status.to_i
         case status
         when 200..299
+          count = record_count_from_response_headers(res.header_str)
           begin
-            parsed_response = res.body.empty? ? {} : JSON.parse(res.body, symbolize_names: true)
-            @@logger.debug(log_message) {"parsed_response=#{parsed_response}"}
+            parsed_response = body.empty? ? {} : JSON.parse(body, symbolize_names: true)
+            logger.debug(log_message) {"parsed_response=#{parsed_response}"}
             if count == 0 && !parsed_response.to_s.empty?
               count = parsed_response.is_a?(Hash) ? 1 : parsed_response.count
             end
             {status: status, count: count, items: parsed_response.is_a?(Hash) ? [parsed_response] : parsed_response, message: "OK"}
           rescue => e
-            @@logger.error(log_message) {"Error during processing: #{$!}"}
-            @@logger.error(log_message) {"Backtrace:\n\t#{e.backtrace.join("\n\t")}"}
+            logger.error(log_message) {"Error during processing: #{$!}"}
+            logger.error(log_message) {"Backtrace:\n\t#{e.backtrace.join("\n\t")}"}
             {status: nil, count: nil, items: nil, message: "Error processing #{$!}: \n\t#{e.backtrace.join("\n\t")}"}
           end
         when 400
         when 404
-          @@logger.debug(log_message) {"Records not found for url=#{@@url}, params=#{params}, headers=#{headers}"}
+          logger.debug(log_message) {"Records not found for url=#{url}, params=#{params}, headers=#{headers}"}
           {status: status, count: 0, items: [], message: "Not Found"}
         when 401
-          @@logger.debug(log_message) {"Not authorized for url=#{@@url}, params=#{params}, headers=#{headers}"}
+          logger.debug(log_message) {"Not authorized for url=#{url}, params=#{params}, headers=#{headers}"}
           {status: status, count: 0, items: [], message: "Unauthorized: missing authorization header"}
         else
-          @@logger.debug(log_message) {"Unexpected status code received: #{status}"}
+          logger.debug(log_message) {"Unexpected status code received: #{status}"}
           {status: status, count: nil, items: nil, message: "Status #{status} unprocessable"}
         end
       rescue Curl::Err::ConnectionFailedError => e
-        {status: 500, count: nil, items: nil, message: "Couldn't connect to server #{complete_url(params)}"}
+        {status: 500, count: nil, items: nil, message: "Couldn't connect to server #{complete_url(url, params)}"}
       rescue Curl::Err::CurlError => e
-        {status: 500, count: nil, items: nil, message: "Generic error while connecting to server #{complete_url(params)}"}
+        {status: 500, count: nil, items: nil, message: "Generic error while connecting to server #{complete_url(url, params)}"}
       rescue Curl::Err::AccessDeniedError => e
-        {status: 500, count: nil, items: nil, message: "Access denied while connecting to server #{complete_url(params)}"}
+        {status: 500, count: nil, items: nil, message: "Access denied while connecting to server #{complete_url(url, params)}"}
       rescue Curl::Err::TimeoutError => e
-        {status: 500, count: nil, items: nil, message: "Time out while connecting to server #{complete_url(params)}"}
+        {status: 500, count: nil, items: nil, message: "Time out while connecting to server #{complete_url(url, params)}"}
       rescue Curl::Err::HostResolutionError => e
-        {status: 500, count: nil, items: nil, message: "Couldn't resolve host name #{complete_url(params)}"}
+        {status: 500, count: nil, items: nil, message: "Couldn't resolve host name #{complete_url(url, params)}"}
       end
     end
   
     private
   
-    def self.complete_url(params)
-      params.empty? ? @@url : @@url + '?' + Curl::postalize(params)
+    def self.complete_url(url, params)
+      params.empty? ? url : url + '?' + URI.encode_www_form(params)
     end
   
     def self.record_count_from_response_headers(header_str)
