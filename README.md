@@ -1,6 +1,8 @@
 [![Build Status](http://jenkins.sonata-nfv.eu/buildStatus/icon?job=son-gkeeper)](http://jenkins.sonata-nfv.eu/job/son-gkeeper)
 
 # SON-GKEEPER
+
+[![Join the chat at https://gitter.im/son-gkeeper/Lobby](https://badges.gitter.im/son-gkeeper/Lobby.svg)](https://gitter.im/son-gkeeper/Lobby?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 This is [SONATA](http://www.sonata-nfv.eu)'s Service Platform Gatekeeper's repository.
 
 The Gatekeeper is the component that implements all the **Northbound Interface** (NBI) of the Servive Platform.
