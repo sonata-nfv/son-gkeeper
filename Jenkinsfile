@@ -185,28 +185,6 @@ pipeline {
         }
       }
     }
-    stage('Integration - Deployment') {
-      environment {
-        ENV_INT_SERVER = 'sp.int.sonata-nfv.eu'
-      }
-      steps {
-        dir(path: 'tests/integration') {
-          sh './deploy.sh'
-        }
-        
-      }
-    }
-    stage('Integration - Test') {
-      environment {
-        ENV_INT_SERVER = 'sp.int.sonata-nfv.eu'
-      }
-      steps {
-        dir(path: 'tests/integration') {
-          sh './funtionaltests.sh localhost'
-        }
-        
-      }
-    }
     stage('Containers Publication') {
       parallel {
         stage('son-gtkapi') {
@@ -269,6 +247,28 @@ pipeline {
             sh 'docker push registry.sonata-nfv.eu:5000/son-sec-gw'
           }
         }
+      }
+    }
+    stage('Integration - Deployment') {
+      environment {
+        ENV_INT_SERVER = 'sp.int.sonata-nfv.eu'
+      }
+      steps {
+        dir(path: 'tests/integration') {
+          sh './deploy.sh'
+        }
+        
+      }
+    }
+    stage('Integration - Test') {
+      environment {
+        ENV_INT_SERVER = 'sp.int.sonata-nfv.eu'
+      }
+      steps {
+        dir(path: 'tests/integration') {
+          sh './funtionaltests.sh localhost'
+        }
+        
       }
     }
     stage('Publish results') {
