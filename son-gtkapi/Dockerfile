@@ -23,5 +23,5 @@ ENV METRICS_URL http://son-monitor:8000/api/v1
 ENV USER_MANAGEMENT_URL http://son-gtkusr:5600
 ENV VALIDATOR_URL http://son-validate:5050
 ENV RATE_LIMITER_URL http://son-gtkrlt:5150
-CMD ["foreman", "start"]
-#CMD ["bundle", "exec", "puma", "-C", "config/puma.rb", "-b", "tcp://0.0.0.0:0$PORT"]
+#CMD ["foreman", "start"]
+CMD ["bundle", "exec", "puma", "-C", "config/puma.rb", "-b", "tcp://0.0.0.0:0$PORT"]
