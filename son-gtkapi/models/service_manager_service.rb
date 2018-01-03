@@ -32,116 +32,122 @@ class ServiceManagerService < ManagerService
   JSON_HEADERS = { 'Accept'=> 'application/json', 'Content-Type'=>'application/json'}
   LOG_MESSAGE = 'GtkApi::' + self.name
     
-  def self.config(url:)
+  def self.config(url:, logger:)
     method = LOG_MESSAGE + "#config"
     raise ArgumentError.new('ServiceManagerService can not be configured with nil or empty url') if url.to_s.empty?
     @@url = url
-    GtkApi.logger.debug(method) {"entered with url=#{url}"}
+    @@logger = logger
+    @@logger.debug(method) {"entered with url=#{url}"}
   end
 
   def self.find_service_by_uuid(uuid:, params: {})
     message = LOG_MESSAGE+"##{__method__}"
-    GtkApi.logger.debug(message) {"entered with uuid= #{uuid}, params=#{params}"}
+    @@logger.debug(message) {"entered with uuid= #{uuid}, params=#{params}"}
     find(url: @@url + '/services/' + uuid, params: params, log_message: LOG_MESSAGE + "##{__method__}(#{uuid})")
   end
   
   def self.find_services(params)
     message = LOG_MESSAGE+"##{__method__}"
-    GtkApi.logger.debug(message) {"entered with #{params}"}
+    @@logger.debug(message) {"entered with #{params}"}
     services=find(url: @@url + '/services', params: params, log_message: LOG_MESSAGE + "##{__method__}(#{params})")
     vectorize_hash services
  end
 
   def self.find_requests(params)
     message = LOG_MESSAGE+"##{__method__}"
-    GtkApi.logger.debug(message) {"entered with #{params}"}
-    requests=find(url: @@url + '/requests', params: params, log_message: LOG_MESSAGE + "##{__method__}(#{params})")
-    vectorize_hash requests
+    @@logger.debug(message) {"entered with #{params}"}
+    requests=getCurb(url: @@url + '/requests', params: params)
+    case requests[:status]
+    when 200
+      return vectorize_hash requests
+    else
+      requests
+    end
   end
   
   def self.find_requests_by_uuid(uuid)
     message = LOG_MESSAGE+"##{__method__}"
-    GtkApi.logger.debug(message) {"entered with #{uuid}"}
+    @@logger.debug(message) {"entered with #{uuid}"}
     find(url: @@url + '/requests/' + uuid, log_message: LOG_MESSAGE + "##{__method__}")
   end
   
   def self.find_requests_by_service_instance_uuid(uuid)
     message = LOG_MESSAGE+"##{__method__}"
-    GtkApi.logger.debug(message) {"entered with #{uuid}"}
+    @@logger.debug(message) {"entered with #{uuid}"}
     find(url: @@url + '/requests?service_instance_uuid=' + uuid, log_message: LOG_MESSAGE + "##{__method__}")
   end
   
   def self.create_service_request(params)
     message = LOG_MESSAGE+"##{__method__}"
-    GtkApi.logger.debug(message) {"entered with #{params}"}
-    GtkApi.logger.debug(message) {"@@url = "+@@url}
+    @@logger.debug(message) {"entered with #{params}"}
+    @@logger.debug(message) {"@@url = "+@@url}
 
     begin
       resp = self.postCurb(url: @@url+'/requests', body: params) ## TODO: check if this tests ok!! 
-      GtkApi.logger.debug(message) {"resp=#{resp}"}
+      @@logger.debug(message) {"resp=#{resp}"}
       resp
     rescue => e
-      GtkApi.logger.error(message) {"Error during processing: #{$!}"}
-      GtkApi.logger.error(message) {"Backtrace:\n\t#{e.backtrace.join("\n\t")}"}
+      @@logger.error(message) {"Error during processing: #{$!}"}
+      @@logger.error(message) {"Backtrace:\n\t#{e.backtrace.join("\n\t")}"}
       nil 
     end      
   end
   
   def self.create_service_update_request(nsr_uuid:, nsd:)
     message = LOG_MESSAGE+"##{__method__}"
-    GtkApi.logger.debug(message) {"entered with service instance=#{nsr_uuid}, nsd=#{nsd}"}
+    @@logger.debug(message) {"entered with service instance=#{nsr_uuid}, nsd=#{nsd}"}
     begin
-      GtkApi.logger.debug(message) {"@url = "+@@url}
+      @@logger.debug(message) {"@url = "+@@url}
       #response = RestClient.put(@url+'/services/'+nsr_uuid, nsd.to_json, content_type: :json, accept: :json) 
       response = self.postCurb(url: @@url+'/services/'+nsr_uuid, body: nsd) 
-      GtkApi.logger.debug(message) {"response="+response}
+      @@logger.debug(message) {"response="+response}
       response
     rescue => e
-      GtkApi.logger.error(message) {"Error during processing: #{$!}"}
-      GtkApi.logger.error(message) {"Backtrace:\n\t#{e.backtrace.join("\n\t")}"}
+      @@logger.error(message) {"Error during processing: #{$!}"}
+      @@logger.error(message) {"Backtrace:\n\t#{e.backtrace.join("\n\t")}"}
       nil 
     end      
   end
   
   def self.create_service_termination_request(service_instance_uuid:)
     message = LOG_MESSAGE+"##{__method__}"
-    GtkApi.logger.debug(message) {"entered with service instance=#{service_instance_uuid}"}
+    @@logger.debug(message) {"entered with service instance=#{service_instance_uuid}"}
     
     record = RecordManagerService.find_record_by_uuid(kind: 'services', uuid: service_instance_uuid)
-    GtkApi.logger.debug(message) {"record found=#{record}"}
+    @@logger.debug(message) {"record found=#{record}"}
     unless record[:status] == 200
       return {status: record[:status], count: 0, items: [], message: record[:message]}
     end
     descriptor = find_service_by_uuid(uuid: record[:items][:descriptor_reference])
-    GtkApi.logger.debug(message) {"descriptor found=#{descriptor}"}
+    @@logger.debug(message) {"descriptor found=#{descriptor}"}
     unless descriptor[:status] == 200
       return {status: descriptor[:status], count: 0, items: [], message: descriptor[:message]}
     end
     begin
       response = self.putCurb(url: @@url+'/services/'+service_instance_uuid+'/terminate', body: descriptor[:items][:nsd]) 
-      GtkApi.logger.debug(message) {"response=#{response}"}
+      @@logger.debug(message) {"response=#{response}"}
       response
     rescue => e
-      GtkApi.logger.error(message) {"Error during processing: #{$!}"}
-      GtkApi.logger.error(message) {"Backtrace:\n\t#{e.backtrace.join("\n\t")}"}
+      @@logger.error(message) {"Error during processing: #{$!}"}
+      @@logger.error(message) {"Backtrace:\n\t#{e.backtrace.join("\n\t")}"}
       nil 
     end      
   end
   
   def self.began_at
     log_message=LOG_MESSAGE+"##{__method__}"
-    GtkApi.logger.debug(log_message) {'entered'}    
+    @@logger.debug(log_message) {'entered'}    
     response = getCurb(url: @@url + '/began_at')
-    GtkApi.logger.debug(log_message) {"response=#{response}"}
+    @@logger.debug(log_message) {"response=#{response}"}
     response
   end
   
   # TODO
   def self.valid?(service_uuid)
     message = LOG_MESSAGE+"##{__method__}"
-    GtkApi.logger.debug(message) {"entered with service uuid=#{service_uuid}"}
+    @@logger.debug(message) {"entered with service uuid=#{service_uuid}"}
     service = find_service_by_uuid(uuid: service_uuid)
-    GtkApi.logger.debug(message) {"found service =#{service}"}
+    @@logger.debug(message) {"found service =#{service}"}
     service
   end
 end

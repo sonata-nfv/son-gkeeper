@@ -33,50 +33,50 @@ class WimManagerService < ManagerService
   CLASS_NAME = self.name
   LOG_MESSAGE = 'GtkApi::' + CLASS_NAME
 
-  def self.config(url:)
+  def self.config(url:, logger:)
     method = LOG_MESSAGE + "##{__method__}(url=#{url})"
-    raise ArgumentError, CLASS_NAME+' can not be configured with nil url' if url.nil?
-    raise ArgumentError, CLASS_NAME+' can not be configured with empty url' if url.empty?
+    raise ArgumentError, CLASS_NAME+' can not be configured with nil or empty url' if url.to_s.empty?
     @@url = url
-    GtkApi.logger.debug(method) {'entered'}
+    @@logger = logger
+    @@logger.debug(method) {'entered'}
   end
 
   def self.find_wims(params)
     method = LOG_MESSAGE + "##{__method__}(#{params})"
-    GtkApi.logger.debug(method) {'entered'}
+    @@logger.debug(method) {'entered'}
     begin
       response = getCurb(url:@@url+'/wim', headers:JSON_HEADERS)
-      GtkApi.logger.debug(method) {'response='+response.to_s}
+      @@logger.debug(method) {'response='+response.to_s}
       response
     rescue => e
-      GtkApi.logger.error(method) {"Error during processing: #{$!}"}
-      GtkApi.logger.error(method) {"Backtrace:\n\t#{e.backtrace.join("\n\t")}"}
+      @@logger.error(method) {"Error during processing: #{$!}"}
+      @@logger.error(method) {"Backtrace:\n\t#{e.backtrace.join("\n\t")}"}
       nil
     end
   end
 
   def self.create_wim(params)
     method = LOG_MESSAGE + "##{__method__}(#{params})"
-    GtkApi.logger.debug(method) {"entered"}
+    @@logger.debug(method) {"entered"}
 
     begin
-      GtkApi.logger.debug(method) {"@url = " + @@url}
+      @@logger.debug(method) {"@url = " + @@url}
       response = postCurb(url:@@url+'/wim', body: params)
-      GtkApi.logger.debug(method) {"response="+response.to_s}
+      @@logger.debug(method) {"response="+response.to_s}
       response
     rescue => e
-      GtkApi.logger.error(method) {"Error during processing: #{$!}"}
-      GtkApi.logger.error(method) {"Backtrace:\n\t#{e.backtrace.join("\n\t")}"}
+      @@logger.error(method) {"Error during processing: #{$!}"}
+      @@logger.error(method) {"Backtrace:\n\t#{e.backtrace.join("\n\t")}"}
       nil
     end
   end
 
   def self.find_wim_request_by_uuid(uuid)
     method = LOG_MESSAGE + "##{__method__}(#{uuid})"
-    GtkApi.logger.debug(method) {'entered'}
+    @@logger.debug(method) {'entered'}
     begin
       response = getCurb(url:@@url+'/wim_requests/'+uuid, headers: JSON_HEADERS)
-      GtkApi.logger.debug(method) {"Got response: #{response}"}
+      @@logger.debug(method) {"Got response: #{response}"}
       query_response = response[:items][:query_response]
       if query_response
         query_response
@@ -84,17 +84,17 @@ class WimManagerService < ManagerService
         {}
       end
     rescue => e
-      GtkApi.logger.error(method) {"Error during processing: #{$!}"}
-      GtkApi.logger.error(method) {"Backtrace:\n\t#{e.backtrace.join("\n\t")}"}
+      @@logger.error(method) {"Error during processing: #{$!}"}
+      @@logger.error(method) {"Backtrace:\n\t#{e.backtrace.join("\n\t")}"}
       nil
     end
   end
   
   def self.began_at
     log_message=LOG_MESSAGE+"##{__method__}"
-    GtkApi.logger.debug(log_message) {'entered'}    
+    @@logger.debug(log_message) {'entered'}    
     response = getCurb(url: @@url + '/began_at')
-    GtkApi.logger.debug(log_message) {"response=#{response}"}
+    @@logger.debug(log_message) {"response=#{response}"}
     response
   end
 end

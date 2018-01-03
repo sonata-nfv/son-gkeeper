@@ -34,7 +34,7 @@ RSpec.describe GtkApi, type: :controller do
   include Rack::Test::Methods
   def app() GtkApi end
 
-  describe 'GET /api/v2/services' do
+  describe 'GET /api/v2/services', type: :controller do
     let(:token) {'abc'}
     let(:service1) {{
       name: "sonata-demo-1",
@@ -68,10 +68,8 @@ RSpec.describe GtkApi, type: :controller do
         get '/api/v2/services/'+service1[:uuid], {}, {'HTTP_AUTHORIZATION' => 'Bearer '+token}
       end
     
-      #subject { last_response }
-      #its(:status) { is_expected.to eq 200 }
       it 'returns Ok (200)' do
-        expect(last_response.status).to eq(200)
+        expect(last_response).to be_ok
       end
 
     end
@@ -87,7 +85,7 @@ RSpec.describe GtkApi, type: :controller do
       }}
       let(:all_services) { [ service1, service2 ]}
       let(:returned_all_services) {{status: 200, count: 2, items: all_services, message: "OK"}}
-      let(:default_params) {{'offset'=>GtkApi::DEFAULT_OFFSET, 'limit'=>GtkApi::DEFAULT_LIMIT}}
+      let(:default_params) {{'captures'=>[], 'offset'=>GtkApi::DEFAULT_OFFSET, 'limit'=>GtkApi::DEFAULT_LIMIT}}
       let(:tokenized_default_params) {default_params.merge({'token'=>token})}
       before(:each) do        
         allow(ServiceManagerService).to receive(:find_services).with(default_params).and_return(returned_all_services)
@@ -99,9 +97,8 @@ RSpec.describe GtkApi, type: :controller do
       it 'calls ServiceManagerService' do
         expect(ServiceManagerService).to have_received(:find_services)
       end
-      
       it 'returns Ok (200)' do
-        expect(last_response.status).to eq(200)
+        expect(last_response).to be_ok
       end
       it 'returns a list of two services' do
         expect(last_response.body).to eq(returned_all_services[:items].to_json)
