@@ -16,4 +16,4 @@ ENV DATABASE_PORT 5432
 ENV MQSERVER amqp://guest:guest@broker:5672
 ENV CATALOGUES_URL http://sp.int.sonata-nfv.eu:4002/catalogues
 ENV PORT 5300
-CMD ["foreman", "start"]
+CMD ["bundle", "exec", "puma", "-C", "config/puma.rb", "-b", "tcp://0.0.0.0:5300"]

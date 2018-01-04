@@ -11,4 +11,4 @@ EXPOSE 5800
 WORKDIR /app
 ENV REPOSITORIES_URL http://catalogues:4002/records
 ENV PORT 5800
-CMD ["foreman", "start"]
+CMD ["bundle", "exec", "puma", "-C", "config/puma.rb", "-b", "tcp://0.0.0.0:5800"]

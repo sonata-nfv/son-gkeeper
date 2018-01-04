@@ -11,5 +11,5 @@ EXPOSE 5150
 WORKDIR /app
 ENV PORT 5150
 ENV REDIS_URL redis://127.0.0.1:6379
-CMD ["foreman", "start"]
+CMD ["bundle", "exec", "puma", "-C", "config/puma.rb", "-b", "tcp://0.0.0.0:5150"]
 
