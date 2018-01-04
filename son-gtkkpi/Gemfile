@@ -37,7 +37,3 @@ group :test do
   gem 'webmock', '2.1.0'
   gem 'rspec-its', '1.2.0'
 end
-
-group :test, :development do
-  gem 'capybara', '2.7.1'
-end
