@@ -15,4 +15,4 @@ ENV DATABASE_HOST postgres
 ENV DATABASE_PORT 5432
 ENV MQSERVER amqp://guest:guest@broker:5672
 ENV PORT 5700
-CMD ["foreman", "start"]
+CMD ["bundle", "exec", "puma", "-C", "config/puma.rb", "-b", "tcp://0.0.0.0:5700"]

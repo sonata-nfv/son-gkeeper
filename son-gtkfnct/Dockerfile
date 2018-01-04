@@ -11,4 +11,4 @@ EXPOSE 5500
 WORKDIR /app
 ENV CATALOGUES_URL http://catalogues:4002/catalogues/api/v2
 ENV PORT 5500
-CMD ["foreman", "start"]
+CMD ["bundle", "exec", "puma", "-C", "config/puma.rb", "-b", "tcp://0.0.0.0:5500"]
