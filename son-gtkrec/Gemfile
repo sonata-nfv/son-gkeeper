@@ -22,7 +22,3 @@ group :test do
   gem 'rack-test', '0.6.3'
   gem 'rspec-its', '1.2.0'
 end
-
-group :test, :development do
-  gem 'capybara', '2.7.1'
-end
