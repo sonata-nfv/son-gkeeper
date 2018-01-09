@@ -41,8 +41,7 @@ class GtkSrv < Sinatra::Base
     halt 206, json_request if request
     json_error 404, "#{MODULE}: Request #{params[:uuid]} not found"    
   end
-  
-  
+
   # GET many requests
   get '/requests/?' do
 
@@ -116,7 +115,7 @@ class GtkSrv < Sinatra::Base
       start_request_yml = YAML.dump(start_request.deep_stringify_keys)
       logger.debug(log_msg) {"#{params}:\n"+start_request_yml}
 
-      mq_server = params['request_type'] == 'CREATE' ? settings.create_mqserver : settings.terminate_mqserver
+      mq_server = find_mq_server(params['request_type'])
       smresponse = mq_server.publish( start_request_yml.to_s, si_request['id'])
       json_request = json(si_request, { root: false })
       logger.debug(log_msg) {' returning POST /requests with request='+json_request}
@@ -150,6 +149,20 @@ class GtkSrv < Sinatra::Base
   end
 
   private 
+  
+  def find_mq_server(request_type)
+    case request_type
+    when 'CREATE'
+      settings.create_mqserver
+    when 'UPDATE'
+       settings.update_mqserver
+    when 'TERMINATE'
+       settings.terminate_mqserver
+    else
+      json_error 400, "#{request_type} is the wrong type of request"
+    end
+  end
+  
   def query_string
     request.env['QUERY_STRING'].nil? ? '' : '?' + request.env['QUERY_STRING'].to_s
   end
