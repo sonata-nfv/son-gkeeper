@@ -49,9 +49,9 @@ class KpiManagerService < ManagerService
       @@logger.error(method) {"response=#{response}"}
       case response[:status]
       when 201
-        { status: response[:status], data: {}, message: 'Metric updated'}        
+        return { status: response[:status], data: {}, message: 'Metric updated'}        
       else
-        { status: response[:status], data: {}, message: 'Metric was not updated'}
+        return { status: response[:status], data: {}, message: 'Metric was not updated'}
       end      
     rescue => e
       @@logger.error(method) {"Error during processing: #{$!}"}
