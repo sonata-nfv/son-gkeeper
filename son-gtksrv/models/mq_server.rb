@@ -200,10 +200,10 @@ class MQServer
   
   def register_kpi(request)    
     log_message='MQServer.'+__method__.to_s
-    @logger.debug(log_message) { "entered with request=#{request}"}
+    @logger.debug(log_message) { "entered with request=#{request.inspect}"}
     now = Time.now.utc
 
-    body = { uuid: request['uuid'], elapsed_time: now-Time.parse(request['began_at']), time_stamp: now.to_s}
+    body = { uuid: request['uuid'], elapsed_time: now-Time.parse(request['began_at']), time_stamp: now}
     begin
       _response = RestClient.put(request['callback'], body.to_json, content_type: :json, accept: :json) 
       @logger.debug(log_message) { "response=#{_response}"}
