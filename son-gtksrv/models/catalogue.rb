@@ -65,6 +65,7 @@ class Catalogue
   def find_by_uuid(uuid)
     log_message='Catalogue.'+__method__.to_s
     @logger.debug(log_message) { "entered with uuid #{uuid})"}
+    raise ArgumentError.new(log_message + ': no UUID has been provided') if uuid.empty?
     begin
       _response = RestClient.get(@url+"/#{uuid}", JSON_HEADERS) 
       @logger.debug(log_message) { "response=#{_response}"}

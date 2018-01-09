@@ -52,6 +52,7 @@ class NService
   end
 
   def find_by_uuid(uuid)
+    raise ArgumentError.new('NService.find_by_uuid: no UUID has been provided') if uuid.empty?
     @logger.debug "NService.find_by_uuid(#{uuid})"
     begin
       service = @catalogue.find_by_uuid(uuid)
