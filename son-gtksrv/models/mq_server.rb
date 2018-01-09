@@ -163,7 +163,7 @@ class MQServer
 
         # We know our own messages, so just skip them
         unless properties[:app_id] == 'son-gkeeper'
-          # We're interested in app_id == 'son-plugin.slm'
+          # We're interested in app_id == 'son-gkeeper'
           parsed_payload = YAML.load(payload)
           @logger.debug(logmsg) { "parsed_payload: #{parsed_payload}"}
           status = parsed_payload['status']
@@ -203,7 +203,7 @@ class MQServer
     @logger.debug(log_message) { "entered with request=#{request}"}
     now = Time.now.utc
 
-    body = { uuid: request['uuid'], elapsed_time: now-Time.parse(request['began_at']), time_stamp: now}
+    body = { uuid: request['uuid'], elapsed_time: now-Time.parse(request['began_at']), time_stamp: now.to_s}
     begin
       _response = RestClient.put(request['callback'], body.to_json, content_type: :json, accept: :json) 
       @logger.debug(log_message) { "response=#{_response}"}
