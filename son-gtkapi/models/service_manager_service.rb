@@ -68,7 +68,10 @@ class ServiceManagerService < ManagerService
   def self.find_requests_by_uuid(uuid)
     message = LOG_MESSAGE+"##{__method__}"
     @@logger.debug(message) {"entered with #{uuid}"}
-    find(url: @@url + '/requests/' + uuid, log_message: LOG_MESSAGE + "##{__method__}")
+    # find(url: @@url + '/requests/' + uuid, log_message: LOG_MESSAGE + "##{__method__}")
+    request=getCurb(url: @@url + '/requests/'+uuid)
+    @@logger.debug(message) {"Request is #{request}"}
+    request
   end
   
   def self.find_requests_by_service_instance_uuid(uuid)

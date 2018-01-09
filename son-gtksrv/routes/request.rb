@@ -59,7 +59,8 @@ class GtkSrv < Sinatra::Base
     
     requests = Request.where(keyed_params).limit(params['limit'].to_i).offset(params['offset'].to_i)
     json_requests = json(requests, { root: false })
-    logger.info(MODULE) {" leaving GET /requests?#{query_string} with "+json_requests}
+    logger.info(MODULE) {" leaving GET /requests#{query_string} with "+json_requests}
+    logger.info(MODULE) {" size is #{requests.size}"}
     if json_requests
       headers 'Record-Count'=>requests.size.to_s, 'Content-Type'=>'application/json'
       halt 200, json_requests
