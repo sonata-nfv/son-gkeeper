@@ -185,7 +185,7 @@ class ManagerService
   
   private
   
-  def build_headers(headers)
+  def self.build_headers(headers)
     if headers.empty?
       headers = {}
       headers['Content-type'] = headers['Accept'] = 'application/json'
