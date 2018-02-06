@@ -44,7 +44,7 @@ class Catalogue
     log_message='Catalogue.'+__method__.to_s
     @url = url
     @logger = logger
-    @logger.debug(log_message) {"initiaized: url="+url+", logger=#{logger}"}
+    @logger.debug(log_message) {"url="+url+", logger=#{logger}"}
   end
     
   def create(descriptor)
@@ -111,7 +111,8 @@ class Catalogue
         @logger.debug(log_message) {"records #{records}"}
         result[:items] = JSON.parse records.body
       end
-      result
+      @logger.debug(log_message) {"returning result=#{result}"}
+      return result
     rescue => e
       @logger.error(log_message) {"Error during processing: #{$!}"}
       @logger.error(log_message) {"Backtrace:\n\t#{e.backtrace.join("\n\t")}"}

@@ -43,8 +43,9 @@ class MQServer
     @topic = channel.topic("son-kernel", :auto_delete => false)
     @queue = channel.queue(queue_name, :auto_delete => true).bind(@topic, :routing_key => queue_name)
     method = queue_name.split('.')[-1]
+    
+    # The way ruby creates a singleton_method for the class
     self.send(:"consume_#{method}")
-    #self.consume
   end
 
   def publish(msg, correlation_id)

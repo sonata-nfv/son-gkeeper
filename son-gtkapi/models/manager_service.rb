@@ -48,14 +48,7 @@ class ManagerService
     GtkApi.logger.debug(log_message) {"complete_url=#{complete_url}"} 
     begin
       res=Curl.get(complete_url) do |req|
-        if headers.empty?
-          req.headers['Content-type'] = req.headers['Accept'] = 'application/json'
-        else
-          headers.each do |h|
-            GtkApi.logger.debug(log_message) {"header[#{h[0]}]: #{h[1]}"}
-            req.headers[h[0]] = h[1]
-          end
-        end
+        req.headers = build_headers req.headers
       end
       GtkApi.logger.debug(log_message) {"header_str=#{res.header_str}"}
       GtkApi.logger.debug(log_message) {"response body=#{res.body}"}
@@ -118,11 +111,12 @@ class ManagerService
     end
     GtkApi.logger.debug(log_message) {"response body=#{res.body}"}
     status = status_from_response_headers(res.header_str)
+    GtkApi.logger.debug(log_message) {"Status #{status}"} 
     case status
     when 200..202
       begin
         parsed_response = JSON.parse(res.body, symbolize_names: true)
-        GtkApi.logger.debug(log_message) {"status #{status}, parsed_response=#{parsed_response}"}
+        GtkApi.logger.debug(log_message) {"parsed_response=#{parsed_response}"}
         {status: status, count: 1, items: parsed_response, message: "OK"}
       rescue => e
         GtkApi.logger.error(log_message) {"Error during processing: #{$!}"} 
@@ -130,10 +124,8 @@ class ManagerService
         {status: nil, count: nil, items: nil, message: "Error processing #{$!}: \n\t#{e.backtrace.join("\n\t")}"}
       end
     when 400..499
-      GtkApi.logger.error(log_message) {"Status #{status}"} 
       {status: status, count: nil, items: nil, message: "Status #{status}: could not process"}
     else
-      GtkApi.logger.error(log_message) {"Status #{status}"} 
       {status: status, count: nil, items: nil, message: "Status #{status} unknown"}
     end
   end  
@@ -192,6 +184,18 @@ class ManagerService
   end
   
   private
+  
+  def build_headers(headers)
+    if headers.empty?
+      headers = {}
+      headers['Content-type'] = headers['Accept'] = 'application/json'
+      return headers
+    end
+    headers.each do |h|
+      GtkApi.logger.debug(log_message) {"header[#{h[0]}]: #{h[1]}"}
+      headers[h[0]] = h[1]
+    end
+  end
   
   def self.format_error(backtrace)
     first_line = backtrace[0].split(":")

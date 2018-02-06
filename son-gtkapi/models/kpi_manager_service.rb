@@ -46,7 +46,7 @@ class KpiManagerService < ManagerService
     begin
       @@logger.debug(method) {"url = "+@@url}      
       response = putCurb(url: @@url+'/kpis', body: params)      
-      @@logger.error(method) {"response=#{response}"}
+      @@logger.debug(method) {"response=#{response}"}
       case response[:status]
       when 201
         return { status: response[:status], data: {}, message: 'Metric updated'}        

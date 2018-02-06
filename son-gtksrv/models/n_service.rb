@@ -26,6 +26,7 @@
 ## acknowledge the contributions of their colleagues of the SONATA 
 ## partner consortium (www.sonata-nfv.eu).
 # encoding: utf-8
+require 'curb'
 require 'json'
 
 class NServiceNotFoundError < StandardError; end
@@ -51,19 +52,65 @@ class NService
     end
   end
 
+  #def find_by_uuid(uuid)
+  #  raise ArgumentError.new('NService.find_by_uuid: no UUID has been provided') if uuid.empty?
+  #  @logger.debug "NService.find_by_uuid(#{uuid})"
+  #  begin
+  #    service = @catalogue.find_by_uuid(uuid)
+  #    @logger.debug "NService.find_by_uuid: #{service}"
+  #    service.is_a?(Array) ? service.first : service
+  #  rescue CatalogueRecordNotFoundError
+  #    raise NServiceNotFoundError.new 'Service with uuid '+uuid+' was not found'
+  #  rescue Exception => e
+  #    @logger.debug(e.message)
+  #    @logger.debug(e.backtrace.inspect)
+  #    halt 500, 'Could not contact the Service Catalogue'
+  #  end
+  #end
+  
   def find_by_uuid(uuid)
-    raise ArgumentError.new('NService.find_by_uuid: no UUID has been provided') if uuid.empty?
-    @logger.debug "NService.find_by_uuid(#{uuid})"
+    log_message='NService.'+__method__.to_s
+    raise ArgumentError.new(log_message + ': no UUID has been provided') if uuid.empty?
+    @logger.debug(log_message) {"entered with uuid=#{uuid}"}
     begin
-      service = @catalogue.find_by_uuid(uuid)
-      @logger.debug "NService.find_by_uuid: #{service}"
-      service.is_a?(Array) ? service.first : service
-    rescue CatalogueRecordNotFoundError
-      raise NServiceNotFoundError.new 'Service with uuid '+uuid+' was not found'
-    rescue Exception => e
-      @logger.debug(e.message)
-      @logger.debug(e.backtrace.inspect)
-      halt 500, 'Could not contact the Service Catalogue'
+      res=Curl.get(@catalogue.url) do |req|
+        req.headers['Content-type'] = req.headers['Accept'] = 'application/json'
+      end
+      @logger.debug(log_message) {"header_str=#{res.header_str}"}
+      @logger.debug(log_message) {"response body=#{res.body}"}
+      status = status_from_response_headers(res.header_str)
+      case status
+      when 200
+        begin
+          parsed_response = res.body.empty? ? {} : JSON.parse(res.body, symbolize_names: true)
+          @logger.debug(log_message) {"parsed_response=#{parsed_response}"}
+          {status: 200, count: 1, items: parsed_response, message: "OK"}
+        rescue => e
+          @logger.error(log_message) {"Error during processing: #{$!}"}
+          @logger.error(log_message) {"Backtrace:\n\t#{e.backtrace.join("\n\t")}"}
+        end
+      else
+        raise NServiceNotFoundError.new 'Service with uuid '+uuid+' was not found'
+      end
+    rescue Curl::Err::ConnectionFailedError => e
+      {status: 500, count: nil, items: nil, message: "Couldn't connect to server #{@catalogue.url}"}
+    rescue Curl::Err::CurlError => e
+      {status: 500, count: nil, items: nil, message: "Generic error while connecting to server #{@catalogue.url}"}
+    rescue Curl::Err::AccessDeniedError => e
+      {status: 500, count: nil, items: nil, message: "Access denied while connecting to server #{@catalogue.url}"}
+    rescue Curl::Err::TimeoutError => e
+      {status: 500, count: nil, items: nil, message: "Time out while connecting to server #{@catalogue.url}"}
+    rescue Curl::Err::HostResolutionError => e
+      {status: 500, count: nil, items: nil, message: "Couldn't resolve host name #{@catalogue.url}"}
     end
+  end
+  
+  private
+  
+  def status_from_response_headers(header_str)
+    # From http://stackoverflow.com/questions/14345805/get-response-headers-from-curb
+    #http_response # => "HTTP/1.1 200 OK"
+    http_status = header_str.split(/[\r\n]+/).map(&:strip)[0].split(" ")
+    http_status[1].to_i
   end
 end
