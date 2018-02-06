@@ -1,6 +1,6 @@
 #!/bin/bash
 ### Docker network create son-sp if doesn't exists
-### Setting integration server
+### Setting integration server. Localhost is default
 if ! [ -z $ENV_INT_SERVER ] 
 then
     export DOCKER_HOST=tcp://$ENV_INT_SERVER:2375
@@ -21,6 +21,24 @@ docker pull sonatanfv/son-monitor-pushgateway:dev
 docker pull sonatanfv/son-monitor-pushgateway:dev
 docker pull sonatanfv/son-monitor-manager:dev
 docker pull sonatanfv/son-validate:dev
+
+### If the deployment is in a different server of localhost
+### Last version of container have to be updated
+if ! [ -z $ENV_INT_SERVER ]
+then
+	docker pull registry.sonata-nfv.eu:5000/son-gtkapi
+	docker pull registry.sonata-nfv.eu:5000/son-gtkfnct
+	docker pull registry.sonata-nfv.eu:5000/son-keycloak
+	docker pull registry.sonata-nfv.eu:5000/son-gtkkpi
+	docker pull registry.sonata-nfv.eu:5000/son-gtkpkg
+	docker pull registry.sonata-nfv.eu:5000/son-gtklic
+	docker pull registry.sonata-nfv.eu:5000/son-gtkrec
+	docker pull registry.sonata-nfv.eu:5000/son-gtkrlt
+	docker pull registry.sonata-nfv.eu:5000/son-gtksrv
+	docker pull registry.sonata-nfv.eu:5000/son-gtkusr
+	docker pull registry.sonata-nfv.eu:5000/son-gtkvim
+	docker pull registry.sonata-nfv.eu:5000/son-sec-gw
+fi
 
 ### POSTGRES
 echo postgres

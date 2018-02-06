@@ -1,5 +1,3 @@
-## SONATA - Gatekeeper
-##
 ## Copyright (c) 2015 SONATA-NFV [, ANY ADDITIONAL AFFILIATION]
 ## ALL RIGHTS RESERVED.
 ## 
@@ -25,4 +23,12 @@
 ## the Horizon 2020 and 5G-PPP programmes. The authors would like to 
 ## acknowledge the contributions of their colleagues of the SONATA 
 ## partner consortium (www.sonata-nfv.eu).
-web: bundle exec puma -C config/puma.rb -b tcp://0.0.0.0:0$PORT
+# spec/support/factory_girl.rb
+require 'factory_bot'
+RSpec.configure do |config|
+  config.include FactoryBot::Syntax::Methods
+
+  config.before(:suite) do
+    FactoryBot.find_definitions
+  end
+end

@@ -65,7 +65,7 @@ class GtkSrv < Sinatra::Base
   set :root, File.dirname(__FILE__)
   set :public_folder, File.join(File.dirname(__FILE__), 'public')
   set :bind, '0.0.0.0'
-  set :time_at_startup, Time.now.utc
+  set :began_at, Time.now.utc
   set :environments, %w(development test integration qualification demonstration)
   set :environment, ENV['RACK_ENV'] || :development
   config_file File.join( [root, 'config', 'services.yml.erb'] )
@@ -80,33 +80,44 @@ class GtkSrv < Sinatra::Base
   logfile.sync = true
   set :logger, Logger.new(logfile)
   raise 'Can not proceed without a logger file' if settings.logger.nil?
-  set :logger_level, (settings.logger_level ||= 'debug').to_sym # can be debug, fatal, error, warn, or info
-  logger.info(MODULE) {"Started at #{settings.time_at_startup}"}
+  set :logger_level, (settings.level ||= 'debug').to_sym # can be debug, fatal, error, warn, or info
   logger.info(MODULE) {"Logger level at :#{settings.logger_level}"}
     
   enable :cross_origin
   
-  if settings.catalogues
-    set :services_catalogue, Catalogue.new(settings.catalogues+'/network-services', logger)
-    set :functions_catalogue, Catalogue.new(settings.catalogues+'/vnfs', logger)
-  else
+  unless settings.catalogues
     logger.error(MODULE) {'>>>Catalogue url not defined, application being terminated!!'}
     Process.kill('TERM', Process.pid)
   end
-  if settings.mqserver_url
-    set :create_mqserver, MQServer.new(CREATE, settings.mqserver_url)
-    #set :update_server, UpdateServer.new(settings.mqserver_url, logger)
-    set :update_mqserver, MQServer.new(UPDATE, settings.mqserver_url)
-    set :terminate_mqserver, MQServer.new(TERMINATE, settings.mqserver_url)
-  else
+  set :services_catalogue, Catalogue.new(settings.catalogues+'/network-services', logger)
+  set :functions_catalogue, Catalogue.new(settings.catalogues+'/vnfs', logger)
+
+  unless settings.mqserver_url
     logger.error(MODULE) {'>>>MQServer url not defined, application being terminated!!'}
     Process.kill('TERM', Process.pid)
   end
-  logger.info(MODULE) {"started at #{settings.time_at_startup}"}
+  set :create_mqserver, MQServer.new(CREATE, settings.mqserver_url)
+  set :update_mqserver, MQServer.new(UPDATE, settings.mqserver_url)
+  set :terminate_mqserver, MQServer.new(TERMINATE, settings.mqserver_url)
+
+  logger.info(MODULE) {"started at #{settings.began_at}"}
   logger.info(MODULE) {"Services Catalogue: #{settings.services_catalogue.url}"}
   logger.info(MODULE) {"Functions Catalogue: #{settings.functions_catalogue.url}"}
   logger.info(MODULE) {"Create MQServer: #{settings.create_mqserver.url}"}
   logger.info(MODULE) {"Update MQServer: #{settings.update_mqserver.url}"}
   logger.info(MODULE) {"Terminate MQServer: #{settings.terminate_mqserver.url}"}
   #logger.info(MODULE) {"UpdateServer: #{settings.update_mqserver.url}"}
+  
+  get '/admin/logs' do
+    content_type :text
+    logger.debug "GtkSrv: entered GET /admin/logs"
+    File.open('log/'+ENV['RACK_ENV']+'.log', 'r').read
+  end  
+  
+  get '/began_at/?' do
+    log_message = 'GtkSrv GET /began_at'
+    logger.debug(log_message) {'entered'}
+    logger.debug(log_message) {"began at #{settings.began_at}"}
+    halt 200, {began_at: settings.began_at}.to_json
+  end
 end

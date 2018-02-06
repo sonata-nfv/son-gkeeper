@@ -60,7 +60,7 @@ class Request < ActiveRecord::Base
   end
   
   def self.process_request(nsd:, service_instance_uuid:, type: 'UPDATE', mq_server:)
-    method = GtkSrv::MODULE + "Request.process_request"
+    method = GtkSrv::MODULE + "Request#{}process_request"
     logger = GtkSrv.logger
     logger.debug(method) {"entered"}
     raise Exception.new(method+'A valid NSD is needed') unless nsd
@@ -102,6 +102,73 @@ class Request < ActiveRecord::Base
     end
   end
 
+  def self.build params
+    log_msg = 'GtkSrv::Request#build'.freeze
+    logger = GtkSrv.logger
+    logger.debug(log_msg) {"with params=#{params}"}
+    
+    start_request={}
+    start_request['instance_id'] = params['service_instance_uuid'] if (params['request_type'] == 'TERMINATE' || params['request_type'] == 'UPDATE')
+
+    # we're not storing egresses or ingresses
+    egresses = params.delete 'egresses' if params['egresses']
+    ingresses = params.delete 'ingresses' if params['ingresses']
+    user_data = params.delete 'user_data' if params['user_data']
+
+    service = get_service(params)
+    raise Exception.new(log_msg+': Network service not found') unless service
+    logger.debug(log_msg) {"service=#{service}"}
+
+    # we're not storing egresses or ingresses, so we're not passing them
+    si_request = Request.create(service_uuid: service[:uuid], service_instance_uuid: params['service_instance_uuid'], request_type: params['request_type'], callback: params['callback'], began_at: Time.now.utc)
+    raise Exception.new(log_msg+': Not possible to create '+params['request_type']+' request') unless si_request
+
+    logger.debug(log_msg) {"with service_uuid=#{params['service_uuid']}, service_instance_uuid=#{params['service_instance_uuid']}: #{si_request.inspect}"}
+    
+    nsd = service[:nsd]
+    nsd[:uuid] = service[:uuid]
+    start_request['NSD']=nsd
+  
+    nsd[:network_functions].each_with_index do |function, index|
+      logger.debug(log_msg) { "function=['#{function[:vnf_name]}', '#{function[:vnf_vendor]}', '#{function[:vnf_version]}']"}
+      stored_function = VFunction.new(GtkSrv.functions_catalogue, logger).find_function(function[:vnf_name],function[:vnf_vendor],function[:vnf_version])
+      logger.error(log_msg) {"network function not found"} unless stored_function
+      logger.debug(log_msg) {"function#{index}=#{stored_function}"}
+      vnfd = stored_function[:vnfd]
+      vnfd[:uuid] = stored_function[:uuid]
+      start_request["VNFD#{index}"]=vnfd 
+      logger.debug(log_msg) {"start_request[\"VNFD#{index}\"]=#{vnfd}"}
+    end
+    start_request['egresses'] = egresses
+    start_request['ingresses'] = ingresses
+    start_request['user_data'] = user_data
+    return si_request, start_request
+  end
+  
+  private
+  
+  def self.get_service(params)
+    log_message = 'GtkSrv::get_service'
+    logger.debug(log_message) {"entered with params #{params}"}
+    logger = GtkSrv.logger
+    if (params['request_type'] == 'TERMINATE' || params['request_type'] == 'UPDATE')
+      # Get the service_uuid from the creation request
+      creation_request = fetch_creation_request params['service_instance_uuid']
+      logger.debug(log_message) {"creation_request found = #{creation_request}"}
+      unless creation_request
+        logger.debug(log_message) {"No creation request found"}
+        return nil
+      end
+      params['service_uuid'] = creation_request.to_a.first['service_uuid']
+    end
+    service=NService.new(GtkSrv.services_catalogue, logger).find_by_uuid(params['service_uuid'])
+    return nil unless service[:status] == 200
+    service[:items].first
+  end
+  
+  def fetch_creation_request uuid
+    Request.where("service_instance_uuid = ? AND request_type = 'CREATE' ans status='READY'", uuid)
+  end
 end
 
 # Establish a connection with a Model (a Table) belong to a database different from default 
