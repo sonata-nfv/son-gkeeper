@@ -106,12 +106,6 @@ class GtkSrv < Sinatra::Base
     end
   end
 
-  get '/admin/logs' do
-    content_type :text
-    logger.debug "GtkSrv: entered GET /admin/logs"
-    File.open('log/'+ENV['RACK_ENV']+'.log', 'r').read
-  end  
-  
   private 
   def query_string
     request.env['QUERY_STRING'].nil? ? '' : '?' + request.env['QUERY_STRING'].to_s
