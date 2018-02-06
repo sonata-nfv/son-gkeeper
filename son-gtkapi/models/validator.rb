@@ -37,18 +37,19 @@ class Validator < ManagerService
   
   #attr_accessor :available, :until
   
-  def self.config(url:)
+  def self.config(url:, logger:)
     log_message = LOG_MESSAGE + '#' + __method__.to_s
-    raise ArgumentError.new('Validator model can not be configured with nil or empty url') if (url.to_s.empty?)
+    raise ArgumentError.new('Validator model can not be configured with nil or empty url') if url.to_s.empty?
     @@url = url
-    GtkApi.logger.debug(log_message) {'entered with url='+url}
+    @@logger = logger
+    @@logger.debug(log_message) {'entered with url='+url}
   end
   
   def self.valid_package?(file_path:, signature: '')
     log_message = LOG_MESSAGE + '#'+__method__.to_s
     # /validate/package
     # POST {'source':'embedded', 'file':'...', 'syntax': True, 'integrity': True, 'topology':True}
-    GtkApi.logger.debug(log_message) {"entered with file name #{file_path}"}
+    @@logger.debug(log_message) {"entered with file name #{file_path}"}
     
     # prepare post data
     #fields_hash = {source:'embedded', syntax: true, integrity: true, topology: true, signature: signature}
@@ -69,31 +70,31 @@ class Validator < ManagerService
         Curl::PostField.content('signature', signature),
         Curl::PostField.file('file', file_path)
         )
-      GtkApi.logger.debug(log_message) {"curl.body_str=#{curl.body_str}"}
+      @@logger.debug(log_message) {"curl.body_str=#{curl.body_str}"}
       resp = {status: curl.response_code, items: [JSON.parse(curl.body_str)]} # ManagerService.status_from_response_headers(curl.header_str)
       case resp[:status]
       when 200
-        GtkApi.logger.debug(log_message) {"Validator result=#{resp[:items]}"}
+        @@logger.debug(log_message) {"Validator result=#{resp[:items]}"}
         resp[:items].first
       when 400
-        GtkApi.logger.error(log_message) {"Status 400: #{resp[:items]}"} 
+        @@logger.error(log_message) {"Status 400: #{resp[:items]}"} 
         raise ValidatorError.new "Errors/warnings in validating the package: #{resp[:items]}"
       else
-        GtkApi.logger.error(log_message) {"Status #{resp[:status]}"} 
+        @@logger.error(log_message) {"Status #{resp[:status]}"} 
         raise ValidatorGenericError.new "Error #{resp[:status]} from the Package Validator"
       end
     rescue  => e
-      GtkApi.logger.error(log_message) {"Error during processing: #{$!}"}
-      GtkApi.logger.error(log_message) {"Backtrace:\n\t#{e.backtrace.join("\n\t")}"}
+      @@logger.error(log_message) {"Error during processing: #{$!}"}
+      @@logger.error(log_message) {"Backtrace:\n\t#{e.backtrace.join("\n\t")}"}
       raise ValidatorGenericError.new "There was a problem POSTing a package file to the Package validator"
     end    
   end
   
   def self.began_at
     log_message=LOG_MESSAGE+"##{__method__}"
-    GtkApi.logger.debug(log_message) {'entered'}    
+    @@logger.debug(log_message) {'entered'}    
     response = getCurb(url: @@url + '/began_at')
-    GtkApi.logger.debug(log_message) {"response=#{response}"}
+    @@logger.debug(log_message) {"response=#{response}"}
     response
   end
 end

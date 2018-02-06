@@ -50,16 +50,17 @@ class User < ManagerService
   
   # {"username" => "sampleuser", "enabled" => true, "totp" => false, "emailVerified" => false, "firstName" => "User", "lastName" => "Sample", "email" => "user.sample@email.com.br", "credentials" => [ {"type" => "password", "value" => "1234"} ], "requiredActions" => [], "federatedIdentities" => [], "attributes" => {"developer" => ["true"], "customer" => ["false"], "admin" => ["false"]}, "realmRoles" => [], "clientRoles" => {}, "groups" => ["developers"]}
   
-  def self.config(url:)
+  def self.config(url:, logger:)
     method = LOG_MESSAGE + __method__.to_s
-    raise ArgumentError.new('UserManagerService can not be configured with nil or empty url') if (url.nil? || url.empty?)
+    raise ArgumentError.new('UserManagerService can not be configured with nil or empty url') if url.to_s.empty?
     @@url = url
-    GtkApi.logger.debug(method) {'entered with url='+url}
+    @@logger = logger
+    @@logger.debug(method) {'entered with url='+url}
   end
   
   def initialize(params)
     method = LOG_MESSAGE + "##{__method__}"
-    GtkApi.logger.debug(method) {"entered with params #{params}"}
+    @@logger.debug(method) {"entered with params #{params}"}
     raise ArgumentError.new('UserManagerService can not be instantiated without a user name') unless (params.key?(:username) && !params[:username].empty?)
 
     @username = params[:username]
@@ -79,7 +80,7 @@ class User < ManagerService
 
   def self.create(params)
     method = LOG_MESSAGE + "##{__method__}"
-    GtkApi.logger.debug(method) {"entered with #{params}"}
+    @@logger.debug(method) {"entered with #{params}"}
 
     saved_params = params.dup
     
@@ -95,7 +96,7 @@ class User < ManagerService
     params[:attributes][:phone_number] = [params.delete(:phone_number)] if params[:phone_number]
     params[:attributes][:certificate] = [params.delete(:certificate)] if params[:certificate]
     params[:attributes][:public_key] = [params.delete(:public_key)] if params[:public_key]
-    GtkApi.logger.debug(method) {"params = #{params}"}
+    @@logger.debug(method) {"params = #{params}"}
     
     begin
       resp = postCurb(url: @@url+'/api/v1/register/user', body: params)
@@ -103,23 +104,23 @@ class User < ManagerService
       when 200..202
         user = resp[:items]
         raise UserNotCreatedError.new "User not created with params #{params}" unless user.key? :userId
-        GtkApi.logger.debug(method) {"user=#{user}"}
+        @@logger.debug(method) {"user=#{user}"}
         unless user.empty?
           saved_params[:uuid] = user[:userId]
           saved_params[:created_at] = user[:created_at]
         end
         User.new(saved_params)
       when 409
-        GtkApi.logger.debug(method) {"Status 409"} 
+        @@logger.debug(method) {"Status 409"} 
         raise UserNameAlreadyInUseError.new "User name #{params[:username]} already in use"
       else
-        GtkApi.logger.error(method) {"Status #{resp[:status]}"} 
+        @@logger.error(method) {"Status #{resp[:status]}"} 
         raise UserNotCreatedError.new "User not created with params #{params}"
       end
       #rescue  => e
-      #GtkApi.logger.debug(method) {"resp=#{resp}"}
-      #GtkApi.logger.error(method) {"Error during processing: #{$!}"}
-      #GtkApi.logger.error(method) {"Backtrace:\n\t#{e.backtrace.join("\n\t")}"}
+      #@@logger.debug(method) {"resp=#{resp}"}
+      #@@logger.error(method) {"Error during processing: #{$!}"}
+      #@@logger.error(method) {"Backtrace:\n\t#{e.backtrace.join("\n\t")}"}
       #raise UserNotCreatedError.new "User not created with params #{params}"
     end
   end
@@ -130,26 +131,26 @@ class User < ManagerService
     raise ArgumentError.new 'Authentication needs the user password' if (password.to_s.empty?)
     
     secret = Base64.strict_encode64(username+':'+password)
-    GtkApi.logger.debug(method) {"entered with secret=#{secret}"}
+    @@logger.debug(method) {"entered with secret=#{secret}"}
     headers = {'Content-type'=>'application/json', 'Accept'=> 'application/json', 'Authorization'=>'Basic '+secret}
     begin
       resp = postCurb(url: @@url+'/api/v1/login/user', body: {}, headers: headers)
-      GtkApi.logger.debug(method) {"response=#{resp}"}
+      @@logger.debug(method) {"response=#{resp}"}
       case resp[:status]
       when 200
         token = resp[:items]
-        GtkApi.logger.debug(method) {"token=#{token}"}
+        @@logger.debug(method) {"token=#{token}"}
         {began_at: Time.now.utc, token: token, user_type: find_user_type_by_username(username)}
       when 401
-        GtkApi.logger.error(method) {"Status 401"} 
+        @@logger.error(method) {"Status 401"} 
         raise UserNotAuthenticatedError.new "User not authenticated with params #{secret}"
       else
-        GtkApi.logger.error(method) {"Status #{resp[:status]}"} 
+        @@logger.error(method) {"Status #{resp[:status]}"} 
         raise UserNotAuthenticatedError.new "User not authenticated with params #{secret}"
       end
       #rescue  => e
-      #GtkApi.logger.error(method) {"Error during processing: #{$!}"}
-      #GtkApi.logger.error(method) {"Backtrace:\n\t#{e.backtrace.join("\n\t")}"}
+      #@@logger.error(method) {"Error during processing: #{$!}"}
+      #@@logger.error(method) {"Backtrace:\n\t#{e.backtrace.join("\n\t")}"}
       #raise UserNotAuthenticatedError.new "User not authenticated with params #{secret}"
     end
   end
@@ -157,19 +158,19 @@ class User < ManagerService
   def self.logout!(token)
     method = LOG_MESSAGE + "##{__method__}"
     raise ArgumentError.new 'Logging out requires the login token' if (token.nil? || token.empty?)
-    GtkApi.logger.debug(method) {"entered"}
+    @@logger.debug(method) {"entered"}
     headers = {'Content-type'=>'application/json', 'Accept'=> 'application/json', 'Authorization'=>'Bearer '+token}
 
     resp = postCurb(url: @@url+'/api/v1/logout', body: {}, headers: headers)
     case resp[:status]
     when 204
-      GtkApi.logger.debug(method) {"User logged out"}
+      @@logger.debug(method) {"User logged out"}
       {lasted_for: Time.now.utc}
     when 401
-      GtkApi.logger.error(method) {"Status 401: token not active"} 
+      @@logger.error(method) {"Status 401: token not active"} 
       raise UserTokenNotActiveError.new "User token was not active"
     else
-      GtkApi.logger.error(method) {"Status #{resp[:status]}"} 
+      @@logger.error(method) {"Status #{resp[:status]}"} 
       raise UserNotLoggedOutError.new "User not logged out with the given token"
     end
   end
@@ -178,20 +179,20 @@ class User < ManagerService
     method = LOG_MESSAGE + "##{__method__}"
     raise ArgumentError.new __method__.to_s+' requires the login token' if token.to_s.empty?
     raise ArgumentError.new __method__.to_s+' requires a path and a method to be authorized' if (params.to_s.empty? || !params.key?(:method) || !params.key?(:path))
-    GtkApi.logger.debug(method) {"entered with token #{token} and params #{params}"}
+    @@logger.debug(method) {"entered with token #{token} and params #{params}"}
     headers = {'Content-type'=>'application/json', 'Accept'=> 'application/json', 'Authorization'=>'Bearer '+token}
 
     resp = postCurb(url: @@url+'/api/v1/userinfo', body: params, headers: headers)
     # {:sub=>"fe53ac4f-052a-4a41-b7cd-914d4c64c2f8", :name=>"", :preferred_username=>"jbonnet", :email=>"jbonnet@alticelabs.com"}
     case resp[:status]
     when 200
-      GtkApi.logger.debug(method) {"User authorized to #{params}"}
+      @@logger.debug(method) {"User authorized to #{params}"}
       true
     when 401
-      GtkApi.logger.error(method) {"Status 401: User not authorized to #{params}"} 
+      @@logger.error(method) {"Status 401: User not authorized to #{params}"} 
       false
     else
-      GtkApi.logger.error(method) {"Status #{resp[:status]}"} 
+      @@logger.error(method) {"Status #{resp[:status]}"} 
       false
     end
   end
@@ -199,18 +200,18 @@ class User < ManagerService
   def update(fields, token)
     log_message = LOG_MESSAGE + "##{__method__}"
     raise ArgumentError.new __method__.to_s+' requires a hash with arguments' if fields.to_s.empty?
-    GtkApi.logger.debug(log_message) {"entered with fields=#{fields}"}
+    @@logger.debug(log_message) {"entered with fields=#{fields}"}
     fields.each do |key, value|
-      GtkApi.logger.debug(log_message) {"key=#{key}, value=#{value}"}
+      @@logger.debug(log_message) {"key=#{key}, value=#{value}"}
       setter = :"#{key}="
-      GtkApi.logger.debug(log_message) {"setter is #{setter}"}
+      @@logger.debug(log_message) {"setter is #{setter}"}
       if respond_to?(setter)
-        GtkApi.logger.debug(log_message) {"user responds to #{setter}"}
+        @@logger.debug(log_message) {"user responds to #{setter}"}
         public_send(setter, value)
         new_val = instance_variable_get("@#{key}")
-        GtkApi.logger.debug(log_message) {"variable @#{key} set to #{new_val}"}
+        @@logger.debug(log_message) {"variable @#{key} set to #{new_val}"}
       else
-        GtkApi.logger.debug(log_message) {"user does not respond to #{setter}"}
+        @@logger.debug(log_message) {"user does not respond to #{setter}"}
       end
     end
     save(token: token)
@@ -218,25 +219,25 @@ class User < ManagerService
 
   def save(token:)
     method = LOG_MESSAGE + "##{__method__}"
-    GtkApi.logger.debug(method) {"entered"}
+    @@logger.debug(method) {"entered"}
     body={public_key: @public_key, certificate: @certificate}
     headers = {'Content-type'=>'application/json', 'Accept'=> 'application/json', 'Authorization'=>'Bearer '+token}
     resp = User.putCurb(url: @@url+'/api/v1/users?username='+@username, body: export(), headers: headers)
     case resp[:status]
     when 204 # data was successfully saved
-      GtkApi.logger.debug(method) {"User data saved"}
+      @@logger.debug(method) {"User data saved"}
       self
     when 400 # Provided username does not match with Access Token, No username specified or Developer public key not provided
-      GtkApi.logger.debug(method) {'Username '+@username+' does not match with token'}
+      @@logger.debug(method) {'Username '+@username+' does not match with token'}
       raise UserTokenDoesNotMatchError.new 'Username '+@username+' does not match with token'
     when 401 # Token is not valid
-      GtkApi.logger.debug(method) {'Username '+@username+' provided a token that is not valid'}
+      @@logger.debug(method) {'Username '+@username+' provided a token that is not valid'}
       raise UserTokenNotActiveError.new 'Username '+@username+' provided a token that is not valid'
     when 404 # Username is not found
-      GtkApi.logger.debug(method) {'Username '+@username+' was not found'}
+      @@logger.debug(method) {'Username '+@username+' was not found'}
       raise UserNotFoundError.new 'Username '+@username+' was not found'
     else
-      GtkApi.logger.error(method) {"Status #{resp[:status]}"} 
+      @@logger.error(method) {"Status #{resp[:status]}"} 
       raise UserNotUpdatedError.new 'User public-key not updated'
     end
   end
@@ -244,7 +245,7 @@ class User < ManagerService
   def save_public_key(params, token)
     method = LOG_MESSAGE + "##{__method__}"
     raise ArgumentError.new __method__.to_s+' requires the login token' if token.to_s.empty?
-    GtkApi.logger.debug(method) {"entered"}
+    @@logger.debug(method) {"entered"}
     
     @public_key = params[:public_key]
     @certificate = params[:certificate] if params[:certificate]
@@ -253,35 +254,35 @@ class User < ManagerService
     resp = User.putCurb(url: @@url+'/api/v1/signatures/'+@username, body: body, headers: headers)
     case resp[:status]
     when 204 # signature is successfully updated
-      GtkApi.logger.debug(method) {"User public-key updated"}
+      @@logger.debug(method) {"User public-key updated"}
       self
     when 400 # Provided username does not match with Access Token, No username specified or Developer public key not provided
-      GtkApi.logger.debug(method) {'Username '+@username+' does not match with token'}
+      @@logger.debug(method) {'Username '+@username+' does not match with token'}
       raise UserTokenDoesNotMatchError.new 'Username '+@username+' does not match with token'
     when 401 # Token is not valid
-      GtkApi.logger.debug(method) {'Username '+@username+' provided a token that is not valid'}
+      @@logger.debug(method) {'Username '+@username+' provided a token that is not valid'}
       raise UserTokenNotActiveError.new 'Username '+@username+' provided a token that is not valid'
     when 404 # Username is not found
-      GtkApi.logger.debug(method) {'Username '+@username+' was not found'}
+      @@logger.debug(method) {'Username '+@username+' was not found'}
       raise UserNotFoundError.new 'Username '+@username+' was not found'
     else
-      GtkApi.logger.error(method) {"Status #{resp[:status]}"} 
+      @@logger.error(method) {"Status #{resp[:status]}"} 
       raise UserPublicKeyNotUpdatedError.new 'User public-key not updated'
     end
   end
   
   def self.valid?(params)
     method = LOG_MESSAGE + "##{__method__}"
-    GtkApi.logger.debug(method) {"entered with params #{params}"}
+    @@logger.debug(method) {"entered with params #{params}"}
     User.find_by_uuid(params[:user_uuid])
   end
   
   def self.find_by_uuid(uuid)
     method = LOG_MESSAGE + "##{__method__}"
-    GtkApi.logger.debug(method) {"entered with uuid #{uuid}"}
+    @@logger.debug(method) {"entered with uuid #{uuid}"}
     begin
       response = getCurb(url:@@url + '/api/v1/users?id=' + uuid, headers: JSON_HEADERS)
-      GtkApi.logger.debug(method) {"Got response: #{response}"}
+      @@logger.debug(method) {"Got response: #{response}"}
       raise UserNotFoundError.new "User with uuid #{uuid} was not found" unless response[:status] == 200
       if response[:items].empty? || (user = response[:items].first).empty?
         raise UserNotFoundError.new "User with uuid #{uuid} was not found (code #{response[:status]})"
@@ -292,11 +293,11 @@ class User < ManagerService
 
   def self.find_by_name(name)
     method = LOG_MESSAGE + "##{__method__}"
-    GtkApi.logger.debug(method) {"entered with name #{name}"}
+    @@logger.debug(method) {"entered with name #{name}"}
 
     begin
       response = getCurb(url:@@url + '/api/v1/users?username=' + name, headers: JSON_HEADERS)
-      GtkApi.logger.debug(method) {"Got response: #{response}"}
+      @@logger.debug(method) {"Got response: #{response}"}
       raise UserNotFoundError.new "User with name #{name} was not found (code #{response[:status]})" unless response[:status] == 200
   
       if response[:items].empty? || (user = response[:items].first).empty?
@@ -308,14 +309,14 @@ class User < ManagerService
   
   def self.find(params)
     method = LOG_MESSAGE + "##{__method__}"
-    GtkApi.logger.debug(method) {"entered with params #{params}"}
+    @@logger.debug(method) {"entered with params #{params}"}
 
     begin
       response = getCurb(url:@@url + '/api/v1/users', headers: JSON_HEADERS)
-      GtkApi.logger.debug(method) {"Got response: #{response}"}
+      @@logger.debug(method) {"Got response: #{response}"}
       case response[:status]
       when 200
-        GtkApi.logger.debug(method) {'response[:items].empty? '+(response[:items].empty? ? 'yes' : 'no')}
+        @@logger.debug(method) {'response[:items].empty? '+(response[:items].empty? ? 'yes' : 'no')}
         raise UsersNotFoundError.new "No users with params #{params} were found" if response[:items].empty?
         retrieved_users = []
         response[:items].each do |user|
@@ -328,8 +329,8 @@ class User < ManagerService
         raise UsersNotFoundError.new "Users with params #{params} were not found(code #{response[:code]})"
       end
       #rescue StandardError => e
-      #GtkApi.logger.error(method) {"Error during processing: #{$!}"}
-      #GtkApi.logger.error(method) {"Backtrace:\n\t#{e.backtrace.join("\n\t")}"}
+      #@@logger.error(method) {"Error during processing: #{$!}"}
+      #@@logger.error(method) {"Backtrace:\n\t#{e.backtrace.join("\n\t")}"}
       #[]
     end
   end
@@ -337,7 +338,7 @@ class User < ManagerService
   def self.find_username_by_token(token)
     method = LOG_MESSAGE + "##{__method__}"
     raise ArgumentError.new __method__.to_s+' requires the login token' if (token.to_s.empty?)
-    GtkApi.logger.debug(method) {"entered with token #{token}"}
+    @@logger.debug(method) {"entered with token #{token}"}
 
     translated_token = self.translate_token token    
     translated_token[:preferred_username]
@@ -346,7 +347,7 @@ class User < ManagerService
   def self.find_email_by_token(token)
     method = LOG_MESSAGE + "##{__method__}"
     raise ArgumentError.new __method__.to_s+' requires the login token' if (token.to_s.empty?)
-    GtkApi.logger.debug(method) {"entered with token #{token}"}
+    @@logger.debug(method) {"entered with token #{token}"}
     
     translated_token = self.translate_token token
     translated_token[:email]
@@ -359,35 +360,35 @@ class User < ManagerService
     # e.g.: "attributes": { "userType": [ "developer" ] }
     method = "#{LOG_MESSAGE}##{__method__}"
     raise ArgumentError.new __method__.to_s+' requires the user name' if (username.to_s.empty?)
-    GtkApi.logger.debug(method) {"entered"}
+    @@logger.debug(method) {"entered"}
     headers = {'Content-type'=>'application/json', 'Accept'=> 'application/json'} #, 'Authorization'=>'Bearer '+token}
 
     resp = getCurb(url: @@url+'/api/v1/users?username='+username, params: {}, headers: headers)
-    GtkApi.logger.debug(method) {"resp=#{resp}"}
+    @@logger.debug(method) {"resp=#{resp}"}
     case resp[:status]
     when 200
-      GtkApi.logger.debug(method) {"resp[:items]=#{resp[:items]}"}
+      @@logger.debug(method) {"resp[:items]=#{resp[:items]}"}
       user = resp[:items].first
       user[:attributes][:userType].first
     when 404
-      GtkApi.logger.error(method) {"Status 404: username #{username} not found"} 
+      @@logger.error(method) {"Status 404: username #{username} not found"} 
       raise UserNotFoundError.new "User username #{username} not found"
     else
-      GtkApi.logger.error(method) {"Status #{resp[:status]}"} 
+      @@logger.error(method) {"Status #{resp[:status]}"} 
       raise UserNotFoundError.new "User not found with the given username"
     end  
   end
   
   def self.public_key
     method = LOG_MESSAGE + "##{__method__}"
-    GtkApi.logger.debug(method) {'entered'}
+    @@logger.debug(method) {'entered'}
     begin
       p_key = getCurb(url: @@url+'/api/v1/public-key', params: {}, headers: {})
-      GtkApi.logger.debug(method) {"p_key=#{p_key}"}
+      @@logger.debug(method) {"p_key=#{p_key}"}
       p_key
     rescue  => e
-      GtkApi.logger.error(method) {"Error during processing: #{$!}"}
-      GtkApi.logger.error(method) {"Backtrace:\n\t#{e.backtrace.join("\n\t")}"}
+      @@logger.error(method) {"Error during processing: #{$!}"}
+      @@logger.error(method) {"Backtrace:\n\t#{e.backtrace.join("\n\t")}"}
       raise PublicKeyNotFoundError.new('No public key received from User Management micro-service')
     end
   end
@@ -398,15 +399,15 @@ class User < ManagerService
 
   def to_h
     method = LOG_MESSAGE + "##{__method__}"
-    GtkApi.logger.debug(method) {"entered"}
+    @@logger.debug(method) {"entered"}
     self.instance_variables.each_with_object({}) { |var,hash| hash[var[1..-1].to_sym] = self.instance_variable_get(var) }
   end
   
   def self.began_at
     log_message=LOG_MESSAGE+"##{__method__}"
-    GtkApi.logger.debug(log_message) {'entered'}    
+    @@logger.debug(log_message) {'entered'}    
     response = getCurb(url: @@url + '/began_at')
-    GtkApi.logger.debug(log_message) {"response=#{response}"}
+    @@logger.debug(log_message) {"response=#{response}"}
     response
   end
   
@@ -433,7 +434,7 @@ class User < ManagerService
 
   def export()
     log_message=LOG_MESSAGE+"##{__method__}"
-    GtkApi.logger.debug(log_message) {'entered'}
+    @@logger.debug(log_message) {'entered'}
     user = {}
       
     user[:firstName] = first_name if first_name
@@ -449,7 +450,7 @@ class User < ManagerService
     user[:attributes][:phone_number] = [phone_number] if phone_number
     user[:attributes][:certificate] = [certificate] if certificate
     user[:attributes][:public_key] = [public_key] if public_key
-    GtkApi.logger.debug(log_message) {"user = #{user}"}
+    @@logger.debug(log_message) {"user = #{user}"}
     user
   end
   
@@ -460,20 +461,20 @@ class User < ManagerService
     #  {"sub":"8031545e-d4da-4086-8cb2-a417f3460de2","name":"myName myLastName","preferred_username":"tester01","given_name":"myName","family_name":"myLastName","email":"myname.company@email.com"}
 
     method = LOG_MESSAGE + "##{__method__}"
-    GtkApi.logger.debug(method) {"entered with token #{token}"}
+    @@logger.debug(method) {"entered with token #{token}"}
     headers = {'Content-type'=>'application/json', 'Accept'=> 'application/json', 'Authorization'=>'Bearer '+token}
 
     resp = postCurb(url: @@url+'/api/v1/userinfo', body: {}, headers: headers)
-    GtkApi.logger.debug(method) {"response= #{resp}"}
+    @@logger.debug(method) {"response= #{resp}"}
     case resp[:status]
     when 200
-      GtkApi.logger.debug(method) {"resp[:items]=#{resp[:items]}"}
+      @@logger.debug(method) {"resp[:items]=#{resp[:items]}"}
       resp[:items]
     when 401
-      GtkApi.logger.error(method) {"Status 401: token not active"} 
+      @@logger.error(method) {"Status 401: token not active"} 
       raise UserTokenNotActiveError.new "User token was not active"
     else
-      GtkApi.logger.error(method) {"Status #{resp[:status]}"} 
+      @@logger.error(method) {"Status #{resp[:status]}"} 
       raise UserNotFoundError.new "User not found with the given token"
     end  
   end

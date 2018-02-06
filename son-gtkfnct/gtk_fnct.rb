@@ -33,7 +33,6 @@ require 'sinatra/json'
 require 'sinatra/config_file'
 require 'sinatra/cross_origin'
 require 'sinatra/reloader'
-require 'sinatra/activerecord'
 require 'sinatra/logger'
 
 # Require the bundler gem and then call Bundler.require to load in all gems listed in Gemfile.
@@ -51,7 +50,6 @@ class GtkFnct < Sinatra::Base
   register Sinatra::ConfigFile
   register Sinatra::CrossOrigin
   register Sinatra::Reloader
-  register Sinatra::ActiveRecordExtension
   register Sinatra::Logger
   set :logger_level, :debug # or :fatal, :error, :warn, :info
   

@@ -39,16 +39,17 @@ class MicroService < ManagerService
   
   attr_accessor :uuid, :clientId, :redirectUris, :secret, :token
   
-  def self.config(url:)
+  def self.config(url:, logger:)
     method = LOG_MESSAGE + "#config"
-    raise ArgumentError.new('MicroService Manager Service can not be configured with nil or empty url') if (url.nil? || url.empty?)
+    raise ArgumentError.new('MicroService Manager Service can not be configured with nil or empty url') if url.to_s.empty?
     @@url = url
-    GtkApi.logger.debug(method) {'entered with url '+url}
+    @@logger = logger
+    @@logger.debug(method) {'entered with url '+url}
   end
   
   def initialize(params)
     method = LOG_MESSAGE + "##{__method__}"
-    GtkApi.logger.debug(method) {"entered with params #{params}"}
+    @@logger.debug(method) {"entered with params #{params}"}
     raise ArgumentError.new('MicroService Manager Service can not be instantiated without a clientId') unless (params.key?(:clientId) && !params[:clientId].empty?)
     raise ArgumentError.new('MicroService Manager Service can not be instantiated without a secret') unless (params.key?(:secret) && !params[:secret].empty?)
     raise ArgumentError.new('MicroService Manager Service can not be instantiated without redirect URIs') unless (params.key?(:redirectUris) && !params[:redirectUris].empty?)
@@ -60,7 +61,7 @@ class MicroService < ManagerService
 
   def self.create(params)
     method = LOG_MESSAGE + "##{__method__}"
-    GtkApi.logger.debug(method) {"entered with #{params}"}
+    @@logger.debug(method) {"entered with #{params}"}
  
     body = params.dup
     body[:clientAuthenticatorType]="client-secret"
@@ -76,46 +77,46 @@ class MicroService < ManagerService
     body[:fullScopeAllowed]=false
     
     micro_service = postCurb(url: @@url+'/api/v1/register/service', body: body, headers: {})
-    GtkApi.logger.debug(method) {"micro_service=#{micro_service}"}
+    @@logger.debug(method) {"micro_service=#{micro_service}"}
     case micro_service[:status]
     when 201
-      GtkApi.logger.debug(method) {"Created micro-service #{micro_service[:items]}"}
+      @@logger.debug(method) {"Created micro-service #{micro_service[:items]}"}
       micro_service[:items][:secret] = params[:secret] # Adds client Secret to the micro_service items
       micro_service[:items][:redirectUris] = params[:redirectUris] # Adds client RedirectUri info to items
       MicroService.new(micro_service[:items])
     when 404
-      GtkApi.logger.debug(method) {"Status 404 (Not Found): micro-service #{params} could not be created"}
+      @@logger.debug(method) {"Status 404 (Not Found): micro-service #{params} could not be created"}
       raise MicroServiceNotCreatedError.new "Could not create micro-service for #{params}"
     when 409
-      GtkApi.logger.debug(method) {"Status 409 (Conflict): micro-service #{params} already created"}
+      @@logger.debug(method) {"Status 409 (Conflict): micro-service #{params} already created"}
       raise MicroServiceAlreadyCreatedError.new "Micro-service #{params} has already been registered"
     else
-      GtkApi.logger.debug(method) {"Status #{micro_service[:status]}: micro-service #{params} could not be created"}
+      @@logger.debug(method) {"Status #{micro_service[:status]}: micro-service #{params} could not be created"}
       raise MicroServiceNotCreatedError.new "Could not create micro-service for #{params}"
     end
   end
 
   def self.find_by_credentials(credentials)
     method = LOG_MESSAGE + "##{__method__}"
-    GtkApi.logger.debug(method) {"entered with credentials #{credentials}"}
+    @@logger.debug(method) {"entered with credentials #{credentials}"}
     #user=find(url: @@url + USERS_URL + name, log_message: LOG_MESSAGE + "##{__method__}(#{name})")
     begin
       micro_service = postCurb(url: @@url+'/api/v1/login/service', body: {}, headers: { authorization: 'basic '+credentials})
       case micro_service[:status]
       when 200 # This only returns the JSON Web Token Hash and do not provide ClientId nor Secret fields!
-        GtkApi.logger.debug(method) {"micro_service=#{micro_service[:items]}"}
+        @@logger.debug(method) {"micro_service=#{micro_service[:items]}"}
         # MicroService.new(micro_service)
         micro_service[:items]
       when 400
-        GtkApi.logger.debug(method) {"Status 400 when looking for micro_service with credentials #{credentials}"}
+        @@logger.debug(method) {"Status 400 when looking for micro_service with credentials #{credentials}"}
         raise MicroServiceNotFoundError.new(credentials)
       else
-        GtkApi.logger.debug(method) {"Status #{micro_service[:status]} when looking for micro_service with credentials #{credentials}"}
+        @@logger.debug(method) {"Status #{micro_service[:status]} when looking for micro_service with credentials #{credentials}"}
         raise MicroServiceNotFoundError.new(credentials)
       end
     rescue  => e
-      GtkApi.logger.error(method) {"Error during processing: #{$!}"}
-      GtkApi.logger.error(method) {"Backtrace:\n\t#{e.backtrace.join("\n\t")}"}
+      @@logger.error(method) {"Error during processing: #{$!}"}
+      @@logger.error(method) {"Backtrace:\n\t#{e.backtrace.join("\n\t")}"}
       raise MicroServiceNotFoundError.new(credentials)
     end
   end
@@ -124,7 +125,7 @@ class MicroService < ManagerService
     method = LOG_MESSAGE + "##{__method__}(#{params})"
     GtkApi.services.keys
     #users = find(url: @@url + USERS_URL, params: params, log_message: LOG_MESSAGE + "##{__method__}(#{params})")
-    #GtkApi.logger.debug(method) {"users=#{users}"}
+    #@@logger.debug(method) {"users=#{users}"}
     #case users[:status]
     #when 200
     #  {status: 200, count: users[:items][:data][:licences].count, items: users[:items][:data][:licences], message: "OK"}
@@ -138,23 +139,23 @@ class MicroService < ManagerService
   
   def self.public_key
     method = LOG_MESSAGE + "##{__method__}"
-    GtkApi.logger.debug(method) {'entered'}
+    @@logger.debug(method) {'entered'}
     begin
       p_key = getCurb(url: @@url+'/api/v1/public-key', params: {}, headers: {})
-      GtkApi.logger.debug(method) {"p_key=#{p_key}"}
+      @@logger.debug(method) {"p_key=#{p_key}"}
       p_key
     rescue  => e
-      GtkApi.logger.error(method) {"Error during processing: #{$!}"}
-      GtkApi.logger.error(method) {"Backtrace:\n\t#{e.backtrace.join("\n\t")}"}
+      @@logger.error(method) {"Error during processing: #{$!}"}
+      @@logger.error(method) {"Backtrace:\n\t#{e.backtrace.join("\n\t")}"}
       raise PublicKeyNotFoundError.new('No public key received from User Management micro-service')
     end
   end
   
   def self.began_at
     log_message=LOG_MESSAGE+"##{__method__}"
-    GtkApi.logger.debug(log_message) {'entered'}    
+    @@logger.debug(log_message) {'entered'}    
     response = getCurb(url: @@url + '/began_at')
-    GtkApi.logger.debug(log_message) {"response=#{response}"}
+    @@logger.debug(log_message) {"response=#{response}"}
     response
   end
 end

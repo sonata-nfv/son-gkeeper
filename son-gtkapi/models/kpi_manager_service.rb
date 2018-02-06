@@ -31,45 +31,45 @@ class KpiManagerService < ManagerService
   
   LOG_MESSAGE = 'GtkApi::' + self.name
   
-  def self.config(url:)
+  def self.config(url:, logger:)
     method = LOG_MESSAGE + "##{__method__}(url=#{url})"
-    raise ArgumentError.new('KpiManagerService can not be configured with nil url') if url.nil?
-    raise ArgumentError.new('KpiManagerService can not be configured with empty url') if url.empty?
+    raise ArgumentError.new('KpiManagerService can not be configured with nil or empty url') if url.to_s.empty?
     @@url = url
-    GtkApi.logger.debug(method) {'entered'}
+    @@logger = logger
+    @@logger.debug(method) {'entered'}
   end
 
   def self.update_metric(params)
     method = LOG_MESSAGE + "##{__method__}"
-    GtkApi.logger.debug(method) {"entered with #{params}"}
+    @@logger.debug(method) {"entered with #{params}"}
     
     begin
-      GtkApi.logger.debug(method) {"url = "+@@url}      
+      @@logger.debug(method) {"url = "+@@url}      
       response = putCurb(url: @@url+'/kpis', body: params)      
-      GtkApi.logger.error(method) {"response=#{response}"}
+      @@logger.debug(method) {"response=#{response}"}
       case response[:status]
       when 201
-        { status: response[:status], data: {}, message: 'Metric updated'}        
+        return { status: response[:status], data: {}, message: 'Metric updated'}        
       else
-        { status: response[:status], data: {}, message: 'Metric was not updated'}
+        return { status: response[:status], data: {}, message: 'Metric was not updated'}
       end      
     rescue => e
-      GtkApi.logger.error(method) {"Error during processing: #{$!}"}
-      GtkApi.logger.error(method) {"Backtrace:\n\t#{e.backtrace.join("\n\t")}"}
+      @@logger.error(method) {"Error during processing: #{$!}"}
+      @@logger.error(method) {"Backtrace:\n\t#{e.backtrace.join("\n\t")}"}
       { status: 500, data: {}, message: e.backtrace.join("\n\t")}
     end      
   end
 
   def self.find(params)
     method = LOG_MESSAGE + "##{__method__}"
-    GtkApi.logger.debug(method) {"entered with params=#{params}"}
-    GtkApi.logger.debug(method) {"url = "+@@url}
+    @@logger.debug(method) {"entered with params=#{params}"}
+    @@logger.debug(method) {"url = "+@@url}
 
     # POST .../api/v1/prometheus/metrics/data with body {"name":"user_registrations","start": "2017-05-03T11:41:22Z", "end": "2017-05-03T11:51:11Z", "step": "10s", "labels":[]}    
     # curl -H "Content-Type: application/json" -d '{"name":"user_registrations","start":"2017-05-05T14:13:02.699Z","end":"2017-05-05T14:33:02.699Z","step":"10m","labels":[{}]}' http://sp.int3.sonata-nfv.eu:8000/api/v1/prometheus/metrics/data
     begin
       response = getCurb(url: @@url+'/kpis', params: params)      
-      GtkApi.logger.debug(method) {"response: #{response}"}
+      @@logger.debug(method) {"response: #{response}"}
       case response[:status]
       when 200
         { status: response[:status], data: response[:items] }
@@ -77,18 +77,18 @@ class KpiManagerService < ManagerService
         { status: response[:status], data: {}, message: 'Metric were not retrieved'}
       end   
     rescue => e
-      GtkApi.logger.error(method) {"Error during processing: #{$!}"}
-      GtkApi.logger.error(method) {"Backtrace:\n\t#{e.backtrace.join("\n\t")}"}
+      @@logger.error(method) {"Error during processing: #{$!}"}
+      @@logger.error(method) {"Backtrace:\n\t#{e.backtrace.join("\n\t")}"}
       { status: 500, message: e.backtrace.join("\n\t")}
     end      
   end
 
   def self.get_metric(params)
     method = LOG_MESSAGE + "##{__method__}(#{params})"
-    GtkApi.logger.debug(method) {"entered"}
+    @@logger.debug(method) {"entered"}
     
     begin
-      GtkApi.logger.debug(method) {"url = "+@@url}
+      @@logger.debug(method) {"url = "+@@url}
       response = getCurb(url: @@url+'/kpis', params: params, headers:JSON_HEADERS)      
       case response[:status]
       when 200
@@ -97,17 +97,17 @@ class KpiManagerService < ManagerService
         { status: response[:status], data: {}, message: 'Metric does not retrieved'}
       end   
     rescue => e
-      GtkApi.logger.error(method) {"Error during processing: #{$!}"}
-      GtkApi.logger.error(method) {"Backtrace:\n\t#{e.backtrace.join("\n\t")}"}
+      @@logger.error(method) {"Error during processing: #{$!}"}
+      @@logger.error(method) {"Backtrace:\n\t#{e.backtrace.join("\n\t")}"}
       { status: 500, message: e.backtrace.join("\n\t")}
     end      
   end
   
   def self.began_at
     log_message=LOG_MESSAGE+"##{__method__}"
-    GtkApi.logger.debug(log_message) {'entered'}    
+    @@logger.debug(log_message) {'entered'}    
     response = getCurb(url: @@url + '/began_at')
-    GtkApi.logger.debug(log_message) {"response=#{response}"}
+    @@logger.debug(log_message) {"response=#{response}"}
     response
   end
 end

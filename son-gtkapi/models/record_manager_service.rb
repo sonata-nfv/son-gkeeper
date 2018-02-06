@@ -32,41 +32,41 @@ class RecordManagerService < ManagerService
   JSON_HEADERS = { 'Accept'=> 'application/json', 'Content-Type'=>'application/json'}
   LOG_MESSAGE = 'GtkApi::' + self.name
   
-  def self.config(url:)
+  def self.config(url:, logger:)
     method = LOG_MESSAGE + "##{__method__}"
-    raise ArgumentError.new('RecordManagerService can not be configured with nil or empty url') if (url.nil? || url.empty?)
-
+    raise ArgumentError.new('RecordManagerService can not be configured with nil or empty url') if url.to_s.empty?
     @@url = url
-    GtkApi.logger.debug(method) {'entered with url='+url}
+    @@logger = logger
+    @@logger.debug(method) {'entered with url='+url}
   end
   
   def self.find_records(params)
     method = LOG_MESSAGE + "##{__method__}"
-    GtkApi.logger.debug(method) {"entered with params=#{params}"}
+    @@logger.debug(method) {"entered with params=#{params}"}
 
     kind = params.delete('kind')
-    GtkApi.logger.debug(method) {"url=#{@@url}/#{kind}"}
+    @@logger.debug(method) {"url=#{@@url}/#{kind}"}
     records= find(url: "#{@@url}/#{kind}", params: params, log_message: LOG_MESSAGE + "##{__method__}(#{params})")
     vectorize_hash records
   end
   
   def self.find_record_by_uuid(kind: 'services', uuid:)
     log_message = LOG_MESSAGE + "##{__method__}"
-    GtkApi.logger.debug(log_message) {"entered with uuid=#{uuid}"}
+    @@logger.debug(log_message) {"entered with uuid=#{uuid}"}
     find(url: @@url + '/' + kind + '/' + uuid, log_message: log_message) # + 'records/'
   end
   
   def self.find_records_by_function_uuid(uuid)
     method = LOG_MESSAGE + "##{__method__}"
-    GtkApi.logger.debug(method) {"entered with uuid=#{uuid}"}
+    @@logger.debug(method) {"entered with uuid=#{uuid}"}
     find(url: @@url + '/functions?function_uuid=' + uuid, log_message: LOG_MESSAGE + "##{__method__}(#{uuid})") #+ '/records/' 
   end
   
   def self.began_at
     log_message=LOG_MESSAGE+"##{__method__}"
-    GtkApi.logger.debug(log_message) {'entered'}    
+    @@logger.debug(log_message) {'entered'}    
     response = getCurb(url: @@url + '/began_at')
-    GtkApi.logger.debug(log_message) {"response=#{response}"}
+    @@logger.debug(log_message) {"response=#{response}"}
     response
   end
 end

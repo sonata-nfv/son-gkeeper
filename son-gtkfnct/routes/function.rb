@@ -31,6 +31,10 @@ require 'pp'
 
 class GtkFnct < Sinatra::Base
 
+  before do
+    content_type :json
+  end
+  
   get '/functions/?' do
     log_message="GtkFnct GET /functions"
     logger.debug(log_message) {"entered with params #{params}"}
@@ -40,41 +44,40 @@ class GtkFnct < Sinatra::Base
     logger.debug(log_message) { 'query_string='+query_string}
     logger.debug(log_message) { "params without fields=#{params}"}
     
-    functions = settings.functions_catalogue.find(params)
-    logger.debug(log_message) { "functions=#{functions}"}
-    if functions
-      if field_list
-        fields = field_list.split(',')
-        logger.debug(log_message) {"fields=#{fields}"}
-        response = functions.to_json(:only => fields)
-      else
-        response = functions.to_json
-      end
-      logger.debug(log_message) { "leaving with response="+response}
-      halt 200, response
-    else
+    resp = settings.functions_catalogue.find(params)
+    unless resp[:status] == 200
       logger.debug(log_message) { "leaving with \"No function with params #{query_string} was found\""}
       json_error 404, "No function with params #{query_string} was found"
     end
+
+    logger.debug(log_message) { "functions=#{resp[:data]}"}
+    if field_list
+      fields = field_list.split(',')
+      logger.debug(log_message) {"fields=#{fields}"}
+      functions = resp[:data].to_json(:only => fields)
+    else
+      functions = resp[:data].to_json
+    end
+    logger.debug(log_message) { "leaving with functions="+functions}
+    headers 'Record-Count' => resp[:count]
+    halt 200, functions
   end
   
   get '/functions/:uuid' do
     log_message = "GtkFnct GET /functions/:uuid"
-    unless params[:uuid].nil?
-      logger.debug(log_message) {"entered with uuid=#{params[:uuid]}"}
-      function = settings.functions_catalogue.find_by_uuid(params[:uuid])
-      logger.info(log_message) { "found function #{function}"}
-      if function && function.is_a?(Hash) && function['uuid']
-        response = function.to_json
-        logger.info(log_message) { "leaving with response="+response}
-        halt 200, response
-      else
-        logger.error(log_message) { "leaving with \"No function with UUID=#{params[:uuid]} was found\""}
-        json_error 404, "No function with UUID=#{params[:uuid]} was found"
-      end
+    if params[:uuid].nil?
+      logger.error(log_message) { "leaving with \"No function UUID specified\""}
+      json_error 400, 'No function UUID specified'
     end
-    logger.error(log_message) { "leaving with \"No function UUID specified\""}
-    json_error 400, 'No function UUID specified'
+    logger.debug(log_message) {"entered with uuid=#{params[:uuid]}"}
+    resp = settings.functions_catalogue.find_by_uuid(params[:uuid])
+    unless resp[:status] == 200
+      logger.error(log_message) { "leaving with \"No function with UUID=#{params[:uuid]} was found\""}
+      json_error 404, "No function with UUID=#{params[:uuid]} was found"
+    end
+    logger.info(log_message) { "found function #{resp[:data]}"}
+    headers 'Record-Count' => '1'
+    halt 200, resp[:data].to_json
   end
   
   get '/admin/logs' do
@@ -82,7 +85,7 @@ class GtkFnct < Sinatra::Base
     File.open('log/'+ENV['RACK_ENV']+'.log', 'r').read
   end
   
-  get '/began_at/?' do
+  get '/functions/began_at/?' do
     log_message = 'GtkFnct GET /began_at'
     logger.debug(log_message) {'entered'}
     logger.debug(log_message) {"began at #{settings.began_at}"}

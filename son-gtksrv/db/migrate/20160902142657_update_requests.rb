@@ -1,4 +1,4 @@
-class UpdateRequests < ActiveRecord::Migration
+class UpdateRequests < ActiveRecord::Migration[4.2]
   def up
     change_column_default :requests, :status, 'NEW'
     add_column :requests, :request_type, :string, :default => 'CREATE'

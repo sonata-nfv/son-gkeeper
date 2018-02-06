@@ -36,13 +36,14 @@ class Package < ManagerService
     @@url
   end
 
-  def self.config(url:)
+  def self.config(url:, logger:)
     method = LOG_MESSAGE + "##{__method__}"
-    GtkApi.logger.debug(method) {'entered with url='+url}
     raise ArgumentError.new('Package can not be configured with nil or empty url') if url.to_s.empty?
     @@url = url
+    @@logger = logger
     @@catalogue_url = ENV[GtkApi.services['catalogue']['env_var_url']]
-    GtkApi.logger.debug(method) {"@@catalogue_url=#{@@catalogue_url}"}
+    @@logger.debug(method) {'entered with url='+url}
+    @@logger.debug(method) {"@@catalogue_url=#{@@catalogue_url}"}
   end
 
    def initialize(params)
@@ -85,29 +86,29 @@ class Package < ManagerService
   
   def self.create(params)
     method = LOG_MESSAGE + "##{__method__}"
-    GtkApi.logger.debug(method) {"entered with params #{params}"}
+    @@logger.debug(method) {"entered with params #{params}"}
     raise ArgumentError.new('Package can not be created without a user token') unless params.key?(:token)
     token = params.delete(:token)
     # {"path": "/packages", "method": "POST"}
     unless User.authorized?(token: token, params: {path: '/packages', method: 'POST'})
-      GtkApi.logger.debug(method) {"User not authorized to create packages"}
+      @@logger.debug(method) {"User not authorized to create packages"}
       return { status: 403, count: 0, data: {}, message: 'Forbidden: user could not be authorized'}
     end
-    GtkApi.logger.debug(method) {"User authorized"}
+    @@logger.debug(method) {"User authorized"}
     
     username = User.find_username_by_token(token)
     if (username.to_s.empty?)
-      GtkApi.logger.debug(method) {"User name not found from token"}
+      @@logger.debug(method) {"User name not found from token"}
       return { status: 404, count: 0, data: {}, message: 'Not Found: user name not found from token'}
     end
-    GtkApi.logger.debug(method) {"User name found: #{username}"}
+    @@logger.debug(method) {"User name found: #{username}"}
     
     uri = @@url+'/packages'
     begin
       # from http://www.rubydoc.info/gems/rest-client/1.6.7/frames#Result_handling
-      GtkApi.logger.debug(method) {"POSTing to "+uri+ " with params #{params}"}
+      @@logger.debug(method) {"POSTing to "+uri+ " with params #{params}"}
       RestClient.post(uri, params.merge({username: username})){ |response, request, result, &block|
-        GtkApi.logger.debug(method) {"response=#{response.inspect}"}
+        @@logger.debug(method) {"response=#{response.inspect}"}
         case response.code
         when 201
           { status: 201, count: 1, data: JSON.parse(response.body, symbolize_names: true), message: 'Created'}
@@ -120,26 +121,26 @@ class Package < ManagerService
         end
       }
     rescue  => e #RestClient::Conflict
-      GtkApi.logger.error(method) {"Error during processing: #{$!}"}
-      GtkApi.logger.error(method) {"Backtrace:\n\t#{e.backtrace.join("\n\t")}"}
+      @@logger.error(method) {"Error during processing: #{$!}"}
+      @@logger.error(method) {"Backtrace:\n\t#{e.backtrace.join("\n\t")}"}
       { status: 500, count: 0, data: {}, message: e.backtrace.join("\n\t")}
     end
   end
   
   def self.find_by_uuid(uuid)
     log_message = LOG_MESSAGE + "##{__method__}"
-    GtkApi.logger.debug(log_message) {"entered with uuid #{uuid}"}
+    @@logger.debug(log_message) {"entered with uuid #{uuid}"}
     response = getCurb(url: @@url + '/packages/'+uuid)
-    GtkApi.logger.debug(log_message) {"response=#{response}"}
+    @@logger.debug(log_message) {"response=#{response}"}
     response
   end
 
   def self.find_package_file_name(uuid)
     method = LOG_MESSAGE + "##{__method__}"
-    GtkApi.logger.debug(method) {'entered with uuid='+uuid}
+    @@logger.debug(method) {'entered with uuid='+uuid}
     begin
       response = RestClient.get(@@url+"/son-packages/#{uuid}", JSON_HEADERS)
-      GtkApi.logger.debug(method) {"response #{response}"}
+      @@logger.debug(method) {"response #{response}"}
       if response.code == 200
         JSON.parse(response, symbolize_names: true)[:grid_fs_name]
       else
@@ -152,9 +153,9 @@ class Package < ManagerService
 
   def self.find(params)
     log_message = LOG_MESSAGE + "##{__method__}"
-    GtkApi.logger.debug(log_message) {"entered with params #{params}"}
+    @@logger.debug(log_message) {"entered with params #{params}"}
     response = getCurb(url: @@url + '/packages', params: params)
-    GtkApi.logger.debug(log_message) {"response=#{response}"}
+    @@logger.debug(log_message) {"response=#{response}"}
     response
   end
   
@@ -162,28 +163,28 @@ class Package < ManagerService
     method = LOG_MESSAGE + "##{__method__}"
     raise ArgumentError.new('Package can not be downloaded if uuid is not given') if uuid.nil?
     
-    GtkApi.logger.debug(method) {'entered with uuid='+uuid}
+    @@logger.debug(method) {'entered with uuid='+uuid}
     
     # TODO: validate user permission
     # TODO: validate throttle
     
     #package_file_meta_data = self.find_package_file_meta_data_by_uuid(uuid)
-    #GtkApi.logger.debug(method) {"package_file_meta_data=#{package_file_meta_data}"}
+    #@@logger.debug(method) {"package_file_meta_data=#{package_file_meta_data}"}
     #raise 'No package file meta-data found with package file uuid='+uuid if package_file_meta_data.empty?
     
     file_name = self.save_package_file(uuid) #package_file_meta_data)
-    GtkApi.logger.debug(method) {"file_name=#{file_name}"}
+    @@logger.debug(method) {"file_name=#{file_name}"}
     raise "Package file with file_name=#{file_name} failled to be saved" if (file_name.nil? || file_name.empty?)
     file_name
   end
   
   def self.find_package_file_meta_data_by_uuid(uuid)
     method = LOG_MESSAGE + "##{__method__}"
-    GtkApi.logger.debug(method) {'entered with uuid='+uuid}
+    @@logger.debug(method) {'entered with uuid='+uuid}
     headers = { 'Accept'=> 'application/json', 'Content-Type'=>'application/json'}
     begin
       response = RestClient.get(@@catalogue_url+"/son-packages/#{uuid}", headers)
-      GtkApi.logger.debug(method) {"response.code=#{response.code}"}
+      @@logger.debug(method) {"response.code=#{response.code}"}
       if response.code == 200
         JSON.parse(response, symbolize_names: true)
       else
@@ -196,7 +197,7 @@ class Package < ManagerService
   
   def self.save_package_file(uuid)
     method = LOG_MESSAGE + "##{__method__}"
-    GtkApi.logger.debug(method) {"entered with package_file_meta_data=#{uuid}"}
+    @@logger.debug(method) {"entered with package_file_meta_data=#{uuid}"}
     
     # Get data
     url = URI(@@catalogue_url)
@@ -206,7 +207,7 @@ class Package < ManagerService
     request["content-type"] = 'application/zip'
     request["content-disposition"] = 'attachment; filename=<filename.son>'
     response = http.request(request)
-    GtkApi.logger.debug("Catalogue response.code: #{response.code}")
+    @@logger.debug("Catalogue response.code: #{response.code}")
     case response.code
     when '200'
       data = response.read_body
@@ -226,15 +227,15 @@ class Package < ManagerService
     
   def self.delete(uuid)
     method = LOG_MESSAGE + "##{__method__}"
-    GtkApi.logger.debug(method) {'entered'}
+    @@logger.debug(method) {'entered'}
     headers = { 'Accept'=> 'application/json', 'Content-Type'=>'application/json'}
     begin
       response = RestClient.delete(@@url+'/packages/'+uuid, headers)
-      GtkApi.logger.debug(method) {"response #{response}"}
+      @@logger.debug(method) {"response #{response}"}
       response
     rescue => e
-      GtkApi.logger.error(method) {"Error during processing: #{$!}"}
-      GtkApi.logger.error(method) {"Backtrace:\n\t#{e.backtrace.join("\n\t")}"}
+      @@logger.error(method) {"Error during processing: #{$!}"}
+      @@logger.error(method) {"Backtrace:\n\t#{e.backtrace.join("\n\t")}"}
       nil
     end
   end
@@ -244,9 +245,9 @@ class Package < ManagerService
   
   def self.began_at
     log_message=LOG_MESSAGE+"##{__method__}"
-    GtkApi.logger.debug(log_message) {'entered'}    
+    @@logger.debug(log_message) {'entered'}    
     response = getCurb(url: @@url + '/began_at')
-    GtkApi.logger.debug(log_message) {"response=#{response}"}
+    @@logger.debug(log_message) {"response=#{response}"}
     response
   end
   
