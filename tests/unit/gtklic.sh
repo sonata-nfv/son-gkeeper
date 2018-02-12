@@ -9,4 +9,4 @@ docker run -i \
 -e POSTGRES_DB=gatekeeper \
 --rm=true \
 -v "$(pwd)/spec/reports/son-gtklic:/code/log" \
-registry.sonata-nfv.eu:5000/son-gtklic python tests.py
+registry.sonata-nfv.eu:5000/son-gtklic:v3.1 python tests.py
