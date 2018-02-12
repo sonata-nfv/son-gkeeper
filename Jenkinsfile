@@ -189,62 +189,62 @@ pipeline {
       parallel {
         stage('son-gtkapi') {
           steps {
-            sh 'docker push registry.sonata-nfv.eu:5000/son-gtkapi'
+            sh 'docker push registry.sonata-nfv.eu:5000/son-gtkapi:v3.1'
           }
         }
         stage('son-gtkfnct') {
           steps {
-            sh 'docker push registry.sonata-nfv.eu:5000/son-gtkfnct'
+            sh 'docker push registry.sonata-nfv.eu:5000/son-gtkfnct:v3.1'
           }
         }
         stage('son-gtkkeycloak') {
           steps {
-            sh 'docker push registry.sonata-nfv.eu:5000/son-keycloak'
+            sh 'docker push registry.sonata-nfv.eu:5000/son-keycloak:v3.1'
           }
         }
         stage('son-gtkkpi') {
           steps {
-            sh 'docker push registry.sonata-nfv.eu:5000/son-gtkkpi'
+            sh 'docker push registry.sonata-nfv.eu:5000/son-gtkkpi:v3.1'
           }
         }
         stage('son-gtklic') {
           steps {
-            sh 'docker push registry.sonata-nfv.eu:5000/son-gtklic'
+            sh 'docker push registry.sonata-nfv.eu:5000/son-gtklic:v3.1'
           }
         }
         stage('son-gtkpkg') {
           steps {
-            sh 'docker push registry.sonata-nfv.eu:5000/son-gtkpkg'
+            sh 'docker push registry.sonata-nfv.eu:5000/son-gtkpkg:v3.1'
           }
         }
         stage('son-gtkrec') {
           steps {
-            sh 'docker push registry.sonata-nfv.eu:5000/son-gtkrec'
+            sh 'docker push registry.sonata-nfv.eu:5000/son-gtkrec:v3.1'
           }
         }
         stage('son-gtkrlt') {
           steps {
-            sh 'docker push registry.sonata-nfv.eu:5000/son-gtkrlt'
+            sh 'docker push registry.sonata-nfv.eu:5000/son-gtkrlt:v3.1'
           }
         }
         stage('son-gtksrv') {
           steps {
-            sh 'docker push registry.sonata-nfv.eu:5000/son-gtksrv'
+            sh 'docker push registry.sonata-nfv.eu:5000/son-gtksrv:v3.1'
           }
         }
         stage('son-gtkusr') {
           steps {
-            sh 'docker push registry.sonata-nfv.eu:5000/son-gtkusr'
+            sh 'docker push registry.sonata-nfv.eu:5000/son-gtkusr:v3.1'
           }
         }
         stage('son-gtkvim') {
           steps {
-            sh 'docker push registry.sonata-nfv.eu:5000/son-gtkvim'
+            sh 'docker push registry.sonata-nfv.eu:5000/son-gtkvim:v3.1'
           }
         }
         stage('son-sec-gw') {
           steps {
-            sh 'docker push registry.sonata-nfv.eu:5000/son-sec-gw'
+            sh 'docker push registry.sonata-nfv.eu:5000/son-sec-gw:v3.1'
           }
         }
       }
