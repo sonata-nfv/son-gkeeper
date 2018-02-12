@@ -9,7 +9,7 @@ docker run -i \
 -e POSTGRES_USER=sonatatest \
 -e RACK_ENV=integration \
 -e CATALOGUES_URL=http://0.0.0.0:5200/catalogues \
-registry.sonata-nfv.eu:5000/son-gtkvim bundle exec rake db:migrate
+registry.sonata-nfv.eu:5000/son-gtkvim:v3.1 bundle exec rake db:migrate
 
 docker run -i \
 --rm=true \
@@ -22,4 +22,4 @@ docker run -i \
 -e RACK_ENV=integration \
 -e CATALOGUES_URL=http://0.0.0.0:5200/catalogues \
 -v "$(pwd)/spec/reports/son-gtkvim:/app/spec/reports" \
-registry.sonata-nfv.eu:5000/son-gtkvim bundle exec rake ci:all
+registry.sonata-nfv.eu:5000/son-gtkvim:v3.1 bundle exec rake ci:all

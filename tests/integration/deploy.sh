@@ -26,18 +26,18 @@ docker pull sonatanfv/son-validate:dev
 ### Last version of container have to be updated
 if ! [ -z $ENV_INT_SERVER ]
 then
-	docker pull registry.sonata-nfv.eu:5000/son-gtkapi
-	docker pull registry.sonata-nfv.eu:5000/son-gtkfnct
-	docker pull registry.sonata-nfv.eu:5000/son-keycloak
-	docker pull registry.sonata-nfv.eu:5000/son-gtkkpi
-	docker pull registry.sonata-nfv.eu:5000/son-gtkpkg
-	docker pull registry.sonata-nfv.eu:5000/son-gtklic
-	docker pull registry.sonata-nfv.eu:5000/son-gtkrec
-	docker pull registry.sonata-nfv.eu:5000/son-gtkrlt
-	docker pull registry.sonata-nfv.eu:5000/son-gtksrv
-	docker pull registry.sonata-nfv.eu:5000/son-gtkusr
-	docker pull registry.sonata-nfv.eu:5000/son-gtkvim
-	docker pull registry.sonata-nfv.eu:5000/son-sec-gw
+	docker pull registry.sonata-nfv.eu:5000/son-gtkapi:v3.1
+	docker pull registry.sonata-nfv.eu:5000/son-gtkfnct:v3.1
+	docker pull registry.sonata-nfv.eu:5000/son-keycloak:v3.1
+	docker pull registry.sonata-nfv.eu:5000/son-gtkkpi:v3.1
+	docker pull registry.sonata-nfv.eu:5000/son-gtkpkg:v3.1
+	docker pull registry.sonata-nfv.eu:5000/son-gtklic:v3.1
+	docker pull registry.sonata-nfv.eu:5000/son-gtkrec:v3.1
+	docker pull registry.sonata-nfv.eu:5000/son-gtkrlt:v3.1
+	docker pull registry.sonata-nfv.eu:5000/son-gtksrv:v3.1
+	docker pull registry.sonata-nfv.eu:5000/son-gtkusr:v3.1
+	docker pull registry.sonata-nfv.eu:5000/son-gtkvim:v3.1
+	docker pull registry.sonata-nfv.eu:5000/son-sec-gw:v3.1
 fi
 
 ### POSTGRES
@@ -219,7 +219,7 @@ docker run -d \
 -e SONATA_USER=sonata \
 -e SONATA_PASSWORD=1234 \
 -e SONATA_EMAIL=sonata.admin@email.com \
-registry.sonata-nfv.eu:5000/son-keycloak
+registry.sonata-nfv.eu:5000/son-keycloak:v3.1
 
 echo gtkpkg
 if ! [[ "$(docker inspect -f {{.State.Running}} son-gtkpkg 2> /dev/null)" == "" ]]; then docker rm -fv son-gtkpkg ; fi
@@ -230,7 +230,7 @@ docker run -d \
 -p 5100:5100 \
 -e CATALOGUES_URL=http://son-catalogue-repository:4011/catalogues/api/v2 \
 -e RACK_ENV=integration \
-registry.sonata-nfv.eu:5000/son-gtkpkg
+registry.sonata-nfv.eu:5000/son-gtkpkg:v3.1
 
 ### Populating database son-gtksrv
 echo populate database gtksrv
@@ -245,7 +245,7 @@ docker run -i \
 -e DATABASE_PORT=5432 \
 -e POSTGRES_PASSWORD=sonata \
 -e POSTGRES_USER=sonatatest \
-registry.sonata-nfv.eu:5000/son-gtksrv bundle exec rake db:migrate
+registry.sonata-nfv.eu:5000/son-gtksrv:v3.1 bundle exec rake db:migrate
 
 ### son-gtksrv
 echo gtksrv
@@ -264,7 +264,7 @@ docker run -d \
 -e POSTGRES_USER=sonatatest \
 -e MQSERVER=amqp://guest:guest@son-broker:5672 \
 -e RACK_ENV=integration \
-registry.sonata-nfv.eu:5000/son-gtksrv
+registry.sonata-nfv.eu:5000/son-gtksrv:v3.1
 
 ### son-gtkfnct
 echo gtkfnct
@@ -276,7 +276,7 @@ docker run -d \
 -p 5500:5500 \
 -e RACK_ENV=integration \
 -e CATALOGUES_URL=http://son-catalogue-repository:4011/catalogues/api/v2 \
-registry.sonata-nfv.eu:5000/son-gtkfnct
+registry.sonata-nfv.eu:5000/son-gtkfnct:v3.1
 
 ### son-gtkrec
 echo gtkrec
@@ -288,7 +288,7 @@ docker run -d \
 -p 5800:5800 \
 -e RACK_ENV=integration \
 -e REPOSITORIES_URL=http://son-catalogue-repository:4011/records \
-registry.sonata-nfv.eu:5000/son-gtkrec
+registry.sonata-nfv.eu:5000/son-gtkrec:v3.1
 
 ### Population son-gtkvim
 echo populate database son-gtkvim
@@ -301,7 +301,7 @@ docker run -i \
 -e DATABASE_PORT=5432 \
 -e POSTGRES_PASSWORD=sonata \
 -e POSTGRES_USER=sonatatest \
-registry.sonata-nfv.eu:5000/son-gtkvim bundle exec rake db:migrate
+registry.sonata-nfv.eu:5000/son-gtkvim:v3.1 bundle exec rake db:migrate
 
 ### son-gtkvim
 echo son-gtkvim
@@ -319,7 +319,7 @@ docker run -d \
 -e POSTGRES_USER=sonatatest \
 -e MQSERVER=amqp://guest:guest@son-broker:5672 \
 -e RACK_ENV=integration \
-registry.sonata-nfv.eu:5000/son-gtkvim
+registry.sonata-nfv.eu:5000/son-gtkvim:v3.1
 
 ### Population son-gtklic
 echo populate database son-gtklic
@@ -332,7 +332,7 @@ docker run -i \
 -e POSTGRES_PASSWORD=sonata \
 -e POSTGRES_USER=sonatatest \
 -e POSTGRES_DB=gatekeeper \
-registry.sonata-nfv.eu:5000/son-gtklic python manage.py db upgrade
+registry.sonata-nfv.eu:5000/son-gtklic:v3.1 python manage.py db upgrade
 
 ### son-gtklic
 echo gtklic
@@ -348,7 +348,7 @@ docker run -d \
 -e POSTGRES_PASSWORD=sonata \
 -e POSTGRES_USER=sonatatest \
 -e POSTGRES_DB=gatekeeper \
-registry.sonata-nfv.eu:5000/son-gtklic
+registry.sonata-nfv.eu:5000/son-gtklic:v3.1
 
 ### son-gtkkpi
 echo gtkkpi
@@ -362,7 +362,7 @@ docker run -d \
 -e PUSHGATEWAY_PORT=9091 \
 -e PROMETHEUS_PORT=9090 \
 -e RACK_ENV=integration \
-registry.sonata-nfv.eu:5000/son-gtkkpi 
+registry.sonata-nfv.eu:5000/son-gtkkpi:v3.1
 
 ### son-gtkusr
 echo gtkusr
@@ -377,7 +377,7 @@ docker run -d \
 -e KEYCLOAK_PATH=auth \
 -e SONATA_REALM=sonata \
 -e CLIENT_NAME=adapter \
-registry.sonata-nfv.eu:5000/son-gtkusr 
+registry.sonata-nfv.eu:5000/son-gtkusr:v3.1
 
 ### son-gtkrlt
 echo gtkrlt
@@ -388,7 +388,7 @@ docker run -d \
 --network-alias=son-gtkrlt \
 -p 5150:5150 \
 -e REDIS_URL=redis://son-redis:6379  \
-registry.sonata-nfv.eu:5000/son-gtkrlt
+registry.sonata-nfv.eu:5000/son-gtkrlt:v3.1
 
 ### son-gtkapi
 echo gtkapi
@@ -411,7 +411,7 @@ docker run -d \
 -e RECORD_MANAGEMENT_URL=http://son-gtkrec:5800 \
 -e KPI_MANAGEMENT_URL=http://son-gtkkpi:5400 \
 -e USER_MANAGEMENT_URL=http://son-gtkusr:5600 \
-registry.sonata-nfv.eu:5000/son-gtkapi
+registry.sonata-nfv.eu:5000/son-gtkapi:v3.1
 
 # son-sec-gw
 echo son-sec-gw
@@ -423,4 +423,4 @@ docker run -d \
 -p 80:80 \
 -p 443:443 \
 -v /etc/ssl/private/sonata/:/etc/nginx/cert/ \
-registry.sonata-nfv.eu:5000/son-sec-gw
+registry.sonata-nfv.eu:5000/son-sec-gw:v3.1
