@@ -41,9 +41,7 @@ require 'bundler'
 Bundler.require :default, ENV['RACK_ENV'].to_sym
 
 ['helpers', 'routes', 'models'].each do |dir|
-  Dir[File.join(File.dirname(__FILE__), dir, '**', '*.rb')].each do |file|
-    require file
-  end
+  Dir[File.join(File.dirname(__FILE__), dir, '**', '*.rb')].each { |file| require file }
 end
 
 # Main class supporting the Gatekeeper's Service Management micro-service

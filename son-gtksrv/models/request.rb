@@ -31,7 +31,8 @@ require 'json'
 require 'yaml'
 
 class Request < ActiveRecord::Base
-    
+  attr_accessor :began_at, :created_at, :updated_at, :service_uuid, :status, :request_type, :service_instance_uuid, :callback
+  
   # validations a la Activerecord
   validates :service_uuid, presence: true
   
@@ -146,14 +147,15 @@ class Request < ActiveRecord::Base
   end
   
   private
-  
   def self.get_service(params)
-    log_message = 'GtkSrv::get_service'
-    logger.debug(log_message) {"entered with params #{params}"}
+    log_message = 'GtkSrv::Request.get_service'
     logger = GtkSrv.logger
-    if (params['request_type'] == 'TERMINATE' || params['request_type'] == 'UPDATE')
+    logger.debug(log_message) {"entered with params #{params}"}
+    
+    # Termination requests are dealt with in a sub-class -- Update will too
+    if (params['request_type'] == 'UPDATE')
       # Get the service_uuid from the creation request
-      creation_request = fetch_creation_request params['service_instance_uuid']
+      creation_request = find_creation_request_by params['service_instance_uuid']
       logger.debug(log_message) {"creation_request found = #{creation_request}"}
       unless creation_request
         logger.debug(log_message) {"No creation request found"}
@@ -166,13 +168,9 @@ class Request < ActiveRecord::Base
     service[:items].first
   end
   
-  def fetch_creation_request uuid
-    Request.where("service_instance_uuid = ? AND request_type = 'CREATE' ans status='READY'", uuid)
+  protected
+  def self.find_creation_request_by uuid
+    Request.where("service_instance_uuid = ? AND request_type = 'CREATE' and status='READY'", uuid)
   end
 end
 
-# Establish a connection with a Model (a Table) belong to a database different from default 
-# establish_connection(ENV['SAR_DB_URL'] || 'postgres://YOURUSERNAME:YOURPASSWORD@HOSTIPADDRESS/sar')
-
-# set table Name, in case in the existing datbase there is not a 'Rails naming' convention
-# self.table_name = "notes"

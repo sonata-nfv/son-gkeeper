@@ -80,11 +80,15 @@ class GtkSrv < Sinatra::Base
     logger.debug(log_msg) {"with params=#{params}"}
     
     begin
-      si_request, start_request = Request.build params
-      start_request_yml = YAML.dump(start_request.deep_stringify_keys)
+      if params['request_type'] == 'TERMINATE'
+        si_request, start_request = TerminationRequest.build params
+        mq_server = settings.terminate_mqserver
+      else
+        si_request, start_request = Request.build params
+        start_request_yml = YAML.dump(start_request.deep_stringify_keys)
+        mq_server = find_mq_server(params['request_type'])
+      end
       logger.debug(log_msg) {"#{params}:\n"+start_request_yml}
-
-      mq_server = find_mq_server(params['request_type'])
       smresponse = mq_server.publish( start_request_yml.to_s, si_request['id'])
       json_request = json(si_request, { root: false })
       logger.debug(log_msg) {' returning POST /requests with request='+json_request}
@@ -95,47 +99,6 @@ class GtkSrv < Sinatra::Base
 	    json_error 400, 'Not found: '+e.message
     end
   end
-
-  # POSTs an instantiation request, given a service_uuid
-  post '/requests/:si_uuid/terminate' do
-    log_msg = 'GtkSrv::POST /requests/:si_uuid/terminate'.freeze
-    #original_body = request.body.read
-    #json_error 400, 'Body of the request can not be empty', log_message if original_body.empty?
-    #logger.debug(log_msg) {"entered with original_body=#{original_body}"}
-    #params = JSON.parse(original_body, quirks_mode: true)
-    #logger.debug(log_msg) {"with params=#{params}"}
-    params = { service_instance_uuid: si_uuid, request_type: 'TERMINATE'}
-    
-    begin
-      si_request, start_request = Request.build params
-      start_request_yml = YAML.dump(start_request.deep_stringify_keys)
-      logger.debug(log_msg) {"#{params}:\n"+start_request_yml}
-
-      mq_server = find_mq_server(params['request_type'])
-      smresponse = mq_server.publish( start_request_yml.to_s, si_request['id'])
-      json_request = json(si_request, { root: false })
-      logger.debug(log_msg) {' returning POST /requests with request='+json_request}
-      halt 201, json_request
-    rescue Exception => e
-      logger.error(log_msg) {e.message}
-	    logger.error(log_msg) {e.backtrace.inspect}
-	    json_error 400, 'Not found: '+e.message
-    end
-  end
-
-  # PUTs an update on an existing instantiation request, given its UUID
-  put '/requests/:uuid/?' do
-    log_message = 'GtkSrv::PUT /requests/:uuid'.freeze
-    logger.debug(log_message) {"entered with params=#{params}"}
-    request = Request.find params[:uuid]
-    
-    # it should be .update( :id, :params)
-    # if request.update_all(params)
-    json_error 400, 'Not possible to update request with uuid='+params[:uuid], log_message unless request.update( params[:uuid], params)
-
-    logger.debug(log_message) {"returning with updated request=#{request}"}
-    halt 200, request.to_json
-  end  
   
   private 
   
@@ -144,9 +107,10 @@ class GtkSrv < Sinatra::Base
     when 'CREATE'
       settings.create_mqserver
     when 'UPDATE'
-       settings.update_mqserver
-    when 'TERMINATE'
-       settings.terminate_mqserver
+      settings.update_mqserver
+    # TERMINATE is processed above 
+    #when 'TERMINATE'
+    #   settings.terminate_mqserver
     else
       json_error 400, "#{request_type} is the wrong type of request"
     end
