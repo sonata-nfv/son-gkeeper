@@ -26,14 +26,14 @@
 # encoding: utf-8
 module GtkSrvHelper
   def correct(val, default_val)
-    return defalt_val unless val
+    return default_val unless val
     return 0 if val < 0
     val
   end
 
   def json_error(code, message, log_message='')
     content_type :json
-    msg = {'error' => { 'code'=>code, 'message'=>message}}.to_json
+    msg = {error: { code: code, message: message}}.to_json
     if log_message.empty?
       logger.error msg
     else
@@ -50,4 +50,10 @@ module GtkSrvHelper
   def keyed_hash(hash)
     Hash[hash.map{|(k,v)| [k.to_sym,v]}]
   end
+  
+  def respond(status, message)
+    logger.debug( "status: #{status} message: #{message}")
+    halt status, {status: status, message: message}.to_json
+  end
+  
 end

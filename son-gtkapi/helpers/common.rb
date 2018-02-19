@@ -55,7 +55,7 @@ module GtkApiHelper
   end
   
   def build_pagination_headers(url:, limit:, offset:, total:)
-    raise ArgumentError.new('A url can not be empty or nil') if (url.empty? || url.nil?)
+    raise ArgumentError.new('A url can not be empty or nil') if (url.to_s.empty?)
     raise ArgumentError.new('A (positive) value for total is required') if total < 0
     raise ArgumentError.new('A (positive) value for limit is required') if limit <= 0
     raise ArgumentError.new('A (positive) value for offset is required') if offset < 0

@@ -1,4 +1,4 @@
-FROM ruby:2.2.3-slim
+FROM ruby:2.4.3-slim-stretch
 RUN apt-get update && apt-get install -y --no-install-recommends \
                 build-essential \
 		libcurl3 \
@@ -60,4 +60,4 @@ WORKDIR /app
 ENV PUSHGATEWAY_HOST pushgateway
 ENV PUSHGATEWAY_PORT 9091
 ENV PORT 5400
-CMD ["foreman", "start"]
+CMD ["bundle", "exec", "puma", "-C", "config/puma.rb", "-b", "tcp://0.0.0.0:5400"]

@@ -1,5 +1,3 @@
-## SONATA - Gatekeeper
-##
 ## Copyright (c) 2015 SONATA-NFV [, ANY ADDITIONAL AFFILIATION]
 ## ALL RIGHTS RESERVED.
 ## 
@@ -25,4 +23,19 @@
 ## the Horizon 2020 and 5G-PPP programmes. The authors would like to 
 ## acknowledge the contributions of their colleagues of the SONATA 
 ## partner consortium (www.sonata-nfv.eu).
-web: bundle exec puma -C config/puma.rb -b tcp://0.0.0.0:0$PORT
+# spec/spec_helper.rb
+require 'rspec'
+require "bundler/setup"
+require "SONATA"
+
+RSpec.configure do |config|
+  # Enable flags like --only-failures and --next-failure
+  config.example_status_persistence_file_path = ".rspec_status"
+
+  # Disable RSpec exposing methods globally on `Module` and `main`
+  config.disable_monkey_patching!
+
+  config.expect_with :rspec do |c|
+    c.syntax = :expect
+  end
+end

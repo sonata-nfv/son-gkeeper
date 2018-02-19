@@ -1,4 +1,4 @@
-class AddBeganAtTime < ActiveRecord::Migration
+class AddBeganAtTime < ActiveRecord::Migration[4.2]
   def change
     add_column :requests, :began_at, :datetime
     remove_column :requests, :ingress

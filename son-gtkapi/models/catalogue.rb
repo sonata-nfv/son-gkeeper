@@ -32,10 +32,11 @@ class Catalogue < ManagerService
   #JSON_HEADERS = { 'Accept'=> 'application/json', 'Content-Type'=>'application/json'}
   LOG_MESSAGE = 'GtkApi::' + self.name
   
-  def self.config(url:)
+  def self.config(url:, logger:)
     method = LOG_MESSAGE + "#config"
     raise ArgumentError.new('Catalogue can not be configured with nil or empty url') if (url.to_s.empty?)
     @@url = url
-    GtkApi.logger.debug(method) {'entered with url='+url}
+    @@logger = logger
+    @@logger.debug(method) {'entered with url='+url}
   end
 end
