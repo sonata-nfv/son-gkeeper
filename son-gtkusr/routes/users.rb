@@ -192,7 +192,11 @@ class Keycloak < Sinatra::Application
       user = Sp_user.create!(new_user)
     rescue Moped::Errors::OperationFailure => e
       delete_user(form['username'])
-      json_error 409, 'Duplicated user ID' if e.message.include? 'E11000'
+      if e.message.include? 'E11000'
+        json_error 409, 'Duplicated user ID'
+      else
+        json_error 400, "Registering user in database returned error #{e.message}"
+      end
     end
 
     logger.debug "Database: New user #{form['username']} with ID #{user_id} has been added"
