@@ -75,50 +75,10 @@ class GtkSrv < Sinatra::Base
     logger.debug(log_msg) {"entered with original_body=#{original_body}"}
     params = JSON.parse(original_body, quirks_mode: true)
     logger.debug(log_msg) {"with params=#{params}"}
-    
-    # we're not storing egresses or ingresses
-    egresses = params.delete 'egresses' if params['egresses']
-    ingresses = params.delete 'ingresses' if params['ingresses']
-    user_data = params.delete 'user_data' if params['user_data']
-    
+
     begin
-      start_request={}
-      start_request['instance_id'] = params['service_instance_uuid'] if params['request_type'] == 'TERMINATE'
-
-      # for TERMINATE, service_uuid has to be found first
-      service = get_service(params)
-      logger.error(log_msg) {"network service not found"} unless service
-      logger.debug(log_msg) {"service=#{service}"}
-
-      # we're not storing egresses or ingresses, so we're not passing them
-      si_request = Request.create(service_uuid: service['uuid'], service_instance_uuid: params['service_instance_uuid'], request_type: params['request_type'], callback: params['callback'], began_at: Time.now.utc)
-      json_error 400, 'Not possible to create '+params['request_type']+' request', log_msg unless si_request
-      logger.debug(log_msg) {"with service_uuid=#{params['service_uuid']}, service_instance_uuid=#{params['service_instance_uuid']}: #{si_request.inspect}"}
-      
-      nsd = service['nsd']
-      nsd[:uuid] = service['uuid']
-      start_request['NSD']=nsd
-    
-      nsd['network_functions'].each_with_index do |function, index|
-        logger.debug(log_msg) { "function=['#{function['vnf_name']}', '#{function['vnf_vendor']}', '#{function['vnf_version']}']"}
-        stored_function = VFunction.new(settings.functions_catalogue, logger).find_function(function['vnf_name'],function['vnf_vendor'],function['vnf_version'])
-        logger.error(log_msg) {"network function not found"} unless stored_function
-        logger.debug(log_msg) {"function#{index}=#{stored_function}"}
-        vnfd = stored_function[:vnfd]
-        vnfd[:uuid] = stored_function[:uuid]
-        start_request["VNFD#{index}"]=vnfd 
-        logger.debug(log_msg) {"start_request[\"VNFD#{index}\"]=#{vnfd}"}
-      end
-      start_request['egresses'] = egresses
-      start_request['ingresses'] = ingresses
-      start_request['user_data'] = user_data
-      
-      start_request_yml = YAML.dump(start_request.deep_stringify_keys)
-      logger.debug(log_msg) {"#{params}:\n"+start_request_yml}
-
-      mq_server = params['request_type'] == 'CREATE' ? settings.create_mqserver : settings.terminate_mqserver
-      smresponse = mq_server.publish( start_request_yml.to_s, si_request['id'])
-      json_request = json(si_request, { root: false })
+      resp = Processor.new(logger, settings.services_catalogue, settings.functions_catalogue).call(params)
+      json_request = json(resp, { root: false })
       logger.debug(log_msg) {' returning POST /requests with request='+json_request}
       halt 201, json_request
     rescue Exception => e

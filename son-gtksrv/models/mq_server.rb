@@ -45,10 +45,12 @@ class MQServer
     method = queue_name.split('.')[-1]
     self.send(:"consume_#{method}")
     #self.consume
+    $stderr.puts "MQserver#initialize: queue_name #{queue_name}, url #{url}"
   end
 
   def publish(msg, correlation_id)
     logmsg= CLASS+'.'+__method__.to_s
+    $stderr.puts "MQserver#publish: msg #{msg}, correlation_id #{correlation_id}"
     @logger.debug(logmsg) {"msg=#{msg} correlation_id=#{correlation_id}"}
     response = @topic.publish(msg, :content_type =>'text/yaml', :routing_key => @queue.name, :correlation_id => correlation_id, :reply_to => @queue.name, :app_id => 'son-gkeeper')
     @logger.debug(logmsg) {"published msg '"+msg+"', with correlation_id="+correlation_id}
@@ -56,6 +58,7 @@ class MQServer
   end
   
   def consume_create
+    $stderr.puts "MQserver#consume_create: entered"
     logmsg= CLASS+'.'+__method__.to_s
     @logger.debug(logmsg) {"entered"}
     @queue.subscribe do |delivery_info, properties, payload|

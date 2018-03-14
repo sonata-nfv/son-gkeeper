@@ -28,7 +28,7 @@
 # encoding: utf-8
 require 'tempfile'
 require 'json'
-require 'pp'
+require 'curb'
 
 class CatalogueRecordNotCreatedError < StandardError; end
 class CatalogueRecordNotFoundError < StandardError; end
@@ -41,14 +41,14 @@ class Catalogue
   JSON_HEADERS = {'Accept'=>'application/json', 'Content-Type'=>'application/json'}
   
   def initialize(url, logger)
-    log_message='Catalogue.'+__method__.to_s
+    log_message='Catalogue#'+__method__.to_s
     @url = url
     @logger = logger
-    @logger.debug(log_message) {"initiaized: url="+url+", logger=#{logger}"}
+    @logger.debug(log_message) {"url="+url+", logger=#{logger}"}
   end
     
   def create(descriptor)
-    log_message='Catalogue.'+__method__.to_s
+    log_message='Catalogue#'+__method__.to_s
     @logger.debug(log_message) {"entered with #{descriptor}"}
     begin
       response = RestClient.post( @url, descriptor.to_json, content_type: :json, accept: :json)     
@@ -63,14 +63,20 @@ class Catalogue
   end
   
   def find_by_uuid(uuid)
-    log_message='Catalogue.'+__method__.to_s
-    @logger.debug(log_message) { "entered with uuid #{uuid})"}
+    log_message='Catalogue#'+__method__.to_s
+    @logger.debug(log_message) { "entered with uuid #{uuid}"}
     begin
-      _response = RestClient.get(@url+"/#{uuid}", JSON_HEADERS) 
-      @logger.debug(log_message) { "response=#{_response}"}
-      parsed_response = JSON.parse _response #.body
-      @logger.debug(log_message) { "parsed_response=#{parsed_response}"}
-      parsed_response
+      resp=Curl.get(@url+'/'+uuid) do |req|
+        req.headers['Content-type'] = req.headers['Accept'] = 'application/json'
+      end
+      $stderr.puts "Catalogue#find_by_uuid: resp.status #{resp.status}"
+      $stderr.puts "Catalogue#find_by_uuid: resp.body_str #{resp.body_str}"
+      case resp.status.to_i
+      when 200
+        resp.body_str.is_a?(Array) ? resp.body_str.first : resp.body_str
+      else
+        raise CatalogueRecordNotFoundError.new 'Record with uuid '+uuid+' was not found'
+      end
     rescue => e
       @logger.error(log_message) {"Error during processing: #{$!}"}
       @logger.error(log_message) {"Backtrace:\n\t#{e.backtrace.join("\n\t")}"}
@@ -79,7 +85,7 @@ class Catalogue
   end
   
   def find(params)
-    log_message='Catalogue.'+__method__.to_s
+    log_message='Catalogue#'+__method__.to_s
     headers = JSON_HEADERS
     headers[:params] = params unless params.empty?
     @logger.debug(log_message) {"entered, with params #{params} and headers #{headers}"}
