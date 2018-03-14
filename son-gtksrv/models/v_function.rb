@@ -41,13 +41,14 @@ class VFunction
       end
       case resp.status.to_i
       when 200
-        resp.body_str.is_a?(Array) ? resp.body_str.first : resp.body_str
+        json = JSON.parse(resp.body_str, symbolize_names: true)
+        json.is_a?(Array) ? json.first : json
       else
-        raise ArgumentError.new 'Record with uuid '+uuid+' was not found'
+        raise ArgumentError.new 'Function with name '+name+', vendor '+vendor+' and version '+version+' was not found'
       end
     rescue => e
-      $stderr.puts "#{log_message}: No function found for "+url
-      e.message
+      $stderr.puts "#{log_message}: No function found for name "+name+', vendor '+vendor+' and version '+version
+      {}
     end
   end
 end

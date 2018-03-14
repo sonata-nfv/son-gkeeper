@@ -64,10 +64,11 @@ class Processor
     # we're not storing egresses or ingresses, so we're not passing them
     si_request = Request.create(service_uuid: params[:service_uuid], request_type: params[:request_type], callback: params[:callback], began_at: Time.now.utc)
     return nil if si_request.empty?
-    service = NService.new(@s_catalogue, @logger).find_by_uuid(params[:service_uuid])
     
-    nsd = service['nsd'] || service[:nsd]
-    nsd[:uuid] = service['uuid'] || service[:uuid]
+    service = NService.new(@s_catalogue, @logger).find_by_uuid(params[:service_uuid])
+
+    nsd = service[:nsd]
+    nsd[:uuid] = service[:uuid]
     start_request['NSD']=nsd
   
     functions = build_function_list(nsd[:network_functions])
@@ -148,7 +149,10 @@ class Processor
     result = {}
     functions.each_with_index do |function, index|
       stored_function = VFunction.new(@f_catalogue, @logger).find_function( function[:vnf_name], function[:vnf_vendor], function[:vnf_version])
-      $stderr.puts "#{log_msg}: network function not found" unless stored_function
+      if stored_function.empty?
+        $stderr.puts "#{log_msg}: network function not found"
+        next
+      end
       vnfd = stored_function[:vnfd]
       vnfd[:uuid] = stored_function[:uuid]
       result["VNFD#{index}"]=vnfd 

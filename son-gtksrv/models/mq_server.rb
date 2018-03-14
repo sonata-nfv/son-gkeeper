@@ -57,7 +57,6 @@ class MQServer
   end
   
   def consume_create
-    $stderr.puts "MQserver#consume_create: entered"
     logmsg= CLASS+'.'+__method__.to_s
     @logger.debug(logmsg) {"entered"}
     @queue.subscribe do |delivery_info, properties, payload|

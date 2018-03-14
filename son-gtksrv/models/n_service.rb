@@ -52,26 +52,9 @@ class NService
     end
   end
 
-  #def find_by_uuid(uuid)
-  #  raise ArgumentError.new('NService.find_by_uuid: no UUID has been provided') if uuid.empty?
-  #  @logger.debug "NService.find_by_uuid(#{uuid})"
-  #  begin
-  #    service = @catalogue.find_by_uuid(uuid)
-  #    @logger.debug "NService.find_by_uuid: #{service}"
-  #    service.is_a?(Array) ? service.first : service
-  #  rescue CatalogueRecordNotFoundError
-  #    raise NServiceNotFoundError.new 'Service with uuid '+uuid+' was not found'
-  #  rescue Exception => e
-  #    @logger.debug(e.message)
-  #    @logger.debug(e.backtrace.inspect)
-  #    halt 500, 'Could not contact the Service Catalogue'
-  #  end
-  #end
-  
   def find_by_uuid(uuid)
     begin
-      service = @catalogue.find_by_uuid(uuid)
-      service
+      @catalogue.find_by_uuid(uuid)
     rescue CatalogueRecordNotFoundError
       raise NServiceNotFoundError.new 'Service with uuid '+uuid+' was not found'
     rescue Exception => e

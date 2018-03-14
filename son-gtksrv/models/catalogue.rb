@@ -73,7 +73,8 @@ class Catalogue
       end
       case resp.status.to_i
       when 200
-        resp.body_str.is_a?(Array) ? resp.body_str.first : resp.body_str
+        json = JSON.parse(resp.body_str, symbolize_names: true)
+        json.is_a?(Array) ? json.first : json
       else
         raise CatalogueRecordNotFoundError.new 'Record with uuid '+uuid+' was not found'
       end
