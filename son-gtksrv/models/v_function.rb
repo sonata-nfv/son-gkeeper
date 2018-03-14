@@ -34,19 +34,21 @@ class VFunction
   
   def find_function(name,vendor,version)
     log_message = 'VFunction.'+__method__.to_s
-    headers = { 'Accept'=> 'application/json', 'Content-Type'=>'application/json'}
     url = @catalogue.url+"?name=#{name}&vendor=#{vendor}&version=#{version}"
-    @logger.debug(log_message) {"url="+url}
     begin
-      response = RestClient.get(url, headers)
-      body = response.body
-      @logger.debug(log_message) {"body=#{body}"}
-      function=JSON.parse(body, symbolize_names: true)
-      @logger.debug(log_message) {"function=#{function}"}
-      function[0]
+      resp=Curl.get(url) do |req|
+        req.headers['Content-type'] = req.headers['Accept'] = 'application/json'
+      end
+      case resp.status.to_i
+      when 200
+        json = JSON.parse(resp.body_str, symbolize_names: true)
+        json.is_a?(Array) ? json.first : json
+      else
+        raise ArgumentError.new 'Function with name '+name+', vendor '+vendor+' and version '+version+' was not found'
+      end
     rescue => e
-      @logger.error(log_message) {"No function found for "+url}
-      e.message
+      $stderr.puts "#{log_message}: No function found for name "+name+', vendor '+vendor+' and version '+version
+      {}
     end
   end
 end

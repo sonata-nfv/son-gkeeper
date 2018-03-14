@@ -74,28 +74,19 @@ class GtkSrv < Sinatra::Base
   post '/requests/?' do
     log_msg = 'GtkSrv::POST /requests'.freeze
     original_body = request.body.read
-    json_error 400, 'Body of the request can not be empty', log_message if original_body.empty?
-    logger.debug(log_msg) {"entered with original_body=#{original_body}"}
-    params = JSON.parse(original_body, quirks_mode: true)
+
+    params = JSON.parse(original_body, quirks_mode: true, symbolize_names: true)
     logger.debug(log_msg) {"with params=#{params}"}
-    
+
     begin
-      if params['request_type'] == 'TERMINATE'
-        si_request, start_request = TerminationRequest.build params
-        mq_server = settings.terminate_mqserver
-      else
-        si_request, start_request = Request.build params
-        start_request_yml = YAML.dump(start_request.deep_stringify_keys)
-        mq_server = find_mq_server(params['request_type'])
-      end
-      logger.debug(log_msg) {"#{params}:\n"+start_request_yml}
-      smresponse = mq_server.publish( start_request_yml.to_s, si_request['id'])
-      json_request = json(si_request, { root: false })
+      resp = Processor.new(logger, settings.services_catalogue, settings.functions_catalogue).call(params)
+      json_request = json(resp, { root: false })
+
       logger.debug(log_msg) {' returning POST /requests with request='+json_request}
       halt 201, json_request
     rescue Exception => e
-      logger.error(log_msg) {e.message}
-	    logger.error(log_msg) {e.backtrace.inspect}
+      $stderr.puts "#{log_msg}: #{e.message}"
+      $stderr.puts "#{log_msg}: #{e.backtrace.inspect}"
 	    json_error 400, 'Not found: '+e.message
     end
   end
@@ -124,26 +115,5 @@ class GtkSrv < Sinatra::Base
     log_message = 'GtkSrv::request_url'
     logger.debug(log_message) {"Schema=#{request.env['rack.url_scheme']}, host=#{request.env['HTTP_HOST']}, path=#{request.env['REQUEST_PATH']}"}
     request.env['rack.url_scheme']+'://'+request.env['HTTP_HOST']+request.env['REQUEST_PATH']
-  end
-    
-  class Hash
-    def deep_stringify_keys
-      deep_transform_keys{ |key| key.to_s }
-    end
-    def deep_transform_keys(&block)
-      _deep_transform_keys_in_object(self, &block)
-    end
-    def _deep_transform_keys_in_object(object, &block)
-      case object
-      when Hash
-        object.each_with_object({}) do |(key, value), result|
-          result[yield(key)] = _deep_transform_keys_in_object(value, &block)
-        end
-      when Array
-        object.map {|e| _deep_transform_keys_in_object(e, &block) }
-      else
-        object
-      end
-    end
   end
 end
