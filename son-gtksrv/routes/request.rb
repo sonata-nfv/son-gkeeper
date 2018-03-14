@@ -85,8 +85,8 @@ class GtkSrv < Sinatra::Base
       logger.debug(log_msg) {' returning POST /requests with request='+json_request}
       halt 201, json_request
     rescue Exception => e
-      logger.error(log_msg) {e.message}
-	    logger.error(log_msg) {e.backtrace.inspect}
+      $stderr.puts "#{log_msg}: #{e.message}"
+      $stderr.puts "#{log_msg}: #{e.backtrace.inspect}"
 	    json_error 400, 'Not found: '+e.message
     end
   end
