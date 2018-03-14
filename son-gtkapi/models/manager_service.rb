@@ -48,14 +48,7 @@ class ManagerService
     GtkApi.logger.debug(log_message) {"complete_url=#{complete_url}"} 
     begin
       res=Curl.get(complete_url) do |req|
-        if headers.empty?
-          req.headers['Content-type'] = req.headers['Accept'] = 'application/json'
-        else
-          headers.each do |h|
-            GtkApi.logger.debug(log_message) {"header[#{h[0]}]: #{h[1]}"}
-            req.headers[h[0]] = h[1]
-          end
-        end
+        req.headers = build_headers req.headers
       end
       GtkApi.logger.debug(log_message) {"header_str=#{res.header_str}"}
       GtkApi.logger.debug(log_message) {"response body=#{res.body}"}
@@ -118,11 +111,12 @@ class ManagerService
     end
     GtkApi.logger.debug(log_message) {"response body=#{res.body}"}
     status = status_from_response_headers(res.header_str)
+    GtkApi.logger.debug(log_message) {"Status #{status}"} 
     case status
     when 200..202
       begin
         parsed_response = JSON.parse(res.body, symbolize_names: true)
-        GtkApi.logger.debug(log_message) {"status #{status}, parsed_response=#{parsed_response}"}
+        GtkApi.logger.debug(log_message) {"parsed_response=#{parsed_response}"}
         {status: status, count: 1, items: parsed_response, message: "OK"}
       rescue => e
         GtkApi.logger.error(log_message) {"Error during processing: #{$!}"} 
@@ -130,10 +124,8 @@ class ManagerService
         {status: nil, count: nil, items: nil, message: "Error processing #{$!}: \n\t#{e.backtrace.join("\n\t")}"}
       end
     when 400..499
-      GtkApi.logger.error(log_message) {"Status #{status}"} 
       {status: status, count: nil, items: nil, message: "Status #{status}: could not process"}
     else
-      GtkApi.logger.error(log_message) {"Status #{status}"} 
       {status: status, count: nil, items: nil, message: "Status #{status} unknown"}
     end
   end  
@@ -160,38 +152,50 @@ class ManagerService
           body = res.body
           if body.empty?
             GtkApi.logger.debug(log_message) {"status #{status}, parsed_response=[]"}
-            {status: status, count: 1, items: [], message: "OK"}
+            return {status: status, count: 0, items: [], message: "OK"}
           else
             parsed_response = JSON.parse(body, symbolize_names: true)
             GtkApi.logger.debug(log_message) {"status #{status}, parsed_response=#{parsed_response}"}
-            {status: status, count: 1, items: parsed_response, message: "OK"}
+            return {status: status, count: 1, items: parsed_response, message: "OK"}
           end
         rescue => e
           GtkApi.logger.error(log_message) {"Error during processing: #{$!}"} 
           GtkApi.logger.error(log_message) {"Backtrace:\n\t#{e.backtrace.join("\n\t")}"}
-          {status: nil, count: nil, items: nil, message: "Error processing #{$!}: \n\t#{e.backtrace.join("\n\t")}"}
+          return {status: nil, count: nil, items: nil, message: "Error processing #{$!}: \n\t#{e.backtrace.join("\n\t")}"}
         end
       when 400..499
         GtkApi.logger.error(log_message) {"Status #{status}"} 
-        {status: status, count: nil, items: nil, message: "Status #{status}: could not process"}
+        return {status: status, count: nil, items: nil, message: "Status #{status}: could not process"}
       else
         GtkApi.logger.error(log_message) {"Status #{status}"} 
-        {status: status, count: nil, items: nil, message: "Status #{status} unknown"}
+        return {status: status, count: nil, items: nil, message: "Status #{status} unknown"}
       end
     rescue Curl::Err::ConnectionFailedError => e
-      {status: 500, count: nil, items: nil, message: "Couldn't connect to server #{url}"}
+      return {status: 500, count: nil, items: nil, message: "Couldn't connect to server #{url}"}
     rescue Curl::Err::CurlError => e
-      {status: 500, count: nil, items: nil, message: "Generic error while connecting to server #{url}"}
+      return {status: 500, count: nil, items: nil, message: "Generic error while connecting to server #{url}"}
     rescue Curl::Err::AccessDeniedError => e
-      {status: 500, count: nil, items: nil, message: "Access denied while connecting to server #{url}"}
+      return {status: 500, count: nil, items: nil, message: "Access denied while connecting to server #{url}"}
     rescue Curl::Err::TimeoutError => e
-      {status: 500, count: nil, items: nil, message: "Time out while connecting to server #{url}"}
+      return {status: 500, count: nil, items: nil, message: "Time out while connecting to server #{url}"}
     rescue Curl::Err::HostResolutionError => e
-      {status: 500, count: nil, items: nil, message: "Couldn't resolve host name #{url}"}
+      return {status: 500, count: nil, items: nil, message: "Couldn't resolve host name #{url}"}
     end
   end
   
   private
+  
+  def self.build_headers(headers)
+    if headers.empty?
+      headers = {}
+      headers['Content-type'] = headers['Accept'] = 'application/json'
+      return headers
+    end
+    headers.each do |h|
+      GtkApi.logger.debug(log_message) {"header[#{h[0]}]: #{h[1]}"}
+      headers[h[0]] = h[1]
+    end
+  end
   
   def self.format_error(backtrace)
     first_line = backtrace[0].split(":")

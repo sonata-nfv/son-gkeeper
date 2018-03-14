@@ -105,59 +105,7 @@ class GtkSrv < Sinatra::Base
       json_error 404, "Service instance '#{params[:uuid]}' not found", method
     end
   end
-  
-  # PUTs an update on an existing service instance, given the service instance UUID, to terminate it
-  put '/services/:uuid/terminate/?' do
-    method = 'GtkSrv PUT /services/:uuid/terminate'
-    logger.debug(method) {"entered with #{params[:uuid]}"}
-    
-    # is it a valid service instance uuid?
-    begin
-      creation_request = Request.validate_request(service_instance_uuid: params[:uuid])
-      logger.debug(method) {"creation_request=#{creation_request.inspect}"}
-      logger.debug(method) {"creation_request[:service_uuid]=#{creation_request[:service_uuid]}"}
-      #service_instantiation_request={
-      #  request_type: "TERMINATE", service_instance_uuid: params[:uuid], service_uuid: creation_request[:service_uuid],
-      #  egress: nil, ingress: nil
-      #}
-      service_instantiation_request_result = Request.create(
-        request_type: "TERMINATE", service_instance_uuid: params[:uuid], service_uuid: creation_request[:service_uuid],
-        egress: nil, ingress: nil
-      )
-      json_error 400, "Service instance '#{params[:uuid]}' termination failled", method unless service_instantiation_request_result
-      logger.debug(log_msg) { "service_instantiation_request_result= #{service_instantiation_request_result}"}
 
-      logger.debug(method) {"build_descriptors with service_uuid: #{creation_request[:service_uuid]}, service_instance_uuid: #{params[:uuid]}"}
-      nsd = build_descriptors(service_uuid: creation_request[:service_uuid], service_instance_uuid: params[:uuid])
-      
-      json_error 404, "NSD not found for service uuid '#{creation_request[:service_uuid]}'", method unless nsd
-        
-      logger.debug(method) {"with nsd=#{nsd}"}
-
-      nsd.delete('status') if nsd['status']
-      descriptors_yml = YAML.dump(descriptors.deep_stringify_keys)
-      logger.debug(log_msg) {"descriptors_yml=#{descriptors_yml}"}
-
-      smresponse = settings.create_mqserver.publish( descriptors_yml.to_s, service_instantiation_request_result['id'])
-      formated_descriptors = json(service_instantiation_request, { root: false })
-      logger.debug(log_msg) {'returning with request='+formated_descriptors}
-
-      terminate_response = Request.process_request(nsd: formated_descriptors, service_instance_uuid: params[:uuid], type: 'TERMINATE', mq_server: settings.terminate_mqserver)
-      logger.debug(method) {"terminate_response=#{terminate_response}"}
-      json_error 400, "Terminate request for service instance '#{params[:uuid]} failled", method unless terminate_response
-
-      halt 201, terminate_response.to_json
-    rescue Exception=> e
-      json_error 404, "Service instance '#{params[:uuid]}' not found", method
-    end
-  end
-
-  get '/admin/logs' do
-    content_type :text
-    logger.debug "GtkSrv: entered GET /admin/logs"
-    File.open('log/'+ENV['RACK_ENV']+'.log', 'r').read
-  end  
-  
   private 
   def query_string
     request.env['QUERY_STRING'].nil? ? '' : '?' + request.env['QUERY_STRING'].to_s

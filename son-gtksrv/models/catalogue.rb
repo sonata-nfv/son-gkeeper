@@ -63,8 +63,10 @@ class Catalogue
   end
   
   def find_by_uuid(uuid)
-    log_message='Catalogue#'+__method__.to_s
-    @logger.debug(log_message) { "entered with uuid #{uuid}"}
+    log_message='Catalogue.'+__method__.to_s
+    @logger.debug(log_message) { "entered with uuid #{uuid})"}
+    raise ArgumentError.new(log_message + ': no UUID has been provided') if uuid.empty?
+
     begin
       resp=Curl.get(@url+'/'+uuid) do |req|
         req.headers['Content-type'] = req.headers['Accept'] = 'application/json'
@@ -114,7 +116,8 @@ class Catalogue
         @logger.debug(log_message) {"records #{records}"}
         result[:items] = JSON.parse records.body
       end
-      result
+      @logger.debug(log_message) {"returning result=#{result}"}
+      return result
     rescue => e
       @logger.error(log_message) {"Error during processing: #{$!}"}
       @logger.error(log_message) {"Backtrace:\n\t#{e.backtrace.join("\n\t")}"}

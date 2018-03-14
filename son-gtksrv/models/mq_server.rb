@@ -43,6 +43,8 @@ class MQServer
     @topic = channel.topic("son-kernel", :auto_delete => false)
     @queue = channel.queue(queue_name, :auto_delete => true).bind(@topic, :routing_key => queue_name)
     method = queue_name.split('.')[-1]
+    
+    # The way ruby creates a singleton_method for the class
     self.send(:"consume_#{method}")
   end
 
@@ -163,7 +165,7 @@ class MQServer
 
         # We know our own messages, so just skip them
         unless properties[:app_id] == 'son-gkeeper'
-          # We're interested in app_id == 'son-plugin.slm'
+          # We're interested in app_id == 'son-gkeeper'
           parsed_payload = YAML.load(payload)
           @logger.debug(logmsg) { "parsed_payload: #{parsed_payload}"}
           status = parsed_payload['status']
@@ -200,7 +202,7 @@ class MQServer
   
   def register_kpi(request)    
     log_message='MQServer.'+__method__.to_s
-    @logger.debug(log_message) { "entered with request=#{request}"}
+    @logger.debug(log_message) { "entered with request=#{request.inspect}"}
     now = Time.now.utc
 
     body = { uuid: request['uuid'], elapsed_time: now-Time.parse(request['began_at']), time_stamp: now}
