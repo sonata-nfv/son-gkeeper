@@ -52,10 +52,8 @@ class NService
   end
 
   def find_by_uuid(uuid)
-    $stderr.puts "NService.find_by_uuid: uuid #{uuid}"
     begin
       service = @catalogue.find_by_uuid(uuid)
-      $stderr.puts "NService.find_by_uuid: #{service}"
       service
     rescue CatalogueRecordNotFoundError
       raise NServiceNotFoundError.new 'Service with uuid '+uuid+' was not found'

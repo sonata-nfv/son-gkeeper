@@ -69,8 +69,6 @@ class Catalogue
       resp=Curl.get(@url+'/'+uuid) do |req|
         req.headers['Content-type'] = req.headers['Accept'] = 'application/json'
       end
-      $stderr.puts "Catalogue#find_by_uuid: resp.status #{resp.status}"
-      $stderr.puts "Catalogue#find_by_uuid: resp.body_str #{resp.body_str}"
       case resp.status.to_i
       when 200
         resp.body_str.is_a?(Array) ? resp.body_str.first : resp.body_str

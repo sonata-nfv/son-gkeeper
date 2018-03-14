@@ -72,8 +72,7 @@ class GtkSrv < Sinatra::Base
   post '/requests/?' do
     log_msg = MODULE + '::POST /requests'
     original_body = request.body.read
-    logger.debug(log_msg) {"entered with original_body=#{original_body}"}
-    params = JSON.parse(original_body, quirks_mode: true)
+    params = JSON.parse(original_body, quirks_mode: true, symbolize_names: true)
     logger.debug(log_msg) {"with params=#{params}"}
 
     begin
@@ -131,26 +130,5 @@ class GtkSrv < Sinatra::Base
     end
     logger.debug(log_message) {"params #{params}"}
     NService.new(settings.services_catalogue, logger).find_by_uuid(params['service_uuid'])
-  end
-    
-  class Hash
-    def deep_stringify_keys
-      deep_transform_keys{ |key| key.to_s }
-    end
-    def deep_transform_keys(&block)
-      _deep_transform_keys_in_object(self, &block)
-    end
-    def _deep_transform_keys_in_object(object, &block)
-      case object
-      when Hash
-        object.each_with_object({}) do |(key, value), result|
-          result[yield(key)] = _deep_transform_keys_in_object(value, &block)
-        end
-      when Array
-        object.map {|e| _deep_transform_keys_in_object(e, &block) }
-      else
-        object
-      end
-    end
   end
 end

@@ -35,32 +35,16 @@ class VFunction
   def find_function(name,vendor,version)
     log_message = 'VFunction.'+__method__.to_s
     url = @catalogue.url+"?name=#{name}&vendor=#{vendor}&version=#{version}"
-    $stderr.puts "#{log_message}: url #{url}"
-    #@logger.debug(log_message) {"url="+url}
     begin
       resp=Curl.get(url) do |req|
         req.headers['Content-type'] = req.headers['Accept'] = 'application/json'
       end
-      $stderr.puts "#{log_message}: resp.status #{resp.status}"
-      $stderr.puts "#{log_message}: resp.body_str #{resp.body_str}"
       case resp.status.to_i
       when 200
         resp.body_str.is_a?(Array) ? resp.body_str.first : resp.body_str
       else
-        #raise CatalogueRecordNotFoundError.new 'Record with uuid '+uuid+' was not found'
         raise ArgumentError.new 'Record with uuid '+uuid+' was not found'
       end
-      #rescue => e
-      #  @logger.error(log_message) {"Error during processing: #{$!}"}
-      #  @logger.error(log_message) {"Backtrace:\n\t#{e.backtrace.join("\n\t")}"}
-      #  raise CatalogueRecordNotFoundError.new 'Record with uuid '+uuid+' was not found'
-      #end
-      
-      #body = response.body
-      #@logger.debug(log_message) {"body=#{body}"}
-      #function=JSON.parse(body, symbolize_names: true)
-      #@logger.debug(log_message) {"function=#{function}"}
-      #function[0]
     rescue => e
       $stderr.puts "#{log_message}: No function found for "+url
       e.message
