@@ -35,19 +35,20 @@ class GtkSrv < Sinatra::Base
   
   # GETs a request, given an uuid
   get '/requests/:uuid/?' do
-    logger.debug(MODULE) {" entered GET /requests/#{params[:uuid]}"}
+    log_msg = 'GtkSrv::GET /requests'.freeze
+    logger.debug(log_msg) {" entered GET /requests/#{params[:uuid]}"}
     request = Request.find(params[:uuid])
     json_request = json(request, { root: false })
-    halt 206, json_request if request
-    json_error 404, "#{MODULE}: Request #{params[:uuid]} not found"    
+    halt 200, json_request if request
+    json_error 404, "#{log_msg}: Request #{params[:uuid]} not found"    
   end
-  
-  
+
   # GET many requests
   get '/requests/?' do
+    log_msg = 'GtkSrv::GET /requests'.freeze
 
-    logger.info(MODULE) {" entered GET /requests#{query_string}"}
-    logger.info(MODULE) {" params=#{params}"}
+    logger.info(log_msg) {" entered GET /requests#{query_string}"}
+    logger.info(log_msg) {" params=#{params}"}
     
     # transform 'string' params Hash into keys
     keyed_params = keyed_hash(params)
@@ -55,12 +56,13 @@ class GtkSrv < Sinatra::Base
     # get rid of :offset and :limit
     [:offset, :limit, :captures].each { |k| keyed_params.delete(k)}
     valid_fields = [:service_uuid, :status, :created_at, :updated_at]
-    logger.info(MODULE) {" keyed_params.keys - valid_fields = #{keyed_params.keys - valid_fields}"}
+    logger.info(log_msg) {" keyed_params.keys - valid_fields = #{keyed_params.keys - valid_fields}"}
     json_error 400, "GtkSrv: wrong parameters #{params}" unless keyed_params.keys - valid_fields == []
     
     requests = Request.where(keyed_params).limit(params['limit'].to_i).offset(params['offset'].to_i)
     json_requests = json(requests, { root: false })
-    logger.info(MODULE) {" leaving GET /requests?#{query_string} with "+json_requests}
+    logger.info(log_msg) {" leaving GET /requests#{query_string} with "+json_requests}
+    logger.info(log_msg) {" size is #{requests.size}"}
     if json_requests
       headers 'Record-Count'=>requests.size.to_s, 'Content-Type'=>'application/json'
       halt 200, json_requests
@@ -70,45 +72,41 @@ class GtkSrv < Sinatra::Base
 
   # POSTs an instantiation request, given a service_uuid
   post '/requests/?' do
-    log_msg = MODULE + '::POST /requests'
+    log_msg = 'GtkSrv::POST /requests'.freeze
     original_body = request.body.read
+
     params = JSON.parse(original_body, quirks_mode: true, symbolize_names: true)
     logger.debug(log_msg) {"with params=#{params}"}
 
     begin
       resp = Processor.new(logger, settings.services_catalogue, settings.functions_catalogue).call(params)
       json_request = json(resp, { root: false })
+
       logger.debug(log_msg) {' returning POST /requests with request='+json_request}
       halt 201, json_request
     rescue Exception => e
-      logger.debug(log_msg) {e.message}
-	    logger.debug(log_msg) {e.backtrace.inspect}
-	    halt 500, 'Internal server error'+e.message
+      logger.error(log_msg) {e.message}
+	    logger.error(log_msg) {e.backtrace.inspect}
+	    json_error 400, 'Not found: '+e.message
     end
   end
-
-  # PUTs an update on an existing instantiation request, given its UUID
-  put '/requests/:uuid/?' do
-    log_message = MODULE+' PUT /requests/:uuid'
-    logger.debug(log_message) {"entered with params=#{params}"}
-    request = Request.find params[:uuid]
-    
-    # it should be .update( :id, :params)
-    # if request.update_all(params)
-    json_error 400, 'Not possible to update request with uuid='+params[:uuid], log_message unless request.update( params[:uuid], params)
-
-    logger.debug(log_message) {"returning with updated request=#{request}"}
-    halt 200, request.to_json
-  end  
   
-  get '/began_at/?' do
-    log_message = 'GtkSrv GET /began_at'
-    logger.debug(log_message) {'entered'}
-    logger.debug(log_message) {"began at #{settings.began_at}"}
-    halt 200, {began_at: settings.began_at}.to_json
-  end
-
   private 
+  
+  def find_mq_server(request_type)
+    case request_type
+    when 'CREATE'
+      settings.create_mqserver
+    when 'UPDATE'
+      settings.update_mqserver
+    # TERMINATE is processed above 
+    #when 'TERMINATE'
+    #   settings.terminate_mqserver
+    else
+      json_error 400, "#{request_type} is the wrong type of request"
+    end
+  end
+  
   def query_string
     request.env['QUERY_STRING'].nil? ? '' : '?' + request.env['QUERY_STRING'].to_s
   end
@@ -117,18 +115,5 @@ class GtkSrv < Sinatra::Base
     log_message = 'GtkSrv::request_url'
     logger.debug(log_message) {"Schema=#{request.env['rack.url_scheme']}, host=#{request.env['HTTP_HOST']}, path=#{request.env['REQUEST_PATH']}"}
     request.env['rack.url_scheme']+'://'+request.env['HTTP_HOST']+request.env['REQUEST_PATH']
-  end
-
-  def get_service(params)
-    log_message = 'GtkSrv::get_service'
-    logger.debug(log_message) {"entered with params #{params}"}
-    if params['request_type'] == 'TERMINATE'
-      # Get the service_uuid from the creation request
-      services = Request.where("service_instance_uuid = ? AND request_type = 'CREATE'", params['service_instance_uuid'])
-      logger.debug(log_message) {"services found = #{services}"}
-      params['service_uuid'] = services.to_a[0]['service_uuid']
-    end
-    logger.debug(log_message) {"params #{params}"}
-    NService.new(settings.services_catalogue, logger).find_by_uuid(params['service_uuid'])
   end
 end

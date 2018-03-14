@@ -46,12 +46,12 @@ class KpiManagerService < ManagerService
     begin
       @@logger.debug(method) {"url = "+@@url}      
       response = putCurb(url: @@url+'/kpis', body: params)      
-      @@logger.error(method) {"response=#{response}"}
+      @@logger.debug(method) {"response=#{response}"}
       case response[:status]
       when 201
-        { status: response[:status], data: {}, message: 'Metric updated'}        
+        return { status: response[:status], data: {}, message: 'Metric updated'}        
       else
-        { status: response[:status], data: {}, message: 'Metric was not updated'}
+        return { status: response[:status], data: {}, message: 'Metric was not updated'}
       end      
     rescue => e
       @@logger.error(method) {"Error during processing: #{$!}"}

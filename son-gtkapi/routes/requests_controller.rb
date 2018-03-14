@@ -49,17 +49,22 @@ class GtkApi < Sinatra::Base
       params = JSON.parse(request.body.read)
       logger.debug(log_message) {"entered with params=#{params}"}
       params['request_type'] ||= 'CREATE'
-      if params['request_type'] == 'CREATE'
+      case params['request_type']
+      when 'CREATE'
         kpi_method = method(:count_service_instantiation_requests)
         require_param(param: 'service_uuid', params: params, kpi_method: kpi_method, error_message: 'Service UUID', log_message: log_message, began_at: began_at)
         require_param(param: 'egresses', params: params, kpi_method: kpi_method, error_message: 'Egresses list', log_message: log_message, began_at: began_at)
         require_param(param: 'ingresses', params: params, kpi_method: kpi_method, error_message: 'Ingresses list', log_message: log_message, began_at: began_at)
-      elsif params['request_type'] == 'UPDATE'
+      when 'UPDATE'
         kpi_method = method(:count_service_instance_update_requests)
         require_param(param: 'service_instance_uuid', params: params, kpi_method: kpi_method, error_message: 'Service instance UUID', log_message: log_message, began_at: began_at)
-      else # 'TERMINATE'
+        require_param(param: 'latest_nsd_id', params: params, kpi_method: kpi_method, error_message: 'Latest NSD UUID', log_message: log_message, began_at: began_at)
+        require_param(param: 'nsd_id', params: params, kpi_method: kpi_method, error_message: 'NSD UUID', log_message: log_message, began_at: began_at)
+      when 'TERMINATE'
         kpi_method = method(:count_service_termination_requests)
         require_param(param: 'service_instance_uuid', params: params, kpi_method: kpi_method, error_message: 'Service UUID', log_message: log_message, began_at: began_at)
+      else
+        json_error 400, params['request_type']+' is not an acceptable type of request'
       end
       
       token = get_token( request.env, began_at, kpi_method, log_message)
@@ -69,13 +74,25 @@ class GtkApi < Sinatra::Base
       logger.debug(log_message) {"User authorized"}
       remaining = check_rate_limit(limit: 'other_operations', client: user_name) if check_rate_limit_usage()
       
-      params['callback'] = kpis_url+'/service-instantiation-time'
-      params['user_data'] = build_user_data(user_name)
-      new_request = ServiceManagerService.create_service_request(params)
+      case params['request_type']
+      when 'CREATE'
+        params['callback'] = kpis_url+'/service-instantiation-time'
+        params['user_data'] = build_user_data(user_name)
+        new_request = ServiceManagerService.create_service_request(params)
+      when 'UPDATE'
+        descriptor = RecordManagerService.find_record_by_uuid(kind: 'services', uuid: params['latest_nsd_id'])
+        json_error 404, "No descriptor with uuid=#{params[:latest_nsd_id]} found" unless descriptor      
+        logger.debug(log_message) {"found #{descriptor}"}
+        new_request = ServiceManagerService.create_service_update_request(nsr_uuid: params['service_instance_uuid'], nsd: descriptor)
+      when 'TERMINATE'
+        new_request = ServiceManagerService.create_service_termination_request(service_instance_uuid: params['service_instance_uuid'])
+      else
+        json_error 400, 'Request type '+params['request_type']+' is not supported'
+      end
       logger.debug(log_message) { "new_request =#{new_request}"}
       if new_request[:status] != 201
         kpi_method.call(labels: {result: "bad request", uuid: '', elapsed_time: (Time.now.utc-began_at).to_s})
-        json_error 400, 'No request was created', log_message
+        json_error 400, 'No '+params['request_type']+' request was created', log_message
       end
       kpi_method.call(labels: {result: "ok", uuid: new_request[:items][:service_uuid], elapsed_time: (Time.now.utc-began_at).to_s})
       halt 201, new_request[:items].to_json
@@ -160,17 +177,15 @@ class GtkApi < Sinatra::Base
     end
   end
 
-  namespace '/api/v2/admin/requests' do
-    # GET module's logs
-    get '/logs/?' do
-      log_message = "GtkApi::GET /api/v2/admin/requests/logs"
-      logger.debug(log_message) {"entered"}
-      url = ServiceManagerService.class_variable_get(:@@url)+'/admin/logs'
-      log = ServiceManagerService.get_log(url: url, log_message:log_message)
-      logger.debug(log_message) {'leaving with log='+log}
-      headers 'Content-Type' => 'text/plain; charset=utf8', 'Location' => '/api/v2/admin/requests/logs'
-      halt 200, log
-    end
+  # GET module's logs
+  get '/api/v2/admin/requests/logs/?' do
+    log_message = "GtkApi::GET /api/v2/admin/requests/logs"
+    logger.debug(log_message) {"entered"}
+    url = ServiceManagerService.class_variable_get(:@@url)+'/admin/logs'
+    log = ServiceManagerService.get_log(url: url, log_message:log_message)
+    logger.debug(log_message) {'leaving with log='+log}
+    headers 'Content-Type' => 'text/plain; charset=utf8', 'Location' => '/api/v2/admin/requests/logs'
+    halt 200, log
   end
   
   private
