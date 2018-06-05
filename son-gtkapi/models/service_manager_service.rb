@@ -116,19 +116,18 @@ class ServiceManagerService < ManagerService
     message = LOG_MESSAGE+"##{__method__}"
     @@logger.debug(message) {"entered with service instance=#{service_instance_uuid}"}
     
-    #record = RecordManagerService.find_record_by_uuid(kind: 'services', uuid: service_instance_uuid)
-    #@@logger.debug(message) {"record found=#{record}"}
-    #unless record[:status] == 200
-    #  return {status: record[:status], count: 0, items: [], message: record[:message]}
-    #end
-    #descriptor = find_service_by_uuid(uuid: record[:items][:descriptor_reference])
-    #@@logger.debug(message) {"descriptor found=#{descriptor}"}
-    #unless descriptor[:status] == 200
-    #  return {status: descriptor[:status], count: 0, items: [], message: descriptor[:message]}
-    #end
+    record = RecordManagerService.find_record_by_uuid(kind: 'services', uuid: service_instance_uuid)
+    @@logger.debug(message) {"record found=#{record}"}
+    unless record[:status] == 200
+      return {status: record[:status], count: 0, items: [], message: record[:message]}
+    end
+    descriptor = find_service_by_uuid(uuid: record[:items][:descriptor_reference])
+    @@logger.debug(message) {"descriptor found=#{descriptor}"}
+    unless descriptor[:status] == 200
+      return {status: descriptor[:status], count: 0, items: [], message: descriptor[:message]}
+    end
     begin
-      #response = self.putCurb(url: @@url+'/services/'+service_instance_uuid+'/terminate', body: descriptor[:items][:nsd]) 
-      response = self.postCurb(url: @@url+'/requests/'+service_instance_uuid, body: {})
+      response = self.putCurb(url: @@url+'/services/'+service_instance_uuid+'/terminate', body: descriptor[:items][:nsd]) 
       @@logger.debug(message) {"response=#{response}"}
       response
     rescue => e

@@ -86,8 +86,6 @@ class GtkApi < Sinatra::Base
         new_request = ServiceManagerService.create_service_update_request(nsr_uuid: params['service_instance_uuid'], nsd: descriptor)
       when 'TERMINATE'
         new_request = ServiceManagerService.create_service_termination_request(service_instance_uuid: params['service_instance_uuid'])
-      else
-        json_error 400, 'Request type '+params['request_type']+' is not supported'
       end
       logger.debug(log_message) { "new_request =#{new_request}"}
       if new_request[:status] != 201
