@@ -134,7 +134,7 @@ class GtkApi < Sinatra::Base
         settings.logger.error(log_message) {'Rate limiter is in place, but could not create a limit'} unless (resp || resp[:status] == 201)
       rescue RateLimitNotCreatedError => e
         settings.logger.error(log_message) {'Failled to create rate limit'}
-        json_error 500, {error: { code: 500, message:'There seems to have been a problem with rate limit creation'}}.to_json
+        halt 500, {error: { code: 500, message:'There seems to have been a problem with rate limit creation'}}.to_json
       end
     end
     settings.logger.debug(log_message) {'Setting rate_limits_created to true...'} 
